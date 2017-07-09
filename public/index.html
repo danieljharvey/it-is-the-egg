@@ -1,0 +1,31 @@
+<html style='background-color: black;'>
+	<head>
+		<title>Jetpack</title>
+		<script src='js/jetpack.js'></script>
+	</head>
+	<style>
+		#canvas {
+			display: block;
+		}
+	</style>
+	<body>
+		<button onClick='jetpack.startRender()'>RENDER</button>
+		<button onClick='jetpack.rotateBoard(false);'>ROTATE ANTICLOCKWISE</button>
+		<button onClick='jetpack.rotateBoard(true);'>ROTATE CLOCKWISE</button>
+		<canvas id='canvas'></canvas>
+		
+	</body>
+</html>
+
+<script>
+var jetpack;
+
+// and here's the trick (works everywhere)
+function r(f){/in/.test(document.readyState)?setTimeout('r('+f+')',9):f()}
+// use like
+r(function(){
+    jetpack = new Jetpack();
+	jetpack.go();
+});
+
+</script>
