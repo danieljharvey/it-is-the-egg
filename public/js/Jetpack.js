@@ -12,8 +12,8 @@ function Jetpack() {
 	this.tiles={
 		0: {
 			'id':0,
-			'title':'Sky',
-			'img':'sky.png',
+			'title':'Table cloth',
+			'img':'table-cloth.png',
 			'background':true,
 			'needsDraw':true
 		},
@@ -27,39 +27,66 @@ function Jetpack() {
 		},
 		2: {
 			'id':2,
-			'title':'Mud',
-			'img':'mud.png',
+			'title':'Fabric',
+			'img':'fabric.png',
 			'background':false,
 			'needsDraw':true
 		},
 		3: {
 			'id':3,
-			'title':'Mud Window',
-			'img':'mud-window.png',
-			'background':true,
-			'needsDraw':true,
-			'frontLayer':true
-		},
-		4: {
-			'id':4,
 			'title':'Cacti',
 			'img':'cacti.png',
 			'background':true,
 			'needsDraw':true,
 			'frontLayer':true
 		},
-		5: {
-			'id':5,
+		4: {
+			'id':4,
 			'title':'Plant',
 			'img':'plant.png',
 			'background':true,
 			'needsDraw':true,
 			'frontLayer':true
 		},
-		6: {
-			'id':6,
+		/*5: {
+			'id':5,
 			'title':'Crate',
 			'img':'crate.png',
+			'background':false,
+			'needsDraw':true
+		},*/
+		/*6: {
+			'id':6,
+			'title':'Cereal',
+			'img':'cereal.png',
+			'background':true,
+			'needsDraw':true
+		},*/
+		/*7: {
+			'id':7,
+			'title':'Work surface 1',
+			'img':'work-surface-1.png',
+			'background':false,
+			'needsDraw':true
+		},*/
+		8: {
+			'id':8,
+			'title':'Work surface 2',
+			'img':'work-surface-2.png',
+			'background':true,
+			'needsDraw':true
+		},
+		9: {
+			'id':9,
+			'title':'Work surface 3',
+			'img':'work-surface-3.png',
+			'background':false,
+			'needsDraw':true
+		},
+		10: {
+			'id':10,
+			'title':'Work surface 4',
+			'img':'work-surface-4.png',
 			'background':false,
 			'needsDraw':true
 		}
@@ -70,6 +97,12 @@ function Jetpack() {
 			'id':'egg',
 			'title':"It is of course the egg",
 			'img':'egg-sprite.png',
+			'frames':18
+		},
+		'red-egg': {
+			'id':'egg',
+			'title':"It is of course the red egg",
+			'img':'egg-sprite-red.png',
 			'frames':18
 		}
 	}
@@ -481,12 +514,21 @@ function Jetpack() {
 	}
 
 	this.createPlayers = function() {
-		var x = parseInt(Math.random() * this.boardSize.width) - 1;
-		var y = parseInt(Math.random() * this.boardSize.height) - 2;
-		if (x<0) x = 0;
-		if (y<0) y = 0;
-		var player = this.createNewPlayer(this.playerTypes['egg'],x,y);
-		this.players=[player];
+		for (var i = 0; i < 3; i++) {
+			var x = parseInt(Math.random() * this.boardSize.width) - 1;
+			var y = parseInt(Math.random() * this.boardSize.height) - 2;
+			if (x<0) x = 0;
+			if (y<0) y = 0;
+			if (i % 2 == 0) {
+				var type = 'egg';
+			} else {
+				var type = 'red-egg';
+			}
+			var player = this.createNewPlayer(this.playerTypes[type],x,y);	
+			this.players[i] = player;
+		}
+		
+		//this.players=[player];
 	}
 
 	// create player and load their sprite
@@ -642,7 +684,7 @@ function Jetpack() {
 		var left = offset;
 	    var top = offset;
 
-	    self.wipeCanvas('rgba(0,0,0,1)');
+	    self.wipeCanvas('rgba(0,0,0,0.1)');
 
 	    this.ctx.translate( left, top );
 	  	this.ctx.rotate( angleInRad );
