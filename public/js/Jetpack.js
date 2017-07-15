@@ -19,10 +19,9 @@ function Jetpack() {
 		},
 		1: {
 			'id':1,
-			'title':'Water',
-			'img':'water.png',
-			'background':false,
-			'dontAdd':true,
+			'title':'Sky',
+			'img':'sky.png',
+			'background':true,
 			'needsDraw':true
 		},
 		2: {
@@ -54,29 +53,12 @@ function Jetpack() {
 			'img':'crate.png',
 			'background':false,
 			'needsDraw':true,
-			'dontAdd':true
-		},
-		6: {
-			'id':6,
-			'title':'Cereal',
-			'img':'cereal.png',
-			'background':true,
-			'needsDraw':true,
-			'dontAdd':true,
-		},
-		7: {
-			'id':7,
-			'title':'Work surface 1',
-			'img':'work-surface-1.png',
-			'background':false,
-			'needsDraw':true,
-			'dontAdd':true
 		},
 		8: {
 			'id':8,
 			'title':'Work surface 2',
 			'img':'work-surface-2.png',
-			'background':true,
+			'background':false,
 			'needsDraw':true
 		},
 		9: {
@@ -187,7 +169,7 @@ function Jetpack() {
 					}
 	    		} else {
 	    			// render sky behind see through tiles
-	    			var skyTileImage = this.tileImages[0];
+	    			var skyTileImage = this.tileImages[1];
 	    			this.renderTile(x, y, tile, skyTileImage);
 	    		}
 	    	}
@@ -518,7 +500,7 @@ function Jetpack() {
 	}
 
 	this.createPlayers = function() {
-		for (var i = 0; i < 3; i++) {
+		for (var i = 0; i < 2; i++) {
 			var x = parseInt(Math.random() * this.boardSize.width) - 1;
 			var y = parseInt(Math.random() * this.boardSize.height) - 2;
 			if (x<0) x = 0;
@@ -707,7 +689,6 @@ function Jetpack() {
 
 	// coords is always x,y,offsetX, offsetY
 	this.handleClick = function(coords) {
-		console.log(coords);
 		this.cycleTile(coords.x,coords.y);
 	}
 
