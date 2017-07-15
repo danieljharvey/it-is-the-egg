@@ -48,27 +48,30 @@ function Jetpack() {
 			'needsDraw':true,
 			'frontLayer':true
 		},
-		/*5: {
+		5: {
 			'id':5,
 			'title':'Crate',
 			'img':'crate.png',
 			'background':false,
-			'needsDraw':true
-		},*/
-		/*6: {
+			'needsDraw':true,
+			'dontAdd':true
+		},
+		6: {
 			'id':6,
 			'title':'Cereal',
 			'img':'cereal.png',
 			'background':true,
-			'needsDraw':true
-		},*/
-		/*7: {
+			'needsDraw':true,
+			'dontAdd':true,
+		},
+		7: {
 			'id':7,
 			'title':'Work surface 1',
 			'img':'work-surface-1.png',
 			'background':false,
-			'needsDraw':true
-		},*/
+			'needsDraw':true,
+			'dontAdd':true
+		},
 		8: {
 			'id':8,
 			'title':'Work surface 2',
@@ -125,6 +128,7 @@ function Jetpack() {
 	this.go = function() {
 		var board = this.generateRandomBoard();
 		this.board = this.addWaterToBoard(board);
+		this.bindClickHandler();
 		this.loadTilePalette();
 		this.loadCanvas();
 		this.createPlayers();
@@ -637,17 +641,8 @@ function Jetpack() {
 
 	this.drawRotatingBoard = function(clockwise) {
 
-		console.log('drawRotatingBoard');
-
 	    var cw=this.canvas.width;
 	    var ch=this.canvas.height;
-	    /*
-		// create backing canvas
-		var backCanvas = document.createElement('canvas');
-		backCanvas.width = this.canvas.width;
-		backCanvas.height = this.canvas.height;
-		var backCtx = backCanvas.getContext('2d');
-		*/
 
 		var savedData = new Image();
 	    savedData.src = this.canvas.toDataURL("image/png");
@@ -664,18 +659,14 @@ function Jetpack() {
 		if (direction>0) {
 			if (angle >= targetAngle) {
 				self.startRender();	
-				console.log('startRender');
 				return false;
 			}
 		} else {
 			if (angle <= targetAngle) {
 				self.startRender();	
-				console.log('startRender');
 				return false;
 			}
 		}
-
-		console.log(savedData, angle, targetAngle, direction);
 
 		var angleInRad = angle * (Math.PI/180);
 			
@@ -689,8 +680,6 @@ function Jetpack() {
 	    this.ctx.translate( left, top );
 	  	this.ctx.rotate( angleInRad );
 
-	  	console.log(angleInRad);
-
 	    this.ctx.drawImage(savedData, -offset, -offset);
 
 	    this.ctx.rotate( -angleInRad );
@@ -701,5 +690,43 @@ function Jetpack() {
 	    this.animationHandle = window.requestAnimationFrame(function() {
 	    	self.drawRotated(savedData, direction,angle,targetAngle)
 	    });
-	}	
+	}
+
+	this.bindClickHandler = function() {
+		var canvas = document.getElementById('canvas');
+		canvas.addEventListener('click', function(event) {
+		    var coords = {
+		    	x: parseInt(event.offsetX / self.tileSize),
+	        	y: parseInt(event.offsetY / self.tileSize),
+	        	offsetX: (event.offsetX % self.tileSize) - (self.tileSize / 2),
+	        	offsetY: (event.offsetY % self.tileSize) - (self.tileSize / 2)
+	        }
+	        self.handleClick(coords);
+	    });
+	}
+
+	// coords is always x,y,offsetX, offsetY
+	this.handleClick = function(coords) {
+		console.log(coords);
+		this.cycleTile(coords.x,coords.y);
+	}
+
+	this.cycleTile = function(x,y) {
+		var currentTile = this.board[x][y];
+		var currentKey = currentTile.id;
+
+		var keys = Object.keys(this.tiles);
+		
+		var newKey = nextKey = false;
+		for (var i in keys) {
+			if (newKey===false || nextKey) newKey = keys[i];
+			if (keys[i]==currentKey) {
+				nextKey = true;
+			} else {
+				nextKey = false;
+			}
+		}
+	    var tile = this.getTile(newKey);
+	    this.board[x][y] = tile;
+	}
 }
