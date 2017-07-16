@@ -378,13 +378,12 @@ function Jetpack() {
 
 		if (player.falling) return false;
 
-		/*
 		if (player.direction !== 0 && !this.checkTileIsEmpty(player.x - 1, player.y) && !this.checkTileIsEmpty(player.x + 1, player.y)) {
 			// trapped
 			player.oldDirection = player.direction;
 			player.direction = 0;
 			return false;
-		}*/
+		}
 
 		if (player.direction < 0) {
 			if (!this.checkTileIsEmpty(player.x - 1, player.y)) {
@@ -619,6 +618,15 @@ function Jetpack() {
 		player.y = coords.y;
 		player.offsetX = 0; //offsetX;
 		player.offsetY = 0; //offsetY;
+
+		// if player is still, nudge them in rotation direction
+		if (player.direction==0) {
+			if (clockwise) {
+				player.direction = 1;
+			} else {
+				player.direction = -1;
+			}
+		}
 	}
 
 	this.drawRotatingBoard = function(clockwise) {
