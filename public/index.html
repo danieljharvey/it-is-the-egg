@@ -18,11 +18,18 @@
 			display: block;
 			margin: 0px auto;
 		}
+		#score {
+			color: white;
+			margin-left: 20px;
+			margin-right: 20px;
+			text-align: center;
+			font-family: Helvetica;
+		}
 	</style>
 	<body>
 		<div id='controlHeader'>
-			<button onClick='jetpack.startRender()'>RENDER</button>
 			<button onClick='jetpack.rotateBoard(false);'>ROTATE ANTICLOCKWISE</button>
+			<span id='score'>0</span>
 			<button onClick='jetpack.rotateBoard(true);'>ROTATE CLOCKWISE</button>
 		</div>
 		<canvas id='canvas'></canvas>

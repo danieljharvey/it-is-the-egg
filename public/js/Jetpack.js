@@ -117,19 +117,22 @@ function Jetpack() {
 			'type':'egg',
 			'title':"It is of course the egg",
 			'img':'egg-sprite.png',
-			'frames':18
+			'frames':18,
+			'multiplier':1
 		},
 		'red-egg': {
 			'type':'red-egg',
 			'title':"It is of course the red egg",
 			'img':'egg-sprite-red.png',
-			'frames':18
+			'frames':18,
+			'multiplier':2
 		},
 		'blue-egg': {
 			'type':'blue-egg',
 			'title':"It is of course the blue egg",
 			'img':'egg-sprite-blue.png',
-			'frames':18
+			'frames':18,
+			'multiplier':5
 		}
 	}
 	
@@ -138,8 +141,8 @@ function Jetpack() {
 	this.tileSize = 48;
 
 	this.boardSize = {
-		width: 10,
-		height: 10
+		width: 14,
+		height: 14
 	};
 
 	this.board = [];
@@ -156,6 +159,11 @@ function Jetpack() {
 		this.loadTilePalette();
 		this.loadCanvas();
 		this.createPlayers();
+		
+		this.resetScore();
+		var s = setTimeout(function() {
+			self.startRender();
+		},1000);
 	}
 
 	this.startRender = function() {
@@ -164,6 +172,17 @@ function Jetpack() {
 		this.markAllForRedraw();
 		this.paused = false;
 		this.animationHandle = window.requestAnimationFrame(self.render);
+	}
+
+	this.resetScore = function(score) {
+		this.score = 0;
+		this.addScore(0);
+	}
+
+	this.addScore = function(amount) {
+		this.score += amount;
+		var scoreElement = document.getElementById('score');
+		scoreElement.innerHTML = this.score;
 	}
 
 	this.markAllForRedraw = function() {
@@ -650,7 +669,8 @@ function Jetpack() {
 		var tile = this.board[player.x][player.y];
 		var collectable = this.getTileProperty(tile,'collectable');
 		if (collectable) {
-			this.score+= collectable;
+			var score = collectable * player.multiplier;
+			this.addScore(score);
 			var blankTile = this.getTile(1);
 			blankTile.needsDraw = true;
 			this.board[player.x][player.y] = blankTile;
