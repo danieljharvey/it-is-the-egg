@@ -6,6 +6,7 @@ function Jetpack() {
 	this.moveSpeed = 6;
 	this.renderAngle = 0;
 	this.paused = true;
+	this.checkResize = true;
 
 	this.animationHandle;
 
@@ -53,6 +54,7 @@ function Jetpack() {
 			'img':'crate.png',
 			'background':false,
 			'needsDraw':true,
+			'breakable':true
 		},
 		8: {
 			'id':8,
@@ -74,6 +76,35 @@ function Jetpack() {
 			'img':'work-surface-4.png',
 			'background':false,
 			'needsDraw':true
+		},
+		11: {
+			'id':11,
+			'title':'Tiles',
+			'img':'tile.png',
+			'background':false,
+			'needsDraw':true
+		},
+		12: {
+			'id':12,
+			'title':'Turn left',
+			'img':'left-turn.png',
+			'background':true,
+			'needsDraw':true,
+			'action':'rotateLeft',
+			'frontLayer':true,
+			'dontAdd':true,
+			/*'dontRotate':true*/
+		},
+		13: {
+			'id':13,
+			'title':'Turn Right',
+			'img':'right-turn.png',
+			'background':true,
+			'needsDraw':true,
+			'action':'rotateRight',
+			'frontLayer':true,
+			'dontAdd':true,
+			/*'dontRotate':true*/
 		}
 	}
 
@@ -97,8 +128,8 @@ function Jetpack() {
 	this.tileSize = 48;
 
 	this.boardSize = {
-		width: 12,
-		height: 12
+		width: 10,
+		height: 10
 	};
 
 	this.board = [];
@@ -110,6 +141,7 @@ function Jetpack() {
 	this.go = function() {
 		var board = this.generateRandomBoard();
 		this.board = this.addWaterToBoard(board);
+		this.bindSizeHandler();
 		this.bindClickHandler();
 		this.loadTilePalette();
 		this.loadCanvas();
@@ -119,9 +151,18 @@ function Jetpack() {
 	this.startRender = function() {
 		if (!this.paused) return false;
 		window.cancelAnimationFrame(this.animationHandle);
+		this.markAllForRedraw();
 		this.paused = false;
 		this.animationHandle = window.requestAnimationFrame(self.render);
+	}
 
+	this.markAllForRedraw = function() {
+		// force redraw
+		for (var x in this.board) {
+			for (var y in this.board[x]) {
+				this.board[x][y].needsDraw = true;
+			}
+		}
 	}
 
 	this.pauseRender = function() {
@@ -131,6 +172,7 @@ function Jetpack() {
 
 	this.render = function() {
 		if (this.paused) return false;
+		self.sizeCanvas();
 		//self.wipeCanvas('rgba(0,0,0,0.02)');
 		self.renderBoard();
 		self.renderPlayers();	
@@ -138,6 +180,39 @@ function Jetpack() {
 		self.doPlayerCalcs();
 		//self.wipeCanvas('rgba(255,255,0,0.04)');	
 		self.animationHandle = window.requestAnimationFrame(self.render);
+	}
+
+	this.sizeCanvas = function() {
+		if (!this.checkResize) return false;
+		var maxBoardSize = this.getMaxBoardSize();
+
+		this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + 'px';
+
+		this.tileSize = maxBoardSize / this.boardSize.width;
+		this.loadCanvas();
+		this.markAllForRedraw();
+
+		this.checkResize = false; // all done
+	}
+
+	this.getMaxBoardSize = function() {
+		var width = window.innerWidth;
+		var height = window.innerHeight;
+		
+		var controlHeader = document.getElementById('controlHeader');
+
+		height = height - (controlHeader.offsetHeight * 2);
+		width = width - (controlHeader.offsetHeight * 2);
+
+		if (width > height) {
+			var difference = (height % this.boardSize.width);
+			height = height - difference;
+			return height;
+		} else {
+			var difference = (width % this.boardSize.width);
+			width = width - difference;
+			return width;
+		}
 	}
 
 	this.wipeCanvas = function(fillStyle) {
@@ -169,11 +244,16 @@ function Jetpack() {
 					}
 	    		} else {
 	    			// render sky behind see through tiles
-	    			var skyTileImage = this.tileImages[1];
-	    			this.renderTile(x, y, tile, skyTileImage);
+	    			this.drawSkyTile(tile,x,y);
 	    		}
 	    	}
 	    }
+	}
+
+	this.drawSkyTile = function(tile, x,y) {
+		var skyTile = this.getTile(1);
+		var skyTileImage = this.tileImages[skyTile.id];
+		this.renderTile(x, y, tile, skyTileImage);
 	}
 
 	// just go over and draw the over-the-top stuff
@@ -199,10 +279,7 @@ function Jetpack() {
 	}
 
 	this.tileIsFrontLayer = function(tile) {
-		if (tile.hasOwnProperty('frontLayer') && tile.frontLayer) {
-			return true;
-		} 
-		return false;
+		return this.getTileProperty(tile,'frontLayer');
 	}
 
 	this.renderPlayers = function() {
@@ -230,9 +307,7 @@ function Jetpack() {
 
 	    this.ctx.globalAlpha = opacity;
 	    
-	    
-	
-		if (this.renderAngle == 0) {
+		if (this.renderAngle == 0 || this.getTileProperty(tile,'dontRotate')) {
 			this.ctx.drawImage(img,left,top,this.tileSize,this.tileSize);
 		} else {
 
@@ -349,13 +424,27 @@ function Jetpack() {
 		if (y >= this.boardSize.height) y = 0;
 
 		var tile = this.board[player.x][y];
+
 		if (tile.background) {
 			player.falling = true;
 			player.offsetY += this.moveSpeed;
+		} else if (player.falling && this.tileIsBreakable(tile)) {
+			player.offsetY += this.moveSpeed;
 		} else {
 			player.falling = false;
+			this.checkPlayerTileAction(player);
 		}
+
 		this.checkIfPlayerIsInNewTile(player);
+	}
+
+	this.getTileProperty = function(tile, property) {
+		if (!tile.hasOwnProperty(property)) return false;
+		return tile[property];
+
+	}
+	this.tileIsBreakable = function(tile) {
+		return this.getTileProperty(tile,'breakable');
 	}
 
 	// is intended next tile empty / a wall?
@@ -404,12 +493,23 @@ function Jetpack() {
 				player.offsetX+=this.moveSpeed;;
 			}
 		}
+
+		// if we've stopped and ended up not quite squared up, correct this
+		if (player.direction ==0 && player.falling==false) {
+			if (player.offsetX > 0) {
+				player.offsetX -= this.moveSpeed;
+			} else if (player.offSetX < 0) {
+				player.offsetX += this.moveSpeed;
+			}
+		}
+
 		this.checkIfPlayerIsInNewTile(player);
 	}
 
 	this.checkIfPlayerIsInNewTile = function(player) {
 		if (player.offsetX > this.tileSize) {
 			player.offsetX = 0;
+			this.checkPlayerTileAction(player);
 			player.x ++;
 			if (player.x >= this.boardSize.width) {
 				player.x = 0; // wrap around
@@ -417,6 +517,7 @@ function Jetpack() {
 		}
 		if (player.offsetX < (-1 * this.tileSize)) {
 			player.offsetX = 0;
+			this.checkPlayerTileAction(player);
 			player.x --;
 			if (player.x < 0) {
 				player.x = this.boardSize.width - 1; // wrap around
@@ -424,6 +525,7 @@ function Jetpack() {
 		}
 		if (player.offsetY > this.tileSize) {
 			player.offsetY = 0;
+			this.checkPlayerTileAction(player);
 			player.y ++;
 			if (player.y >= this.boardSize.height) {
 				player.y = 0; // wrap around
@@ -431,11 +533,39 @@ function Jetpack() {
 		}
 		if (player.offsetY < (-1 * this.tileSize)) {
 			player.offsetY = 0;
+			this.checkPlayerTileAction(player);
 			player.y --;
 			if (player.y < 0) {
 				player.y = this.boardSize.height - 1; // wrap around
 			}
 		}
+	}
+
+	this.checkPlayerTileAction = function(player) {
+		if (player.offsetX != 0 || player.offsetY != 0) return false;
+
+		if (player.falling) {
+			var coords=this.correctForOverflow(player.x, player.y + 1);
+			
+			var tile = this.board[coords.x][coords.y];
+
+			if (this.tileIsBreakable(tile)) {
+				this.board[coords.x][coords.y] = this.getTile(1); // smash block, replace with empty
+			}
+		} else {
+			var tile = this.board[player.x][player.y];
+			var action = this.getTileAction(tile);
+			
+			if (action=='rotateLeft') {
+				this.rotateBoard(false);
+			} else if (action=='rotateRight') {
+				this.rotateBoard(true);
+			}
+		}
+	}
+
+	this.getTileAction = function(tile) {
+		return this.getTileProperty(tile,'action');
 	}
 
 	this.generateRandomBoard = function() {
@@ -476,7 +606,7 @@ function Jetpack() {
 		var theseTiles = JSON.parse(JSON.stringify(tiles));
 		// remove unwanted tiles
 		for (var i in theseTiles) {
-			if (theseTiles[i].hasOwnProperty('dontAdd')) {
+			if (this.getTileProperty(theseTiles[i],'dontAdd')) {
 		    	delete theseTiles[i];
 		    }
 		}
@@ -499,7 +629,7 @@ function Jetpack() {
 	}
 
 	this.createPlayers = function() {
-		for (var i = 0; i < 2; i++) {
+		for (var i = 0; i < 1; i++) {
 			var x = parseInt(Math.random() * this.boardSize.width) - 1;
 			var y = parseInt(Math.random() * this.boardSize.height) - 2;
 			if (x<0) x = 0;
@@ -680,6 +810,12 @@ function Jetpack() {
 	    this.animationHandle = window.requestAnimationFrame(function() {
 	    	self.drawRotated(savedData, direction,angle,targetAngle)
 	    });
+	}
+
+	this.bindSizeHandler = function() {
+		window.addEventListener('resize', function() {
+			self.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+		});
 	}
 
 	this.bindClickHandler = function() {

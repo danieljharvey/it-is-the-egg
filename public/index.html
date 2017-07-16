@@ -4,15 +4,27 @@
 		<script src='js/Jetpack.js'></script>
 	</head>
 	<style>
+		html, body {
+			margin: 0px;
+			padding: 0px;
+		}
+		#controlHeader {
+			height: 50px;
+			width: 100%;
+			text-align: center;
+			line-height:50px;
+		}
 		#canvas {
 			display: block;
-			margin: 20px auto;
+			margin: 0px auto;
 		}
 	</style>
 	<body>
-		<button onClick='jetpack.startRender()'>RENDER</button>
-		<button onClick='jetpack.rotateBoard(false);'>ROTATE ANTICLOCKWISE</button>
-		<button onClick='jetpack.rotateBoard(true);'>ROTATE CLOCKWISE</button>
+		<div id='controlHeader'>
+			<button onClick='jetpack.startRender()'>RENDER</button>
+			<button onClick='jetpack.rotateBoard(false);'>ROTATE ANTICLOCKWISE</button>
+			<button onClick='jetpack.rotateBoard(true);'>ROTATE CLOCKWISE</button>
+		</div>
 		<canvas id='canvas'></canvas>
 		
 	</body>
