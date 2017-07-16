@@ -11,13 +11,13 @@ function Jetpack() {
 	this.animationHandle;
 
 	this.tiles={
-		0: {
+		/*0: {
 			'id':0,
 			'title':'Table cloth',
 			'img':'table-cloth.png',
 			'background':true,
 			'needsDraw':true
-		},
+		},*/
 		1: {
 			'id':1,
 			'title':'Sky',
@@ -84,7 +84,7 @@ function Jetpack() {
 			'background':false,
 			'needsDraw':true
 		},
-		12: {
+		/*12: {
 			'id':12,
 			'title':'Turn left',
 			'img':'left-turn.png',
@@ -93,7 +93,7 @@ function Jetpack() {
 			'action':'rotateLeft',
 			'frontLayer':true,
 			'dontAdd':true,
-			/*'dontRotate':true*/
+			'dontRotate':true
 		},
 		13: {
 			'id':13,
@@ -104,8 +104,8 @@ function Jetpack() {
 			'action':'rotateRight',
 			'frontLayer':true,
 			'dontAdd':true,
-			/*'dontRotate':true*/
-		}
+			'dontRotate':true
+		}*/
 	}
 
 	this.playerTypes={
@@ -271,6 +271,7 @@ function Jetpack() {
 	    	}
 	    }
 	}
+
  	// debugging tools
 	this.showUnrenderedTile = function(x,y) {
 		return false;
@@ -362,6 +363,7 @@ function Jetpack() {
 			this.incrementPlayerFrame(player);
 		    this.checkFloorBelowPlayer(player);
 		    this.incrementPlayerDirection(player);	
+		    this.checkPlayerCollisions(player);
 		}
 	}
 
@@ -502,7 +504,6 @@ function Jetpack() {
 				player.offsetX += this.moveSpeed;
 			}
 		}
-
 		this.checkIfPlayerIsInNewTile(player);
 	}
 
@@ -537,6 +538,42 @@ function Jetpack() {
 			player.y --;
 			if (player.y < 0) {
 				player.y = this.boardSize.height - 1; // wrap around
+			}
+		}
+	}
+
+	this.checkPlayerCollisions = function(player) {
+		for (var i in this.players) {
+			var player2 = this.players[i];
+			if (player.id !== player2.id) {
+				this.checkCollision(player, player2);	
+			}
+		}
+	}
+
+	// only deal with horizontal collisions for now
+	this.checkCollision = function(player1, player2) {
+		if (player1.y != player2.y) return false;
+
+		// horizontal collisions
+
+		if (player1.offsetX > 0) { // heading right
+			if (player1.x + 1 == player2.x && player2.offsetX < 0) {
+				player1.direction = -1; // flip direction
+				player2.direction = 1; // flip direction
+			}
+		} else if (player1.offsetX < 0) { // heading left
+			if (player1.x - 1 == player2.x && player2.offsetX > 0) {
+				player1.direction = 1; // flip direction
+				player2.direction = -1; // flip direction
+			}
+		}
+
+		// vertical collisions (egg falling onto egg)
+
+		if (player1.falling) {
+			if (player1.x == player2.x) {
+				console.log('combine eggs!');
 			}
 		}
 	}
@@ -629,7 +666,7 @@ function Jetpack() {
 	}
 
 	this.createPlayers = function() {
-		for (var i = 0; i < 1; i++) {
+		for (var i = 0; i < 2; i++) {
 			var x = parseInt(Math.random() * this.boardSize.width) - 1;
 			var y = parseInt(Math.random() * this.boardSize.height) - 2;
 			if (x<0) x = 0;
@@ -640,7 +677,7 @@ function Jetpack() {
 				var type = 'red-egg';
 			}
 			var player = this.createNewPlayer(this.playerTypes[type],x,y);	
-			this.players[i] = player;
+			this.players[player.id] = player;
 		}
 		
 		//this.players=[player];
@@ -649,7 +686,9 @@ function Jetpack() {
 	// create player and load their sprite
 	this.createNewPlayer = function(playerType, startX, startY) {
 		var player = JSON.parse(JSON.stringify(playerType));
+		player.id = this.players.length + 1;
 		player.currentFrame = 0;
+		player.level = 1;
 		player.x = startX; // x in tiles
 		player.y = startY; // y in tiles
 		player.direction = 1;
