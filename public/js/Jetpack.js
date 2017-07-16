@@ -3,10 +3,12 @@ function Jetpack() {
 	
 	var self = this;
 
-	this.moveSpeed = 6;
+	this.moveSpeed = 7;
 	this.renderAngle = 0;
 	this.paused = true;
 	this.checkResize = true;
+	this.nextPlayerID = 1;
+	this.score = 0;
 
 	this.animationHandle;
 
@@ -38,7 +40,8 @@ function Jetpack() {
 			'img':'cacti.png',
 			'background':true,
 			'needsDraw':true,
-			'frontLayer':true
+			'frontLayer':true,
+			'collectable':1
 		},
 		4: {
 			'id':4,
@@ -46,7 +49,8 @@ function Jetpack() {
 			'img':'plant.png',
 			'background':true,
 			'needsDraw':true,
-			'frontLayer':true
+			'frontLayer':true,
+			'collectable':10
 		},
 		5: {
 			'id':5,
@@ -110,15 +114,21 @@ function Jetpack() {
 
 	this.playerTypes={
 		'egg': {
-			'id':'egg',
+			'type':'egg',
 			'title':"It is of course the egg",
 			'img':'egg-sprite.png',
 			'frames':18
 		},
 		'red-egg': {
-			'id':'egg',
+			'type':'red-egg',
 			'title':"It is of course the red egg",
 			'img':'egg-sprite-red.png',
+			'frames':18
+		},
+		'blue-egg': {
+			'type':'blue-egg',
+			'title':"It is of course the blue egg",
+			'img':'egg-sprite-blue.png',
 			'frames':18
 		}
 	}
@@ -422,10 +432,12 @@ function Jetpack() {
 	}
 
 	this.checkFloorBelowPlayer = function(player) {
-		var y = player.y + 1;
-		if (y >= this.boardSize.height) y = 0;
+		
+		if (player.offsetX !== 0) return false;
 
-		var tile = this.board[player.x][y];
+		var coords = this.correctForOverflow(player.x, player.y + 1);
+
+		var tile = this.board[coords.x][coords.y];
 
 		if (tile.background) {
 			player.falling = true;
@@ -468,13 +480,13 @@ function Jetpack() {
 	this.incrementPlayerDirection = function(player) {
 
 		if (player.falling) return false;
-
+		/*
 		if (player.direction !== 0 && !this.checkTileIsEmpty(player.x - 1, player.y) && !this.checkTileIsEmpty(player.x + 1, player.y)) {
 			// trapped
 			player.oldDirection = player.direction;
 			player.direction = 0;
 			return false;
-		}
+		}*/
 
 		if (player.direction < 0) {
 			if (!this.checkTileIsEmpty(player.x - 1, player.y)) {
@@ -551,35 +563,98 @@ function Jetpack() {
 		}
 	}
 
+	this.combinePlayers = function(player1, player2) {
+		delete this.players[player1.id];
+		delete this.players[player2.id];
+		
+		if (player1.type=='egg' && player2.type=='egg') {
+			var type='red-egg';
+			var coords={
+				'x':player2.x,
+				'y':player2.y,
+				'offsetX':player2.offsetX,
+				'offsetY':player2.offsetY
+			}
+			var newPlayer = this.createNewPlayer(type, coords, player2.direction);	
+			this.players[newPlayer.id] = newPlayer;
+		} else if (player1.type=='egg' && player2.type=='red-egg') {
+			var type='blue-egg';
+			var coords={
+				'x':player2.x,
+				'y':player2.y,
+				'offsetX':player2.offsetX,
+				'offsetY':player2.offsetY
+			}
+			var newPlayer = this.createNewPlayer(type, coords, player2.direction);	
+			this.players[newPlayer.id] = newPlayer;
+		} else if (player1.type=='red-egg' && player2.type=='egg') {
+			var type='blue-egg';
+			var coords={
+				'x':player1.x,
+				'y':player1.y,
+				'offsetX':player1.offsetX,
+				'offsetY':player1.offsetY
+			}
+			var newPlayer = this.createNewPlayer(type, coords, player1.direction);	
+			this.players[newPlayer.id] = newPlayer;
+		}
+	}
+
 	// only deal with horizontal collisions for now
 	this.checkCollision = function(player1, player2) {
+		
+		if (!player1 || !player2) return false;
+
+		if (player1.x == player2.x && player1.y == player2.y) {
+			if (player1.offsetX==0 && player1.offsetY == 0 && player2.offsetX ==0 && player2.offsetY == 0) {
+				if (player1.falling || player2.falling) {
+					this.combinePlayers(player1, player2);
+					return false;
+				}
+			}
+		}
+
 		if (player1.y != player2.y) return false;
 
 		// horizontal collisions
 
-		if (player1.offsetX > 0) { // heading right
-			if (player1.x + 1 == player2.x && player2.offsetX < 0) {
-				player1.direction = -1; // flip direction
-				player2.direction = 1; // flip direction
-			}
-		} else if (player1.offsetX < 0) { // heading left
-			if (player1.x - 1 == player2.x && player2.offsetX > 0) {
-				player1.direction = 1; // flip direction
-				player2.direction = -1; // flip direction
+		if (player1.x == player2.x) {
+			if (player1.offsetX == 0 && player2.offsetX == 0) {
+				this.combinePlayers(player1,player2);
+				return false;
 			}
 		}
 
-		// vertical collisions (egg falling onto egg)
-
-		if (player1.falling) {
-			if (player1.x == player2.x) {
-				console.log('combine eggs!');
+		if (player1.offsetX > 0) { // heading right
+			if (player1.x + 1 == player2.x && player2.offsetX < 0) {
+				this.combinePlayers(player1,player2);
+				return false;
+				//player1.direction = -1; // flip direction
+				//player2.direction = 1; // flip direction
+			}
+		} else if (player1.offsetX < 0) { // heading left
+			if (player1.x - 1 == player2.x && player2.offsetX > 0) {
+				this.combinePlayers(player1,player2);
+				return false;
+				//player1.direction = 1; // flip direction
+				//player2.direction = -1; // flip direction
 			}
 		}
 	}
 
+
+
 	this.checkPlayerTileAction = function(player) {
 		if (player.offsetX != 0 || player.offsetY != 0) return false;
+
+		var tile = this.board[player.x][player.y];
+		var collectable = this.getTileProperty(tile,'collectable');
+		if (collectable) {
+			this.score+= collectable;
+			var blankTile = this.getTile(1);
+			blankTile.needsDraw = true;
+			this.board[player.x][player.y] = blankTile;
+		}
 
 		if (player.falling) {
 			var coords=this.correctForOverflow(player.x, player.y + 1);
@@ -598,6 +673,8 @@ function Jetpack() {
 			} else if (action=='rotateRight') {
 				this.rotateBoard(true);
 			}
+
+			
 		}
 	}
 
@@ -666,36 +743,36 @@ function Jetpack() {
 	}
 
 	this.createPlayers = function() {
-		for (var i = 0; i < 2; i++) {
+		for (var i = 0; i < 3; i++) {
 			var x = parseInt(Math.random() * this.boardSize.width) - 1;
 			var y = parseInt(Math.random() * this.boardSize.height) - 2;
 			if (x<0) x = 0;
 			if (y<0) y = 0;
-			if (i % 2 == 0) {
-				var type = 'egg';
-			} else {
-				var type = 'red-egg';
+			var type = 'egg';
+			var coords = {
+				'x':x,
+				'y':y,
+				'offsetX':0,
+				'offsetY':0
 			}
-			var player = this.createNewPlayer(this.playerTypes[type],x,y);	
+			var player = this.createNewPlayer(type, coords, 1);	
 			this.players[player.id] = player;
 		}
-		
-		//this.players=[player];
 	}
 
 	// create player and load their sprite
-	this.createNewPlayer = function(playerType, startX, startY) {
+	this.createNewPlayer = function(type, coords, direction) {
+		var playerType = this.playerTypes[type];
 		var player = JSON.parse(JSON.stringify(playerType));
-		player.id = this.players.length + 1;
+		player.id = this.nextPlayerID++;
 		player.currentFrame = 0;
-		player.level = 1;
-		player.x = startX; // x in tiles
-		player.y = startY; // y in tiles
-		player.direction = 1;
+		player.x = coords.x; // x in tiles
+		player.y = coords.y; // y in tiles
+		player.direction = direction;
 		player.oldDirection = 0;
 		player.falling = false; // can't move when falling
-		player.offsetX = 0;
-		player.offsetY = 0;
+		player.offsetX = coords.offsetX;
+		player.offsetY = coords.offsetY;
 		player.image = document.createElement("img");
 		player.image.setAttribute('src', this.getTileImagePath(player));
 		return player;
