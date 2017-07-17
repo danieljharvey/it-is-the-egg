@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "emitDecoratorMetadata": true,
+        "module": "system",
+        "target": "ES5",
+        "outFile": "public/js/Jetpack.js",
+        "rootDir": "include/ts/",
+        "sourceMap": true
+    }
+}
