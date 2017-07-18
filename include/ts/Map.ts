@@ -3,8 +3,6 @@ function Map(tiles) {
 	var self = this;
 
 	this.tiles = tiles;
-	
-	this.tileSize = 48;
 
 	this.boardSize = {
 		width: 14,
@@ -63,11 +61,9 @@ function Map(tiles) {
 	}
 
 
-	this.tileIsFrontLayer = function(tile) {
-		return this.getTileProperty(tile,'frontLayer');
-	}
+	
 
-		this.markAllForRedraw = function() {
+	this.markAllForRedraw = function() {
 		// force redraw
 		for (var x in this.board) {
 			for (var y in this.board[x]) {
@@ -161,6 +157,79 @@ function Map(tiles) {
 			coords.y = height - x;
 		}
 		return coords;
+	}
+
+	this.rotateBoard = function(clockwise) {
+		var newBoard=this.getBlankBoard();
+
+		var width = this.boardSize.width -1;
+		var height = this.boardSize.height -1;
+
+		for (var x in this.board) {
+			for (var y in this.board[x]) {
+				var coords = this.translateRotation(x,y,clockwise)
+				newBoard[coords.x][coords.y] = this.board[x][y];
+				newBoard[coords.x][coords.y].needsDraw = true;
+			}
+		}
+		if (clockwise) {
+			this.renderAngle = this.renderAngle + 90;
+			if (this.renderAngle > 360) {
+				this.renderAngle = this.renderAngle - 360;
+			}	
+		} else {
+			this.renderAngle = this.renderAngle - 90;
+			if (this.renderAngle < 0) {
+				this.renderAngle = 360 + this.renderAngle;
+			}
+		}
+		
+		this.board = newBoard;
+		
+		return true;
+	}
+
+
+	this.rotatePlayer = function(player: Player, clockwise) {
+		
+		var coords = this.translateRotation(player.x, player.y, clockwise);
+		
+		player.x = coords.x;
+		player.y = coords.y;
+		player.offsetX = 0; //offsetX;
+		player.offsetY = 0; //offsetY;
+
+		// if player is still, nudge them in rotation direction
+		if (player.direction==0) {
+			if (clockwise) {
+				player.direction = 1;
+			} else {
+				player.direction = -1;
+			}
+		}
+	}
+	
+	this.cycleTile = function(x:number, y:number) {
+		console.log(x,y);
+		var currentTile = this.board[x][y];
+		
+		console.log(currentTile,x,y);
+
+		var currentKey = currentTile.id;
+
+		var keys = Object.keys(this.tiles);
+		
+		var newKey = nextKey = false;
+		for (var i in keys) {
+			if (newKey===false || nextKey) newKey = keys[i];
+			if (keys[i]==currentKey) {
+				nextKey = true;
+			} else {
+				nextKey = false;
+			}
+		}
+	    var tile = this.getTile(newKey);
+	    this.board[x][y] = tile;
 	}
 
 	this.construct();

@@ -1,8 +1,84 @@
+function Collisions(jetpack) {
+    var self = this;
+    this.jetpack = jetpack;
+    // only deal with horizontal collisions for now
+    this.checkCollision = function (player1, player2) {
+        if (!player1 || !player2)
+            return false;
+        if (player1.id == player2.id)
+            return false;
+        if (player1.x == player2.x && player1.y == player2.y) {
+            if (player1.offsetX == 0 && player1.offsetY == 0 && player2.offsetX == 0 && player2.offsetY == 0) {
+                if (player1.falling || player2.falling) {
+                    this.combinePlayers(player1, player2);
+                    return false;
+                }
+            }
+        }
+        if (player1.y != player2.y)
+            return false;
+        // horizontal collisions
+        if (player1.x == player2.x) {
+            if (player1.offsetX == 0 && player2.offsetX == 0) {
+                this.combinePlayers(player1, player2);
+                return false;
+            }
+        }
+        if (player1.offsetX > 0) {
+            if (player1.x + 1 == player2.x && player2.offsetX < 0) {
+                this.combinePlayers(player1, player2);
+                return false;
+            }
+        }
+        else if (player1.offsetX < 0) {
+            if (player1.x - 1 == player2.x && player2.offsetX > 0) {
+                this.combinePlayers(player1, player2);
+                return false;
+            }
+        }
+    };
+    this.combinePlayers = function (player1, player2) {
+        if (player1.type == 'egg' && player2.type == 'egg') {
+            var type = 'red-egg';
+            var coords = {
+                'x': player2.x,
+                'y': player2.y,
+                'offsetX': player2.offsetX,
+                'offsetY': player2.offsetY
+            };
+            this.jetpack.createNewPlayer(type, coords, player2.direction);
+        }
+        else if (player1.type == 'egg' && player2.type == 'red-egg') {
+            var type = 'blue-egg';
+            var coords = {
+                'x': player2.x,
+                'y': player2.y,
+                'offsetX': player2.offsetX,
+                'offsetY': player2.offsetY
+            };
+            this.createNewPlayer(type, coords, player2.direction);
+        }
+        else if (player1.type == 'red-egg' && player2.type == 'egg') {
+            var type = 'blue-egg';
+            var coords = {
+                'x': player1.x,
+                'y': player1.y,
+                'offsetX': player1.offsetX,
+                'offsetY': player1.offsetY
+            };
+            this.createNewPlayer(type, coords, player1.direction);
+        }
+        this.jetpack.deletePlayer(player1);
+        this.jetpack.deletePlayer(player2);
+    };
+}
 function Jetpack() {
     var self = this;
     this.paused = true;
+    this.moveSpeed = 7;
     this.map; // Map object
     this.renderer; // Renderer object
+    this.collisions; // Collisions object
     this.nextPlayerID = 1;
     this.score = 0;
     this.playerTypes = {
@@ -41,6 +117,7 @@ function Jetpack() {
         var tiles = tileSet.getTiles();
         this.map = new Map(tiles);
         this.renderer = new Renderer(this, this.map, tiles);
+        this.collisions = new Collisions(this);
         this.bindSizeHandler();
         this.bindClickHandler();
         this.createPlayers();
@@ -76,83 +153,8 @@ function Jetpack() {
             player.doCalcs();
         }
     };
-    this.combinePlayers = function (player1, player2) {
-        delete this.players[player1.id];
-        delete this.players[player2.id];
-        if (player1.type == 'egg' && player2.type == 'egg') {
-            var type = 'red-egg';
-            var coords = {
-                'x': player2.x,
-                'y': player2.y,
-                'offsetX': player2.offsetX,
-                'offsetY': player2.offsetY
-            };
-            var newPlayer = this.createNewPlayer(type, coords, player2.direction);
-            this.players[newPlayer.id] = newPlayer;
-        }
-        else if (player1.type == 'egg' && player2.type == 'red-egg') {
-            var type = 'blue-egg';
-            var coords = {
-                'x': player2.x,
-                'y': player2.y,
-                'offsetX': player2.offsetX,
-                'offsetY': player2.offsetY
-            };
-            var newPlayer = this.createNewPlayer(type, coords, player2.direction);
-            this.players[newPlayer.id] = newPlayer;
-        }
-        else if (player1.type == 'red-egg' && player2.type == 'egg') {
-            var type = 'blue-egg';
-            var coords = {
-                'x': player1.x,
-                'y': player1.y,
-                'offsetX': player1.offsetX,
-                'offsetY': player1.offsetY
-            };
-            var newPlayer = this.createNewPlayer(type, coords, player1.direction);
-            this.players[newPlayer.id] = newPlayer;
-        }
-    };
-    // only deal with horizontal collisions for now
-    this.checkCollision = function (player1, player2) {
-        if (!player1 || !player2)
-            return false;
-        if (player1.x == player2.x && player1.y == player2.y) {
-            if (player1.offsetX == 0 && player1.offsetY == 0 && player2.offsetX == 0 && player2.offsetY == 0) {
-                if (player1.falling || player2.falling) {
-                    this.combinePlayers(player1, player2);
-                    return false;
-                }
-            }
-        }
-        if (player1.y != player2.y)
-            return false;
-        // horizontal collisions
-        if (player1.x == player2.x) {
-            if (player1.offsetX == 0 && player2.offsetX == 0) {
-                this.combinePlayers(player1, player2);
-                return false;
-            }
-        }
-        if (player1.offsetX > 0) {
-            if (player1.x + 1 == player2.x && player2.offsetX < 0) {
-                this.combinePlayers(player1, player2);
-                return false;
-                //player1.direction = -1; // flip direction
-                //player2.direction = 1; // flip direction
-            }
-        }
-        else if (player1.offsetX < 0) {
-            if (player1.x - 1 == player2.x && player2.offsetX > 0) {
-                this.combinePlayers(player1, player2);
-                return false;
-                //player1.direction = 1; // flip direction
-                //player2.direction = -1; // flip direction
-            }
-        }
-    };
     this.createPlayers = function () {
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 4; i++) {
             var x = parseInt(Math.random() * this.map.boardSize.width) - 1;
             var y = parseInt(Math.random() * this.map.boardSize.height) - 2;
             if (x < 0)
@@ -167,8 +169,10 @@ function Jetpack() {
                 'offsetY': 0
             };
             var player = this.createNewPlayer(type, coords, 1);
-            this.players[player.id] = player;
         }
+    };
+    this.deletePlayer = function (player) {
+        delete this.players[player.id];
     };
     // create player and load their sprite
     this.createNewPlayer = function (type, coords, direction) {
@@ -183,99 +187,24 @@ function Jetpack() {
         params.falling = false; // can't move when falling
         params.offsetX = coords.offsetX;
         params.offsetY = coords.offsetY;
+        params.moveSpeed = this.moveSpeed;
         params.image = document.createElement("img");
         params.image.setAttribute('src', this.renderer.getTileImagePath(params));
-        var player = new Player(params, this.map);
-        console.log(player);
+        var player = new Player(params, this.map, this.renderer, this, this.collisions);
+        this.players[player.id] = player;
         return player;
     };
     // make this actually fucking rotate, and choose direction, and do the visual effect thing
     this.rotateBoard = function (clockwise) {
         self.pauseRender();
-        var newBoard = this.getBlankBoard();
-        var width = this.boardSize.width - 1;
-        var height = this.boardSize.height - 1;
-        for (var x in this.board) {
-            for (var y in this.board[x]) {
-                var coords = this.translateRotation(x, y, clockwise);
-                newBoard[coords.x][coords.y] = this.board[x][y];
-                newBoard[coords.x][coords.y].needsDraw = true;
-            }
-        }
-        if (clockwise) {
-            this.renderAngle = this.renderAngle + 90;
-            if (this.renderAngle > 360) {
-                this.renderAngle = this.renderAngle - 360;
-            }
-        }
-        else {
-            this.renderAngle = this.renderAngle - 90;
-            if (this.renderAngle < 0) {
-                this.renderAngle = 360 + this.renderAngle;
-            }
-        }
-        this.board = newBoard;
+        this.map.rotateBoard(clockwise);
         for (var i in this.players) {
-            this.rotatePlayer(this.players[i], clockwise);
+            this.map.rotatePlayer(this.players[i], clockwise);
         }
-        this.drawRotatingBoard(clockwise);
-        return newBoard;
-    };
-    this.rotatePlayer = function (player, clockwise) {
-        var coords = this.translateRotation(player.x, player.y, clockwise);
-        player.x = coords.x;
-        player.y = coords.y;
-        player.offsetX = 0; //offsetX;
-        player.offsetY = 0; //offsetY;
-        // if player is still, nudge them in rotation direction
-        if (player.direction == 0) {
-            if (clockwise) {
-                player.direction = 1;
-            }
-            else {
-                player.direction = -1;
-            }
-        }
-    };
-    this.drawRotatingBoard = function (clockwise) {
-        var cw = this.canvas.width;
-        var ch = this.canvas.height;
-        var savedData = new Image();
-        savedData.src = this.canvas.toDataURL("image/png");
-        if (clockwise) {
-            this.drawRotated(savedData, 1, 0, 90);
-        }
-        else {
-            this.drawRotated(savedData, -1, 0, -90);
-        }
-    };
-    this.drawRotated = function (savedData, direction, angle, targetAngle) {
-        if (direction > 0) {
-            if (angle >= targetAngle) {
-                self.startRender();
-                return false;
-            }
-        }
-        else {
-            if (angle <= targetAngle) {
-                self.startRender();
-                return false;
-            }
-        }
-        var angleInRad = angle * (Math.PI / 180);
-        var offset = this.canvas.width / 2;
-        var left = offset;
-        var top = offset;
-        self.wipeCanvas('rgba(0,0,0,0.1)');
-        this.ctx.translate(left, top);
-        this.ctx.rotate(angleInRad);
-        this.ctx.drawImage(savedData, -offset, -offset);
-        this.ctx.rotate(-angleInRad);
-        this.ctx.translate(-left, -top);
-        angle += (direction * this.moveSpeed);
-        this.animationHandle = window.requestAnimationFrame(function () {
-            self.drawRotated(savedData, direction, angle, targetAngle);
+        this.renderer.drawRotatingBoard(clockwise, function () {
+            self.startRender();
         });
+        return true;
     };
     this.bindSizeHandler = function () {
         window.addEventListener('resize', function () {
@@ -285,42 +214,24 @@ function Jetpack() {
     this.bindClickHandler = function () {
         var canvas = document.getElementById('canvas');
         canvas.addEventListener('click', function (event) {
+            var tileSize = self.renderer.tileSize;
             var coords = {
-                x: parseInt(event.offsetX / self.tileSize),
-                y: parseInt(event.offsetY / self.tileSize),
-                offsetX: (event.offsetX % self.tileSize) - (self.tileSize / 2),
-                offsetY: (event.offsetY % self.tileSize) - (self.tileSize / 2)
+                x: parseInt(event.offsetX / tileSize),
+                y: parseInt(event.offsetY / tileSize),
+                offsetX: (event.offsetX % tileSize) - (tileSize / 2),
+                offsetY: (event.offsetY % tileSize) - (tileSize / 2)
             };
             self.handleClick(coords);
         });
     };
     // coords is always x,y,offsetX, offsetY
     this.handleClick = function (coords) {
-        this.cycleTile(coords.x, coords.y);
-    };
-    this.cycleTile = function (x, y) {
-        var currentTile = this.board[x][y];
-        var currentKey = currentTile.id;
-        var keys = Object.keys(this.tiles);
-        var newKey = nextKey = false;
-        for (var i in keys) {
-            if (newKey === false || nextKey)
-                newKey = keys[i];
-            if (keys[i] == currentKey) {
-                nextKey = true;
-            }
-            else {
-                nextKey = false;
-            }
-        }
-        var tile = this.getTile(newKey);
-        this.board[x][y] = tile;
+        this.map.cycleTile(coords.x, coords.y);
     };
 }
 function Map(tiles) {
     var self = this;
     this.tiles = tiles;
-    this.tileSize = 48;
     this.boardSize = {
         width: 14,
         height: 14
@@ -370,9 +281,6 @@ function Map(tiles) {
         }
         var tile = this.board[x][y];
         return tile.background;
-    };
-    this.tileIsFrontLayer = function (tile) {
-        return this.getTileProperty(tile, 'frontLayer');
     };
     this.markAllForRedraw = function () {
         // force redraw
@@ -459,22 +367,87 @@ function Map(tiles) {
         }
         return coords;
     };
+    this.rotateBoard = function (clockwise) {
+        var newBoard = this.getBlankBoard();
+        var width = this.boardSize.width - 1;
+        var height = this.boardSize.height - 1;
+        for (var x in this.board) {
+            for (var y in this.board[x]) {
+                var coords = this.translateRotation(x, y, clockwise);
+                newBoard[coords.x][coords.y] = this.board[x][y];
+                newBoard[coords.x][coords.y].needsDraw = true;
+            }
+        }
+        if (clockwise) {
+            this.renderAngle = this.renderAngle + 90;
+            if (this.renderAngle > 360) {
+                this.renderAngle = this.renderAngle - 360;
+            }
+        }
+        else {
+            this.renderAngle = this.renderAngle - 90;
+            if (this.renderAngle < 0) {
+                this.renderAngle = 360 + this.renderAngle;
+            }
+        }
+        this.board = newBoard;
+        return true;
+    };
+    this.rotatePlayer = function (player, clockwise) {
+        var coords = this.translateRotation(player.x, player.y, clockwise);
+        player.x = coords.x;
+        player.y = coords.y;
+        player.offsetX = 0; //offsetX;
+        player.offsetY = 0; //offsetY;
+        // if player is still, nudge them in rotation direction
+        if (player.direction == 0) {
+            if (clockwise) {
+                player.direction = 1;
+            }
+            else {
+                player.direction = -1;
+            }
+        }
+    };
+    this.cycleTile = function (x, y) {
+        console.log(x, y);
+        var currentTile = this.board[x][y];
+        console.log(currentTile, x, y);
+        var currentKey = currentTile.id;
+        var keys = Object.keys(this.tiles);
+        var newKey = nextKey = false;
+        for (var i in keys) {
+            if (newKey === false || nextKey)
+                newKey = keys[i];
+            if (keys[i] == currentKey) {
+                nextKey = true;
+            }
+            else {
+                nextKey = false;
+            }
+        }
+        var tile = this.getTile(newKey);
+        this.board[x][y] = tile;
+    };
     this.construct();
 }
-function Player(params, map) {
+function Player(params, map, renderer, jetpack, collisions) {
     var self = this;
-    this.construct = function (params, map) {
+    this.construct = function (params, map, renderer, jetpack, collisions) {
         for (var i in params) {
             this[i] = params[i];
         }
         this.map = map;
+        this.renderer = renderer;
+        this.jetpack = jetpack;
+        this.collisions = collisions;
     };
     this.doCalcs = function () {
         this.setRedrawAroundPlayer();
         this.incrementPlayerFrame();
-        //this.checkFloorBelowPlayer(player);
-        //this.incrementPlayerDirection(player);	
-        //this.checkPlayerCollisions(player);
+        this.checkFloorBelowPlayer();
+        this.incrementPlayerDirection();
+        this.checkPlayerCollisions();
     };
     this.setRedrawAroundPlayer = function () {
         // first just do the stuff around player
@@ -515,7 +488,7 @@ function Player(params, map) {
         var collectable = this.map.getTileProperty(tile, 'collectable');
         if (collectable) {
             var score = collectable * this.multiplier;
-            this.addScore(score);
+            this.jetpack.addScore(score);
             var blankTile = this.map.getTile(1);
             blankTile.needsDraw = true;
             board[this.x][this.y] = blankTile;
@@ -523,7 +496,7 @@ function Player(params, map) {
         if (this.falling) {
             var coords = this.map.correctForOverflow(this.x, this.y + 1);
             var tile = board[coords.x][coords.y];
-            if (this.tileIsBreakable(tile)) {
+            if (this.map.tileIsBreakable(tile)) {
                 board[coords.x][coords.y] = this.map.getTile(1); // smash block, replace with empty
             }
         }
@@ -531,117 +504,108 @@ function Player(params, map) {
             var tile = board[this.x][this.y];
             var action = this.map.getTileAction(tile);
             if (action == 'rotateLeft') {
-                this.map.rotateBoard(false);
+                this.jetpack.rotateBoard(false);
             }
             else if (action == 'rotateRight') {
-                this.map.rotateBoard(true);
+                this.jetpack.rotateBoard(true);
             }
         }
     };
-    this.checkPlayerCollisions = function (player) {
+    
+    this.checkPlayerCollisions = function () {
         for (var i in this.players) {
-            var player2 = this.players[i];
-            if (player.id !== player2.id) {
-                this.checkCollision(player, player2);
-            }
+            var player = this.players[i];
+            this.collisions.checkCollision(this, player);
         }
     };
-    this.incrementPlayerDirection = function (player) {
-        if (player.falling)
+
+    this.incrementPlayerDirection = function () {
+        if (this.falling)
             return false;
         /*
-        if (player.direction !== 0 && !this.checkTileIsEmpty(player.x - 1, player.y) && !this.checkTileIsEmpty(player.x + 1, player.y)) {
+        if (this.direction !== 0 && !this.checkTileIsEmpty(this.x - 1, this.y) && !this.checkTileIsEmpty(this.x + 1, this.y)) {
             // trapped
-            player.oldDirection = player.direction;
-            player.direction = 0;
+            this.oldDirection = this.direction;
+            this.direction = 0;
             return false;
         }*/
-        if (player.direction < 0) {
-            if (!this.checkTileIsEmpty(player.x - 1, player.y)) {
+        if (this.direction < 0) {
+            if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
                 // turn around
-                player.direction = 1;
+                this.direction = 1;
             }
             else {
                 // move
-                player.offsetX -= this.moveSpeed;
-                ;
+                this.offsetX -= this.moveSpeed;
             }
         }
-        if (player.direction > 0) {
-            if (!this.checkTileIsEmpty(player.x + 1, player.y)) {
+        if (this.direction > 0) {
+            if (!this.map.checkTileIsEmpty(this.x + 1, this.y)) {
                 // turn around
-                player.direction = -1;
+                this.direction = -1;
             }
             else {
                 // move
-                player.offsetX += this.moveSpeed;
+                this.offsetX += this.moveSpeed;
                 ;
             }
         }
         // if we've stopped and ended up not quite squared up, correct this
-        if (player.direction == 0 && player.falling == false) {
-            if (player.offsetX > 0) {
-                player.offsetX -= this.moveSpeed;
+        if (this.direction == 0 && this.falling == false) {
+            if (this.offsetX > 0) {
+                this.offsetX -= this.moveSpeed;
             }
-            else if (player.offSetX < 0) {
-                player.offsetX += this.moveSpeed;
+            else if (this.offSetX < 0) {
+                this.offsetX += this.moveSpeed;
             }
         }
-        this.checkIfPlayerIsInNewTile(player);
+        this.checkIfPlayerIsInNewTile();
     };
-    this.checkIfPlayerIsInNewTile = function (player) {
-        if (player.offsetX > this.tileSize) {
-            player.offsetX = 0;
-            this.checkPlayerTileAction(player);
-            player.x++;
-            if (player.x >= this.boardSize.width) {
-                player.x = 0; // wrap around
-            }
+    this.checkIfPlayerIsInNewTile = function () {
+        if (this.offsetX > this.renderer.tileSize) {
+            this.offsetX = 0;
+            this.checkPlayerTileAction();
+            this.x++;
         }
-        if (player.offsetX < (-1 * this.tileSize)) {
-            player.offsetX = 0;
-            this.checkPlayerTileAction(player);
-            player.x--;
-            if (player.x < 0) {
-                player.x = this.boardSize.width - 1; // wrap around
-            }
+        if (this.offsetX < (-1 * this.renderer.tileSize)) {
+            this.offsetX = 0;
+            this.checkPlayerTileAction();
+            this.x--;
         }
-        if (player.offsetY > this.tileSize) {
-            player.offsetY = 0;
-            this.checkPlayerTileAction(player);
-            player.y++;
-            if (player.y >= this.boardSize.height) {
-                player.y = 0; // wrap around
-            }
+        if (this.offsetY > this.renderer.tileSize) {
+            this.offsetY = 0;
+            this.checkPlayerTileAction();
+            this.y++;
         }
-        if (player.offsetY < (-1 * this.tileSize)) {
-            player.offsetY = 0;
-            this.checkPlayerTileAction(player);
-            player.y--;
-            if (player.y < 0) {
-                player.y = this.boardSize.height - 1; // wrap around
-            }
+        if (this.offsetY < (-1 * this.renderer.tileSize)) {
+            this.offsetY = 0;
+            this.checkPlayerTileAction();
+            this.y--;
         }
+        // have we gone over the edge?
+        var coords = this.map.correctForOverflow(this.x, this.y);
+        this.x = coords.x;
+        this.y = coords.y;
     };
-    this.checkFloorBelowPlayer = function (player) {
-        if (player.offsetX !== 0)
+    this.checkFloorBelowPlayer = function () {
+        if (this.offsetX !== 0)
             return false;
-        var coords = this.correctForOverflow(player.x, player.y + 1);
-        var tile = this.board[coords.x][coords.y];
+        var coords = this.map.correctForOverflow(this.x, this.y + 1);
+        var tile = this.map.board[coords.x][coords.y];
         if (tile.background) {
-            player.falling = true;
-            player.offsetY += this.moveSpeed;
+            this.falling = true;
+            this.offsetY += this.moveSpeed;
         }
-        else if (player.falling && this.tileIsBreakable(tile)) {
-            player.offsetY += this.moveSpeed;
+        else if (this.falling && this.map.tileIsBreakable(tile)) {
+            this.offsetY += this.moveSpeed;
         }
         else {
-            player.falling = false;
-            this.checkPlayerTileAction(player);
+            this.falling = false;
+            this.checkPlayerTileAction();
         }
-        this.checkIfPlayerIsInNewTile(player);
+        this.checkIfPlayerIsInNewTile();
     };
-    this.construct(params, map);
+    this.construct(params, map, renderer, jetpack, collisions);
 }
 function Renderer(jetpack, map, tiles) {
     var self = this;
@@ -653,7 +617,6 @@ function Renderer(jetpack, map, tiles) {
         this.loadCanvas();
     };
     this.tileSize = 48;
-    this.moveSpeed = 7;
     this.renderAngle = 0;
     this.checkResize = true;
     this.imagesFolder = 'img/';
@@ -821,14 +784,56 @@ function Renderer(jetpack, map, tiles) {
         this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, left, top, this.tileSize, this.tileSize);
         if (left < 0) {
             // also draw on right
-            var secondLeft = (this.tileSize * this.boardSize.width) + player.offsetX;
+            var secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
             this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
         }
-        if ((left + this.tileSize) > (this.tileSize * this.boardSize.width)) {
+        if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
             // also draw on left
-            var secondLeft = left - (this.tileSize * this.boardSize.width);
+            var secondLeft = left - (this.tileSize * this.map.boardSize.width);
             this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
         }
+    };
+    this.drawRotatingBoard = function (clockwise, completed) {
+        if (completed === void 0) { completed = function () { }; }
+        var cw = this.canvas.width;
+        var ch = this.canvas.height;
+        var savedData = new Image();
+        savedData.src = this.canvas.toDataURL("image/png");
+        if (clockwise) {
+            this.drawRotated(savedData, 1, 0, 90, completed);
+        }
+        else {
+            this.drawRotated(savedData, -1, 0, -90, completed);
+        }
+    };
+    this.drawRotated = function (savedData, direction, angle, targetAngle, completed) {
+        if (completed === void 0) { completed = function () { }; }
+        if (direction > 0) {
+            if (angle >= targetAngle) {
+                completed();
+                return false;
+            }
+        }
+        else {
+            if (angle <= targetAngle) {
+                completed();
+                return false;
+            }
+        }
+        var angleInRad = angle * (Math.PI / 180);
+        var offset = this.canvas.width / 2;
+        var left = offset;
+        var top = offset;
+        self.wipeCanvas('rgba(0,0,0,0.1)');
+        this.ctx.translate(left, top);
+        this.ctx.rotate(angleInRad);
+        this.ctx.drawImage(savedData, -offset, -offset);
+        this.ctx.rotate(-angleInRad);
+        this.ctx.translate(-left, -top);
+        angle += (direction * this.jetpack.moveSpeed);
+        this.animationHandle = window.requestAnimationFrame(function () {
+            self.drawRotated(savedData, direction, angle, targetAngle, completed);
+        });
     };
     this.construct(jetpack, map, tiles);
 }

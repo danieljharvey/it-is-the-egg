@@ -1,20 +1,23 @@
-function Player(params: object, map: Map) {
+function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 	
 	var self = this;
 
-	this.construct = function(params: object, map: Map) {
+	this.construct = function(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
 			this[i] = params[i];
 		}
 		this.map = map;
+		this.renderer = renderer;
+		this.jetpack = jetpack;
+		this.collisions = collisions;
 	}
 
 	this.doCalcs = function() {
 		this.setRedrawAroundPlayer();
 		this.incrementPlayerFrame();
-	    //this.checkFloorBelowPlayer(player);
-	    //this.incrementPlayerDirection(player);	
-	    //this.checkPlayerCollisions(player);
+	    this.checkFloorBelowPlayer();
+	    this.incrementPlayerDirection();	
+	    this.checkPlayerCollisions();
 	}
 
 	this.setRedrawAroundPlayer = function() {
@@ -59,7 +62,7 @@ function Player(params: object, map: Map) {
 		var collectable = this.map.getTileProperty(tile,'collectable');
 		if (collectable) {
 			var score = collectable * this.multiplier;
-			this.addScore(score);
+			this.jetpack.addScore(score);
 			var blankTile = this.map.getTile(1);
 			blankTile.needsDraw = true;
 			board[this.x][this.y] = blankTile;
@@ -70,7 +73,7 @@ function Player(params: object, map: Map) {
 			
 			var tile = board[coords.x][coords.y];
 
-			if (this.tileIsBreakable(tile)) {
+			if (this.map.tileIsBreakable(tile)) {
 				board[coords.x][coords.y] = this.map.getTile(1); // smash block, replace with empty
 			}
 		} else {
@@ -78,124 +81,110 @@ function Player(params: object, map: Map) {
 			var action = this.map.getTileAction(tile);
 			
 			if (action=='rotateLeft') {
-				this.map.rotateBoard(false);
+				this.jetpack.rotateBoard(false);
 			} else if (action=='rotateRight') {
-				this.map.rotateBoard(true);
+				this.jetpack.rotateBoard(true);
 			}
 		}
 	}
 
-	this.checkPlayerCollisions = function(player) {
+	this.checkPlayerCollisions = function() {
 		for (var i in this.players) {
-			var player2 = this.players[i];
-			if (player.id !== player2.id) {
-				this.checkCollision(player, player2);	
-			}
+			var player = this.players[i];
+			this.collisions.checkCollision(this, player);	
 		}
 	}
 
-	this.incrementPlayerDirection = function(player) {
+	this.incrementPlayerDirection = function() {
 
-		if (player.falling) return false;
+		if (this.falling) return false;
 		/*
-		if (player.direction !== 0 && !this.checkTileIsEmpty(player.x - 1, player.y) && !this.checkTileIsEmpty(player.x + 1, player.y)) {
+		if (this.direction !== 0 && !this.checkTileIsEmpty(this.x - 1, this.y) && !this.checkTileIsEmpty(this.x + 1, this.y)) {
 			// trapped
-			player.oldDirection = player.direction;
-			player.direction = 0;
+			this.oldDirection = this.direction;
+			this.direction = 0;
 			return false;
 		}*/
 
-		if (player.direction < 0) {
-			if (!this.checkTileIsEmpty(player.x - 1, player.y)) {
+		if (this.direction < 0) {
+			if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
 				// turn around
-				player.direction = 1;
+				this.direction = 1;
 			} else {
 				// move
-				player.offsetX-=this.moveSpeed;;
+				this.offsetX-=this.moveSpeed;
 			}
 		}
 
-		if (player.direction > 0) {
-			if (!this.checkTileIsEmpty(player.x + 1, player.y)) {
+		if (this.direction > 0) {
+			if (!this.map.checkTileIsEmpty(this.x + 1, this.y)) {
 				// turn around
-				player.direction = -1;
+				this.direction = -1;
 			} else {
 				// move
-				player.offsetX+=this.moveSpeed;;
+				this.offsetX+=this.moveSpeed;;
 			}
 		}
 
 		// if we've stopped and ended up not quite squared up, correct this
-		if (player.direction ==0 && player.falling==false) {
-			if (player.offsetX > 0) {
-				player.offsetX -= this.moveSpeed;
-			} else if (player.offSetX < 0) {
-				player.offsetX += this.moveSpeed;
+		if (this.direction ==0 && this.falling==false) {
+			if (this.offsetX > 0) {
+				this.offsetX -= this.moveSpeed;
+			} else if (this.offSetX < 0) {
+				this.offsetX += this.moveSpeed;
 			}
 		}
-		this.checkIfPlayerIsInNewTile(player);
+		this.checkIfPlayerIsInNewTile();
 	}
 
-	this.checkIfPlayerIsInNewTile = function(player) {
-		if (player.offsetX > this.tileSize) {
-			player.offsetX = 0;
-			this.checkPlayerTileAction(player);
-			player.x ++;
-			if (player.x >= this.boardSize.width) {
-				player.x = 0; // wrap around
-			}
+	this.checkIfPlayerIsInNewTile = function() {
+		if (this.offsetX > this.renderer.tileSize) {
+			this.offsetX = 0;
+			this.checkPlayerTileAction();
+			this.x ++;
 		}
-		if (player.offsetX < (-1 * this.tileSize)) {
-			player.offsetX = 0;
-			this.checkPlayerTileAction(player);
-			player.x --;
-			if (player.x < 0) {
-				player.x = this.boardSize.width - 1; // wrap around
-			}
+		if (this.offsetX < (-1 * this.renderer.tileSize)) {
+			this.offsetX = 0;
+			this.checkPlayerTileAction();
+			this.x --;
 		}
-		if (player.offsetY > this.tileSize) {
-			player.offsetY = 0;
-			this.checkPlayerTileAction(player);
-			player.y ++;
-			if (player.y >= this.boardSize.height) {
-				player.y = 0; // wrap around
-			}
+		if (this.offsetY > this.renderer.tileSize) {
+			this.offsetY = 0;
+			this.checkPlayerTileAction();
+			this.y ++;
 		}
-		if (player.offsetY < (-1 * this.tileSize)) {
-			player.offsetY = 0;
-			this.checkPlayerTileAction(player);
-			player.y --;
-			if (player.y < 0) {
-				player.y = this.boardSize.height - 1; // wrap around
-			}
+		if (this.offsetY < (-1 * this.renderer.tileSize)) {
+			this.offsetY = 0;
+			this.checkPlayerTileAction();
+			this.y --;
 		}
+		// have we gone over the edge?
+		var coords = this.map.correctForOverflow(this.x, this.y);
+		this.x = coords.x;
+		this.y = coords.y;
 	}
 
-		this.checkFloorBelowPlayer = function(player) {
+	this.checkFloorBelowPlayer = function() {
 		
-		if (player.offsetX !== 0) return false;
+		if (this.offsetX !== 0) return false;
 
-		var coords = this.correctForOverflow(player.x, player.y + 1);
+		var coords = this.map.correctForOverflow(this.x, this.y + 1);
 
-		var tile = this.board[coords.x][coords.y];
+		var tile = this.map.board[coords.x][coords.y];
 
 		if (tile.background) {
-			player.falling = true;
-			player.offsetY += this.moveSpeed;
-		} else if (player.falling && this.tileIsBreakable(tile)) {
-			player.offsetY += this.moveSpeed;
+			this.falling = true;
+			this.offsetY += this.moveSpeed;
+		} else if (this.falling && this.map.tileIsBreakable(tile)) {
+			this.offsetY += this.moveSpeed;
 		} else {
-			player.falling = false;
-			this.checkPlayerTileAction(player);
+			this.falling = false;
+			this.checkPlayerTileAction();
 		}
 
-		this.checkIfPlayerIsInNewTile(player);
+		this.checkIfPlayerIsInNewTile();
 	}
 
-	
-
-	
-
-	this.construct(params, map);
+	this.construct(params, map, renderer, jetpack, collisions);
 
 }
