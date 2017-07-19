@@ -1,0 +1,57 @@
+<html style='background-color: black;'>
+	<head>
+		<title>Level Editor</title>
+		<script src='js/Jetpack.js'></script>
+	</head>
+	<style>
+		html, body {
+			margin: 0px;
+			padding: 0px;
+		}
+		#controlHeader {
+			height: 30px;
+			width: 100%;
+			text-align: center;
+			line-height:30px;
+		}
+		#canvas {
+			display: block;
+			margin: 0px auto;
+		}
+		#score {
+			color: white;
+			margin-left: 20px;
+			margin-right: 20px;
+			text-align: center;
+			font-family: Helvetica;
+		}
+		span#message {
+			color: white;
+			margin: 0px;
+			padding: 0px;
+		}
+	</style>
+	<body>
+		<div id='controlHeader'>
+			<button onClick='jetpack.saveLevel();'>SAVE</button>
+			<span id='message'>EDIT MODE</span>
+			<select id='levelList'>
+			</select>
+		</div>
+		<canvas id='canvas'></canvas>
+		
+	</body>
+</html>
+
+<script>
+var jetpack;
+
+// and here's the trick (works everywhere)
+function r(f){/in/.test(document.readyState)?setTimeout('r('+f+')',9):f()}
+// use like
+r(function(){
+    jetpack = new Jetpack();
+	jetpack.edit();
+});
+
+</script>

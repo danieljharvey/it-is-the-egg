@@ -3,12 +3,14 @@ function Jetpack() {
 	var self = this;
 
 	this.paused = true;
-	
+	this.editMode = false;
+
 	this.moveSpeed = 7;
 
 	this.map; // Map object
 	this.renderer; // Renderer object
 	this.collisions; // Collisions object
+	this.levels; // Levels object
 
 	this.nextPlayerID = 1;
 	this.score = 0;	
@@ -49,14 +51,7 @@ function Jetpack() {
 	this.players = [];
 
 	this.go = function() {
-		var tileSet = new TileSet();
-		var tiles = tileSet.getTiles();
-
-		this.map = new Map(tiles);
-
-		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
-
-		this.collisions = new Collisions(this);
+		this.bootstrap();
 
 		this.bindSizeHandler();
 		this.bindClickHandler();
@@ -67,6 +62,30 @@ function Jetpack() {
 		var s = setTimeout(function() {
 			self.startRender();
 		},1000);
+	}
+
+	// go function but for edit mode
+	this.edit = function() {
+		this.bootstrap();
+		this.editMode = true;
+		this.bindSizeHandler();
+		this.bindClickHandler();
+		var s = setTimeout(function() {
+			self.startRender();
+		},1000);
+	}
+
+	this.bootstrap = function() {
+		var tileSet = new TileSet();
+		var tiles = tileSet.getTiles();
+
+		this.map = new Map(tiles);
+
+		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
+
+		this.collisions = new Collisions(this);
+
+		this.levels = new Levels(this);
 	}
 
 	this.startRender = function() {
@@ -141,8 +160,6 @@ function Jetpack() {
 		params.offsetX = coords.offsetX;
 		params.offsetY = coords.offsetY;
 		params.moveSpeed = this.moveSpeed;
-		params.image = document.createElement("img");
-		params.image.setAttribute('src', this.renderer.getTileImagePath(params));
 		var player = new Player(params, this.map, this.renderer, this, this.collisions);
 		this.players[player.id] = player;
 		return player;
@@ -166,6 +183,40 @@ function Jetpack() {
 		return true;
 	}
 
+	this.revertEditMessage = function() {
+		var s = setTimeout(function() {
+			var message = document.getElementById('message');
+			message.innerHTML="EDIT MODE";
+		},3000);
+	}
+
+	this.showEditMessage = function(text) {
+		var message = document.getElementById('message');
+		message.innerHTML = text;
+		this.revertEditMessage();
+	}
+
+	this.saveLevel = function() {
+		this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, function(levelID) {
+			var text = "Level " + levelID + " saved";
+			self.showEditMessage(text);
+		});
+	}
+
+	this.loadLevelFromList = function() {
+		var select = document.getElementById('levelList');
+        var index = select.selectedIndex;
+        var levelID = select.options[index].value;
+    	self.loadLevel(levelID);        
+	}
+
+	this.loadLevel = function(levelID) {
+		this.levels.loadLevel(levelID, function(data) {
+			var text = "Level " + data.levelID + " loaded!";
+			self.showEditMessage(text);
+			self.map.updateBoard(data.board, data.boardSize);
+		})
+	}
 
 	this.bindSizeHandler = function() {
 		window.addEventListener('resize', function() {
@@ -189,7 +240,11 @@ function Jetpack() {
 
 	// coords is always x,y,offsetX, offsetY
 	this.handleClick = function(coords) {
-		this.map.cycleTile(coords.x,coords.y);
+		if (this.editMode) {
+			this.map.cycleTile(coords.x,coords.y);	
+		} else {
+			// destroy tile or something
+		}
 	}
 
 	

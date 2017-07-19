@@ -12,8 +12,13 @@ function Map(tiles) {
 	this.board = [];
 	
 	this.construct = function() {
-		var board = this.generateRandomBoard();
-		this.board = this.addWaterToBoard(board);
+		this.board = this.generateRandomBoard();
+	}
+
+	this.updateBoard = function(board: object, boardSize: object) {
+		this.board = board;
+		this.boardSize = boardSize;
+		this.markAllForRedraw();
 	}
 
 	this.correctForOverflow = function(x,y) {
@@ -60,9 +65,6 @@ function Map(tiles) {
 		return tile.background;
 	}
 
-
-	
-
 	this.markAllForRedraw = function() {
 		// force redraw
 		for (var x in this.board) {
@@ -88,13 +90,15 @@ function Map(tiles) {
 		return board;
 	}
 
-	this.addWaterToBoard = function(board) {
-		return board; // don't do this for now
+	this.generateBlankBoard = function() {
+		var board=[];
 
-		var bottomRow = this.boardSize.height - 1; // compensate for beginning at zero
 		for (var x = 0; x < this.boardSize.width; x++) {
-			var waterTile = this.getTile(1);
-			board[x][bottomRow] = waterTile;
+			board[x] = [];
+			for (var y = 0; y < this.boardSize.height; y++) {
+				var blankTile = this.getTile(1);
+				board[x][y] = blankTile;
+			}
 		}
 		return board;
 	}
@@ -121,7 +125,7 @@ function Map(tiles) {
 		return randomProperty(theseTiles);
 	}
 
-		this.getBlankBoard = function() {
+	this.getBlankBoard = function() {
 		var newBoard=[];
 		for (var x =0; x < this.boardSize.width; x++) {
 			newBoard[x]=[];
