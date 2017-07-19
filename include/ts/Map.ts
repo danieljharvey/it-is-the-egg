@@ -210,10 +210,7 @@ function Map(tiles) {
 	}
 	
 	this.cycleTile = function(x:number, y:number) {
-		console.log(x,y);
 		var currentTile = this.board[x][y];
-		
-		console.log(currentTile,x,y);
 
 		var currentKey = currentTile.id;
 

@@ -1,12 +1,14 @@
-function Renderer(jetpack, map, tiles) {
+function Renderer(jetpack, map, tiles, playerTypes) {
 
 	var self = this;
 
-	this.construct = function(Jetpack: jetpack, Map: map, object: tiles) {
+	this.construct = function(jetpack:Map, map:Map, tiles: object, playerTypes: object) {
 		this.jetpack = jetpack;
 		this.map = map;
 		this.tiles = tiles;
+		this.playerTypes = playerTypes;
 		this.loadTilePalette();
+		this.loadPlayerPalette();
 		this.loadCanvas();
 	}
 
@@ -21,6 +23,7 @@ function Renderer(jetpack, map, tiles) {
 	this.canvas; // canvas object
 	this.ctx; // canvas context for drawing
 	this.tileImages = {}; // image elements of tiles
+	this.playerImages = {}; // image element of players
 
 	this.render = function() {
 		if (this.jetpack.paused) return false;
@@ -42,6 +45,15 @@ function Renderer(jetpack, map, tiles) {
 			tileImage.setAttribute('width', 64);
 			tileImage.setAttribute('height', 64);
 			this.tileImages[thisTile.id] = tileImage;
+		}
+	}
+
+	this.loadPlayerPalette = function() {
+		for (var i in this.playerTypes) {
+			var playerType = this.playerTypes[i];
+			var playerImage = document.createElement('img');
+			playerImage.setAttribute('src', this.getTileImagePath(playerType));
+			this.playerImages[playerType.img] = playerImage;
 		}
 	}
 
@@ -207,18 +219,21 @@ function Renderer(jetpack, map, tiles) {
 	    var clipTop = 0;
 
 	    this.ctx.globalAlpha = 1;
-	    this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, left,top,this.tileSize,this.tileSize);
+
+	    var image = this.playerImages[player.img];
+
+	    this.ctx.drawImage(image, clipLeft, 0, 64, 64, left,top,this.tileSize,this.tileSize);
 
 	    if (left < 0) {
 	    	// also draw on right
 	    	var secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
-	    	this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+	    	this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
 	    }
 
 	    if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
 	    	// also draw on left
 	    	var secondLeft = left - (this.tileSize * this.map.boardSize.width);
-	    	this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+	    	this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
 	    }
 	}
 
@@ -275,5 +290,5 @@ function Renderer(jetpack, map, tiles) {
 	    });
 	}
 
-	this.construct(jetpack, map, tiles);
+	this.construct(jetpack, map, tiles, playerTypes);
 }

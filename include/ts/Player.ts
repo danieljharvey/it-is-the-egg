@@ -89,8 +89,8 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 	}
 
 	this.checkPlayerCollisions = function() {
-		for (var i in this.players) {
-			var player = this.players[i];
+		for (var i in this.jetpack.players) {
+			var player = this.jetpack.players[i];
 			this.collisions.checkCollision(this, player);	
 		}
 	}

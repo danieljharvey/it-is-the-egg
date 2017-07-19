@@ -7,6 +7,7 @@ function Collisions(jetpack) {
             return false;
         if (player1.id == player2.id)
             return false;
+        // one player falling onto another
         if (player1.x == player2.x && player1.y == player2.y) {
             if (player1.offsetX == 0 && player1.offsetY == 0 && player2.offsetX == 0 && player2.offsetY == 0) {
                 if (player1.falling || player2.falling) {
@@ -38,35 +39,30 @@ function Collisions(jetpack) {
         }
     };
     this.combinePlayers = function (player1, player2) {
+        //console.log('combinePlayers', player1, player2);
         if (player1.type == 'egg' && player2.type == 'egg') {
             var type = 'red-egg';
-            var coords = {
-                'x': player2.x,
-                'y': player2.y,
-                'offsetX': player2.offsetX,
-                'offsetY': player2.offsetY
-            };
-            this.jetpack.createNewPlayer(type, coords, player2.direction);
+            this.jetpack.createNewPlayer(type, player2, player2.direction);
         }
         else if (player1.type == 'egg' && player2.type == 'red-egg') {
             var type = 'blue-egg';
-            var coords = {
-                'x': player2.x,
-                'y': player2.y,
-                'offsetX': player2.offsetX,
-                'offsetY': player2.offsetY
-            };
-            this.createNewPlayer(type, coords, player2.direction);
+            this.jetpack.createNewPlayer(type, player2, player2.direction);
         }
         else if (player1.type == 'red-egg' && player2.type == 'egg') {
             var type = 'blue-egg';
-            var coords = {
-                'x': player1.x,
-                'y': player1.y,
-                'offsetX': player1.offsetX,
-                'offsetY': player1.offsetY
-            };
-            this.createNewPlayer(type, coords, player1.direction);
+            this.jetpack.createNewPlayer(type, player1, player1.direction);
+        }
+        else if (player1.type == 'egg' && player2.type == 'blue-egg') {
+            var type = 'yellow-egg';
+            this.jetpack.createNewPlayer(type, player2, player2.direction);
+        }
+        else if (player1.type == 'blue-egg' && player2.type == 'egg') {
+            var type = 'yellow-egg';
+            this.jetpack.createNewPlayer(type, player1, player1.direction);
+        }
+        else if (player1.type == 'red-egg' && player2.type == 'red-egg') {
+            var type = 'yellow-egg';
+            this.jetpack.createNewPlayer(type, player2, player2.direction);
         }
         this.jetpack.deletePlayer(player1);
         this.jetpack.deletePlayer(player2);
@@ -116,7 +112,7 @@ function Jetpack() {
         var tileSet = new TileSet();
         var tiles = tileSet.getTiles();
         this.map = new Map(tiles);
-        this.renderer = new Renderer(this, this.map, tiles);
+        this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
         this.collisions = new Collisions(this);
         this.bindSizeHandler();
         this.bindClickHandler();
@@ -410,9 +406,7 @@ function Map(tiles) {
         }
     };
     this.cycleTile = function (x, y) {
-        console.log(x, y);
         var currentTile = this.board[x][y];
-        console.log(currentTile, x, y);
         var currentKey = currentTile.id;
         var keys = Object.keys(this.tiles);
         var newKey = nextKey = false;
@@ -511,14 +505,12 @@ function Player(params, map, renderer, jetpack, collisions) {
             }
         }
     };
-    
     this.checkPlayerCollisions = function () {
-        for (var i in this.players) {
-            var player = this.players[i];
+        for (var i in this.jetpack.players) {
+            var player = this.jetpack.players[i];
             this.collisions.checkCollision(this, player);
         }
     };
-
     this.incrementPlayerDirection = function () {
         if (this.falling)
             return false;
@@ -607,13 +599,15 @@ function Player(params, map, renderer, jetpack, collisions) {
     };
     this.construct(params, map, renderer, jetpack, collisions);
 }
-function Renderer(jetpack, map, tiles) {
+function Renderer(jetpack, map, tiles, playerTypes) {
     var self = this;
-    this.construct = function (Jetpack, Map, object) {
+    this.construct = function (jetpack, map, tiles, playerTypes) {
         this.jetpack = jetpack;
         this.map = map;
         this.tiles = tiles;
+        this.playerTypes = playerTypes;
         this.loadTilePalette();
+        this.loadPlayerPalette();
         this.loadCanvas();
     };
     this.tileSize = 48;
@@ -624,6 +618,7 @@ function Renderer(jetpack, map, tiles) {
     this.canvas; // canvas object
     this.ctx; // canvas context for drawing
     this.tileImages = {}; // image elements of tiles
+    this.playerImages = {}; // image element of players
     this.render = function () {
         if (this.jetpack.paused)
             return false;
@@ -644,6 +639,14 @@ function Renderer(jetpack, map, tiles) {
             tileImage.setAttribute('width', 64);
             tileImage.setAttribute('height', 64);
             this.tileImages[thisTile.id] = tileImage;
+        }
+    };
+    this.loadPlayerPalette = function () {
+        for (var i in this.playerTypes) {
+            var playerType = this.playerTypes[i];
+            var playerImage = document.createElement('img');
+            playerImage.setAttribute('src', this.getTileImagePath(playerType));
+            this.playerImages[playerType.img] = playerImage;
         }
     };
     this.getTileImagePath = function (tile) {
@@ -781,16 +784,17 @@ function Renderer(jetpack, map, tiles) {
         var clipLeft = player.currentFrame * 64;
         var clipTop = 0;
         this.ctx.globalAlpha = 1;
-        this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, left, top, this.tileSize, this.tileSize);
+        var image = this.playerImages[player.img];
+        this.ctx.drawImage(image, clipLeft, 0, 64, 64, left, top, this.tileSize, this.tileSize);
         if (left < 0) {
             // also draw on right
             var secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
-            this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
+            this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
         }
         if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
             // also draw on left
             var secondLeft = left - (this.tileSize * this.map.boardSize.width);
-            this.ctx.drawImage(player.image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
+            this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
         }
     };
     this.drawRotatingBoard = function (clockwise, completed) {
@@ -835,7 +839,7 @@ function Renderer(jetpack, map, tiles) {
             self.drawRotated(savedData, direction, angle, targetAngle, completed);
         });
     };
-    this.construct(jetpack, map, tiles);
+    this.construct(jetpack, map, tiles, playerTypes);
 }
 function TileSet() {
     this.getTiles = function () {

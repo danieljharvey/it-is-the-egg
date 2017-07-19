@@ -54,7 +54,7 @@ function Jetpack() {
 
 		this.map = new Map(tiles);
 
-		this.renderer = new Renderer(this, this.map, tiles);
+		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
 
 		this.collisions = new Collisions(this);
 

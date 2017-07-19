@@ -10,6 +10,8 @@ function Collisions(jetpack: Jetpack) {
 
 		if (player1.id == player2.id) return false;
 
+		// one player falling onto another
+
 		if (player1.x == player2.x && player1.y == player2.y) {
 			if (player1.offsetX==0 && player1.offsetY == 0 && player2.offsetX ==0 && player2.offsetY == 0) {
 				if (player1.falling || player2.falling) {
@@ -44,37 +46,31 @@ function Collisions(jetpack: Jetpack) {
 	}
 
 	this.combinePlayers = function(player1: Player, player2: Player) {
-		
+		//console.log('combinePlayers', player1, player2);
+
 		if (player1.type=='egg' && player2.type=='egg') {
 			var type='red-egg';
-			var coords={
-				'x':player2.x,
-				'y':player2.y,
-				'offsetX':player2.offsetX,
-				'offsetY':player2.offsetY
-			}
-			this.jetpack.createNewPlayer(type, coords, player2.direction);	
+			this.jetpack.createNewPlayer(type, player2, player2.direction);	
 		} else if (player1.type=='egg' && player2.type=='red-egg') {
 			var type='blue-egg';
-			var coords={
-				'x':player2.x,
-				'y':player2.y,
-				'offsetX':player2.offsetX,
-				'offsetY':player2.offsetY
-			}
-			this.createNewPlayer(type, coords, player2.direction);	
+			this.jetpack.createNewPlayer(type, player2, player2.direction);	
 		} else if (player1.type=='red-egg' && player2.type=='egg') {
 			var type='blue-egg';
-			var coords={
-				'x':player1.x,
-				'y':player1.y,
-				'offsetX':player1.offsetX,
-				'offsetY':player1.offsetY
-			}
-			this.createNewPlayer(type, coords, player1.direction);	
-		}
+			this.jetpack.createNewPlayer(type, player1, player1.direction);	
+		} else if (player1.type=='egg' && player2.type=='blue-egg') {
+			var type='yellow-egg';
+			this.jetpack.createNewPlayer(type, player2, player2.direction);	
+		} else if (player1.type=='blue-egg' && player2.type=='egg') {
+			var type='yellow-egg';
+			this.jetpack.createNewPlayer(type, player1, player1.direction);	
+		} else if (player1.type=='red-egg' && player2.type=='red-egg') {
+			var type='yellow-egg';
+			this.jetpack.createNewPlayer(type, player2, player2.direction);	
+		} 
 		this.jetpack.deletePlayer(player1);
 		this.jetpack.deletePlayer(player2);
 	}
+
+
 
 }
