@@ -70,6 +70,14 @@ function TileSet() {
 				'background':false,
 				'needsDraw':true
 			},
+			12: {
+				'id':12,
+				'title':'Egg Cup',
+				'img':'egg-cup.png',
+				'background':true,
+				'needsDraw':true,
+				'frontLayer':true,
+			},
 			/*12: {
 				'id':12,
 				'title':'Turn left',

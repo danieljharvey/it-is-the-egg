@@ -123,6 +123,7 @@ function Jetpack() {
     // go function but for edit mode
     this.edit = function () {
         this.bootstrap();
+        this.levels.getLevelList();
         this.editMode = true;
         this.bindSizeHandler();
         this.bindClickHandler();
@@ -280,7 +281,6 @@ var Levels = (function () {
         this.levels = {};
         this.levelList = [];
         this.jetpack = jetpack;
-        this.getLevelList();
     }
     Levels.prototype.getLevelList = function () {
         this.levelList = Object.keys(localStorage);
@@ -1032,6 +1032,14 @@ function TileSet() {
                 'img': 'tile.png',
                 'background': false,
                 'needsDraw': true
+            },
+            12: {
+                'id': 12,
+                'title': 'Egg Cup',
+                'img': 'egg-cup.png',
+                'background': true,
+                'needsDraw': true,
+                'frontLayer': true,
             },
         };
         return tiles;

@@ -7,7 +7,6 @@ class Levels {
 
 	constructor(jetpack: Jetpack) {
 		this.jetpack = jetpack;
-		this.getLevelList();
 	}
 
 	getLevelList(): void {

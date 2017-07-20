@@ -67,6 +67,7 @@ function Jetpack() {
 	// go function but for edit mode
 	this.edit = function() {
 		this.bootstrap();
+		this.levels.getLevelList();
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
