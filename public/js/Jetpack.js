@@ -274,42 +274,42 @@ function Jetpack() {
         }
     };
 }
-function Levels(jetpack) {
-    var self = this;
-    this.levelID = false;
-    this.levels = {};
-    this.levelList = [];
-    this.construct = function (jetpack) {
+var Levels = (function () {
+    function Levels(jetpack) {
+        this.levelID = 0;
+        this.levels = {};
+        this.levelList = [];
         this.jetpack = jetpack;
         this.getLevelList();
-    };
-    this.getLevelList = function () {
+    }
+    Levels.prototype.getLevelList = function () {
         this.levelList = Object.keys(localStorage);
         this.populateLevelsList();
     };
-    this.populateLevelsList = function () {
+    Levels.prototype.populateLevelsList = function () {
         var select = document.getElementById('levelList');
         while (select.firstChild) {
             select.removeChild(select.firstChild);
         }
         for (var i in this.levelList) {
-            var levelID = this.levelList[i];
+            var levelID = parseInt(this.levelList[i]);
             var el = document.createElement("option");
             el.textContent = levelID;
             el.value = levelID;
             select.appendChild(el);
         }
-        select.addEventListener('click', self.jetpack.loadLevelFromList);
+        select.addEventListener('click', this.jetpack.loadLevelFromList);
     };
-    this.generateLevelID = function () {
+    Levels.prototype.generateLevelID = function () {
         for (var levelID = 1; levelID < 10000; levelID++) {
-            if (this.levelList.indexOf(levelID) == -1) {
+            var levelIDString = levelID.toString();
+            if (this.levelList.indexOf(levelIDString) == -1) {
                 return levelID;
             }
         }
-        return false;
+        return 0;
     };
-    this.saveLevel = function (board, boardSize, levelID, callback) {
+    Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
         if (!levelID)
             levelID = this.generateLevelID();
         if (!levelID) {
@@ -322,14 +322,16 @@ function Levels(jetpack) {
             'levelID': levelID
         };
         var saveString = JSON.stringify(saveData);
-        localStorage.setItem(levelID, saveString);
+        var saveKey = levelID.toString();
+        localStorage.setItem(saveKey, saveString);
         this.getLevelList();
         this.levelID = levelID;
         callback(levelID);
     };
-    this.loadLevel = function (levelID, callback) {
+    Levels.prototype.loadLevel = function (levelID, callback) {
         console.log('loadLevel', levelID);
-        if (this.levelList.indexOf(levelID) == -1) {
+        var levelIDString = levelID.toString();
+        if (this.levelList.indexOf(levelIDString) == -1) {
             console.log('Could not load levelID' + levelID + ': does not exist in localStorage');
             return false;
         }
@@ -338,8 +340,8 @@ function Levels(jetpack) {
         this.levelID = levelID;
         callback(data);
     };
-    this.construct(jetpack);
-}
+    return Levels;
+}());
 function Map(tiles) {
     var self = this;
     this.tiles = tiles;
@@ -919,7 +921,6 @@ function Renderer(jetpack, map, tiles, playerTypes) {
         }
     };
     this.drawRotatingBoard = function (clockwise, completed) {
-        if (completed === void 0) { completed = function () { }; }
         var cw = this.canvas.width;
         var ch = this.canvas.height;
         var savedData = new Image();
@@ -932,7 +933,6 @@ function Renderer(jetpack, map, tiles, playerTypes) {
         }
     };
     this.drawRotated = function (savedData, direction, angle, targetAngle, completed) {
-        if (completed === void 0) { completed = function () { }; }
         if (direction > 0) {
             if (angle >= targetAngle) {
                 completed();

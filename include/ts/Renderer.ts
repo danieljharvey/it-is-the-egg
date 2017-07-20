@@ -2,7 +2,7 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 
 	var self = this;
 
-	this.construct = function(jetpack:Map, map:Map, tiles: object, playerTypes: object) {
+	this.construct = function(jetpack:Jetpack, map:Map, tiles: object, playerTypes: object) {
 		this.jetpack = jetpack;
 		this.map = map;
 		this.tiles = tiles;
@@ -57,7 +57,7 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 		}
 	}
 
-	this.getTileImagePath = function(tile) {
+	this.getTileImagePath = function(tile:object) {
 		return this.imagesFolder + tile.img;
 	}
 
@@ -129,11 +129,11 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 	    }
 	}
 
-	this.tileIsFrontLayer = function(tile) {
+	this.tileIsFrontLayer = function(tile:object) {
 		return this.map.getTileProperty(tile,'frontLayer');
 	}
 
-	this.drawSkyTile = function(tile, x:number, y:number) {
+	this.drawSkyTile = function(tile:object, x:number, y:number) {
 		var skyTile = this.map.getTile(1);
 		var skyTileImage = this.tileImages[skyTile.id];
 		this.renderTile(x, y, tile, skyTileImage);
@@ -169,7 +169,7 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 		}
 	}
 
-	this.renderTile = function(x:number, y:number, tile, overwriteImage) {
+	this.renderTile = function(x:number, y:number, tile: object, overwriteImage: object|boolean) {
 
 	    if (overwriteImage) {
 	    	var img = overwriteImage;
@@ -238,7 +238,7 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 	}
 
 
-	this.drawRotatingBoard = function(clockwise: boolean, completed: function) {
+	this.drawRotatingBoard = function(clockwise: boolean, completed: () => void) {
 
 	    var cw=this.canvas.width;
 	    var ch=this.canvas.height;
@@ -253,7 +253,7 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 		}
 	}
 
-	this.drawRotated = function(savedData, direction, angle, targetAngle, completed: function) {
+	this.drawRotated = function(savedData: Image, direction: number, angle: number, targetAngle: number, completed: () => void) {
 		if (direction>0) {
 			if (angle >= targetAngle) {
 				completed();
