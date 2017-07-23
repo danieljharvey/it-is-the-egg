@@ -77,6 +77,7 @@ function TileSet() {
 				'background':true,
 				'needsDraw':true,
 				'frontLayer':true,
+				'createPlayer':'egg'
 			},
 			/*12: {
 				'id':12,

@@ -12,7 +12,7 @@ function Map(tiles) {
 	this.board = [];
 	
 	this.construct = function() {
-		this.board = this.generateRandomBoard();
+		this.board = this.generateBlankBoard();
 	}
 
 	this.updateBoard = function(board: object, boardSize: object) {
@@ -21,7 +21,7 @@ function Map(tiles) {
 		this.markAllForRedraw();
 	}
 
-	this.correctForOverflow = function(x,y) {
+	this.correctForOverflow = function(x:number, y:number): Coords {
 		if (x < 0) {
 			newX = this.boardSize.width - 1;
 		} else if (x >= this.boardSize.width) {
@@ -37,7 +37,7 @@ function Map(tiles) {
 		} else {
 			newY = y;
 		}
-		return {'x':newX,'y':newY};
+		return new Coords(newX, newY);
 	}
 
 	this.getTileProperty = function(tile, property) {
@@ -51,16 +51,10 @@ function Map(tiles) {
 
 	// is intended next tile empty / a wall?
 	this.checkTileIsEmpty = function(x,y) {
-		//var x = player.x + player.direction;
-		if (x >= this.boardSize.width) {
-			x = 0; // wrap around
-		}
 
-		if (x < 0) {
-			x = this.boardSize.width - 1; // wrap around
-		}
+		var coords = this.correctForOverflow(x,y);
 
-		var tile = this.board[x][y];
+		var tile = this.board[coords.x][coords.y];
 
 		return tile.background;
 	}
@@ -76,18 +70,6 @@ function Map(tiles) {
 
 	this.getTileAction = function(tile) {
 		return this.getTileProperty(tile,'action');
-	}
-
-	this.generateRandomBoard = function() {
-		var board=[];
-		for (var x =0; x < this.boardSize.width; x++) {
-			board[x]=[];
-			for (var y = 0; y < this.boardSize.height; y++) {
-				var randomTile = this.getRandomTile(this.tiles);
-				board[x][y] = randomTile;
-			}
-		}
-		return board;
 	}
 
 	this.generateBlankBoard = function() {
@@ -211,6 +193,21 @@ function Map(tiles) {
 				player.direction = -1;
 			}
 		}
+	}
+
+	// return array with all tiles in (with x and y added)
+	this.getAllTiles = function() {
+		var allTiles = [];
+		for (var x in this.board) {
+			for (var y in this.board[x]) {
+				var id = this.board[x][y].id;
+				var tile = this.getTile(id);
+				tile.x = x;
+				tile.y = y;
+				allTiles.push(tile);
+			}
+		}
+		return allTiles;
 	}
 	
 	this.cycleTile = function(x:number, y:number) {

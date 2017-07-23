@@ -68,11 +68,27 @@ function Collisions(jetpack) {
         this.jetpack.deletePlayer(player2);
     };
 }
+var Coords = (function () {
+    function Coords(x, y, offsetX, offsetY) {
+        if (offsetX === void 0) { offsetX = 0; }
+        if (offsetY === void 0) { offsetY = 0; }
+        this.x = 0;
+        this.y = 0;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.x = parseInt(x);
+        this.y = parseInt(y);
+        this.offsetX = parseInt(offsetX);
+        this.offsetY = parseInt(offsetY);
+    }
+    return Coords;
+}());
 function Jetpack() {
     var self = this;
     this.paused = true;
     this.editMode = false;
     this.moveSpeed = 7;
+    this.levelID = 1;
     this.map; // Map object
     this.renderer; // Renderer object
     this.collisions; // Collisions object
@@ -114,11 +130,11 @@ function Jetpack() {
         this.bootstrap();
         this.bindSizeHandler();
         this.bindClickHandler();
-        this.createPlayers();
-        this.resetScore();
-        var s = setTimeout(function () {
+        this.loadLevel(this.levelID, function () {
+            self.createPlayers();
+            self.resetScore();
             self.startRender();
-        }, 1000);
+        });
     };
     // go function but for edit mode
     this.edit = function () {
@@ -166,23 +182,16 @@ function Jetpack() {
             player.doCalcs();
         }
     };
+    // cycle through all map tiles, find egg cups etc and create players
     this.createPlayers = function () {
-        for (var i = 0; i < 4; i++) {
-            var x = parseInt(Math.random() * this.map.boardSize.width) - 1;
-            var y = parseInt(Math.random() * this.map.boardSize.height) - 2;
-            if (x < 0)
-                x = 0;
-            if (y < 0)
-                y = 0;
-            var type = 'egg';
-            var coords = {
-                'x': x,
-                'y': y,
-                'offsetX': 0,
-                'offsetY': 0
-            };
-            var player = this.createNewPlayer(type, coords, 1);
-        }
+        var tiles = this.map.getAllTiles();
+        tiles.map(function (tile) {
+            if (tile.hasOwnProperty('createPlayer') && tile.createPlayer !== false) {
+                var type = tile.createPlayer;
+                var coords = new Coords(tile.x, tile.y);
+                self.createNewPlayer(type, coords, 1);
+            }
+        });
     };
     this.deletePlayer = function (player) {
         delete this.players[player.id];
@@ -224,6 +233,8 @@ function Jetpack() {
         }, 3000);
     };
     this.showEditMessage = function (text) {
+        if (!this.editMode)
+            return false;
         var message = document.getElementById('message');
         message.innerHTML = text;
         this.revertEditMessage();
@@ -240,11 +251,12 @@ function Jetpack() {
         var levelID = select.options[index].value;
         self.loadLevel(levelID);
     };
-    this.loadLevel = function (levelID) {
+    this.loadLevel = function (levelID, callback) {
         this.levels.loadLevel(levelID, function (data) {
             var text = "Level " + data.levelID + " loaded!";
             self.showEditMessage(text);
             self.map.updateBoard(data.board, data.boardSize);
+            callback();
         });
     };
     this.bindSizeHandler = function () {
@@ -284,7 +296,7 @@ var Levels = (function () {
     }
     Levels.prototype.getLevelList = function () {
         this.levelList = Object.keys(localStorage);
-        this.populateLevelsList();
+        //this.populateLevelsList();
     };
     Levels.prototype.populateLevelsList = function () {
         var select = document.getElementById('levelList');
@@ -329,7 +341,7 @@ var Levels = (function () {
         callback(levelID);
     };
     Levels.prototype.loadLevel = function (levelID, callback) {
-        console.log('loadLevel', levelID);
+        this.getLevelList();
         var levelIDString = levelID.toString();
         if (this.levelList.indexOf(levelIDString) == -1) {
             console.log('Could not load levelID' + levelID + ': does not exist in localStorage');
@@ -351,7 +363,7 @@ function Map(tiles) {
     };
     this.board = [];
     this.construct = function () {
-        this.board = this.generateRandomBoard();
+        this.board = this.generateBlankBoard();
     };
     this.updateBoard = function (board, boardSize) {
         this.board = board;
@@ -377,7 +389,7 @@ function Map(tiles) {
         else {
             newY = y;
         }
-        return { 'x': newX, 'y': newY };
+        return new Coords(newX, newY);
     };
     this.getTileProperty = function (tile, property) {
         if (!tile.hasOwnProperty(property))
@@ -389,14 +401,8 @@ function Map(tiles) {
     };
     // is intended next tile empty / a wall?
     this.checkTileIsEmpty = function (x, y) {
-        //var x = player.x + player.direction;
-        if (x >= this.boardSize.width) {
-            x = 0; // wrap around
-        }
-        if (x < 0) {
-            x = this.boardSize.width - 1; // wrap around
-        }
-        var tile = this.board[x][y];
+        var coords = this.correctForOverflow(x, y);
+        var tile = this.board[coords.x][coords.y];
         return tile.background;
     };
     this.markAllForRedraw = function () {
@@ -409,17 +415,6 @@ function Map(tiles) {
     };
     this.getTileAction = function (tile) {
         return this.getTileProperty(tile, 'action');
-    };
-    this.generateRandomBoard = function () {
-        var board = [];
-        for (var x = 0; x < this.boardSize.width; x++) {
-            board[x] = [];
-            for (var y = 0; y < this.boardSize.height; y++) {
-                var randomTile = this.getRandomTile(this.tiles);
-                board[x][y] = randomTile;
-            }
-        }
-        return board;
     };
     this.generateBlankBoard = function () {
         var board = [];
@@ -527,6 +522,20 @@ function Map(tiles) {
                 player.direction = -1;
             }
         }
+    };
+    // return array with all tiles in (with x and y added)
+    this.getAllTiles = function () {
+        var allTiles = [];
+        for (var x in this.board) {
+            for (var y in this.board[x]) {
+                var id = this.board[x][y].id;
+                var tile = this.getTile(id);
+                tile.x = x;
+                tile.y = y;
+                allTiles.push(tile);
+            }
+        }
+        return allTiles;
     };
     this.cycleTile = function (x, y) {
         var currentTile = this.board[x][y];
@@ -1040,6 +1049,7 @@ function TileSet() {
                 'background': true,
                 'needsDraw': true,
                 'frontLayer': true,
+                'createPlayer': 'egg'
             },
         };
         return tiles;

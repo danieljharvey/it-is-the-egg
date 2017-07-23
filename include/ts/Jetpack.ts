@@ -7,6 +7,8 @@ function Jetpack() {
 
 	this.moveSpeed = 7;
 
+	this.levelID = 1;
+
 	this.map; // Map object
 	this.renderer; // Renderer object
 	this.collisions; // Collisions object
@@ -56,12 +58,11 @@ function Jetpack() {
 		this.bindSizeHandler();
 		this.bindClickHandler();
 		
-		this.createPlayers();
-		
-		this.resetScore();
-		var s = setTimeout(function() {
+		this.loadLevel(this.levelID, function() {
+			self.createPlayers();
+			self.resetScore();
 			self.startRender();
-		},1000);
+		});
 	}
 
 	// go function but for edit mode
@@ -108,14 +109,10 @@ function Jetpack() {
 		scoreElement.innerHTML = this.score;
 	}
 
-
-
 	this.pauseRender = function() {
 		this.paused = true;
 		window.cancelAnimationFrame(this.animationHandle);
 	}
-
-	
 
 	this.doPlayerCalcs = function() {
 		for (var i in this.players) {
@@ -124,23 +121,16 @@ function Jetpack() {
 		}
 	}
 
-
-
+	// cycle through all map tiles, find egg cups etc and create players
 	this.createPlayers = function() {
-		for (var i = 0; i < 4; i++) {
-			var x = parseInt(Math.random() * this.map.boardSize.width) - 1;
-			var y = parseInt(Math.random() * this.map.boardSize.height) - 2;
-			if (x<0) x = 0;
-			if (y<0) y = 0;
-			var type = 'egg';
-			var coords = {
-				'x':x,
-				'y':y,
-				'offsetX':0,
-				'offsetY':0
+		var tiles = this.map.getAllTiles();
+		tiles.map(function(tile) {
+			if (tile.hasOwnProperty('createPlayer') && tile.createPlayer!==false) {
+				var type = tile.createPlayer;
+				var coords = new Coords(tile.x, tile.y);
+				self.createNewPlayer(type, coords, 1);
 			}
-			var player = this.createNewPlayer(type, coords, 1);	
-		}
+		});
 	}
 
 	this.deletePlayer = function(player:Player) {
@@ -192,6 +182,7 @@ function Jetpack() {
 	}
 
 	this.showEditMessage = function(text) {
+		if (!this.editMode) return false;
 		var message = document.getElementById('message');
 		message.innerHTML = text;
 		this.revertEditMessage();
@@ -211,11 +202,12 @@ function Jetpack() {
     	self.loadLevel(levelID);        
 	}
 
-	this.loadLevel = function(levelID) {
+	this.loadLevel = function(levelID, callback) {
 		this.levels.loadLevel(levelID, function(data) {
 			var text = "Level " + data.levelID + " loaded!";
 			self.showEditMessage(text);
 			self.map.updateBoard(data.board, data.boardSize);
+			callback();
 		})
 	}
 

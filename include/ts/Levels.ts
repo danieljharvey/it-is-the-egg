@@ -11,7 +11,7 @@ class Levels {
 
 	getLevelList(): void {
 		this.levelList = Object.keys(localStorage);
-		this.populateLevelsList();
+		//this.populateLevelsList();
 	}
 
 	populateLevelsList(): void {
@@ -59,7 +59,7 @@ class Levels {
 	}
 
 	loadLevel(levelID: number, callback: (object) => any): void {
-		console.log('loadLevel', levelID);
+		this.getLevelList();
 		var levelIDString:string = levelID.toString();
 		if (this.levelList.indexOf(levelIDString) == -1) {
 			console.log('Could not load levelID' + levelID + ': does not exist in localStorage');
