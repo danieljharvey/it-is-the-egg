@@ -25,6 +25,46 @@ function Renderer(jetpack, map, tiles, playerTypes) {
 	this.tileImages = {}; // image elements of tiles
 	this.playerImages = {}; // image element of players
 
+	this.renderTitleScreen = function(callback) {
+		var titleImage: HTMLElement = document.createElement('img');
+		titleImage.addEventListener('load', function() {
+		  self.drawTheBigEgg(titleImage, 0.02, true, callback);
+		}, false);
+		titleImage.setAttribute('src', this.imagesFolder + 'large/the-egg.png');
+		titleImage.setAttribute('width', 1024);
+		titleImage.setAttribute('height', 1024);
+	}
+
+	this.drawTheBigEgg = function(titleImage, opacity, show, callback) {
+
+		this.ctx.globalAlpha = 1;
+		this.wipeCanvas('rgb(0,0,0)');
+
+		this.ctx.globalAlpha = opacity;
+		this.ctx.drawImage(titleImage,0,0,this.canvas.width,this.canvas.height);
+		if (show) {
+			opacity += 0.01;
+			if (opacity >= 1) {
+				// wait, fade the egg
+				var v = setTimeout(function() {
+					// and start fading!
+					self.drawTheBigEgg(titleImage, opacity, false, callback);
+				},1000);
+				return false;
+			}
+		} else {
+			opacity = opacity - 0.03;
+			if (opacity <= 0) {
+				callback();
+				titleImage = null;
+				return false;
+			}
+		}
+		this.animationHandle = window.requestAnimationFrame(function() {
+	    	self.drawTheBigEgg(titleImage, opacity, show, callback);
+	    });
+	}
+
 	this.render = function() {
 		if (this.jetpack.paused) return false;
 		self.sizeCanvas();

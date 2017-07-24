@@ -80,7 +80,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 			var tile = board[this.x][this.y];
 			var action = this.map.getTileAction(tile);
 				
-			console.log('tileAction', action);
+			//console.log('tileAction', action);
 
 			if (action=='rotateLeft') {
 				this.jetpack.rotateBoard(false);

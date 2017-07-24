@@ -55,15 +55,18 @@ function Jetpack() {
 
 	this.go = function() {
 		this.bootstrap();
-
 		this.bindSizeHandler();
 		this.bindClickHandler();
 		
-		this.loadLevel(this.levelID, function() {
-			self.createPlayers();
-			self.resetScore();
-			self.startRender();
+		this.pauseRender();
+		this.renderer.renderTitleScreen(function() {
+			self.loadLevel(self.levelID, function() {
+				self.createPlayers();
+				self.resetScore();
+				self.startRender();	
+			});	
 		});
+		
 	}
 
 	// go function but for edit mode
@@ -138,6 +141,7 @@ function Jetpack() {
 
 	// cycle through all map tiles, find egg cups etc and create players
 	this.createPlayers = function() {
+		this.destroyPlayers();
 		var tiles = this.map.getAllTiles();
 		tiles.map(function(tile) {
 			var type = self.map.getTileProperty(tile,'createPlayer');
@@ -146,6 +150,10 @@ function Jetpack() {
 				self.createNewPlayer(type, coords, 1);
 			}
 		});
+	}
+
+	this.destroyPlayers = function() {
+		this.players = [];
 	}
 
 	// cycle through all map tiles, find egg cups etc and create players

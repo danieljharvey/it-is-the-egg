@@ -131,10 +131,13 @@ function Jetpack() {
         this.bootstrap();
         this.bindSizeHandler();
         this.bindClickHandler();
-        this.loadLevel(this.levelID, function () {
-            self.createPlayers();
-            self.resetScore();
-            self.startRender();
+        this.pauseRender();
+        this.renderer.renderTitleScreen(function () {
+            self.loadLevel(self.levelID, function () {
+                self.createPlayers();
+                self.resetScore();
+                self.startRender();
+            });
         });
     };
     // go function but for edit mode
@@ -198,6 +201,7 @@ function Jetpack() {
     };
     // cycle through all map tiles, find egg cups etc and create players
     this.createPlayers = function () {
+        this.destroyPlayers();
         var tiles = this.map.getAllTiles();
         tiles.map(function (tile) {
             var type = self.map.getTileProperty(tile, 'createPlayer');
@@ -206,6 +210,9 @@ function Jetpack() {
                 self.createNewPlayer(type, coords, 1);
             }
         });
+    };
+    this.destroyPlayers = function () {
+        this.players = [];
     };
     // cycle through all map tiles, find egg cups etc and create players
     this.getCollectable = function () {
@@ -657,7 +664,7 @@ function Player(params, map, renderer, jetpack, collisions) {
         else {
             var tile = board[this.x][this.y];
             var action = this.map.getTileAction(tile);
-            console.log('tileAction', action);
+            //console.log('tileAction', action);
             if (action == 'rotateLeft') {
                 this.jetpack.rotateBoard(false);
             }
@@ -783,6 +790,43 @@ function Renderer(jetpack, map, tiles, playerTypes) {
     this.ctx; // canvas context for drawing
     this.tileImages = {}; // image elements of tiles
     this.playerImages = {}; // image element of players
+    this.renderTitleScreen = function (callback) {
+        var titleImage = document.createElement('img');
+        titleImage.addEventListener('load', function () {
+            self.drawTheBigEgg(titleImage, 0.02, true, callback);
+        }, false);
+        titleImage.setAttribute('src', this.imagesFolder + 'large/the-egg.png');
+        titleImage.setAttribute('width', 1024);
+        titleImage.setAttribute('height', 1024);
+    };
+    this.drawTheBigEgg = function (titleImage, opacity, show, callback) {
+        this.ctx.globalAlpha = 1;
+        this.wipeCanvas('rgb(0,0,0)');
+        this.ctx.globalAlpha = opacity;
+        this.ctx.drawImage(titleImage, 0, 0, this.canvas.width, this.canvas.height);
+        if (show) {
+            opacity += 0.01;
+            if (opacity >= 1) {
+                // wait, fade the egg
+                var v = setTimeout(function () {
+                    // and start fading!
+                    self.drawTheBigEgg(titleImage, opacity, false, callback);
+                }, 1000);
+                return false;
+            }
+        }
+        else {
+            opacity = opacity - 0.03;
+            if (opacity <= 0) {
+                callback();
+                titleImage = null;
+                return false;
+            }
+        }
+        this.animationHandle = window.requestAnimationFrame(function () {
+            self.drawTheBigEgg(titleImage, opacity, show, callback);
+        });
+    };
     this.render = function () {
         if (this.jetpack.paused)
             return false;
