@@ -77,7 +77,17 @@ function TileSet() {
 				'background':true,
 				'needsDraw':true,
 				'frontLayer':true,
-				'createPlayer':'egg'
+				'createPlayer':'egg',
+				'action':'completeLevel'
+			},
+			13: {
+				'id':13,
+				'title':'Toast',
+				'img':'toast.png',
+				'background':true,
+				'needsDraw':true,
+				'frontLayer':true,
+				'collectable':100
 			},
 			/*12: {
 				'id':12,

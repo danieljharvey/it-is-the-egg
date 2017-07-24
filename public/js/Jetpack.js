@@ -95,6 +95,7 @@ function Jetpack() {
     this.levels; // Levels object
     this.nextPlayerID = 1;
     this.score = 0;
+    this.collectable = 0; // total points on screen
     this.playerTypes = {
         'egg': {
             'type': 'egg',
@@ -170,7 +171,20 @@ function Jetpack() {
     this.addScore = function (amount) {
         this.score += amount;
         var scoreElement = document.getElementById('score');
-        scoreElement.innerHTML = this.score;
+        if (scoreElement) {
+            scoreElement.innerHTML = this.score;
+        }
+    };
+    // or at least try
+    this.completeLevel = function () {
+        this.collectable = this.getCollectable();
+        if (this.collectable < 1) {
+            this.nextLevel();
+        }
+    };
+    this.nextLevel = function () {
+        this.levelID++;
+        this.go();
     };
     this.pauseRender = function () {
         this.paused = true;
@@ -186,12 +200,24 @@ function Jetpack() {
     this.createPlayers = function () {
         var tiles = this.map.getAllTiles();
         tiles.map(function (tile) {
-            if (tile.hasOwnProperty('createPlayer') && tile.createPlayer !== false) {
-                var type = tile.createPlayer;
+            var type = self.map.getTileProperty(tile, 'createPlayer');
+            if (type) {
                 var coords = new Coords(tile.x, tile.y);
                 self.createNewPlayer(type, coords, 1);
             }
         });
+    };
+    // cycle through all map tiles, find egg cups etc and create players
+    this.getCollectable = function () {
+        var collectable = 0;
+        var tiles = this.map.getAllTiles();
+        tiles.map(function (tile) {
+            var score = self.map.getTileProperty(tile, 'collectable');
+            if (score > 0) {
+                collectable += score;
+            }
+        });
+        return collectable;
     };
     this.deletePlayer = function (player) {
         delete this.players[player.id];
@@ -296,10 +322,12 @@ var Levels = (function () {
     }
     Levels.prototype.getLevelList = function () {
         this.levelList = Object.keys(localStorage);
-        //this.populateLevelsList();
+        this.populateLevelsList();
     };
     Levels.prototype.populateLevelsList = function () {
         var select = document.getElementById('levelList');
+        if (!select)
+            return false;
         while (select.firstChild) {
             select.removeChild(select.firstChild);
         }
@@ -614,10 +642,10 @@ function Player(params, map, renderer, jetpack, collisions) {
         var collectable = this.map.getTileProperty(tile, 'collectable');
         if (collectable) {
             var score = collectable * this.multiplier;
-            this.jetpack.addScore(score);
             var blankTile = this.map.getTile(1);
             blankTile.needsDraw = true;
             board[this.x][this.y] = blankTile;
+            this.jetpack.addScore(score);
         }
         if (this.falling) {
             var coords = this.map.correctForOverflow(this.x, this.y + 1);
@@ -629,11 +657,15 @@ function Player(params, map, renderer, jetpack, collisions) {
         else {
             var tile = board[this.x][this.y];
             var action = this.map.getTileAction(tile);
+            console.log('tileAction', action);
             if (action == 'rotateLeft') {
                 this.jetpack.rotateBoard(false);
             }
             else if (action == 'rotateRight') {
                 this.jetpack.rotateBoard(true);
+            }
+            else if (action == 'completeLevel') {
+                this.jetpack.completeLevel();
             }
         }
     };
@@ -1049,7 +1081,17 @@ function TileSet() {
                 'background': true,
                 'needsDraw': true,
                 'frontLayer': true,
-                'createPlayer': 'egg'
+                'createPlayer': 'egg',
+                'action': 'completeLevel'
+            },
+            13: {
+                'id': 13,
+                'title': 'Toast',
+                'img': 'toast.png',
+                'background': true,
+                'needsDraw': true,
+                'frontLayer': true,
+                'collectable': 100
             },
         };
         return tiles;

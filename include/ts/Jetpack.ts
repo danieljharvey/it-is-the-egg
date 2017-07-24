@@ -15,7 +15,8 @@ function Jetpack() {
 	this.levels; // Levels object
 
 	this.nextPlayerID = 1;
-	this.score = 0;	
+	this.score = 0;
+	this.collectable = 0; // total points on screen
 
 	this.playerTypes={
 		'egg': {
@@ -106,9 +107,23 @@ function Jetpack() {
 	this.addScore = function(amount) {
 		this.score += amount;
 		var scoreElement = document.getElementById('score');
-		scoreElement.innerHTML = this.score;
+		if (scoreElement) {
+			scoreElement.innerHTML = this.score;
+		}
 	}
 
+	// or at least try
+	this.completeLevel = function() {
+		this.collectable = this.getCollectable();
+		if (this.collectable < 1) {
+			this.nextLevel();
+		}
+	}
+
+	this.nextLevel = function() {
+		this.levelID ++;
+		this.go();
+	}
 	this.pauseRender = function() {
 		this.paused = true;
 		window.cancelAnimationFrame(this.animationHandle);
@@ -125,12 +140,25 @@ function Jetpack() {
 	this.createPlayers = function() {
 		var tiles = this.map.getAllTiles();
 		tiles.map(function(tile) {
-			if (tile.hasOwnProperty('createPlayer') && tile.createPlayer!==false) {
-				var type = tile.createPlayer;
+			var type = self.map.getTileProperty(tile,'createPlayer');
+			if (type) {
 				var coords = new Coords(tile.x, tile.y);
 				self.createNewPlayer(type, coords, 1);
 			}
 		});
+	}
+
+	// cycle through all map tiles, find egg cups etc and create players
+	this.getCollectable = function() {
+		var collectable = 0;
+		var tiles = this.map.getAllTiles();
+		tiles.map(function(tile) {
+			var score = self.map.getTileProperty(tile,'collectable');
+			if (score > 0) {
+				collectable += score;
+			}
+		});
+		return collectable;
 	}
 
 	this.deletePlayer = function(player:Player) {

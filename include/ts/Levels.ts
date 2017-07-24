@@ -11,11 +11,13 @@ class Levels {
 
 	getLevelList(): void {
 		this.levelList = Object.keys(localStorage);
-		//this.populateLevelsList();
+		
+		this.populateLevelsList();
 	}
 
 	populateLevelsList(): void {
 		var select = document.getElementById('levelList');
+		if (!select) return false;
 		while (select.firstChild) {
 		    select.removeChild(select.firstChild);
 		}

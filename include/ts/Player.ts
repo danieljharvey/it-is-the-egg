@@ -62,10 +62,10 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		var collectable = this.map.getTileProperty(tile,'collectable');
 		if (collectable) {
 			var score = collectable * this.multiplier;
-			this.jetpack.addScore(score);
 			var blankTile = this.map.getTile(1);
 			blankTile.needsDraw = true;
 			board[this.x][this.y] = blankTile;
+			this.jetpack.addScore(score);
 		}
 
 		if (this.falling) {
@@ -79,11 +79,15 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		} else {
 			var tile = board[this.x][this.y];
 			var action = this.map.getTileAction(tile);
-			
+				
+			console.log('tileAction', action);
+
 			if (action=='rotateLeft') {
 				this.jetpack.rotateBoard(false);
 			} else if (action=='rotateRight') {
 				this.jetpack.rotateBoard(true);
+			} else if (action=='completeLevel') {
+				this.jetpack.completeLevel();
 			}
 		}
 	}
