@@ -1,1 +1,4 @@
 node_modules/
+include/settings/connection.json
+
+include/vendor/

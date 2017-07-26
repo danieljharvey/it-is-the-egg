@@ -54,41 +54,46 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 	}
 
 	this.checkPlayerTileAction = function() {
+
 		if (this.offsetX != 0 || this.offsetY != 0) return false;
+
+		var coords: Coords = this.map.correctForOverflow(this.x, this.y);
 
 		var board = this.map.board;
 
-		var tile = board[this.x][this.y];
+		var tile = board[coords.x][coords.y];
+
 		var collectable = this.map.getTileProperty(tile,'collectable');
+		
 		if (collectable) {
 			var score = collectable * this.multiplier;
 			var blankTile = this.map.getTile(1);
 			blankTile.needsDraw = true;
-			board[this.x][this.y] = blankTile;
+			board[coords.x][coords.y] = blankTile;
 			this.jetpack.addScore(score);
+			return true;
 		}
 
 		if (this.falling) {
-			var coords=this.map.correctForOverflow(this.x, this.y + 1);
+			var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1);
 			
-			var tile = board[coords.x][coords.y];
+			var tile = board[belowCoords.x][belowCoords.y];
 
 			if (this.map.tileIsBreakable(tile)) {
-				board[coords.x][coords.y] = this.map.getTile(1); // smash block, replace with empty
+				board[belowCoords.x][belowCoords.y] = this.map.getTile(1); // smash block, replace with empty
+				return true;
 			}
-		} else {
-			var tile = board[this.x][this.y];
-			var action = this.map.getTileAction(tile);
-				
-			//console.log('tileAction', action);
+		} 
 
-			if (action=='rotateLeft') {
-				this.jetpack.rotateBoard(false);
-			} else if (action=='rotateRight') {
-				this.jetpack.rotateBoard(true);
-			} else if (action=='completeLevel') {
-				this.jetpack.completeLevel();
-			}
+		var tile = board[coords.x][coords.y];
+		var action = this.map.getTileAction(tile);
+
+		if (action=='rotateLeft') {
+			this.jetpack.rotateBoard(false);
+		} else if (action=='rotateRight') {
+			this.jetpack.rotateBoard(true);
+		} else if (action=='completeLevel') {
+			this.jetpack.completeLevel();
 		}
 	}
 
@@ -114,6 +119,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 			if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
 				// turn around
 				this.direction = 1;
+				this.offsetX = 0;
 			} else {
 				// move
 				this.offsetX-=this.moveSpeed;
@@ -123,6 +129,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		if (this.direction > 0) {
 			if (!this.map.checkTileIsEmpty(this.x + 1, this.y)) {
 				// turn around
+				this.offsetX = 0;
 				this.direction = -1;
 			} else {
 				// move
@@ -144,23 +151,23 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 	this.checkIfPlayerIsInNewTile = function() {
 		if (this.offsetX > this.renderer.tileSize) {
 			this.offsetX = 0;
-			this.checkPlayerTileAction();
 			this.x ++;
+			this.checkPlayerTileAction();
 		}
 		if (this.offsetX < (-1 * this.renderer.tileSize)) {
 			this.offsetX = 0;
-			this.checkPlayerTileAction();
 			this.x --;
+			this.checkPlayerTileAction();
 		}
 		if (this.offsetY > this.renderer.tileSize) {
 			this.offsetY = 0;
-			this.checkPlayerTileAction();
 			this.y ++;
+			this.checkPlayerTileAction();
 		}
 		if (this.offsetY < (-1 * this.renderer.tileSize)) {
 			this.offsetY = 0;
-			this.checkPlayerTileAction();
 			this.y --;
+			this.checkPlayerTileAction();
 		}
 		// have we gone over the edge?
 		var coords = this.map.correctForOverflow(this.x, this.y);

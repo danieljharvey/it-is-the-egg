@@ -11,7 +11,6 @@ class Levels {
 
 	getLevelList(): void {
 		this.levelList = Object.keys(localStorage);
-		
 		this.populateLevelsList();
 	}
 

@@ -118,7 +118,8 @@ function Jetpack() {
 	// or at least try
 	this.completeLevel = function() {
 		this.collectable = this.getCollectable();
-		if (this.collectable < 1) {
+		var playerCount: number = this.countPlayers();
+		if (this.collectable < 1 && playerCount < 2) {
 			this.nextLevel();
 		}
 	}
@@ -127,6 +128,7 @@ function Jetpack() {
 		this.levelID ++;
 		this.go();
 	}
+
 	this.pauseRender = function() {
 		this.paused = true;
 		window.cancelAnimationFrame(this.animationHandle);
@@ -137,6 +139,14 @@ function Jetpack() {
 			var player = this.players[i]
 			player.doCalcs();
 		}
+	}
+
+	this.countPlayers = function() : number {
+		var count: number = 0;
+		for (var i in this.players) {
+			if (this.players[i]) count++;
+		}
+		return count;
 	}
 
 	// cycle through all map tiles, find egg cups etc and create players
