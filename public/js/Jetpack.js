@@ -157,7 +157,10 @@ function Jetpack() {
         this.map = new Map(tiles);
         this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
         this.collisions = new Collisions(this);
-        this.levels = new Levels(this);
+        var apiLocation = window.location.href + 'levels/';
+        console.log('apiLocation', apiLocation);
+        var loader = new Loader(apiLocation);
+        this.levels = new Levels(this, loader);
     };
     this.startRender = function () {
         if (!this.paused)
@@ -330,11 +333,12 @@ function Jetpack() {
     };
 }
 var Levels = (function () {
-    function Levels(jetpack) {
+    function Levels(jetpack, loader) {
         this.levelID = 0;
         this.levels = {};
         this.levelList = [];
         this.jetpack = jetpack;
+        this.loader = loader;
     }
     Levels.prototype.getLevelList = function () {
         this.levelList = Object.keys(localStorage);
@@ -386,17 +390,70 @@ var Levels = (function () {
     };
     Levels.prototype.loadLevel = function (levelID, callback) {
         this.getLevelList();
-        var levelIDString = levelID.toString();
-        if (this.levelList.indexOf(levelIDString) == -1) {
-            console.log('Could not load levelID' + levelID + ': does not exist in localStorage');
-            return false;
-        }
-        var dataString = localStorage.getItem(levelID);
-        var data = JSON.parse(dataString);
-        this.levelID = levelID;
-        callback(data);
+        var params = {
+            levelID: levelID
+        };
+        this.loader.callServer('getLevel', params, function (data) {
+            this.levelID = data.levelID;
+            callback(data.data);
+        }, function (errorMsg) {
+            console.log('ERROR: ', errorMsg);
+        });
     };
     return Levels;
+}());
+var Loader = (function () {
+    function Loader(apiLocation) {
+        this.apiLocation = apiLocation;
+    }
+    Loader.prototype.callServer = function (action, params, callback, failCallback) {
+        var xhr = new XMLHttpRequest();
+        params['action'] = action;
+        xhr.open('POST', this.apiLocation, true);
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhr.onreadystatechange = function () {
+            var DONE = 4; // readyState 4 means the request is done.
+            var OK = 200; // status 200 is a successful return.
+            if (xhr.readyState == DONE) {
+                if (xhr.status == OK) {
+                    var object = JSON.parse(xhr.responseText);
+                    if (object.rc > 0) {
+                        failCallback(object.msg);
+                    }
+                    else {
+                        callback(object);
+                    }
+                }
+                else {
+                    failCallback('Error: ' + xhr.status);
+                }
+            }
+        };
+        //var formData = this.paramsToFormData(params);
+        var queryString = this.param(params);
+        xhr.send(queryString);
+    };
+    Loader.prototype.paramsToFormData = function (params) {
+        var formData = new FormData();
+        for (var key in params) {
+            console.log(key, params[key]);
+            formData.append(key, params[key]);
+        }
+        return formData;
+    };
+    Loader.prototype.param = function (object) {
+        var encodedString = '';
+        for (var prop in object) {
+            if (object.hasOwnProperty(prop)) {
+                if (encodedString.length > 0) {
+                    encodedString += '&';
+                }
+                encodedString += encodeURI(prop + '=' + object[prop]);
+            }
+        }
+        return encodedString;
+    };
+    return Loader;
 }());
 function Map(tiles) {
     var self = this;

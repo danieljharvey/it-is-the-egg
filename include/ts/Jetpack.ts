@@ -90,8 +90,13 @@ function Jetpack() {
 		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
 
 		this.collisions = new Collisions(this);
-
-		this.levels = new Levels(this);
+		
+		var apiLocation = window.location.href + 'levels/';
+		
+		console.log('apiLocation',apiLocation);
+		var loader: Loader = new Loader(apiLocation);
+		
+		this.levels = new Levels(this, loader);
 	}
 
 	this.startRender = function() {

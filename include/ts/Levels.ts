@@ -4,9 +4,11 @@ class Levels {
 	levels:object = {};
 	levelList:array = [];
 	jetpack: Jetpack;
+	loader: Loader;
 
-	constructor(jetpack: Jetpack) {
+	constructor(jetpack: Jetpack, loader: Loader) {
 		this.jetpack = jetpack;
+		this.loader = loader;
 	}
 
 	getLevelList(): void {
@@ -61,16 +63,14 @@ class Levels {
 
 	loadLevel(levelID: number, callback: (object) => any): void {
 		this.getLevelList();
-		var levelIDString:string = levelID.toString();
-		if (this.levelList.indexOf(levelIDString) == -1) {
-			console.log('Could not load levelID' + levelID + ': does not exist in localStorage');
-			return false;
+		var params = {
+			levelID: levelID
 		}
-		var dataString:string = localStorage.getItem(levelID);
-		var data:object = JSON.parse(dataString);
-		this.levelID = levelID;
-		callback(data);
+		this.loader.callServer('getLevel',params,function(data: object) {
+			this.levelID = data.levelID;
+			callback(data.data);
+		}, function(errorMsg: string) {
+			console.log('ERROR: ',errorMsg);
+		})
 	}
-
-	//this.construct(jetpack);
 }
