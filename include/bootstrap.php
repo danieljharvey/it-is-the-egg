@@ -30,6 +30,4 @@ $conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
 
 $egg = new Egg($conn);
 
-$data = $egg->getLevel(1);
 
-var_dump($data);
