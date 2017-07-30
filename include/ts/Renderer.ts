@@ -28,6 +28,7 @@ class Renderer {
 	playerImages:object = {}; // image element of players
 
 	renderTitleScreen(callback) {
+		this.sizeCanvas();
 		var titleImage: HTMLElement = document.createElement('img');
 		titleImage.addEventListener('load', () => {
 		  this.drawTheBigEgg(titleImage, 0.02, true, callback);
@@ -43,7 +44,9 @@ class Renderer {
 		this.wipeCanvas('rgb(0,0,0)');
 
 		this.ctx.globalAlpha = opacity;
-		this.ctx.drawImage(titleImage,0,0,this.canvas.width,this.canvas.height);
+		//this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+
+		this.ctx.drawImage(titleImage,0,0,titleImage.width,titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
 		if (show) {
 			opacity += 0.01;
 			if (opacity >= 1) {
@@ -104,6 +107,7 @@ class Renderer {
 	}
 
 	sizeCanvas() {
+		console.log("sizeCanvas", this.checkResize);
 		if (!this.checkResize) return false;
 		var maxBoardSize = this.getMaxBoardSize();
 
@@ -233,7 +237,7 @@ class Renderer {
 		if (this.map.renderAngle == 0 || this.map.getTileProperty(tile,'dontRotate')) {
 			this.ctx.drawImage(img,left,top,this.tileSize,this.tileSize);
 		} else {
-			console.log('renderAngle', this.map.renderAngle);
+			
 			var angleInRad = this.map.renderAngle * (Math.PI/180);
 			
 			var offset = this.tileSize / 2;

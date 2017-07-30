@@ -75,7 +75,7 @@ class Levels {
 		});
 	}
 
-	loadLevel(levelID: number, callback: (object) => any): void {
+	loadLevel(levelID: number, callback: (object) => any, failCallback: () => any): void {
 		this.getLevelList();
 		var params = {
 			levelID: levelID
@@ -85,6 +85,7 @@ class Levels {
 			callback(data.data);
 		}, function(errorMsg: string) {
 			console.log('ERROR: ',errorMsg);
+			failCallback();
 		})
 	}
 }

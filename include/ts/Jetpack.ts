@@ -256,17 +256,20 @@ function Jetpack() {
 	}
 
 	this.loadLevel = function(levelID, callback) {
-		this.levels.loadLevel(levelID, function(data) {
+		this.levels.loadLevel(levelID, (data) => {
 			var text = "Level " + data.levelID + " loaded!";
-			self.showEditMessage(text);
-			self.map.updateBoard(data.board, data.boardSize);
+			this.showEditMessage(text);
+			this.map.updateBoard(data.board, data.boardSize);
+			callback();
+		},() => {
+			this.map.board = this.map.generateRandomBoard();
 			callback();
 		})
 	}
 
 	this.bindSizeHandler = function() {
-		window.addEventListener('resize', function() {
-			self.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+		window.addEventListener('resize', () => {
+			this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
 		});
 	}
 

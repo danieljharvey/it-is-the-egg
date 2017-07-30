@@ -299,16 +299,21 @@ function Jetpack() {
         });
     };
     this.loadLevel = function (levelID, callback) {
+        var _this = this;
         this.levels.loadLevel(levelID, function (data) {
             var text = "Level " + data.levelID + " loaded!";
-            self.showEditMessage(text);
-            self.map.updateBoard(data.board, data.boardSize);
+            _this.showEditMessage(text);
+            _this.map.updateBoard(data.board, data.boardSize);
+            callback();
+        }, function () {
+            _this.map.board = _this.map.generateRandomBoard();
             callback();
         });
     };
     this.bindSizeHandler = function () {
+        var _this = this;
         window.addEventListener('resize', function () {
-            self.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+            _this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
         });
     };
     this.bindClickHandler = function () {
@@ -405,7 +410,7 @@ var Levels = (function () {
             console.log('ERROR: ', errorMsg);
         });
     };
-    Levels.prototype.loadLevel = function (levelID, callback) {
+    Levels.prototype.loadLevel = function (levelID, callback, failCallback) {
         var _this = this;
         this.getLevelList();
         var params = {
@@ -416,6 +421,7 @@ var Levels = (function () {
             callback(data.data);
         }, function (errorMsg) {
             console.log('ERROR: ', errorMsg);
+            failCallback();
         });
     };
     return Levels;
@@ -540,6 +546,17 @@ var Map = (function () {
             board[x] = [];
             for (var y = 0; y < this.boardSize.height; y++) {
                 var blankTile = this.getTile(1);
+                board[x][y] = blankTile;
+            }
+        }
+        return board;
+    };
+    Map.prototype.generateRandomBoard = function () {
+        var board = [];
+        for (var x = 0; x < this.boardSize.width; x++) {
+            board[x] = [];
+            for (var y = 0; y < this.boardSize.height; y++) {
+                var blankTile = this.getRandomTile(this.tiles);
                 board[x][y] = blankTile;
             }
         }
@@ -881,7 +898,6 @@ var Renderer = (function () {
                 this.ctx.drawImage(img, left, top, this.tileSize, this.tileSize);
             }
             else {
-                console.log('renderAngle', this.map.renderAngle);
                 var angleInRad = this.map.renderAngle * (Math.PI / 180);
                 var offset = this.tileSize / 2;
                 left = left + offset;
@@ -904,6 +920,7 @@ var Renderer = (function () {
     }
     Renderer.prototype.renderTitleScreen = function (callback) {
         var _this = this;
+        this.sizeCanvas();
         var titleImage = document.createElement('img');
         titleImage.addEventListener('load', function () {
             _this.drawTheBigEgg(titleImage, 0.02, true, callback);
@@ -917,7 +934,8 @@ var Renderer = (function () {
         this.ctx.globalAlpha = 1;
         this.wipeCanvas('rgb(0,0,0)');
         this.ctx.globalAlpha = opacity;
-        this.ctx.drawImage(titleImage, 0, 0, this.canvas.width, this.canvas.height);
+        //this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+        this.ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
         if (show) {
             opacity += 0.01;
             if (opacity >= 1) {
@@ -976,6 +994,7 @@ var Renderer = (function () {
         return this.imagesFolder + tile.img;
     };
     Renderer.prototype.sizeCanvas = function () {
+        console.log("sizeCanvas", this.checkResize);
         if (!this.checkResize)
             return false;
         var maxBoardSize = this.getMaxBoardSize();

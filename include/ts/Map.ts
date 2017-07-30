@@ -86,6 +86,19 @@ class Map {
 		return board;
 	}
 
+	generateRandomBoard() {
+		var board=[];
+
+		for (var x = 0; x < this.boardSize.width; x++) {
+			board[x] = [];
+			for (var y = 0; y < this.boardSize.height; y++) {
+				var blankTile = this.getRandomTile(this.tiles);
+				board[x][y] = blankTile;
+			}
+		}
+		return board;
+	}
+
 	getTile(id) {
 		var tile = JSON.parse(JSON.stringify(this.tiles[id])); // create copy of object so we're not changing original
 		return tile;
