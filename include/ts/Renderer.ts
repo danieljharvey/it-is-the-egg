@@ -107,7 +107,6 @@ class Renderer {
 	}
 
 	sizeCanvas() {
-		console.log("sizeCanvas", this.checkResize);
 		if (!this.checkResize) return false;
 		var maxBoardSize = this.getMaxBoardSize();
 

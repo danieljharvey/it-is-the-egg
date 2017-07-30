@@ -1,10 +1,13 @@
-function Collisions(jetpack: Jetpack) {
-	var self = this;
+class Collisions {
 
-	this.jetpack = jetpack;
+	jetpack: Jetpack;
+
+	constructor(jetpack: Jetpack) {
+		this.jetpack = jetpack;	
+	}
 
 	// only deal with horizontal collisions for now
-	this.checkCollision = function(player1: Player, player2: Player) {
+	checkCollision(player1: Player, player2: Player) {
 		
 		if (!player1 || !player2) return false;
 
@@ -45,7 +48,7 @@ function Collisions(jetpack: Jetpack) {
 		}
 	}
 
-	this.combinePlayers = function(player1: Player, player2: Player) {
+	combinePlayers(player1: Player, player2: Player) {
 		//console.log('combinePlayers', player1, player2);
 
 		if (player1.type=='egg' && player2.type=='egg') {
@@ -70,7 +73,5 @@ function Collisions(jetpack: Jetpack) {
 		this.jetpack.deletePlayer(player1);
 		this.jetpack.deletePlayer(player2);
 	}
-
-
 
 }

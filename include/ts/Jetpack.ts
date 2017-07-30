@@ -1,24 +1,22 @@
-function Jetpack() {
-	
-	var self = this;
+class Jetpack {
 
-	this.paused = true;
-	this.editMode = false;
+	paused: boolean = true;
+	editMode: boolean = false;
 
-	this.moveSpeed = 7;
+	moveSpeed: number = 7;
 
-	this.levelID = 1;
+	levelID: number = 1;
 
-	this.map; // Map object
-	this.renderer; // Renderer object
-	this.collisions; // Collisions object
-	this.levels; // Levels object
+	map: Map; // Map object
+	renderer: Renderer; // Renderer object
+	collisions: Collisions; // Collisions object
+	levels: Levels; // Levels object
 
-	this.nextPlayerID = 1;
-	this.score = 0;
-	this.collectable = 0; // total points on screen
+	nextPlayerID: number = 1;
+	score: number = 0;
+	collectable: number = 0; // total points on screen
 
-	this.playerTypes={
+	playerTypes: object ={
 		'egg': {
 			'type':'egg',
 			'title':"It is of course the egg",
@@ -48,40 +46,37 @@ function Jetpack() {
 			'multiplier':10
 		}
 	}
-	
-	
 
-	this.players = [];
+	players: Player[];
 
-	this.go = function() {
+	go() {
 		this.bootstrap();
 		this.bindSizeHandler();
 		this.bindClickHandler();
 		
 		this.pauseRender();
-		this.renderer.renderTitleScreen(function() {
-			self.loadLevel(self.levelID, function() {
-				self.createPlayers();
-				self.resetScore();
-				self.startRender();	
+		this.renderer.renderTitleScreen(() => {
+			this.loadLevel(this.levelID, () => {
+				this.createPlayers();
+				this.resetScore();
+				this.startRender();	
 			});	
 		});
-		
 	}
 
 	// go function but for edit mode
-	this.edit = function() {
+	edit() {
 		this.bootstrap();
 		this.levels.getLevelList();
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
-		var s = setTimeout(function() {
-			self.startRender();
+		var s = setTimeout(() => {
+			this.startRender();
 		},1000);
 	}
 
-	this.bootstrap = function() {
+	bootstrap() {
 		var tileSet = new TileSet();
 		var tiles = tileSet.getTiles();
 
@@ -93,26 +88,25 @@ function Jetpack() {
 		
 		var apiLocation = 'http://' + window.location.hostname + '/levels/';
 		
-		console.log('apiLocation',apiLocation);
 		var loader: Loader = new Loader(apiLocation);
 		
 		this.levels = new Levels(this, loader);
 	}
 
-	this.startRender = function() {
+	startRender() {
 		if (!this.paused) return false;
 		window.cancelAnimationFrame(this.animationHandle);
 		this.map.markAllForRedraw();
 		this.paused = false;
-		this.animationHandle = window.requestAnimationFrame(() => self.renderer.render());
+		this.animationHandle = window.requestAnimationFrame(() => this.renderer.render());
 	}
 
-	this.resetScore = function(score) {
+	resetScore(score) {
 		this.score = 0;
 		this.addScore(0);
 	}
 
-	this.addScore = function(amount) {
+	addScore(amount) {
 		this.score += amount;
 		var scoreElement = document.getElementById('score');
 		if (scoreElement) {
@@ -121,7 +115,7 @@ function Jetpack() {
 	}
 
 	// or at least try
-	this.completeLevel = function() {
+	completeLevel() {
 		this.collectable = this.getCollectable();
 		var playerCount: number = this.countPlayers();
 		if (this.collectable < 1 && playerCount < 2) {
@@ -129,24 +123,24 @@ function Jetpack() {
 		}
 	}
 
-	this.nextLevel = function() {
+	nextLevel() {
 		this.levelID ++;
 		this.go();
 	}
 
-	this.pauseRender = function() {
+	pauseRender() {
 		this.paused = true;
 		window.cancelAnimationFrame(this.animationHandle);
 	}
 
-	this.doPlayerCalcs = function() {
+	doPlayerCalcs() {
 		for (var i in this.players) {
-			var player = this.players[i]
+			var player: Player = this.players[i]
 			player.doCalcs();
 		}
 	}
 
-	this.countPlayers = function() : number {
+	countPlayers() : number {
 		var count: number = 0;
 		for (var i in this.players) {
 			if (this.players[i]) count++;
@@ -155,28 +149,28 @@ function Jetpack() {
 	}
 
 	// cycle through all map tiles, find egg cups etc and create players
-	this.createPlayers = function() {
+	createPlayers() {
 		this.destroyPlayers();
 		var tiles = this.map.getAllTiles();
-		tiles.map(function(tile) {
-			var type = self.map.getTileProperty(tile,'createPlayer');
+		tiles.map((tile) => {
+			var type = this.map.getTileProperty(tile,'createPlayer');
 			if (type) {
 				var coords = new Coords(tile.x, tile.y);
-				self.createNewPlayer(type, coords, 1);
+				this.createNewPlayer(type, coords, 1);
 			}
 		});
 	}
 
-	this.destroyPlayers = function() {
+	destroyPlayers() {
 		this.players = [];
 	}
 
 	// cycle through all map tiles, find egg cups etc and create players
-	this.getCollectable = function() {
+	getCollectable() {
 		var collectable = 0;
 		var tiles = this.map.getAllTiles();
-		tiles.map(function(tile) {
-			var score = self.map.getTileProperty(tile,'collectable');
+		tiles.map((tile) => {
+			var score = this.map.getTileProperty(tile,'collectable');
 			if (score > 0) {
 				collectable += score;
 			}
@@ -184,12 +178,12 @@ function Jetpack() {
 		return collectable;
 	}
 
-	this.deletePlayer = function(player:Player) {
+	deletePlayer(player:Player) {
 		delete this.players[player.id];
 	}
 
 	// create player and load their sprite
-	this.createNewPlayer = function(type: string, coords: Coords, direction:number) {
+	createNewPlayer(type: string, coords: Coords, direction:number) : Player {
 		var playerType = this.playerTypes[type];
 		var params = JSON.parse(JSON.stringify(playerType));
 		params.id = this.nextPlayerID++;
@@ -208,9 +202,9 @@ function Jetpack() {
 	}
 
 	// make this actually fucking rotate, and choose direction, and do the visual effect thing
-	this.rotateBoard = function(clockwise) {
+	rotateBoard(clockwise) {
 		
-		self.pauseRender();
+		this.pauseRender();
 
 		this.map.rotateBoard(clockwise);
 
@@ -218,44 +212,44 @@ function Jetpack() {
 			this.map.rotatePlayer(this.players[i], clockwise);
 		}
 
-		this.renderer.drawRotatingBoard(clockwise, function() {
-			self.startRender();
+		this.renderer.drawRotatingBoard(clockwise, () => {
+			this.startRender();
 		});
 
 		return true;
 	}
 
-	this.revertEditMessage = function() {
+	revertEditMessage() {
 		var s = setTimeout(function() {
 			var message = document.getElementById('message');
 			message.innerHTML="EDIT MODE";
 		},3000);
 	}
 
-	this.showEditMessage = function(text) {
+	showEditMessage(text) {
 		if (!this.editMode) return false;
 		var message = document.getElementById('message');
 		message.innerHTML = text;
 		this.revertEditMessage();
 	}
 
-	this.saveLevel = function() {
-		this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, function(levelID) {
+	saveLevel() {
+		this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, (levelID) => {
 			var text = "Level " + levelID + " saved";
-			self.showEditMessage(text);
+			this.showEditMessage(text);
 		});
 	}
 
-	this.loadLevelFromList = function() {
+	loadLevelFromList() {
 		var select = document.getElementById('levelList');
         var index = select.selectedIndex;
         var levelID = select.options[index].value;
-    	self.loadLevel(levelID, function() {
+    	this.loadLevel(levelID, function() {
     		console.log('loaded!');
     	});        
 	}
 
-	this.loadLevel = function(levelID, callback) {
+	loadLevel(levelID, callback) {
 		this.levels.loadLevel(levelID, (data) => {
 			var text = "Level " + data.levelID + " loaded!";
 			this.showEditMessage(text);
@@ -267,28 +261,28 @@ function Jetpack() {
 		})
 	}
 
-	this.bindSizeHandler = function() {
+	bindSizeHandler() {
 		window.addEventListener('resize', () => {
 			this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
 		});
 	}
 
-	this.bindClickHandler = function() {
+	bindClickHandler() {
 		var canvas = document.getElementById('canvas');
-		canvas.addEventListener('click', function(event) {
-		    var tileSize = self.renderer.tileSize;
+		canvas.addEventListener('click', (event) => {
+		    var tileSize = this.renderer.tileSize;
 		    var coords = {
 		    	x: parseInt(event.offsetX / tileSize),
 	        	y: parseInt(event.offsetY / tileSize),
 	        	offsetX: (event.offsetX % tileSize) - (tileSize / 2),
 	        	offsetY: (event.offsetY % tileSize) - (tileSize / 2)
 	        }
-	        self.handleClick(coords);
+	        this.handleClick(coords);
 	    });
 	}
 
 	// coords is always x,y,offsetX, offsetY
-	this.handleClick = function(coords) {
+	handleClick(coords) {
 		if (this.editMode) {
 			this.map.cycleTile(coords.x,coords.y);	
 		} else {

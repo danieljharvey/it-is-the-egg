@@ -1,6 +1,6 @@
-function TileSet() {
+class TileSet {
 	
-	this.getTiles = function() {
+	getTiles() {
 		var tiles={
 			1: {
 				'id':1,

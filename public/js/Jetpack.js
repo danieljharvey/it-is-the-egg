@@ -1,8 +1,9 @@
-function Collisions(jetpack) {
-    var self = this;
-    this.jetpack = jetpack;
+var Collisions = (function () {
+    function Collisions(jetpack) {
+        this.jetpack = jetpack;
+    }
     // only deal with horizontal collisions for now
-    this.checkCollision = function (player1, player2) {
+    Collisions.prototype.checkCollision = function (player1, player2) {
         if (!player1 || !player2)
             return false;
         if (player1.id == player2.id)
@@ -38,7 +39,7 @@ function Collisions(jetpack) {
             }
         }
     };
-    this.combinePlayers = function (player1, player2) {
+    Collisions.prototype.combinePlayers = function (player1, player2) {
         //console.log('combinePlayers', player1, player2);
         if (player1.type == 'egg' && player2.type == 'egg') {
             var type = 'red-egg';
@@ -67,7 +68,8 @@ function Collisions(jetpack) {
         this.jetpack.deletePlayer(player1);
         this.jetpack.deletePlayer(player2);
     };
-}
+    return Collisions;
+}());
 var Coords = (function () {
     function Coords(x, y, offsetX, offsetY) {
         if (offsetX === void 0) { offsetX = 0; }
@@ -83,98 +85,96 @@ var Coords = (function () {
     }
     return Coords;
 }());
-function Jetpack() {
-    var self = this;
-    this.paused = true;
-    this.editMode = false;
-    this.moveSpeed = 7;
-    this.levelID = 1;
-    this.map; // Map object
-    this.renderer; // Renderer object
-    this.collisions; // Collisions object
-    this.levels; // Levels object
-    this.nextPlayerID = 1;
-    this.score = 0;
-    this.collectable = 0; // total points on screen
-    this.playerTypes = {
-        'egg': {
-            'type': 'egg',
-            'title': "It is of course the egg",
-            'img': 'egg-sprite.png',
-            'frames': 18,
-            'multiplier': 1
-        },
-        'red-egg': {
-            'type': 'red-egg',
-            'title': "It is of course the red egg",
-            'img': 'egg-sprite-red.png',
-            'frames': 18,
-            'multiplier': 2
-        },
-        'blue-egg': {
-            'type': 'blue-egg',
-            'title': "It is of course the blue egg",
-            'img': 'egg-sprite-blue.png',
-            'frames': 18,
-            'multiplier': 5
-        },
-        'yellow-egg': {
-            'type': 'yellow-egg',
-            'title': "It is of course the yellow egg",
-            'img': 'egg-sprite-yellow.png',
-            'frames': 18,
-            'multiplier': 10
-        }
-    };
-    this.players = [];
-    this.go = function () {
+var Jetpack = (function () {
+    function Jetpack() {
+        this.paused = true;
+        this.editMode = false;
+        this.moveSpeed = 7;
+        this.levelID = 1;
+        this.nextPlayerID = 1;
+        this.score = 0;
+        this.collectable = 0; // total points on screen
+        this.playerTypes = {
+            'egg': {
+                'type': 'egg',
+                'title': "It is of course the egg",
+                'img': 'egg-sprite.png',
+                'frames': 18,
+                'multiplier': 1
+            },
+            'red-egg': {
+                'type': 'red-egg',
+                'title': "It is of course the red egg",
+                'img': 'egg-sprite-red.png',
+                'frames': 18,
+                'multiplier': 2
+            },
+            'blue-egg': {
+                'type': 'blue-egg',
+                'title': "It is of course the blue egg",
+                'img': 'egg-sprite-blue.png',
+                'frames': 18,
+                'multiplier': 5
+            },
+            'yellow-egg': {
+                'type': 'yellow-egg',
+                'title': "It is of course the yellow egg",
+                'img': 'egg-sprite-yellow.png',
+                'frames': 18,
+                'multiplier': 10
+            }
+        };
+    }
+    Jetpack.prototype.go = function () {
+        var _this = this;
         this.bootstrap();
         this.bindSizeHandler();
         this.bindClickHandler();
         this.pauseRender();
         this.renderer.renderTitleScreen(function () {
-            self.loadLevel(self.levelID, function () {
-                self.createPlayers();
-                self.resetScore();
-                self.startRender();
+            _this.loadLevel(_this.levelID, function () {
+                _this.createPlayers();
+                _this.resetScore();
+                _this.startRender();
             });
         });
     };
     // go function but for edit mode
-    this.edit = function () {
+    Jetpack.prototype.edit = function () {
+        var _this = this;
         this.bootstrap();
         this.levels.getLevelList();
         this.editMode = true;
         this.bindSizeHandler();
         this.bindClickHandler();
         var s = setTimeout(function () {
-            self.startRender();
+            _this.startRender();
         }, 1000);
     };
-    this.bootstrap = function () {
+    Jetpack.prototype.bootstrap = function () {
         var tileSet = new TileSet();
         var tiles = tileSet.getTiles();
         this.map = new Map(tiles);
         this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
         this.collisions = new Collisions(this);
         var apiLocation = 'http://' + window.location.hostname + '/levels/';
-        console.log('apiLocation', apiLocation);
         var loader = new Loader(apiLocation);
         this.levels = new Levels(this, loader);
     };
-    this.startRender = function () {
+    Jetpack.prototype.startRender = function () {
+        var _this = this;
         if (!this.paused)
             return false;
         window.cancelAnimationFrame(this.animationHandle);
         this.map.markAllForRedraw();
         this.paused = false;
-        this.animationHandle = window.requestAnimationFrame(function () { return self.renderer.render(); });
+        this.animationHandle = window.requestAnimationFrame(function () { return _this.renderer.render(); });
     };
-    this.resetScore = function (score) {
+    Jetpack.prototype.resetScore = function (score) {
         this.score = 0;
         this.addScore(0);
     };
-    this.addScore = function (amount) {
+    Jetpack.prototype.addScore = function (amount) {
         this.score += amount;
         var scoreElement = document.getElementById('score');
         if (scoreElement) {
@@ -182,28 +182,28 @@ function Jetpack() {
         }
     };
     // or at least try
-    this.completeLevel = function () {
+    Jetpack.prototype.completeLevel = function () {
         this.collectable = this.getCollectable();
         var playerCount = this.countPlayers();
         if (this.collectable < 1 && playerCount < 2) {
             this.nextLevel();
         }
     };
-    this.nextLevel = function () {
+    Jetpack.prototype.nextLevel = function () {
         this.levelID++;
         this.go();
     };
-    this.pauseRender = function () {
+    Jetpack.prototype.pauseRender = function () {
         this.paused = true;
         window.cancelAnimationFrame(this.animationHandle);
     };
-    this.doPlayerCalcs = function () {
+    Jetpack.prototype.doPlayerCalcs = function () {
         for (var i in this.players) {
             var player = this.players[i];
             player.doCalcs();
         }
     };
-    this.countPlayers = function () {
+    Jetpack.prototype.countPlayers = function () {
         var count = 0;
         for (var i in this.players) {
             if (this.players[i])
@@ -212,37 +212,39 @@ function Jetpack() {
         return count;
     };
     // cycle through all map tiles, find egg cups etc and create players
-    this.createPlayers = function () {
+    Jetpack.prototype.createPlayers = function () {
+        var _this = this;
         this.destroyPlayers();
         var tiles = this.map.getAllTiles();
         tiles.map(function (tile) {
-            var type = self.map.getTileProperty(tile, 'createPlayer');
+            var type = _this.map.getTileProperty(tile, 'createPlayer');
             if (type) {
                 var coords = new Coords(tile.x, tile.y);
-                self.createNewPlayer(type, coords, 1);
+                _this.createNewPlayer(type, coords, 1);
             }
         });
     };
-    this.destroyPlayers = function () {
+    Jetpack.prototype.destroyPlayers = function () {
         this.players = [];
     };
     // cycle through all map tiles, find egg cups etc and create players
-    this.getCollectable = function () {
+    Jetpack.prototype.getCollectable = function () {
+        var _this = this;
         var collectable = 0;
         var tiles = this.map.getAllTiles();
         tiles.map(function (tile) {
-            var score = self.map.getTileProperty(tile, 'collectable');
+            var score = _this.map.getTileProperty(tile, 'collectable');
             if (score > 0) {
                 collectable += score;
             }
         });
         return collectable;
     };
-    this.deletePlayer = function (player) {
+    Jetpack.prototype.deletePlayer = function (player) {
         delete this.players[player.id];
     };
     // create player and load their sprite
-    this.createNewPlayer = function (type, coords, direction) {
+    Jetpack.prototype.createNewPlayer = function (type, coords, direction) {
         var playerType = this.playerTypes[type];
         var params = JSON.parse(JSON.stringify(playerType));
         params.id = this.nextPlayerID++;
@@ -260,45 +262,47 @@ function Jetpack() {
         return player;
     };
     // make this actually fucking rotate, and choose direction, and do the visual effect thing
-    this.rotateBoard = function (clockwise) {
-        self.pauseRender();
+    Jetpack.prototype.rotateBoard = function (clockwise) {
+        var _this = this;
+        this.pauseRender();
         this.map.rotateBoard(clockwise);
         for (var i in this.players) {
             this.map.rotatePlayer(this.players[i], clockwise);
         }
         this.renderer.drawRotatingBoard(clockwise, function () {
-            self.startRender();
+            _this.startRender();
         });
         return true;
     };
-    this.revertEditMessage = function () {
+    Jetpack.prototype.revertEditMessage = function () {
         var s = setTimeout(function () {
             var message = document.getElementById('message');
             message.innerHTML = "EDIT MODE";
         }, 3000);
     };
-    this.showEditMessage = function (text) {
+    Jetpack.prototype.showEditMessage = function (text) {
         if (!this.editMode)
             return false;
         var message = document.getElementById('message');
         message.innerHTML = text;
         this.revertEditMessage();
     };
-    this.saveLevel = function () {
+    Jetpack.prototype.saveLevel = function () {
+        var _this = this;
         this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, function (levelID) {
             var text = "Level " + levelID + " saved";
-            self.showEditMessage(text);
+            _this.showEditMessage(text);
         });
     };
-    this.loadLevelFromList = function () {
+    Jetpack.prototype.loadLevelFromList = function () {
         var select = document.getElementById('levelList');
         var index = select.selectedIndex;
         var levelID = select.options[index].value;
-        self.loadLevel(levelID, function () {
+        this.loadLevel(levelID, function () {
             console.log('loaded!');
         });
     };
-    this.loadLevel = function (levelID, callback) {
+    Jetpack.prototype.loadLevel = function (levelID, callback) {
         var _this = this;
         this.levels.loadLevel(levelID, function (data) {
             var text = "Level " + data.levelID + " loaded!";
@@ -310,27 +314,28 @@ function Jetpack() {
             callback();
         });
     };
-    this.bindSizeHandler = function () {
+    Jetpack.prototype.bindSizeHandler = function () {
         var _this = this;
         window.addEventListener('resize', function () {
             _this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
         });
     };
-    this.bindClickHandler = function () {
+    Jetpack.prototype.bindClickHandler = function () {
+        var _this = this;
         var canvas = document.getElementById('canvas');
         canvas.addEventListener('click', function (event) {
-            var tileSize = self.renderer.tileSize;
+            var tileSize = _this.renderer.tileSize;
             var coords = {
                 x: parseInt(event.offsetX / tileSize),
                 y: parseInt(event.offsetY / tileSize),
                 offsetX: (event.offsetX % tileSize) - (tileSize / 2),
                 offsetY: (event.offsetY % tileSize) - (tileSize / 2)
             };
-            self.handleClick(coords);
+            _this.handleClick(coords);
         });
     };
     // coords is always x,y,offsetX, offsetY
-    this.handleClick = function (coords) {
+    Jetpack.prototype.handleClick = function (coords) {
         if (this.editMode) {
             this.map.cycleTile(coords.x, coords.y);
         }
@@ -338,7 +343,8 @@ function Jetpack() {
             // destroy tile or something
         }
     };
-}
+    return Jetpack;
+}());
 var Levels = (function () {
     function Levels(jetpack, loader) {
         this.levelID = 0;
@@ -994,7 +1000,6 @@ var Renderer = (function () {
         return this.imagesFolder + tile.img;
     };
     Renderer.prototype.sizeCanvas = function () {
-        console.log("sizeCanvas", this.checkResize);
         if (!this.checkResize)
             return false;
         var maxBoardSize = this.getMaxBoardSize();
@@ -1151,8 +1156,10 @@ var Renderer = (function () {
     };
     return Renderer;
 }());
-function TileSet() {
-    this.getTiles = function () {
+var TileSet = (function () {
+    function TileSet() {
+    }
+    TileSet.prototype.getTiles = function () {
         var tiles = {
             1: {
                 'id': 1,
@@ -1244,5 +1251,6 @@ function TileSet() {
         };
         return tiles;
     };
-}
+    return TileSet;
+}());
 //# sourceMappingURL=Jetpack.js.map
