@@ -26,6 +26,9 @@ class Egg {
 		if ($action=='saveLevel') {
 			return $this->processSaveLevel($params);
 		}
+		if ($action=='getLevelsList') {
+			return $this->processGetLevelsList($params);
+		}
 		return $this->error("Action {$action} not found!");
 	}
 
@@ -47,6 +50,11 @@ class Egg {
 		}
 	}
 
+	protected function processGetLevelsList($params) {
+		$levelsList = $this->getLevelsList();
+		return $this->success($levelsList, "Got levels list!");
+	}
+
 	protected function error($msg) {
 		return json_encode([
 			'rc'=>2,
@@ -62,8 +70,16 @@ class Egg {
 		]);
 	}
 
-	protected function getLevelList() {
-		
+	protected function getLevelsList() {
+		$sql = "SELECT levelID FROM levels";
+		$stmt = $this->dbal->query($sql);
+
+		$levelsList = [];
+		while ($row = $stmt->fetch()) {
+			$levelID = $row['levelID'];
+			array_push($levelsList,$levelID);
+		}
+		return $levelsList;
 	}
 
 	public function getLevel(int $levelID) {
@@ -81,7 +97,7 @@ class Egg {
 	protected function updateLevel(int $levelID, $data) {
 		$success = $this->dbal->update('levels', ['data'=>$data], ['levelID'=>$levelID]);
 		if (!$success) return $this->error("Could not update level ID {$levelID}");
-		return $this->success("Level ID {$levelID} successfully updated!");		
+		return $this->success($levelID,"Level ID {$levelID} successfully updated!");		
 	}
 
 	protected function insertLevel($data) {
@@ -90,4 +106,5 @@ class Egg {
 		$levelID = $this->dbal->lastInsertId();
 		return $this->success($levelID, "New level ID {$levelID} successfully saved!");
 	}
+
 }

@@ -91,7 +91,7 @@ function Jetpack() {
 
 		this.collisions = new Collisions(this);
 		
-		var apiLocation = window.location.href + 'levels/';
+		var apiLocation = 'http://' + window.location.hostname + '/levels/';
 		
 		console.log('apiLocation',apiLocation);
 		var loader: Loader = new Loader(apiLocation);
@@ -104,7 +104,7 @@ function Jetpack() {
 		window.cancelAnimationFrame(this.animationHandle);
 		this.map.markAllForRedraw();
 		this.paused = false;
-		this.animationHandle = window.requestAnimationFrame(self.renderer.render);
+		this.animationHandle = window.requestAnimationFrame(() => self.renderer.render());
 	}
 
 	this.resetScore = function(score) {
@@ -189,7 +189,7 @@ function Jetpack() {
 	}
 
 	// create player and load their sprite
-	this.createNewPlayer = function(type, coords, direction) {
+	this.createNewPlayer = function(type: string, coords: Coords, direction:number) {
 		var playerType = this.playerTypes[type];
 		var params = JSON.parse(JSON.stringify(playerType));
 		params.id = this.nextPlayerID++;
@@ -250,7 +250,9 @@ function Jetpack() {
 		var select = document.getElementById('levelList');
         var index = select.selectedIndex;
         var levelID = select.options[index].value;
-    	self.loadLevel(levelID);        
+    	self.loadLevel(levelID, function() {
+    		console.log('loaded!');
+    	});        
 	}
 
 	this.loadLevel = function(levelID, callback) {

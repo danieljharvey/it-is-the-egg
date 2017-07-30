@@ -6,5 +6,8 @@
         "outFile": "public/js/Jetpack.js",
         "rootDir": "include/ts/",
         "sourceMap": true
-    }
+    },
+    "include": [
+        "include/ts/*"
+    ]
 }

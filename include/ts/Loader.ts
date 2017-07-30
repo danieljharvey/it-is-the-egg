@@ -39,7 +39,6 @@ class Loader {
 	paramsToFormData(params: object) : FormData {
 		var formData = new FormData();
 		for (var key in params) {
-			console.log(key,params[key]);
 			formData.append(key, params[key]);
 		}
 		return formData;

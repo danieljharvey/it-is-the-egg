@@ -1,8 +1,11 @@
-function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
+class Player {
 	
-	var self = this;
-
-	this.construct = function(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
+	map: Map;
+	renderer: Renderer;
+	jetpack: Jetpack;
+	collisions: Collisions;
+	
+	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
 			this[i] = params[i];
 		}
@@ -12,7 +15,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		this.collisions = collisions;
 	}
 
-	this.doCalcs = function() {
+	doCalcs() {
 		this.setRedrawAroundPlayer();
 		this.incrementPlayerFrame();
 	    this.checkFloorBelowPlayer();
@@ -20,7 +23,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 	    this.checkPlayerCollisions();
 	}
 
-	this.setRedrawAroundPlayer = function() {
+	setRedrawAroundPlayer() {
 		// first just do the stuff around player
 		for (var x = this.x - 1; x < this.x + 2; x++) {
 			for (var y = this.y - 1; y < this.y + 2; y++) {
@@ -30,7 +33,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		}
 	}
 
-	this.incrementPlayerFrame = function() {
+	incrementPlayerFrame() {
 		if (this.direction===0 && this.oldDirection===0 && this.currentFrame===0) {
 			// we are still, as it should be
 			return false;
@@ -53,7 +56,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		}
 	}
 
-	this.checkPlayerTileAction = function() {
+	checkPlayerTileAction() {
 
 		if (this.offsetX != 0 || this.offsetY != 0) return false;
 
@@ -97,14 +100,14 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		}
 	}
 
-	this.checkPlayerCollisions = function() {
+	checkPlayerCollisions() {
 		for (var i in this.jetpack.players) {
 			var player = this.jetpack.players[i];
 			this.collisions.checkCollision(this, player);	
 		}
 	}
 
-	this.incrementPlayerDirection = function() {
+	incrementPlayerDirection() {
 
 		if (this.falling) return false;
 		/*
@@ -148,7 +151,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		this.checkIfPlayerIsInNewTile();
 	}
 
-	this.checkIfPlayerIsInNewTile = function() {
+	checkIfPlayerIsInNewTile() {
 		if (this.offsetX > this.renderer.tileSize) {
 			this.offsetX = 0;
 			this.x ++;
@@ -175,7 +178,7 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 		this.y = coords.y;
 	}
 
-	this.checkFloorBelowPlayer = function() {
+	checkFloorBelowPlayer() {
 		
 		if (this.offsetX !== 0) return false;
 
@@ -195,7 +198,4 @@ function Player(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, 
 
 		this.checkIfPlayerIsInNewTile();
 	}
-
-	this.construct(params, map, renderer, jetpack, collisions);
-
 }

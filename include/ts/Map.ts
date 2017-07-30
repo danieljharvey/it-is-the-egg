@@ -1,27 +1,27 @@
-function Map(tiles) {
-	
-	var self = this;
+class Map {
 
-	this.tiles = tiles;
+	tiles: object;
+	renderAngle: number = 0;
 
-	this.boardSize = {
+	boardSize: object = {
 		width: 14,
 		height: 14
 	};
 
-	this.board = [];
+	board: array = [];
 	
-	this.construct = function() {
+	constructor(tiles: object) {
+		this.tiles = tiles;
 		this.board = this.generateBlankBoard();
 	}
 
-	this.updateBoard = function(board: object, boardSize: object) {
+	updateBoard(board: object, boardSize: object) {
 		this.board = board;
 		this.boardSize = boardSize;
 		this.markAllForRedraw();
 	}
 
-	this.correctForOverflow = function(x:number, y:number): Coords {
+	correctForOverflow(x:number, y:number): Coords {
 		if (x < 0) {
 			newX = this.boardSize.width - 1;
 		} else if (x >= this.boardSize.width) {
@@ -40,17 +40,18 @@ function Map(tiles) {
 		return new Coords(newX, newY);
 	}
 
-	this.getTileProperty = function(tile, property) {
+	getTileProperty(tile, property) {
 		if (!tile.hasOwnProperty(property)) return false;
 		return tile[property];
 
 	}
-	this.tileIsBreakable = function(tile) {
+	
+	tileIsBreakable(tile) {
 		return this.getTileProperty(tile,'breakable');
 	}
 
 	// is intended next tile empty / a wall?
-	this.checkTileIsEmpty = function(x,y) {
+	checkTileIsEmpty(x,y) {
 
 		var coords = this.correctForOverflow(x,y);
 
@@ -59,7 +60,7 @@ function Map(tiles) {
 		return tile.background;
 	}
 
-	this.markAllForRedraw = function() {
+	markAllForRedraw() {
 		// force redraw
 		for (var x in this.board) {
 			for (var y in this.board[x]) {
@@ -68,11 +69,11 @@ function Map(tiles) {
 		}
 	}
 
-	this.getTileAction = function(tile) {
+	getTileAction(tile) {
 		return this.getTileProperty(tile,'action');
 	}
 
-	this.generateBlankBoard = function() {
+	generateBlankBoard() {
 		var board=[];
 
 		for (var x = 0; x < this.boardSize.width; x++) {
@@ -85,16 +86,16 @@ function Map(tiles) {
 		return board;
 	}
 
-	this.getTile = function(id) {
+	getTile(id) {
 		var tile = JSON.parse(JSON.stringify(this.tiles[id])); // create copy of object so we're not changing original
 		return tile;
 	}
 
-	this.getRandomTile = function(tiles) {
-		var randomProperty = function (obj) {
+	getRandomTile(tiles) {
+		var randomProperty = (obj) => {
 		    var keys = Object.keys(obj);
 		    var randomKey = keys[ keys.length * Math.random() << 0];
-		    return self.getTile(randomKey);
+		    return this.getTile(randomKey);
 		};
 
 		var theseTiles = JSON.parse(JSON.stringify(tiles));
@@ -107,7 +108,7 @@ function Map(tiles) {
 		return randomProperty(theseTiles);
 	}
 
-	this.getBlankBoard = function() {
+	getBlankBoard() {
 		var newBoard=[];
 		for (var x =0; x < this.boardSize.width; x++) {
 			newBoard[x]=[];
@@ -118,7 +119,7 @@ function Map(tiles) {
 		return newBoard;
 	}
 
-	this.translateRotation = function(x,y,clockwise) {
+	translateRotation(x,y,clockwise) {
 		var coords={
 			x:0,
 			y:0
@@ -145,7 +146,7 @@ function Map(tiles) {
 		return coords;
 	}
 
-	this.rotateBoard = function(clockwise) {
+	rotateBoard(clockwise) {
 		var newBoard=this.getBlankBoard();
 
 		var width = this.boardSize.width -1;
@@ -176,7 +177,7 @@ function Map(tiles) {
 	}
 
 
-	this.rotatePlayer = function(player: Player, clockwise) {
+	rotatePlayer(player: Player, clockwise) {
 		
 		var coords = this.translateRotation(player.x, player.y, clockwise);
 		
@@ -196,7 +197,7 @@ function Map(tiles) {
 	}
 
 	// return array with all tiles in (with x and y added)
-	this.getAllTiles = function() {
+	getAllTiles() {
 		var allTiles = [];
 		for (var x in this.board) {
 			for (var y in this.board[x]) {
@@ -210,7 +211,7 @@ function Map(tiles) {
 		return allTiles;
 	}
 	
-	this.cycleTile = function(x:number, y:number) {
+	cycleTile(x:number, y:number) {
 		var currentTile = this.board[x][y];
 
 		var currentKey = currentTile.id;
@@ -229,7 +230,5 @@ function Map(tiles) {
 	    var tile = this.getTile(newKey);
 	    this.board[x][y] = tile;
 	}
-
-	this.construct();
 
 }

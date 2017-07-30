@@ -12,8 +12,10 @@ class Levels {
 	}
 
 	getLevelList(): void {
-		this.levelList = Object.keys(localStorage);
-		this.populateLevelsList();
+		this.loader.callServer('getLevelsList',{}, (data) => {
+			this.levelList = data.data;
+			this.populateLevelsList();
+		});
 	}
 
 	populateLevelsList(): void {
@@ -22,14 +24,23 @@ class Levels {
 		while (select.firstChild) {
 		    select.removeChild(select.firstChild);
 		}
+		var nullEl = document.createElement('option');
+		nullEl.textContent = "New";
+		nullEl.value = false;
+		if (!this.levelID) nullEl.selected = true;
+		select.appendChild(nullEl);
+
 		for (var i in this.levelList) {
 		    var levelID:number = parseInt(this.levelList[i]);
 		    var el = document.createElement("option");
-		    el.textContent = levelID;
-		    el.value = levelID;
+		    el.textContent = levelID.toString();
+		    el.value = levelID.toString();
+		    console.log(levelID, this.levelID);
+		    if (levelID == this.levelID) {
+		    	el.selected = true;
+		    }
 		    select.appendChild(el);
 		}​
-		select.addEventListener('click',this.jetpack.loadLevelFromList);
 	}
 
 	generateLevelID(): number {
@@ -43,11 +54,6 @@ class Levels {
 	}
 
 	saveLevel(board: object, boardSize: object, levelID: number, callback: (number) => any): void {
-		if (!levelID) levelID = this.generateLevelID();
-		if (!levelID) {
-			console.log("ALL LEVELS SAVED, GIVE UP");
-			return false;
-		}
 		var saveData = {
 			'board':board,
 			'boardSize':boardSize,
@@ -55,10 +61,18 @@ class Levels {
 		}
 		var saveString:string = JSON.stringify(saveData);
 		var saveKey:string = levelID.toString();
-		localStorage.setItem(saveKey, saveString);
-		this.getLevelList();
-		this.levelID = levelID;
-		callback(levelID);
+		var params = {
+			data: saveString
+		};
+		if (levelID) {
+			params.levelID = levelID;
+		}
+		this.loader.callServer('saveLevel', params, (data: object) => {
+			this.levelID = data.data;
+			callback(data.data);
+		},function(errorMsg: string) {
+			console.log('ERROR: ',errorMsg);
+		});
 	}
 
 	loadLevel(levelID: number, callback: (object) => any): void {
@@ -66,8 +80,8 @@ class Levels {
 		var params = {
 			levelID: levelID
 		}
-		this.loader.callServer('getLevel',params,function(data: object) {
-			this.levelID = data.levelID;
+		this.loader.callServer('getLevel',params, (data: object) => {
+			this.levelID = levelID;
 			callback(data.data);
 		}, function(errorMsg: string) {
 			console.log('ERROR: ',errorMsg);
