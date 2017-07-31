@@ -1,4 +1,4 @@
-class Levels {
+export class Levels {
 	
 	levelID:number = 0;
 	levels:object = {};

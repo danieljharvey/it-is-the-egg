@@ -1,4 +1,4 @@
-class Renderer {
+export class Renderer {
 
 	jetpack: Jetpack;
 	map: Map;

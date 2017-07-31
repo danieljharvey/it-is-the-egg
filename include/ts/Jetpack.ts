@@ -1,4 +1,4 @@
-class Jetpack {
+export class Jetpack {
 
 	paused: boolean = true;
 	editMode: boolean = false;

@@ -1,4 +1,4 @@
-class Coords {
+export class Coords {
 	x: number = 0;
 	y: number = 0;
 	offsetX: number = 0;

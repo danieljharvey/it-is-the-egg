@@ -1,4 +1,4 @@
-class TileSet {
+export class TileSet {
 	
 	getTiles() {
 		var tiles={

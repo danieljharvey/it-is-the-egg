@@ -5,7 +5,9 @@
         "target": "ES5",
         "outFile": "public/js/Jetpack.js",
         "rootDir": "include/ts/",
-        "sourceMap": true
+        "sourceMap": true,
+		"types": [ "node", "mocha", "chai", "bunyan", "lodash"],
+		"typeRoots": ["typings"]
     },
     "include": [
         "include/ts/*"

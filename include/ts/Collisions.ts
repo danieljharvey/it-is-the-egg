@@ -1,4 +1,4 @@
-class Collisions {
+export class Collisions {
 
 	jetpack: Jetpack;
 

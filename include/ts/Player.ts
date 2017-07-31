@@ -1,10 +1,18 @@
-class Player {
+export class Player {
 	
 	map: Map;
 	renderer: Renderer;
 	jetpack: Jetpack;
 	collisions: Collisions;
-	
+
+	x: number;
+	y: number;
+	offsetX: number;
+	offsetY: number;
+	direction: number;
+	oldDirection: number;
+	currentFrame: number;
+
 	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
 			this[i] = params[i];
