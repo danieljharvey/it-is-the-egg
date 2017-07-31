@@ -1,0 +1,40 @@
+{
+  "name": "it-is-the-egg",
+  "version": "1.0.0",
+  "description": "Egg game",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danieljharvey/it-is-the-egg.git"
+  },
+  "keywords": [
+    "Egg"
+  ],
+  "author": "Daniel J Harvey",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danieljharvey/it-is-the-egg/issues"
+  },
+  "homepage": "https://github.com/danieljharvey/it-is-the-egg#readme",
+  "devDependencies": {
+    "@types/jest": "^20.0.5",
+    "jest": "^20.0.4",
+    "ts-jest": "^20.0.7",
+    "typescript": "^2.4.2"
+  },
+	"jest": {
+		"transform": {
+			".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+		},
+		"testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+		"moduleFileExtensions": [
+			"ts",
+			"tsx",
+			"js"
+		]
+	}
+
+}

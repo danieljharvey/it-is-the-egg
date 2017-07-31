@@ -5,13 +5,13 @@ export class Player {
 	jetpack: Jetpack;
 	collisions: Collisions;
 
-	x: number;
-	y: number;
-	offsetX: number;
-	offsetY: number;
-	direction: number;
-	oldDirection: number;
-	currentFrame: number;
+	x: number = 0;
+	y: number = 0;
+	offsetX: number = 0;
+	offsetY: number = 0;
+	direction: number = 0;
+	oldDirection: number = 0;
+	currentFrame: number = 0;
 
 	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
