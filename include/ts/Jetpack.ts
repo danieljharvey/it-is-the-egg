@@ -1,4 +1,4 @@
-export class Jetpack {
+class Jetpack {
 
 	paused: boolean = true;
 	editMode: boolean = false;
@@ -204,7 +204,7 @@ export class Jetpack {
 
 	// make this actually fucking rotate, and choose direction, and do the visual effect thing
 	rotateBoard(clockwise) {
-		
+		if (this.paused || this.editMode) return false;
 		this.pauseRender();
 
 		this.map.rotateBoard(clockwise);
@@ -283,14 +283,12 @@ export class Jetpack {
 	}
 
 	bindKeyboardHandler() {
-		window.addEventListener('onkeydown', (event) => {
+		window.addEventListener('keydown', (event) => {
 			if (event.keyCode == '37') {
-				// left
 				this.rotateBoard(false);
 			}
 			
 			if (event.keyCode == '39') {
-				// right
 				this.rotateBoard(true);
 			}
 		});

@@ -1,4 +1,4 @@
-export class Loader {
+class Loader {
 
 	apiLocation: string;
 	

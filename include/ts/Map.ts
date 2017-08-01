@@ -1,4 +1,4 @@
-export class Map {
+class Map {
 
 	tiles: object;
 	renderAngle: number = 0;
