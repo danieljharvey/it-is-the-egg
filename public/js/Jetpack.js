@@ -159,6 +159,7 @@ System.register("Jetpack", [], function (exports_3, context_3) {
                     this.bootstrap();
                     this.bindSizeHandler();
                     this.bindClickHandler();
+                    this.bindKeyboardHandler();
                     this.pauseRender();
                     this.renderer.renderTitleScreen(function () {
                         _this.loadLevel(_this.levelID, function () {
@@ -361,6 +362,19 @@ System.register("Jetpack", [], function (exports_3, context_3) {
                             offsetY: (event.offsetY % tileSize) - (tileSize / 2)
                         };
                         _this.handleClick(coords);
+                    });
+                };
+                Jetpack.prototype.bindKeyboardHandler = function () {
+                    var _this = this;
+                    window.addEventListener('onkeydown', function (event) {
+                        if (event.keyCode == '37') {
+                            // left
+                            _this.rotateBoard(false);
+                        }
+                        if (event.keyCode == '39') {
+                            // right
+                            _this.rotateBoard(true);
+                        }
                     });
                 };
                 // coords is always x,y,offsetX, offsetY
@@ -774,6 +788,13 @@ System.register("Player", [], function (exports_7, context_7) {
         execute: function () {
             Player = (function () {
                 function Player(params, map, renderer, jetpack, collisions) {
+                    this.x = 0;
+                    this.y = 0;
+                    this.offsetX = 0;
+                    this.offsetY = 0;
+                    this.direction = 0;
+                    this.oldDirection = 0;
+                    this.currentFrame = 0;
                     for (var i in params) {
                         this[i] = params[i];
                     }
@@ -854,12 +875,19 @@ System.register("Player", [], function (exports_7, context_7) {
                     else if (action == 'completeLevel') {
                         this.jetpack.completeLevel();
                     }
+                    else if (action == 'teleport') {
+                        this.teleport();
+                    }
                 };
                 Player.prototype.checkPlayerCollisions = function () {
                     for (var i in this.jetpack.players) {
                         var player = this.jetpack.players[i];
                         this.collisions.checkCollision(this, player);
                     }
+                };
+                // find another teleport and go to it
+                // if no others, do nothing
+                Player.prototype.teleport = function () {
                 };
                 Player.prototype.incrementPlayerDirection = function () {
                     if (this.falling)
@@ -1343,6 +1371,37 @@ System.register("TileSet", [], function (exports_9, context_9) {
                             'frontLayer': true,
                             'collectable': 100
                         },
+                        14: {
+                            'id': 14,
+                            'title': 'Door',
+                            'img': 'door.png',
+                            'background': true,
+                            'needsDraw': false,
+                            'frontLayer': true,
+                            'action': 'teleport'
+                        }
+                        /*12: {
+                            'id':12,
+                            'title':'Turn left',
+                            'img':'left-turn.png',
+                            'background':true,
+                            'needsDraw':true,
+                            'action':'rotateLeft',
+                            'frontLayer':true,
+                            'dontAdd':true,
+                            'dontRotate':true
+                        },
+                        13: {
+                            'id':13,
+                            'title':'Turn Right',
+                            'img':'right-turn.png',
+                            'background':true,
+                            'needsDraw':true,
+                            'action':'rotateRight',
+                            'frontLayer':true,
+                            'dontAdd':true,
+                            'dontRotate':true
+                        }*/
                     };
                     return tiles;
                 };

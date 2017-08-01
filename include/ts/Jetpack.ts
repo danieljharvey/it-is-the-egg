@@ -53,6 +53,7 @@ export class Jetpack {
 		this.bootstrap();
 		this.bindSizeHandler();
 		this.bindClickHandler();
+		this.bindKeyboardHandler();
 		
 		this.pauseRender();
 		this.renderer.renderTitleScreen(() => {
@@ -279,6 +280,20 @@ export class Jetpack {
 	        }
 	        this.handleClick(coords);
 	    });
+	}
+
+	bindKeyboardHandler() {
+		window.addEventListener('onkeydown', (event) => {
+			if (event.keyCode == '37') {
+				// left
+				this.rotateBoard(false);
+			}
+			
+			if (event.keyCode == '39') {
+				// right
+				this.rotateBoard(true);
+			}
+		});
 	}
 
 	// coords is always x,y,offsetX, offsetY

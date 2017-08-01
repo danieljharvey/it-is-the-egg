@@ -1,14 +1,12 @@
 {
     "compilerOptions": {
-        "experimentalDecorators":true,
+        //"experimentalDecorators":true,
 		"emitDecoratorMetadata": true,
         "module": "system",
         "target": "ES5",
         "outFile": "public/js/Jetpack.js",
         "rootDir": "include/ts/",
-        "sourceMap": true,
-		"types": [ "node", "mocha", "chai", "bunyan", "lodash"],
-		"typeRoots": ["typings"]
+        "sourceMap": true
     },
     "include": [
         "include/ts/*"

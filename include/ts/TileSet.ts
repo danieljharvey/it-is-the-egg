@@ -89,6 +89,15 @@ export class TileSet {
 				'frontLayer':true,
 				'collectable':100
 			},
+			14: {
+				'id':14,
+				'title':'Door',
+				'img':'door.png',
+				'background':true,
+				'needsDraw':false,
+				'frontLayer':true,
+				'action':'teleport'
+			}
 			/*12: {
 				'id':12,
 				'title':'Turn left',

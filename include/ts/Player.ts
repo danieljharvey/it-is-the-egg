@@ -105,6 +105,8 @@ export class Player {
 			this.jetpack.rotateBoard(true);
 		} else if (action=='completeLevel') {
 			this.jetpack.completeLevel();
+		} else if (action=='teleport') {
+			this.teleport();
 		}
 	}
 
@@ -113,6 +115,12 @@ export class Player {
 			var player = this.jetpack.players[i];
 			this.collisions.checkCollision(this, player);	
 		}
+	}
+	
+	// find another teleport and go to it
+	// if no others, do nothing
+	teleport() {
+		
 	}
 
 	incrementPlayerDirection() {
