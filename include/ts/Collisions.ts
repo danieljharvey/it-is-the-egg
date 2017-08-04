@@ -1,4 +1,7 @@
-class Collisions {
+import { Jetpack } from './Jetpack';
+import { Player } from './Player';
+
+export class Collisions {
 
 	jetpack: Jetpack;
 

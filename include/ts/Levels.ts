@@ -1,4 +1,7 @@
-class Levels {
+import { Jetpack } from './Jetpack';
+import { Loader } from './Loader';
+
+export class Levels {
 	
 	levelID:number = 0;
 	levels:object = {};
@@ -62,7 +65,8 @@ class Levels {
 		var saveString:string = JSON.stringify(saveData);
 		var saveKey:string = levelID.toString();
 		var params = {
-			data: saveString
+			data: saveString,
+			levelID: 0
 		};
 		if (levelID) {
 			params.levelID = levelID;

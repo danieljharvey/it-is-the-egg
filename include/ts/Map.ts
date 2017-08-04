@@ -1,4 +1,7 @@
-class Map {
+import { Coords } from './Coords';
+import { Player } from './Player';
+
+export class Map {
 
 	tiles: object;
 	renderAngle: number = 0;
@@ -22,6 +25,7 @@ class Map {
 	}
 
 	correctForOverflow(x:number, y:number): Coords {
+		var newX, newY;
 		if (x < 0) {
 			newX = this.boardSize.width - 1;
 		} else if (x >= this.boardSize.width) {

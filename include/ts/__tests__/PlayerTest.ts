@@ -1,4 +1,4 @@
-
+/// <reference path="../Player.ts"/>
 import { Player } from '../Player.ts';
 
 test("Player Testing Time", () => {

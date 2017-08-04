@@ -1,4 +1,7 @@
-class Renderer {
+import { Jetpack } from './Jetpack';
+import { Map } from './Map';
+
+export class Renderer {
 
 	jetpack: Jetpack;
 	map: Map;

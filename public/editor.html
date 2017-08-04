@@ -1,7 +1,7 @@
 <html style='background-color: black;'>
 	<head>
 		<title>Level Editor</title>
-		<script src='js/Jetpack.js'></script>
+		<script data-main="edit" type="text/javascript" src='js/require.js'></script>
 	</head>
 	<style>
 		html, body {
@@ -46,13 +46,4 @@
 
 <script>
 var jetpack;
-
-// and here's the trick (works everywhere)
-function r(f){/in/.test(document.readyState)?setTimeout('r('+f+')',9):f()}
-// use like
-r(function(){
-    jetpack = new Jetpack();
-	jetpack.edit();
-});
-
 </script>

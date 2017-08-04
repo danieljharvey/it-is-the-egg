@@ -2,7 +2,7 @@
     "compilerOptions": {
         "experimentalDecorators":true,
 		"emitDecoratorMetadata": true,
-        "module": "system",
+        "module": "amd",
         "target": "ES5",
         "outFile": "public/js/Jetpack.js",
         "rootDir": "include/ts/",

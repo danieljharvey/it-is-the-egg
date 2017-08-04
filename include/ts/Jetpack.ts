@@ -1,4 +1,13 @@
-class Jetpack {
+import { Collisions } from './Collisions';
+import { Map } from './Map';
+import { Levels } from './Levels';
+import { Renderer } from './Renderer';
+import { Player } from './Player';
+import { TileSet } from './TileSet';
+import { Loader } from './Loader';
+import { Coords } from './Coords';
+
+export class Jetpack {
 
 	paused: boolean = true;
 	editMode: boolean = false;
@@ -59,7 +68,7 @@ class Jetpack {
 		this.renderer.renderTitleScreen(() => {
 			this.loadLevel(this.levelID, () => {
 				this.createPlayers();
-				this.resetScore();
+				this.resetScore(0);
 				this.startRender();	
 			});	
 		});
@@ -111,7 +120,7 @@ class Jetpack {
 		this.score += amount;
 		var scoreElement = document.getElementById('score');
 		if (scoreElement) {
-			scoreElement.innerHTML = this.score;
+			scoreElement.innerHTML = this.score.toString();
 		}
 	}
 
@@ -273,8 +282,8 @@ class Jetpack {
 		canvas.addEventListener('click', (event) => {
 		    var tileSize = this.renderer.tileSize;
 		    var coords = {
-		    	x: parseInt(event.offsetX / tileSize),
-	        	y: parseInt(event.offsetY / tileSize),
+		    	x: (event.offsetX / tileSize) as number,
+	        	y: (event.offsetY / tileSize) as number,
 	        	offsetX: (event.offsetX % tileSize) - (tileSize / 2),
 	        	offsetY: (event.offsetY % tileSize) - (tileSize / 2)
 	        }

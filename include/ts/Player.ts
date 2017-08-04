@@ -1,4 +1,10 @@
-class Player {
+import { Map } from './Map';
+import { Renderer } from './Renderer';
+import { Jetpack } from './Jetpack';
+import { Collisions } from './Collisions';
+import { Coords } from './Coords';
+
+export class Player {
 	
 	map: Map;
 	renderer: Renderer;
@@ -12,6 +18,12 @@ class Player {
 	direction: number = 0;
 	oldDirection: number = 0;
 	currentFrame: number = 0;
+	id: number = 0;
+	frames: number = 1;
+	multiplier: number = 1;
+	falling: boolean = false;
+	type: string = 'egg';
+	moveSpeed: number = 1;
 
 	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
@@ -160,7 +172,7 @@ class Player {
 		if (this.direction ==0 && this.falling==false) {
 			if (this.offsetX > 0) {
 				this.offsetX -= this.moveSpeed;
-			} else if (this.offSetX < 0) {
+			} else if (this.offsetX < 0) {
 				this.offsetX += this.moveSpeed;
 			}
 		}
