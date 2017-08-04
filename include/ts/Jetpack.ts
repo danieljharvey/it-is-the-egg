@@ -281,12 +281,12 @@ export class Jetpack {
 		var canvas = document.getElementById('canvas');
 		canvas.addEventListener('click', (event) => {
 		    var tileSize = this.renderer.tileSize;
-		    var coords = {
-		    	x: (event.offsetX / tileSize) as number,
-	        	y: (event.offsetY / tileSize) as number,
-	        	offsetX: (event.offsetX % tileSize) - (tileSize / 2),
-	        	offsetY: (event.offsetY % tileSize) - (tileSize / 2)
-	        }
+		    var coords = new Coords(
+		    	(event.offsetX / tileSize) as number,
+	        	(event.offsetY / tileSize) as number,
+	        	(event.offsetX % tileSize) - (tileSize / 2),
+	        	(event.offsetY % tileSize) - (tileSize / 2)
+	        )
 	        this.handleClick(coords);
 	    });
 	}
@@ -304,7 +304,7 @@ export class Jetpack {
 	}
 
 	// coords is always x,y,offsetX, offsetY
-	handleClick(coords) {
+	handleClick(coords: Coords) {
 		if (this.editMode) {
 			this.map.cycleTile(coords.x,coords.y);	
 		} else {

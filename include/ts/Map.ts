@@ -229,13 +229,14 @@ export class Map {
 	}
 	
 	cycleTile(x:number, y:number) {
+
 		var currentTile = this.board[x][y];
 
 		var currentKey = currentTile.id;
 
 		var keys = Object.keys(this.tiles);
 		
-		var newKey = nextKey = false;
+		var newKey = false, nextKey = false;
 		for (var i in keys) {
 			if (newKey===false || nextKey) newKey = keys[i];
 			if (keys[i]==currentKey) {

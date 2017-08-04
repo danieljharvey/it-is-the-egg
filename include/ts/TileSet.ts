@@ -94,7 +94,7 @@ export class TileSet {
 				'title':'Door',
 				'img':'door.png',
 				'background':true,
-				'needsDraw':false,
+				'needsDraw':true,
 				'frontLayer':true,
 				'action':'teleport'
 			}

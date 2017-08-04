@@ -9,8 +9,8 @@ define("Coords", ["require", "exports"], function (require, exports) {
             this.y = 0;
             this.offsetX = 0;
             this.offsetY = 0;
-            this.x = x;
-            this.y = y;
+            this.x = Math.floor(x);
+            this.y = Math.floor(y);
             this.offsetX = offsetX;
             this.offsetY = offsetY;
         }
@@ -708,7 +708,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
             var currentTile = this.board[x][y];
             var currentKey = currentTile.id;
             var keys = Object.keys(this.tiles);
-            var newKey = nextKey = false;
+            var newKey = false, nextKey = false;
             for (var i in keys) {
                 if (newKey === false || nextKey)
                     newKey = keys[i];
@@ -976,7 +976,7 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                     'title': 'Door',
                     'img': 'door.png',
                     'background': true,
-                    'needsDraw': false,
+                    'needsDraw': true,
                     'frontLayer': true,
                     'action': 'teleport'
                 }
@@ -1255,12 +1255,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             var canvas = document.getElementById('canvas');
             canvas.addEventListener('click', function (event) {
                 var tileSize = _this.renderer.tileSize;
-                var coords = {
-                    x: (event.offsetX / tileSize),
-                    y: (event.offsetY / tileSize),
-                    offsetX: (event.offsetX % tileSize) - (tileSize / 2),
-                    offsetY: (event.offsetY % tileSize) - (tileSize / 2)
-                };
+                var coords = new Coords_2.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
                 _this.handleClick(coords);
             });
         };
