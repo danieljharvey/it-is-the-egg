@@ -12,7 +12,7 @@ export class Jetpack {
 	paused: boolean = true;
 	editMode: boolean = false;
 
-	moveSpeed: number = 7;
+	moveSpeed: number = 8;
 
 	levelID: number = 1;
 

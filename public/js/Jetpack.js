@@ -319,6 +319,7 @@ define("Player", ["require", "exports"], function (require, exports) {
             this.falling = false;
             this.type = 'egg';
             this.moveSpeed = 1;
+            this.lastAction = 'string';
             for (var i in params) {
                 this[i] = params[i];
             }
@@ -412,6 +413,28 @@ define("Player", ["require", "exports"], function (require, exports) {
         // find another teleport and go to it
         // if no others, do nothing
         Player.prototype.teleport = function () {
+            if (this.lastAction == 'teleport')
+                return false;
+            var newTile = this.findTile(14);
+            if (newTile) {
+                this.x = newTile.x;
+                this.y = newTile.y;
+                this.lastAction = 'teleport';
+            }
+        };
+        // find random tile of type
+        Player.prototype.findTile = function (id) {
+            var _this = this;
+            var tiles = this.map.getAllTiles();
+            var teleporters = tiles.filter(function (tile) {
+                if (tile.x == _this.x && tile.y == _this.y)
+                    return false;
+                return (tile.id == id);
+            });
+            if (teleporters.length == 0)
+                return false; // no options
+            var newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
+            return newTile;
         };
         Player.prototype.incrementPlayerDirection = function () {
             if (this.falling)
@@ -423,6 +446,7 @@ define("Player", ["require", "exports"], function (require, exports) {
                 this.direction = 0;
                 return false;
             }*/
+            var moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
             if (this.direction < 0) {
                 if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
                     // turn around
@@ -431,7 +455,7 @@ define("Player", ["require", "exports"], function (require, exports) {
                 }
                 else {
                     // move
-                    this.offsetX -= this.moveSpeed;
+                    this.offsetX -= moveAmount;
                 }
             }
             if (this.direction > 0) {
@@ -442,40 +466,48 @@ define("Player", ["require", "exports"], function (require, exports) {
                 }
                 else {
                     // move
-                    this.offsetX += this.moveSpeed;
-                    ;
+                    this.offsetX += moveAmount;
                 }
             }
             // if we've stopped and ended up not quite squared up, correct this
             if (this.direction == 0 && this.falling == false) {
                 if (this.offsetX > 0) {
-                    this.offsetX -= this.moveSpeed;
+                    this.offsetX -= moveAmount;
                 }
                 else if (this.offsetX < 0) {
-                    this.offsetX += this.moveSpeed;
+                    this.offsetX += moveAmount;
                 }
             }
             this.checkIfPlayerIsInNewTile();
+        };
+        Player.prototype.calcMoveAmount = function (moveSpeed, tileSize) {
+            var fullSize = 64; // size of image tiles
+            var moveAmount = (tileSize / fullSize) * moveSpeed;
+            return Math.round(moveAmount);
         };
         Player.prototype.checkIfPlayerIsInNewTile = function () {
             if (this.offsetX > this.renderer.tileSize) {
                 this.offsetX = 0;
                 this.x++;
+                this.lastAction = '';
                 this.checkPlayerTileAction();
             }
             if (this.offsetX < (-1 * this.renderer.tileSize)) {
                 this.offsetX = 0;
                 this.x--;
+                this.lastAction = '';
                 this.checkPlayerTileAction();
             }
             if (this.offsetY > this.renderer.tileSize) {
                 this.offsetY = 0;
                 this.y++;
+                this.lastAction = '';
                 this.checkPlayerTileAction();
             }
             if (this.offsetY < (-1 * this.renderer.tileSize)) {
                 this.offsetY = 0;
                 this.y--;
+                this.lastAction = '';
                 this.checkPlayerTileAction();
             }
             // have we gone over the edge?
@@ -488,16 +520,18 @@ define("Player", ["require", "exports"], function (require, exports) {
                 return false;
             var coords = this.map.correctForOverflow(this.x, this.y + 1);
             var tile = this.map.board[coords.x][coords.y];
+            var moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
+            var fallAmount = Math.round(moveAmount * 1.5);
             if (tile.background) {
                 this.falling = true;
-                this.offsetY += this.moveSpeed;
+                this.offsetY += fallAmount;
             }
             else if (this.falling && this.map.tileIsBreakable(tile)) {
-                this.offsetY += this.moveSpeed;
+                this.offsetY += fallAmount;
             }
             else {
                 this.falling = false;
-                this.checkPlayerTileAction();
+                //this.checkPlayerTileAction();
             }
             this.checkIfPlayerIsInNewTile();
         };
@@ -1016,7 +1050,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
         function Jetpack() {
             this.paused = true;
             this.editMode = false;
-            this.moveSpeed = 7;
+            this.moveSpeed = 8;
             this.levelID = 1;
             this.nextPlayerID = 1;
             this.score = 0;

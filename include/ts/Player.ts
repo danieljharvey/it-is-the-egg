@@ -24,6 +24,7 @@ export class Player {
 	falling: boolean = false;
 	type: string = 'egg';
 	moveSpeed: number = 1;
+	lastAction: string = 'string';
 
 	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
@@ -132,7 +133,25 @@ export class Player {
 	// find another teleport and go to it
 	// if no others, do nothing
 	teleport() {
-		
+		if (this.lastAction == 'teleport') return false;
+		var newTile = this.findTile(14);
+		if (newTile) {
+			this.x = newTile.x;
+			this.y = newTile.y;
+			this.lastAction = 'teleport';
+		}
+	}
+	
+	// find random tile of type
+	findTile(id) {
+		var tiles = this.map.getAllTiles();
+		var teleporters = tiles.filter(tile => {
+			if (tile.x == this.x && tile.y == this.y) return false;
+			return (tile.id == id);
+		});
+		if (teleporters.length == 0) return false; // no options
+		var newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
+		return newTile
 	}
 
 	incrementPlayerDirection() {
@@ -145,6 +164,8 @@ export class Player {
 			this.direction = 0;
 			return false;
 		}*/
+		
+		const moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
 
 		if (this.direction < 0) {
 			if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
@@ -153,7 +174,7 @@ export class Player {
 				this.offsetX = 0;
 			} else {
 				// move
-				this.offsetX-=this.moveSpeed;
+				this.offsetX -= moveAmount;
 			}
 		}
 
@@ -164,40 +185,50 @@ export class Player {
 				this.direction = -1;
 			} else {
 				// move
-				this.offsetX+=this.moveSpeed;;
+				this.offsetX += moveAmount;
 			}
 		}
 
 		// if we've stopped and ended up not quite squared up, correct this
 		if (this.direction ==0 && this.falling==false) {
 			if (this.offsetX > 0) {
-				this.offsetX -= this.moveSpeed;
+				this.offsetX -= moveAmount;
 			} else if (this.offsetX < 0) {
-				this.offsetX += this.moveSpeed;
+				this.offsetX += moveAmount;
 			}
 		}
 		this.checkIfPlayerIsInNewTile();
+	}
+
+	calcMoveAmount(moveSpeed: number, tileSize: number) {
+		const fullSize = 64; // size of image tiles
+		const moveAmount : number = (tileSize / fullSize) * moveSpeed;
+		return Math.round(moveAmount);
 	}
 
 	checkIfPlayerIsInNewTile() {
 		if (this.offsetX > this.renderer.tileSize) {
 			this.offsetX = 0;
 			this.x ++;
+			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
 		if (this.offsetX < (-1 * this.renderer.tileSize)) {
 			this.offsetX = 0;
 			this.x --;
+			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
 		if (this.offsetY > this.renderer.tileSize) {
 			this.offsetY = 0;
 			this.y ++;
+			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
 		if (this.offsetY < (-1 * this.renderer.tileSize)) {
 			this.offsetY = 0;
 			this.y --;
+			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
 		// have we gone over the edge?
@@ -214,14 +245,17 @@ export class Player {
 
 		var tile = this.map.board[coords.x][coords.y];
 
+		const moveAmount : number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);		
+		const fallAmount : number = Math.round(moveAmount * 1.5);
+
 		if (tile.background) {
 			this.falling = true;
-			this.offsetY += this.moveSpeed;
+			this.offsetY += fallAmount;
 		} else if (this.falling && this.map.tileIsBreakable(tile)) {
-			this.offsetY += this.moveSpeed;
+			this.offsetY += fallAmount;
 		} else {
 			this.falling = false;
-			this.checkPlayerTileAction();
+			//this.checkPlayerTileAction();
 		}
 
 		this.checkIfPlayerIsInNewTile();
