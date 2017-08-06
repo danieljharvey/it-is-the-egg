@@ -1,5 +1,5 @@
-import { Jetpack } from './Jetpack';
-import { Map } from './Map';
+import { Jetpack } from "./Jetpack";
+import { Map } from "./Map";
 
 export class Renderer {
 
@@ -7,16 +7,6 @@ export class Renderer {
 	map: Map;
 	tiles: object;
 	playerTypes: object;
-
-	constructor(jetpack:Jetpack, map:Map, tiles: object, playerTypes: object) {
-		this.jetpack = jetpack;
-		this.map = map;
-		this.tiles = tiles;
-		this.playerTypes = playerTypes;
-		this.loadTilePalette();
-		this.loadPlayerPalette();
-		this.loadCanvas();
-	}
 
 	tileSize:number = 48;
 
@@ -29,6 +19,16 @@ export class Renderer {
 	ctx; // canvas context for drawing
 	tileImages:object = {}; // image elements of tiles
 	playerImages:object = {}; // image element of players
+
+	constructor(jetpack:Jetpack, map:Map, tiles: object, playerTypes: object) {
+		this.jetpack = jetpack;
+		this.map = map;
+		this.tiles = tiles;
+		this.playerTypes = playerTypes;
+		this.loadTilePalette();
+		this.loadPlayerPalette();
+		this.loadCanvas();
+	}
 
 	renderTitleScreen(callback) {
 		this.sizeCanvas();
@@ -151,7 +151,7 @@ export class Renderer {
 		this.canvas = document.getElementById("canvas");
 		this.canvas.width = this.map.boardSize.width * this.tileSize;
 		this.canvas.height = this.map.boardSize.height * this.tileSize;
-	    this.ctx = this.canvas.getContext("2d");
+		this.ctx = this.canvas.getContext("2d");
 	}
 
 	renderBoard() : void {
