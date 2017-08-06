@@ -4,7 +4,8 @@
   "description": "Egg game",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+	"lint": "tslint include/ts/*.ts"
   },
   "repository": {
     "type": "git",
