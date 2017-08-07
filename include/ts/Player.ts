@@ -4,6 +4,8 @@ import { Jetpack } from './Jetpack';
 import { Collisions } from './Collisions';
 import { Coords } from './Coords';
 
+const SPRITE_SIZE:number = 64;
+
 export class Player {
 	
 	map: Map;
@@ -201,31 +203,31 @@ export class Player {
 	}
 
 	calcMoveAmount(moveSpeed: number, tileSize: number) {
-		const fullSize = 64; // size of image tiles
+		const fullSize = SPRITE_SIZE; // size of image tiles
 		const moveAmount : number = (tileSize / fullSize) * moveSpeed;
 		return Math.round(moveAmount);
 	}
 
 	checkIfPlayerIsInNewTile() {
-		if (this.offsetX > this.renderer.tileSize) {
+		if (this.offsetX > SPRITE_SIZE) {
 			this.offsetX = 0;
 			this.x ++;
 			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
-		if (this.offsetX < (-1 * this.renderer.tileSize)) {
+		if (this.offsetX < (-1 * SPRITE_SIZE)) {
 			this.offsetX = 0;
 			this.x --;
 			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
-		if (this.offsetY > this.renderer.tileSize) {
+		if (this.offsetY > SPRITE_SIZE) {
 			this.offsetY = 0;
 			this.y ++;
 			this.lastAction = '';
 			this.checkPlayerTileAction();
 		}
-		if (this.offsetY < (-1 * this.renderer.tileSize)) {
+		if (this.offsetY < (-1 * SPRITE_SIZE)) {
 			this.offsetY = 0;
 			this.y --;
 			this.lastAction = '';

@@ -21,6 +21,7 @@ define("Coords", ["require", "exports"], function (require, exports) {
 define("Renderer", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var SPRITE_SIZE = 64;
     var Renderer = (function () {
         function Renderer(jetpack, map, tiles, playerTypes) {
             this.tileSize = 48;
@@ -83,7 +84,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.ctx.globalAlpha = 1;
             this.wipeCanvas('rgb(0,0,0)');
             this.ctx.globalAlpha = opacity;
-            //this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+            //this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft,top,this.tileSize,this.tileSize);
             this.ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
             if (show) {
                 opacity += 0.01;
@@ -126,8 +127,8 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 var thisTile = this.tiles[i];
                 var tileImage = document.createElement("img");
                 tileImage.setAttribute('src', this.getTileImagePath(thisTile));
-                tileImage.setAttribute('width', 64);
-                tileImage.setAttribute('height', 64);
+                tileImage.setAttribute('width', SPRITE_SIZE);
+                tileImage.setAttribute('height', SPRITE_SIZE);
                 this.tileImages[thisTile.id] = tileImage;
             }
         };
@@ -238,22 +239,23 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             }
         };
         Renderer.prototype.renderPlayer = function (player) {
-            var left = (player.x * this.tileSize) + player.offsetX;
-            var top = (player.y * this.tileSize) + player.offsetY;
-            var clipLeft = player.currentFrame * 64;
+            var offsetRatio = (this.tileSize / SPRITE_SIZE);
+            var left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
+            var top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
+            var clipLeft = player.currentFrame * SPRITE_SIZE;
             var clipTop = 0;
             this.ctx.globalAlpha = 1;
             var image = this.playerImages[player.img];
-            this.ctx.drawImage(image, clipLeft, 0, 64, 64, left, top, this.tileSize, this.tileSize);
+            this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
             if (left < 0) {
                 // also draw on right
                 var secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
-                this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
+                this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
             }
             if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
                 // also draw on left
                 var secondLeft = left - (this.tileSize * this.map.boardSize.width);
-                this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft, top, this.tileSize, this.tileSize);
+                this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
             }
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
@@ -304,6 +306,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
 define("Player", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var SPRITE_SIZE = 64;
     var Player = (function () {
         function Player(params, map, renderer, jetpack, collisions) {
             this.x = 0;
@@ -481,30 +484,30 @@ define("Player", ["require", "exports"], function (require, exports) {
             this.checkIfPlayerIsInNewTile();
         };
         Player.prototype.calcMoveAmount = function (moveSpeed, tileSize) {
-            var fullSize = 64; // size of image tiles
+            var fullSize = SPRITE_SIZE; // size of image tiles
             var moveAmount = (tileSize / fullSize) * moveSpeed;
             return Math.round(moveAmount);
         };
         Player.prototype.checkIfPlayerIsInNewTile = function () {
-            if (this.offsetX > this.renderer.tileSize) {
+            if (this.offsetX > SPRITE_SIZE) {
                 this.offsetX = 0;
                 this.x++;
                 this.lastAction = '';
                 this.checkPlayerTileAction();
             }
-            if (this.offsetX < (-1 * this.renderer.tileSize)) {
+            if (this.offsetX < (-1 * SPRITE_SIZE)) {
                 this.offsetX = 0;
                 this.x--;
                 this.lastAction = '';
                 this.checkPlayerTileAction();
             }
-            if (this.offsetY > this.renderer.tileSize) {
+            if (this.offsetY > SPRITE_SIZE) {
                 this.offsetY = 0;
                 this.y++;
                 this.lastAction = '';
                 this.checkPlayerTileAction();
             }
-            if (this.offsetY < (-1 * this.renderer.tileSize)) {
+            if (this.offsetY < (-1 * SPRITE_SIZE)) {
                 this.offsetY = 0;
                 this.y--;
                 this.lastAction = '';
@@ -1014,28 +1017,6 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                     'frontLayer': true,
                     'action': 'teleport'
                 }
-                /*12: {
-                    'id':12,
-                    'title':'Turn left',
-                    'img':'left-turn.png',
-                    'background':true,
-                    'needsDraw':true,
-                    'action':'rotateLeft',
-                    'frontLayer':true,
-                    'dontAdd':true,
-                    'dontRotate':true
-                },
-                13: {
-                    'id':13,
-                    'title':'Turn Right',
-                    'img':'right-turn.png',
-                    'background':true,
-                    'needsDraw':true,
-                    'action':'rotateRight',
-                    'frontLayer':true,
-                    'dontAdd':true,
-                    'dontRotate':true
-                }*/
             };
             return tiles;
         };
@@ -1330,34 +1311,25 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                 return false;
             if (player1.id == player2.id)
                 return false;
-            // one player falling onto another
-            if (player1.x == player2.x && player1.y == player2.y) {
-                if (player1.offsetX == 0 && player1.offsetY == 0 && player2.offsetX == 0 && player2.offsetY == 0) {
-                    if (player1.falling || player2.falling) {
-                        this.combinePlayers(player1, player2);
-                        return false;
-                    }
-                }
-            }
             if (player1.y != player2.y)
                 return false;
-            // horizontal collisions
+            // end up in exactly same place
             if (player1.x == player2.x) {
                 if (player1.offsetX == 0 && player2.offsetX == 0) {
                     this.combinePlayers(player1, player2);
-                    return false;
+                    return true;
                 }
             }
             if (player1.offsetX > 0) {
                 if (player1.x + 1 == player2.x && player2.offsetX < 0) {
                     this.combinePlayers(player1, player2);
-                    return false;
+                    return true;
                 }
             }
             else if (player1.offsetX < 0) {
                 if (player1.x - 1 == player2.x && player2.offsetX > 0) {
                     this.combinePlayers(player1, player2);
-                    return false;
+                    return true;
                 }
             }
         };

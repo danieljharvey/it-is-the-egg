@@ -1,6 +1,8 @@
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 
+const SPRITE_SIZE:number = 64;
+
 export class Renderer {
 
 	jetpack: Jetpack;
@@ -47,7 +49,7 @@ export class Renderer {
 		this.wipeCanvas('rgb(0,0,0)');
 
 		this.ctx.globalAlpha = opacity;
-		//this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+		//this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft,top,this.tileSize,this.tileSize);
 
 		this.ctx.drawImage(titleImage,0,0,titleImage.width,titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
 		if (show) {
@@ -90,8 +92,8 @@ export class Renderer {
 			var thisTile = this.tiles[i];
 			var tileImage = document.createElement("img");
 			tileImage.setAttribute('src', this.getTileImagePath(thisTile));
-			tileImage.setAttribute('width', 64);
-			tileImage.setAttribute('height', 64);
+			tileImage.setAttribute('width', SPRITE_SIZE);
+			tileImage.setAttribute('height', SPRITE_SIZE);
 			this.tileImages[thisTile.id] = tileImage;
 		}
 	}
@@ -260,28 +262,31 @@ export class Renderer {
 	}
 
 	renderPlayer(player: Player) {
-	 	var left = (player.x * this.tileSize) + player.offsetX;
-	    var top = (player.y * this.tileSize) + player.offsetY;
 
-	    var clipLeft = player.currentFrame * 64;
+		const offsetRatio = (this.tileSize / SPRITE_SIZE);
+
+	 	var left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
+	    var top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
+
+	    var clipLeft = player.currentFrame * SPRITE_SIZE;
 	    var clipTop = 0;
 
 	    this.ctx.globalAlpha = 1;
 
 	    var image = this.playerImages[player.img];
 
-	    this.ctx.drawImage(image, clipLeft, 0, 64, 64, left,top,this.tileSize,this.tileSize);
+	    this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left,top,this.tileSize,this.tileSize);
 
 	    if (left < 0) {
 	    	// also draw on right
 	    	var secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
-	    	this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+	    	this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft,top,this.tileSize,this.tileSize);
 	    }
 
 	    if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
 	    	// also draw on left
 	    	var secondLeft = left - (this.tileSize * this.map.boardSize.width);
-	    	this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+	    	this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft,top,this.tileSize,this.tileSize);
 	    }
 	}
 
