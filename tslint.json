@@ -5,7 +5,8 @@
     ],
     "jsRules": {},
     "rules": {
-		"indent": [true, "tabs"]
+		"indent": [true, "tabs"],
+		"no-irregular-whitespace": false
 	},
     "rulesDirectory": []
 }

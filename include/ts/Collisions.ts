@@ -16,37 +16,26 @@ export class Collisions {
 
 		if (player1.id == player2.id) return false;
 
-		// one player falling onto another
-
-		if (player1.x == player2.x && player1.y == player2.y) {
-			if (player1.offsetX==0 && player1.offsetY == 0 && player2.offsetX ==0 && player2.offsetY == 0) {
-				if (player1.falling || player2.falling) {
-					this.combinePlayers(player1, player2);
-					return false;
-				}
-			}
-		}
-
 		if (player1.y != player2.y) return false;
 
-		// horizontal collisions
+		// end up in exactly same place
 
 		if (player1.x == player2.x) {
 			if (player1.offsetX == 0 && player2.offsetX == 0) {
 				this.combinePlayers(player1,player2);
-				return false;
+				return true;
 			}
 		}
 
 		if (player1.offsetX > 0) { // heading right
 			if (player1.x + 1 == player2.x && player2.offsetX < 0) {
 				this.combinePlayers(player1,player2);
-				return false;
+				return true;
 			}
 		} else if (player1.offsetX < 0) { // heading left
 			if (player1.x - 1 == player2.x && player2.offsetX > 0) {
 				this.combinePlayers(player1,player2);
-				return false;
+				return true;
 			}
 		}
 	}
