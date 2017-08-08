@@ -1,3 +1,5 @@
+const SPRITE_SIZE:number = 64;
+
 export class Coords {
 	x: number = 0;
 	y: number = 0;
@@ -9,5 +11,14 @@ export class Coords {
         this.y = Math.floor(y) as number;
         this.offsetX = offsetX as number;
         this.offsetY = offsetY as number;
+    }
+
+    getActualPosition() {
+        let fullX:number = (this.x * SPRITE_SIZE) + this.offsetX;
+        let fullY:number = (this.y * SPRITE_SIZE) + this.offsetY;
+        return {
+            fullX,
+            fullY
+        }
     }
 }

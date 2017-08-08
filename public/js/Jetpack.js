@@ -1,6 +1,7 @@
 define("Coords", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var SPRITE_SIZE = 64;
     var Coords = (function () {
         function Coords(x, y, offsetX, offsetY) {
             if (offsetX === void 0) { offsetX = 0; }
@@ -14,6 +15,14 @@ define("Coords", ["require", "exports"], function (require, exports) {
             this.offsetX = offsetX;
             this.offsetY = offsetY;
         }
+        Coords.prototype.getActualPosition = function () {
+            var fullX = (this.x * SPRITE_SIZE) + this.offsetX;
+            var fullY = (this.y * SPRITE_SIZE) + this.offsetY;
+            return {
+                fullX: fullX,
+                fullY: fullY
+            };
+        };
         return Coords;
     }());
     exports.Coords = Coords;
@@ -303,7 +312,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Player", ["require", "exports"], function (require, exports) {
+define("Player", ["require", "exports", "Coords"], function (require, exports, Coords_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
@@ -323,6 +332,7 @@ define("Player", ["require", "exports"], function (require, exports) {
             this.type = 'egg';
             this.moveSpeed = 1;
             this.lastAction = 'string';
+            this.value = 1;
             for (var i in params) {
                 this[i] = params[i];
             }
@@ -337,6 +347,9 @@ define("Player", ["require", "exports"], function (require, exports) {
             this.checkFloorBelowPlayer();
             this.incrementPlayerDirection();
             this.checkPlayerCollisions();
+        };
+        Player.prototype.getCoords = function () {
+            return new Coords_1.Coords(this.x, this.y, this.offsetX, this.offsetY);
         };
         Player.prototype.setRedrawAroundPlayer = function () {
             // first just do the stuff around player
@@ -542,7 +555,7 @@ define("Player", ["require", "exports"], function (require, exports) {
     }());
     exports.Player = Player;
 });
-define("Map", ["require", "exports", "Coords"], function (require, exports, Coords_1) {
+define("Map", ["require", "exports", "Coords"], function (require, exports, Coords_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Map = (function () {
@@ -581,7 +594,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
             else {
                 newY = y;
             }
-            return new Coords_1.Coords(newX, newY);
+            return new Coords_2.Coords(newX, newY);
         };
         Map.prototype.getTileProperty = function (tile, property) {
             if (!tile.hasOwnProperty(property))
@@ -1024,7 +1037,49 @@ define("TileSet", ["require", "exports"], function (require, exports) {
     }());
     exports.TileSet = TileSet;
 });
-define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Renderer", "Player", "TileSet", "Loader", "Coords"], function (require, exports, Collisions_1, Map_1, Levels_1, Renderer_1, Player_1, TileSet_1, Loader_1, Coords_2) {
+var PlayerTypes = (function () {
+    function PlayerTypes() {
+        this.playerTypes = {
+            egg: {
+                type: 'egg',
+                title: "It is of course the egg",
+                'img': 'egg-sprite.png',
+                'frames': 18,
+                'multiplier': 1,
+                'value': 1
+            },
+            'red-egg': {
+                'type': 'red-egg',
+                'title': "It is of course the red egg",
+                'img': 'egg-sprite-red.png',
+                'frames': 18,
+                'multiplier': 2,
+                value: 2
+            },
+            'blue-egg': {
+                'type': 'blue-egg',
+                'title': "It is of course the blue egg",
+                'img': 'egg-sprite-blue.png',
+                'frames': 18,
+                'multiplier': 5,
+                value: 3
+            },
+            'yellow-egg': {
+                'type': 'yellow-egg',
+                'title': "It is of course the yellow egg",
+                'img': 'egg-sprite-yellow.png',
+                'frames': 18,
+                'multiplier': 10,
+                value: 4
+            }
+        };
+    }
+    PlayerTypes.prototype.getPlayerTypes = function () {
+        return this.playerTypes;
+    };
+    return PlayerTypes;
+}());
+define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Renderer", "Player", "TileSet", "Loader", "Coords", "./PlayerTypes"], function (require, exports, Collisions_1, Map_1, Levels_1, Renderer_1, Player_1, TileSet_1, Loader_1, Coords_3, PlayerTypes_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1036,36 +1091,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             this.nextPlayerID = 1;
             this.score = 0;
             this.collectable = 0; // total points on screen
-            this.playerTypes = {
-                'egg': {
-                    'type': 'egg',
-                    'title': "It is of course the egg",
-                    'img': 'egg-sprite.png',
-                    'frames': 18,
-                    'multiplier': 1
-                },
-                'red-egg': {
-                    'type': 'red-egg',
-                    'title': "It is of course the red egg",
-                    'img': 'egg-sprite-red.png',
-                    'frames': 18,
-                    'multiplier': 2
-                },
-                'blue-egg': {
-                    'type': 'blue-egg',
-                    'title': "It is of course the blue egg",
-                    'img': 'egg-sprite-blue.png',
-                    'frames': 18,
-                    'multiplier': 5
-                },
-                'yellow-egg': {
-                    'type': 'yellow-egg',
-                    'title': "It is of course the yellow egg",
-                    'img': 'egg-sprite-yellow.png',
-                    'frames': 18,
-                    'multiplier': 10
-                }
-            };
+            this.playerTypes = {};
         }
         Jetpack.prototype.go = function () {
             var _this = this;
@@ -1099,7 +1125,9 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             var tiles = tileSet.getTiles();
             this.map = new Map_1.Map(tiles);
             this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes);
-            this.collisions = new Collisions_1.Collisions(this);
+            var playerTypes = new PlayerTypes_1.PlayerTypes();
+            this.playerTypes = playerTypes.getPlayerTypes();
+            this.collisions = new Collisions_1.Collisions(this, playerTypes);
             var apiLocation = 'http://' + window.location.hostname + '/levels/';
             var loader = new Loader_1.Loader(apiLocation);
             this.levels = new Levels_1.Levels(this, loader);
@@ -1162,7 +1190,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             tiles.map(function (tile) {
                 var type = _this.map.getTileProperty(tile, 'createPlayer');
                 if (type) {
-                    var coords = new Coords_2.Coords(tile.x, tile.y);
+                    var coords = new Coords_3.Coords(tile.x, tile.y);
                     _this.createNewPlayer(type, coords, 1);
                 }
             });
@@ -1270,7 +1298,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             var canvas = document.getElementById('canvas');
             canvas.addEventListener('click', function (event) {
                 var tileSize = _this.renderer.tileSize;
-                var coords = new Coords_2.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
+                var coords = new Coords_3.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
                 _this.handleClick(coords);
             });
         };
@@ -1302,8 +1330,9 @@ define("Collisions", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Collisions = (function () {
-        function Collisions(jetpack) {
+        function Collisions(jetpack, playerTypes) {
             this.jetpack = jetpack;
+            this.playerTypes = playerTypes;
         }
         // only deal with horizontal collisions for now
         Collisions.prototype.checkCollision = function (player1, player2) {
@@ -1313,54 +1342,56 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                 return false;
             if (player1.y != player2.y)
                 return false;
-            // end up in exactly same place
-            if (player1.x == player2.x) {
-                if (player1.offsetX == 0 && player2.offsetX == 0) {
-                    this.combinePlayers(player1, player2);
-                    return true;
-                }
+            var coords1 = player1.getCoords();
+            var coords2 = player2.getCoords();
+            var distance = coords1.getActualPosition().fullX - coords2.getActualPosition().fullX;
+            if (distance < 0)
+                distance = distance * -1;
+            if (distance < 40) {
+                this.combinePlayers(player1, player2);
+                return true;
             }
-            if (player1.offsetX > 0) {
-                if (player1.x + 1 == player2.x && player2.offsetX < 0) {
-                    this.combinePlayers(player1, player2);
-                    return true;
-                }
-            }
-            else if (player1.offsetX < 0) {
-                if (player1.x - 1 == player2.x && player2.offsetX > 0) {
-                    this.combinePlayers(player1, player2);
-                    return true;
-                }
-            }
+            return false;
+        };
+        Collisions.prototype.chooseHigherLevelPlayer = function (player1, player2) {
+            if (player1.level > player2.level)
+                return player1;
+            if (player2.level > player1.level)
+                return player2;
+            if (player1.level == player2.level)
+                return player1;
         };
         Collisions.prototype.combinePlayers = function (player1, player2) {
             //console.log('combinePlayers', player1, player2);
-            if (player1.type == 'egg' && player2.type == 'egg') {
-                var type = 'red-egg';
-                this.jetpack.createNewPlayer(type, player2, player2.direction);
+            var newValue = player1.value + player2.value;
+            var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
+            var playerTypes = this.playerTypes.getPlayerTypes();
+            for (var type in playerTypes) {
+                if (playerTypes[type].value == newValue) {
+                    this.jetpack.createNewPlayer(type, higherPlayer, higherPlayer.direction);
+                    this.jetpack.deletePlayer(player1);
+                    this.jetpack.deletePlayer(player2);
+                }
             }
-            else if (player1.type == 'egg' && player2.type == 'red-egg') {
-                var type = 'blue-egg';
+            /*if (player1.type=='egg' && player2.type=='egg') {
+                var type='red-egg';
                 this.jetpack.createNewPlayer(type, player2, player2.direction);
-            }
-            else if (player1.type == 'red-egg' && player2.type == 'egg') {
-                var type = 'blue-egg';
+            } else if (player1.type=='egg' && player2.type=='red-egg') {
+                var type='blue-egg';
+                this.jetpack.createNewPlayer(type, player2, player2.direction);
+            } else if (player1.type=='red-egg' && player2.type=='egg') {
+                var type='blue-egg';
                 this.jetpack.createNewPlayer(type, player1, player1.direction);
-            }
-            else if (player1.type == 'egg' && player2.type == 'blue-egg') {
-                var type = 'yellow-egg';
+            } else if (player1.type=='egg' && player2.type=='blue-egg') {
+                var type='yellow-egg';
                 this.jetpack.createNewPlayer(type, player2, player2.direction);
-            }
-            else if (player1.type == 'blue-egg' && player2.type == 'egg') {
-                var type = 'yellow-egg';
+            } else if (player1.type=='blue-egg' && player2.type=='egg') {
+                var type='yellow-egg';
                 this.jetpack.createNewPlayer(type, player1, player1.direction);
-            }
-            else if (player1.type == 'red-egg' && player2.type == 'red-egg') {
-                var type = 'yellow-egg';
+            } else if (player1.type=='red-egg' && player2.type=='red-egg') {
+                var type='yellow-egg';
                 this.jetpack.createNewPlayer(type, player2, player2.direction);
-            }
-            this.jetpack.deletePlayer(player1);
-            this.jetpack.deletePlayer(player2);
+            } */
         };
         return Collisions;
     }());

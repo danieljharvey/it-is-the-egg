@@ -8,25 +8,26 @@ const SPRITE_SIZE:number = 64;
 
 export class Player {
 	
-	map: Map;
-	renderer: Renderer;
-	jetpack: Jetpack;
-	collisions: Collisions;
+	map:Map;
+	renderer:Renderer;
+	jetpack:Jetpack;
+	collisions:Collisions;
 
-	x: number = 0;
-	y: number = 0;
-	offsetX: number = 0;
-	offsetY: number = 0;
-	direction: number = 0;
-	oldDirection: number = 0;
-	currentFrame: number = 0;
-	id: number = 0;
-	frames: number = 1;
-	multiplier: number = 1;
-	falling: boolean = false;
-	type: string = 'egg';
-	moveSpeed: number = 1;
-	lastAction: string = 'string';
+	x:number = 0;
+	y:number = 0;
+	offsetX:number = 0;
+	offsetY:number = 0;
+	direction:number = 0;
+	oldDirection:number = 0;
+	currentFrame:number = 0;
+	id:number = 0;
+	frames:number = 1;
+	multiplier:number = 1;
+	falling:boolean = false;
+	type:string = 'egg';
+	moveSpeed:number = 1;
+	lastAction:string = 'string';
+	value:number = 1;
 
 	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (var i in params) {
@@ -44,6 +45,10 @@ export class Player {
 	    this.checkFloorBelowPlayer();
 	    this.incrementPlayerDirection();	
 	    this.checkPlayerCollisions();
+	}
+
+	getCoords() {
+		return new Coords(this.x, this.y, this.offsetX, this.offsetY);
 	}
 
 	setRedrawAroundPlayer() {
