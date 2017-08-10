@@ -20,12 +20,162 @@ define("Coords", ["require", "exports"], function (require, exports) {
             var fullY = (this.y * SPRITE_SIZE) + this.offsetY;
             return {
                 fullX: fullX,
-                fullY: fullY
+                fullY: fullY,
             };
         };
         return Coords;
     }());
     exports.Coords = Coords;
+});
+define("Loader", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Loader = (function () {
+        function Loader(apiLocation) {
+            this.apiLocation = apiLocation;
+        }
+        Loader.prototype.callServer = function (action, params, callback, failCallback) {
+            var xhr = new XMLHttpRequest();
+            params.action = action;
+            xhr.open("POST", this.apiLocation, true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                var DONE = 4; // readyState 4 means the request is done.
+                var OK = 200; // status 200 is a successful return.
+                if (xhr.readyState == DONE) {
+                    if (xhr.status == OK) {
+                        var object = JSON.parse(xhr.responseText);
+                        if (object.rc > 0) {
+                            failCallback(object.msg);
+                        }
+                        else {
+                            callback(object);
+                        }
+                    }
+                    else {
+                        failCallback("Error: " + xhr.status);
+                    }
+                }
+            };
+            //var formData = this.paramsToFormData(params);
+            var queryString = this.param(params);
+            xhr.send(queryString);
+        };
+        Loader.prototype.paramsToFormData = function (params) {
+            var formData = new FormData();
+            for (var key in params) {
+                formData.append(key, params[key]);
+            }
+            return formData;
+        };
+        Loader.prototype.param = function (object) {
+            var encodedString = "";
+            for (var prop in object) {
+                if (object.hasOwnProperty(prop)) {
+                    if (encodedString.length > 0) {
+                        encodedString += "&";
+                    }
+                    encodedString += encodeURI(prop + "=" + object[prop]);
+                }
+            }
+            return encodedString;
+        };
+        return Loader;
+    }());
+    exports.Loader = Loader;
+});
+define("Levels", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Levels = (function () {
+        function Levels(jetpack, loader) {
+            this.levelID = 0;
+            this.levels = {};
+            this.levelList = [];
+            this.jetpack = jetpack;
+            this.loader = loader;
+        }
+        Levels.prototype.getLevelList = function () {
+            var _this = this;
+            this.loader.callServer("getLevelsList", {}, function (data) {
+                _this.levelList = data.data;
+                _this.populateLevelsList();
+            });
+        };
+        Levels.prototype.populateLevelsList = function () {
+            var select = document.getElementById("levelList");
+            if (!select)
+                return false;
+            while (select.firstChild) {
+                select.removeChild(select.firstChild);
+            }
+            var nullEl = document.createElement("option");
+            nullEl.textContent = "New";
+            nullEl.value = false;
+            if (!this.levelID)
+                nullEl.selected = true;
+            select.appendChild(nullEl);
+            for (var i in this.levelList) {
+                var levelID = parseInt(this.levelList[i]);
+                var el = document.createElement("option");
+                el.textContent = levelID.toString();
+                el.value = levelID.toString();
+                console.log(levelID, this.levelID);
+                if (levelID == this.levelID) {
+                    el.selected = true;
+                }
+                select.appendChild(el);
+            }
+        };
+        Levels.prototype.generateLevelID = function () {
+            for (var levelID = 1; levelID < 10000; levelID++) {
+                var levelIDString = levelID.toString();
+                if (this.levelList.indexOf(levelIDString) == -1) {
+                    return levelID;
+                }
+            }
+            return 0;
+        };
+        Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
+            var _this = this;
+            var saveData = {
+                board: board,
+                boardSize: boardSize,
+                levelID: levelID,
+            };
+            var saveString = JSON.stringify(saveData);
+            var saveKey = levelID.toString();
+            var params = {
+                data: saveString,
+                levelID: 0,
+            };
+            if (levelID) {
+                params.levelID = levelID;
+            }
+            this.loader.callServer("saveLevel", params, function (data) {
+                _this.levelID = data.data;
+                callback(data.data);
+            }, function (errorMsg) {
+                console.log("ERROR: ", errorMsg);
+            });
+        };
+        Levels.prototype.loadLevel = function (levelID, callback, failCallback) {
+            var _this = this;
+            this.getLevelList();
+            var params = {
+                levelID: levelID,
+            };
+            this.loader.callServer("getLevel", params, function (data) {
+                _this.levelID = levelID;
+                callback(data.data);
+            }, function (errorMsg) {
+                console.log("ERROR: ", errorMsg);
+                failCallback();
+            });
+        };
+        return Levels;
+    }());
+    exports.Levels = Levels;
 });
 define("Renderer", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -35,7 +185,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         function Renderer(jetpack, map, tiles, playerTypes) {
             this.tileSize = 48;
             this.checkResize = true;
-            this.imagesFolder = 'img/';
+            this.imagesFolder = "img/";
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
             this.renderTile = function (x, y, tile, overwriteImage) {
@@ -53,7 +203,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 var top = y * this.tileSize;
                 var opacity = 1;
                 this.ctx.globalAlpha = opacity;
-                if (this.map.renderAngle == 0 || this.map.getTileProperty(tile, 'dontRotate')) {
+                if (this.map.renderAngle == 0 || this.map.getTileProperty(tile, "dontRotate")) {
                     this.ctx.drawImage(img, left, top, this.tileSize, this.tileSize);
                 }
                 else {
@@ -80,18 +230,18 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         Renderer.prototype.renderTitleScreen = function (callback) {
             var _this = this;
             this.sizeCanvas();
-            var titleImage = document.createElement('img');
-            titleImage.addEventListener('load', function () {
+            var titleImage = document.createElement("img");
+            titleImage.addEventListener("load", function () {
                 _this.drawTheBigEgg(titleImage, 0.02, true, callback);
             }, false);
-            titleImage.setAttribute('src', this.imagesFolder + 'large/the-egg.png');
-            titleImage.setAttribute('width', 1024);
-            titleImage.setAttribute('height', 1024);
+            titleImage.setAttribute("src", this.imagesFolder + "large/the-egg.png");
+            titleImage.setAttribute("width", 1024);
+            titleImage.setAttribute("height", 1024);
         };
         Renderer.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
             var _this = this;
             this.ctx.globalAlpha = 1;
-            this.wipeCanvas('rgb(0,0,0)');
+            this.wipeCanvas("rgb(0,0,0)");
             this.ctx.globalAlpha = opacity;
             //this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft,top,this.tileSize,this.tileSize);
             this.ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
@@ -128,24 +278,24 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.renderPlayers();
             this.renderFrontLayerBoard();
             this.jetpack.doPlayerCalcs();
-            //this.wipeCanvas('rgba(255,255,0,0.04)');	
+            //this.wipeCanvas('rgba(255,255,0,0.04)');
             this.animationHandle = window.requestAnimationFrame(function () { return _this.render(); });
         };
         Renderer.prototype.loadTilePalette = function () {
             for (var i in this.tiles) {
                 var thisTile = this.tiles[i];
                 var tileImage = document.createElement("img");
-                tileImage.setAttribute('src', this.getTileImagePath(thisTile));
-                tileImage.setAttribute('width', SPRITE_SIZE);
-                tileImage.setAttribute('height', SPRITE_SIZE);
+                tileImage.setAttribute("src", this.getTileImagePath(thisTile));
+                tileImage.setAttribute("width", SPRITE_SIZE);
+                tileImage.setAttribute("height", SPRITE_SIZE);
                 this.tileImages[thisTile.id] = tileImage;
             }
         };
         Renderer.prototype.loadPlayerPalette = function () {
             for (var i in this.playerTypes) {
                 var playerType = this.playerTypes[i];
-                var playerImage = document.createElement('img');
-                playerImage.setAttribute('src', this.getTileImagePath(playerType));
+                var playerImage = document.createElement("img");
+                playerImage.setAttribute("src", this.getTileImagePath(playerType));
                 this.playerImages[playerType.img] = playerImage;
             }
         };
@@ -156,7 +306,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             if (!this.checkResize)
                 return false;
             var maxBoardSize = this.getMaxBoardSize();
-            this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + 'px';
+            this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
             this.tileSize = maxBoardSize / this.map.boardSize.width;
             this.loadCanvas();
             this.map.markAllForRedraw();
@@ -165,7 +315,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         Renderer.prototype.getMaxBoardSize = function () {
             var width = window.innerWidth;
             var height = window.innerHeight;
-            var controlHeader = document.getElementById('controlHeader');
+            var controlHeader = document.getElementById("controlHeader");
             height = height - (controlHeader.offsetHeight * 2);
             width = width - (controlHeader.offsetHeight * 2);
             if (width > height) {
@@ -212,7 +362,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             }
         };
         Renderer.prototype.tileIsFrontLayer = function (tile) {
-            return this.map.getTileProperty(tile, 'frontLayer');
+            return this.map.getTileProperty(tile, "frontLayer");
         };
         Renderer.prototype.drawSkyTile = function (tile, x, y) {
             var skyTile = this.map.getTile(1);
@@ -238,7 +388,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         // debugging tools
         Renderer.prototype.showUnrenderedTile = function (x, y) {
             return false;
-            this.ctx.fillStyle = '#f00';
+            this.ctx.fillStyle = "#f00";
             this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
         };
         Renderer.prototype.renderPlayers = function () {
@@ -297,7 +447,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             var offset = this.canvas.width / 2;
             var left = offset;
             var top = offset;
-            this.wipeCanvas('rgba(0,0,0,0.1)');
+            this.wipeCanvas("rgba(0,0,0,0.1)");
             this.ctx.translate(left, top);
             this.ctx.rotate(angleInRad);
             this.ctx.drawImage(savedData, -offset, -offset);
@@ -329,9 +479,9 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             this.frames = 1;
             this.multiplier = 1;
             this.falling = false;
-            this.type = 'egg';
+            this.type = "egg";
             this.moveSpeed = 1;
-            this.lastAction = 'string';
+            this.lastAction = "string";
             this.value = 1;
             for (var i in params) {
                 this[i] = params[i];
@@ -388,7 +538,7 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             var coords = this.map.correctForOverflow(this.x, this.y);
             var board = this.map.board;
             var tile = board[coords.x][coords.y];
-            var collectable = this.map.getTileProperty(tile, 'collectable');
+            var collectable = this.map.getTileProperty(tile, "collectable");
             if (collectable) {
                 var score = collectable * this.multiplier;
                 var blankTile = this.map.getTile(1);
@@ -399,24 +549,24 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             }
             if (this.falling) {
                 var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1);
-                var tile = board[belowCoords.x][belowCoords.y];
-                if (this.map.tileIsBreakable(tile)) {
+                var tile_1 = board[belowCoords.x][belowCoords.y];
+                if (this.map.tileIsBreakable(tile_1)) {
                     board[belowCoords.x][belowCoords.y] = this.map.getTile(1); // smash block, replace with empty
                     return true;
                 }
             }
             var tile = board[coords.x][coords.y];
             var action = this.map.getTileAction(tile);
-            if (action == 'rotateLeft') {
+            if (action == "rotateLeft") {
                 this.jetpack.rotateBoard(false);
             }
-            else if (action == 'rotateRight') {
+            else if (action == "rotateRight") {
                 this.jetpack.rotateBoard(true);
             }
-            else if (action == 'completeLevel') {
+            else if (action == "completeLevel") {
                 this.jetpack.completeLevel();
             }
-            else if (action == 'teleport') {
+            else if (action == "teleport") {
                 this.teleport();
             }
         };
@@ -429,13 +579,13 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
         // find another teleport and go to it
         // if no others, do nothing
         Player.prototype.teleport = function () {
-            if (this.lastAction == 'teleport')
+            if (this.lastAction == "teleport")
                 return false;
             var newTile = this.findTile(14);
             if (newTile) {
                 this.x = newTile.x;
                 this.y = newTile.y;
-                this.lastAction = 'teleport';
+                this.lastAction = "teleport";
             }
         };
         // find random tile of type
@@ -505,25 +655,25 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             if (this.offsetX > SPRITE_SIZE) {
                 this.offsetX = 0;
                 this.x++;
-                this.lastAction = '';
+                this.lastAction = "";
                 this.checkPlayerTileAction();
             }
             if (this.offsetX < (-1 * SPRITE_SIZE)) {
                 this.offsetX = 0;
                 this.x--;
-                this.lastAction = '';
+                this.lastAction = "";
                 this.checkPlayerTileAction();
             }
             if (this.offsetY > SPRITE_SIZE) {
                 this.offsetY = 0;
                 this.y++;
-                this.lastAction = '';
+                this.lastAction = "";
                 this.checkPlayerTileAction();
             }
             if (this.offsetY < (-1 * SPRITE_SIZE)) {
                 this.offsetY = 0;
                 this.y--;
-                this.lastAction = '';
+                this.lastAction = "";
                 this.checkPlayerTileAction();
             }
             // have we gone over the edge?
@@ -563,7 +713,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
             this.renderAngle = 0;
             this.boardSize = {
                 width: 14,
-                height: 14
+                height: 14,
             };
             this.board = [];
             this.tiles = tiles;
@@ -602,7 +752,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
             return tile[property];
         };
         Map.prototype.tileIsBreakable = function (tile) {
-            return this.getTileProperty(tile, 'breakable');
+            return this.getTileProperty(tile, "breakable");
         };
         // is intended next tile empty / a wall?
         Map.prototype.checkTileIsEmpty = function (x, y) {
@@ -619,7 +769,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
             }
         };
         Map.prototype.getTileAction = function (tile) {
-            return this.getTileProperty(tile, 'action');
+            return this.getTileProperty(tile, "action");
         };
         Map.prototype.generateBlankBoard = function () {
             var board = [];
@@ -657,7 +807,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
             var theseTiles = JSON.parse(JSON.stringify(tiles));
             // remove unwanted tiles
             for (var i in theseTiles) {
-                if (this.getTileProperty(theseTiles[i], 'dontAdd')) {
+                if (this.getTileProperty(theseTiles[i], "dontAdd")) {
                     delete theseTiles[i];
                 }
             }
@@ -676,7 +826,7 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
         Map.prototype.translateRotation = function (x, y, clockwise) {
             var coords = {
                 x: 0,
-                y: 0
+                y: 0,
             };
             var width = this.boardSize.width - 1;
             var height = this.boardSize.height - 1;
@@ -776,155 +926,52 @@ define("Map", ["require", "exports", "Coords"], function (require, exports, Coor
     }());
     exports.Map = Map;
 });
-define("Loader", ["require", "exports"], function (require, exports) {
+define("PlayerTypes", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Loader = (function () {
-        function Loader(apiLocation) {
-            this.apiLocation = apiLocation;
+    var PlayerTypes = (function () {
+        function PlayerTypes() {
+            this.playerTypes = {
+                "egg": {
+                    type: "egg",
+                    title: "It is of course the egg",
+                    img: "egg-sprite.png",
+                    frames: 18,
+                    multiplier: 1,
+                    value: 1,
+                },
+                "red-egg": {
+                    type: "red-egg",
+                    title: "It is of course the red egg",
+                    img: "egg-sprite-red.png",
+                    frames: 18,
+                    multiplier: 2,
+                    value: 2,
+                },
+                "blue-egg": {
+                    type: "blue-egg",
+                    title: "It is of course the blue egg",
+                    img: "egg-sprite-blue.png",
+                    frames: 18,
+                    multiplier: 5,
+                    value: 3,
+                },
+                "yellow-egg": {
+                    type: "yellow-egg",
+                    title: "It is of course the yellow egg",
+                    img: "egg-sprite-yellow.png",
+                    frames: 18,
+                    multiplier: 10,
+                    value: 4,
+                },
+            };
         }
-        Loader.prototype.callServer = function (action, params, callback, failCallback) {
-            var xhr = new XMLHttpRequest();
-            params['action'] = action;
-            xhr.open('POST', this.apiLocation, true);
-            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = function () {
-                var DONE = 4; // readyState 4 means the request is done.
-                var OK = 200; // status 200 is a successful return.
-                if (xhr.readyState == DONE) {
-                    if (xhr.status == OK) {
-                        var object = JSON.parse(xhr.responseText);
-                        if (object.rc > 0) {
-                            failCallback(object.msg);
-                        }
-                        else {
-                            callback(object);
-                        }
-                    }
-                    else {
-                        failCallback('Error: ' + xhr.status);
-                    }
-                }
-            };
-            //var formData = this.paramsToFormData(params);
-            var queryString = this.param(params);
-            xhr.send(queryString);
+        PlayerTypes.prototype.getPlayerTypes = function () {
+            return this.playerTypes;
         };
-        Loader.prototype.paramsToFormData = function (params) {
-            var formData = new FormData();
-            for (var key in params) {
-                formData.append(key, params[key]);
-            }
-            return formData;
-        };
-        Loader.prototype.param = function (object) {
-            var encodedString = '';
-            for (var prop in object) {
-                if (object.hasOwnProperty(prop)) {
-                    if (encodedString.length > 0) {
-                        encodedString += '&';
-                    }
-                    encodedString += encodeURI(prop + '=' + object[prop]);
-                }
-            }
-            return encodedString;
-        };
-        return Loader;
+        return PlayerTypes;
     }());
-    exports.Loader = Loader;
-});
-define("Levels", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Levels = (function () {
-        function Levels(jetpack, loader) {
-            this.levelID = 0;
-            this.levels = {};
-            this.levelList = [];
-            this.jetpack = jetpack;
-            this.loader = loader;
-        }
-        Levels.prototype.getLevelList = function () {
-            var _this = this;
-            this.loader.callServer('getLevelsList', {}, function (data) {
-                _this.levelList = data.data;
-                _this.populateLevelsList();
-            });
-        };
-        Levels.prototype.populateLevelsList = function () {
-            var select = document.getElementById('levelList');
-            if (!select)
-                return false;
-            while (select.firstChild) {
-                select.removeChild(select.firstChild);
-            }
-            var nullEl = document.createElement('option');
-            nullEl.textContent = "New";
-            nullEl.value = false;
-            if (!this.levelID)
-                nullEl.selected = true;
-            select.appendChild(nullEl);
-            for (var i in this.levelList) {
-                var levelID = parseInt(this.levelList[i]);
-                var el = document.createElement("option");
-                el.textContent = levelID.toString();
-                el.value = levelID.toString();
-                console.log(levelID, this.levelID);
-                if (levelID == this.levelID) {
-                    el.selected = true;
-                }
-                select.appendChild(el);
-            }
-        };
-        Levels.prototype.generateLevelID = function () {
-            for (var levelID = 1; levelID < 10000; levelID++) {
-                var levelIDString = levelID.toString();
-                if (this.levelList.indexOf(levelIDString) == -1) {
-                    return levelID;
-                }
-            }
-            return 0;
-        };
-        Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
-            var _this = this;
-            var saveData = {
-                'board': board,
-                'boardSize': boardSize,
-                'levelID': levelID
-            };
-            var saveString = JSON.stringify(saveData);
-            var saveKey = levelID.toString();
-            var params = {
-                data: saveString,
-                levelID: 0
-            };
-            if (levelID) {
-                params.levelID = levelID;
-            }
-            this.loader.callServer('saveLevel', params, function (data) {
-                _this.levelID = data.data;
-                callback(data.data);
-            }, function (errorMsg) {
-                console.log('ERROR: ', errorMsg);
-            });
-        };
-        Levels.prototype.loadLevel = function (levelID, callback, failCallback) {
-            var _this = this;
-            this.getLevelList();
-            var params = {
-                levelID: levelID
-            };
-            this.loader.callServer('getLevel', params, function (data) {
-                _this.levelID = levelID;
-                callback(data.data);
-            }, function (errorMsg) {
-                console.log('ERROR: ', errorMsg);
-                failCallback();
-            });
-        };
-        return Levels;
-    }());
-    exports.Levels = Levels;
+    exports.PlayerTypes = PlayerTypes;
 });
 define("TileSet", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -935,101 +982,101 @@ define("TileSet", ["require", "exports"], function (require, exports) {
         TileSet.prototype.getTiles = function () {
             var tiles = {
                 1: {
-                    'id': 1,
-                    'title': 'Sky',
-                    'img': 'sky.png',
-                    'background': true,
-                    'needsDraw': true
+                    id: 1,
+                    title: "Sky",
+                    img: "sky.png",
+                    background: true,
+                    needsDraw: true,
                 },
                 2: {
-                    'id': 2,
-                    'title': 'Fabric',
-                    'img': 'fabric.png',
-                    'background': false,
-                    'needsDraw': true
+                    id: 2,
+                    title: "Fabric",
+                    img: "fabric.png",
+                    background: false,
+                    needsDraw: true,
                 },
                 3: {
-                    'id': 3,
-                    'title': 'Cacti',
-                    'img': 'cacti.png',
-                    'background': true,
-                    'needsDraw': true,
-                    'frontLayer': true,
-                    'collectable': 1
+                    id: 3,
+                    title: "Cacti",
+                    img: "cacti.png",
+                    background: true,
+                    needsDraw: true,
+                    frontLayer: true,
+                    collectable: 1,
                 },
                 4: {
-                    'id': 4,
-                    'title': 'Plant',
-                    'img': 'plant.png',
-                    'background': true,
-                    'needsDraw': true,
-                    'frontLayer': true,
-                    'collectable': 10
+                    id: 4,
+                    title: "Plant",
+                    img: "plant.png",
+                    background: true,
+                    needsDraw: true,
+                    frontLayer: true,
+                    collectable: 10,
                 },
                 5: {
-                    'id': 5,
-                    'title': 'Crate',
-                    'img': 'crate.png',
-                    'background': false,
-                    'needsDraw': true,
-                    'breakable': true
+                    id: 5,
+                    title: "Crate",
+                    img: "crate.png",
+                    background: false,
+                    needsDraw: true,
+                    breakable: true,
                 },
                 8: {
-                    'id': 8,
-                    'title': 'Work surface 2',
-                    'img': 'work-surface-2.png',
-                    'background': false,
-                    'needsDraw': true
+                    id: 8,
+                    title: "Work surface 2",
+                    img: "work-surface-2.png",
+                    background: false,
+                    needsDraw: true,
                 },
                 9: {
-                    'id': 9,
-                    'title': 'Work surface 3',
-                    'img': 'work-surface-3.png',
-                    'background': false,
-                    'needsDraw': true
+                    id: 9,
+                    title: "Work surface 3",
+                    img: "work-surface-3.png",
+                    background: false,
+                    needsDraw: true,
                 },
                 10: {
-                    'id': 10,
-                    'title': 'Work surface 4',
-                    'img': 'work-surface-4.png',
-                    'background': false,
-                    'needsDraw': true
+                    id: 10,
+                    title: "Work surface 4",
+                    img: "work-surface-4.png",
+                    background: false,
+                    needsDraw: true,
                 },
                 11: {
-                    'id': 11,
-                    'title': 'Tiles',
-                    'img': 'tile.png',
-                    'background': false,
-                    'needsDraw': true
+                    id: 11,
+                    title: "Tiles",
+                    img: "tile.png",
+                    background: false,
+                    needsDraw: true,
                 },
                 12: {
-                    'id': 12,
-                    'title': 'Egg Cup',
-                    'img': 'egg-cup.png',
-                    'background': true,
-                    'needsDraw': true,
-                    'frontLayer': true,
-                    'createPlayer': 'egg',
-                    'action': 'completeLevel'
+                    id: 12,
+                    title: "Egg Cup",
+                    img: "egg-cup.png",
+                    background: true,
+                    needsDraw: true,
+                    frontLayer: true,
+                    createPlayer: "egg",
+                    action: "completeLevel",
                 },
                 13: {
-                    'id': 13,
-                    'title': 'Toast',
-                    'img': 'toast.png',
-                    'background': true,
-                    'needsDraw': true,
-                    'frontLayer': true,
-                    'collectable': 100
+                    id: 13,
+                    title: "Toast",
+                    img: "toast.png",
+                    background: true,
+                    needsDraw: true,
+                    frontLayer: true,
+                    collectable: 100,
                 },
                 14: {
-                    'id': 14,
-                    'title': 'Door',
-                    'img': 'door.png',
-                    'background': true,
-                    'needsDraw': true,
-                    'frontLayer': true,
-                    'action': 'teleport'
-                }
+                    id: 14,
+                    title: "Door",
+                    img: "door.png",
+                    background: true,
+                    needsDraw: true,
+                    frontLayer: true,
+                    action: "teleport",
+                },
             };
             return tiles;
         };
@@ -1037,54 +1084,7 @@ define("TileSet", ["require", "exports"], function (require, exports) {
     }());
     exports.TileSet = TileSet;
 });
-define("PlayerTypes", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var PlayerTypes = (function () {
-        function PlayerTypes() {
-            this.playerTypes = {
-                egg: {
-                    type: 'egg',
-                    title: "It is of course the egg",
-                    'img': 'egg-sprite.png',
-                    'frames': 18,
-                    'multiplier': 1,
-                    'value': 1
-                },
-                'red-egg': {
-                    'type': 'red-egg',
-                    'title': "It is of course the red egg",
-                    'img': 'egg-sprite-red.png',
-                    'frames': 18,
-                    'multiplier': 2,
-                    value: 2
-                },
-                'blue-egg': {
-                    'type': 'blue-egg',
-                    'title': "It is of course the blue egg",
-                    'img': 'egg-sprite-blue.png',
-                    'frames': 18,
-                    'multiplier': 5,
-                    value: 3
-                },
-                'yellow-egg': {
-                    'type': 'yellow-egg',
-                    'title': "It is of course the yellow egg",
-                    'img': 'egg-sprite-yellow.png',
-                    'frames': 18,
-                    'multiplier': 10,
-                    value: 4
-                }
-            };
-        }
-        PlayerTypes.prototype.getPlayerTypes = function () {
-            return this.playerTypes;
-        };
-        return PlayerTypes;
-    }());
-    exports.PlayerTypes = PlayerTypes;
-});
-define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Renderer", "Player", "TileSet", "Loader", "Coords", "PlayerTypes"], function (require, exports, Collisions_1, Map_1, Levels_1, Renderer_1, Player_1, TileSet_1, Loader_1, Coords_3, PlayerTypes_1) {
+define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet"], function (require, exports, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1133,7 +1133,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
             this.collisions = new Collisions_1.Collisions(this, this.playerTypes); // pass the data, not the object
-            var apiLocation = 'http://' + window.location.hostname + '/levels/';
+            var apiLocation = "http://" + window.location.hostname + "/levels/";
             var loader = new Loader_1.Loader(apiLocation);
             this.levels = new Levels_1.Levels(this, loader);
         };
@@ -1152,7 +1152,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
         };
         Jetpack.prototype.addScore = function (amount) {
             this.score += amount;
-            var scoreElement = document.getElementById('score');
+            var scoreElement = document.getElementById("score");
             if (scoreElement) {
                 scoreElement.innerHTML = this.score.toString();
             }
@@ -1193,7 +1193,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             this.destroyPlayers();
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                var type = _this.map.getTileProperty(tile, 'createPlayer');
+                var type = _this.map.getTileProperty(tile, "createPlayer");
                 if (type) {
                     var coords = new Coords_3.Coords(tile.x, tile.y);
                     _this.createNewPlayer(type, coords, 1);
@@ -1209,7 +1209,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             var collectable = 0;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                var score = _this.map.getTileProperty(tile, 'collectable');
+                var score = _this.map.getTileProperty(tile, "collectable");
                 if (score > 0) {
                     collectable += score;
                 }
@@ -1254,14 +1254,14 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
         };
         Jetpack.prototype.revertEditMessage = function () {
             var s = setTimeout(function () {
-                var message = document.getElementById('message');
+                var message = document.getElementById("message");
                 message.innerHTML = "EDIT MODE";
             }, 3000);
         };
         Jetpack.prototype.showEditMessage = function (text) {
             if (!this.editMode)
                 return false;
-            var message = document.getElementById('message');
+            var message = document.getElementById("message");
             message.innerHTML = text;
             this.revertEditMessage();
         };
@@ -1273,11 +1273,11 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             });
         };
         Jetpack.prototype.loadLevelFromList = function () {
-            var select = document.getElementById('levelList');
+            var select = document.getElementById("levelList");
             var index = select.selectedIndex;
             var levelID = select.options[index].value;
             this.loadLevel(levelID, function () {
-                console.log('loaded!');
+                console.log("loaded!");
             });
         };
         Jetpack.prototype.loadLevel = function (levelID, callback) {
@@ -1294,14 +1294,14 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
         };
         Jetpack.prototype.bindSizeHandler = function () {
             var _this = this;
-            window.addEventListener('resize', function () {
+            window.addEventListener("resize", function () {
                 _this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
             });
         };
         Jetpack.prototype.bindClickHandler = function () {
             var _this = this;
-            var canvas = document.getElementById('canvas');
-            canvas.addEventListener('click', function (event) {
+            var canvas = document.getElementById("canvas");
+            canvas.addEventListener("click", function (event) {
                 var tileSize = _this.renderer.tileSize;
                 var coords = new Coords_3.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
                 _this.handleClick(coords);
@@ -1309,11 +1309,11 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
         };
         Jetpack.prototype.bindKeyboardHandler = function () {
             var _this = this;
-            window.addEventListener('keydown', function (event) {
-                if (event.keyCode == '37') {
+            window.addEventListener("keydown", function (event) {
+                if (event.keyCode == "37") {
                     _this.rotateBoard(false);
                 }
-                if (event.keyCode == '39') {
+                if (event.keyCode == "39") {
                     _this.rotateBoard(true);
                 }
             });

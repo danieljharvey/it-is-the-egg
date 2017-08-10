@@ -1,12 +1,12 @@
-import { Collisions } from './Collisions';
-import { Map } from './Map';
-import { Levels } from './Levels';
-import { Renderer } from './Renderer';
-import { Player } from './Player';
-import { TileSet } from './TileSet';
-import { Loader } from './Loader';
-import { Coords } from './Coords';
-import { PlayerTypes } from './PlayerTypes';
+import { Collisions } from "./Collisions";
+import { Coords } from "./Coords";
+import { Levels } from "./Levels";
+import { Loader } from "./Loader";
+import { Map } from "./Map";
+import { Player } from "./Player";
+import { PlayerTypes } from "./PlayerTypes";
+import { Renderer } from "./Renderer";
+import { TileSet } from "./TileSet";
 
 export class Jetpack {
 
@@ -35,14 +35,14 @@ export class Jetpack {
 		this.bindSizeHandler();
 		this.bindClickHandler();
 		this.bindKeyboardHandler();
-		
+
 		this.pauseRender();
 		this.renderer.renderTitleScreen(() => {
 			this.loadLevel(this.levelID, () => {
 				this.createPlayers();
 				this.resetScore(0);
-				this.startRender();	
-			});	
+				this.startRender();
+			});
 		});
 	}
 
@@ -53,14 +53,14 @@ export class Jetpack {
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
-		var s = setTimeout(() => {
+		const s = setTimeout(() => {
 			this.startRender();
-		},1000);
+		}, 1000);
 	}
 
 	bootstrap() {
-		var tileSet = new TileSet();
-		var tiles = tileSet.getTiles();
+		const tileSet = new TileSet();
+		const tiles = tileSet.getTiles();
 
 		this.map = new Map(tiles);
 
@@ -71,10 +71,10 @@ export class Jetpack {
 
 		this.collisions = new Collisions(this, this.playerTypes); // pass the data, not the object
 
-		var apiLocation = 'http://' + window.location.hostname + '/levels/';
-		
-		var loader: Loader = new Loader(apiLocation);
-		
+		const apiLocation = "http://" + window.location.hostname + "/levels/";
+
+		const loader: Loader = new Loader(apiLocation);
+
 		this.levels = new Levels(this, loader);
 	}
 
@@ -93,7 +93,7 @@ export class Jetpack {
 
 	addScore(amount) {
 		this.score += amount;
-		var scoreElement = document.getElementById('score');
+		const scoreElement = document.getElementById("score");
 		if (scoreElement) {
 			scoreElement.innerHTML = this.score.toString();
 		}
@@ -102,7 +102,7 @@ export class Jetpack {
 	// or at least try
 	completeLevel() {
 		this.collectable = this.getCollectable();
-		var playerCount: number = this.countPlayers();
+		const playerCount: number = this.countPlayers();
 		if (this.collectable < 1 && playerCount < 2) {
 			this.nextLevel();
 		}
@@ -119,15 +119,15 @@ export class Jetpack {
 	}
 
 	doPlayerCalcs() {
-		for (var i in this.players) {
-			var player: Player = this.players[i]
+		for (const i in this.players) {
+			const player: Player = this.players[i];
 			player.doCalcs();
 		}
 	}
 
-	countPlayers() : number {
-		var count: number = 0;
-		for (var i in this.players) {
+	countPlayers(): number {
+		let count: number = 0;
+		for (const i in this.players) {
 			if (this.players[i]) count++;
 		}
 		return count;
@@ -136,11 +136,11 @@ export class Jetpack {
 	// cycle through all map tiles, find egg cups etc and create players
 	createPlayers() {
 		this.destroyPlayers();
-		var tiles = this.map.getAllTiles();
+		const tiles = this.map.getAllTiles();
 		tiles.map((tile) => {
-			var type = this.map.getTileProperty(tile,'createPlayer');
+			const type = this.map.getTileProperty(tile, "createPlayer");
 			if (type) {
-				var coords = new Coords(tile.x, tile.y);
+				const coords = new Coords(tile.x, tile.y);
 				this.createNewPlayer(type, coords, 1);
 			}
 		});
@@ -152,10 +152,10 @@ export class Jetpack {
 
 	// cycle through all map tiles, find egg cups etc and create players
 	getCollectable() {
-		var collectable = 0;
-		var tiles = this.map.getAllTiles();
+		let collectable = 0;
+		const tiles = this.map.getAllTiles();
 		tiles.map((tile) => {
-			var score = this.map.getTileProperty(tile,'collectable');
+			const score = this.map.getTileProperty(tile, "collectable");
 			if (score > 0) {
 				collectable += score;
 			}
@@ -163,14 +163,14 @@ export class Jetpack {
 		return collectable;
 	}
 
-	deletePlayer(player:Player) {
+	deletePlayer(player: Player) {
 		delete this.players[player.id];
 	}
 
 	// create player and load their sprite
-	createNewPlayer(type: string, coords: Coords, direction:number) : Player {
-		var playerType = this.playerTypes[type];
-		var params = JSON.parse(JSON.stringify(playerType));
+	createNewPlayer(type: string, coords: Coords, direction: number): Player {
+		const playerType = this.playerTypes[type];
+		const params = JSON.parse(JSON.stringify(playerType));
 		params.id = this.nextPlayerID++;
 		params.currentFrame = 0;
 		params.x = coords.x; // x in tiles
@@ -181,7 +181,7 @@ export class Jetpack {
 		params.offsetX = coords.offsetX;
 		params.offsetY = coords.offsetY;
 		params.moveSpeed = this.moveSpeed;
-		var player = new Player(params, this.map, this.renderer, this, this.collisions);
+		const player = new Player(params, this.map, this.renderer, this, this.collisions);
 		this.players[player.id] = player;
 		return player;
 	}
@@ -193,7 +193,7 @@ export class Jetpack {
 
 		this.map.rotateBoard(clockwise);
 
-		for (var i in this.players) {
+		for (const i in this.players) {
 			this.map.rotatePlayer(this.players[i], clockwise);
 		}
 
@@ -205,74 +205,74 @@ export class Jetpack {
 	}
 
 	revertEditMessage() {
-		var s = setTimeout(function() {
-			var message = document.getElementById('message');
-			message.innerHTML="EDIT MODE";
-		},3000);
+		const s = setTimeout(function() {
+			const message = document.getElementById("message");
+			message.innerHTML = "EDIT MODE";
+		}, 3000);
 	}
 
 	showEditMessage(text) {
 		if (!this.editMode) return false;
-		var message = document.getElementById('message');
+		const message = document.getElementById("message");
 		message.innerHTML = text;
 		this.revertEditMessage();
 	}
 
 	saveLevel() {
 		this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, (levelID) => {
-			var text = "Level " + levelID + " saved";
+			const text = "Level " + levelID + " saved";
 			this.showEditMessage(text);
 		});
 	}
 
 	loadLevelFromList() {
-		var select = document.getElementById('levelList');
-        var index = select.selectedIndex;
-        var levelID = select.options[index].value;
-    	this.loadLevel(levelID, function() {
-    		console.log('loaded!');
-    	});        
+		const select = document.getElementById("levelList");
+  const index = select.selectedIndex;
+  const levelID = select.options[index].value;
+  this.loadLevel(levelID, function() {
+    		console.log("loaded!");
+    	});
 	}
 
 	loadLevel(levelID, callback) {
 		this.levels.loadLevel(levelID, (data) => {
-			var text = "Level " + data.levelID + " loaded!";
+			const text = "Level " + data.levelID + " loaded!";
 			this.showEditMessage(text);
 			this.map.updateBoard(data.board, data.boardSize);
 			callback();
-		},() => {
+		}, () => {
 			this.map.board = this.map.generateRandomBoard();
 			callback();
-		})
+		});
 	}
 
 	bindSizeHandler() {
-		window.addEventListener('resize', () => {
+		window.addEventListener("resize", () => {
 			this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
 		});
 	}
 
 	bindClickHandler() {
-		var canvas = document.getElementById('canvas');
-		canvas.addEventListener('click', (event) => {
-		    var tileSize = this.renderer.tileSize;
-		    var coords = new Coords(
+		const canvas = document.getElementById("canvas");
+		canvas.addEventListener("click", (event) => {
+		    const tileSize = this.renderer.tileSize;
+		    const coords = new Coords(
 		    	(event.offsetX / tileSize) as number,
 	        	(event.offsetY / tileSize) as number,
 	        	(event.offsetX % tileSize) - (tileSize / 2),
-	        	(event.offsetY % tileSize) - (tileSize / 2)
-	        )
-	        this.handleClick(coords);
+	        	(event.offsetY % tileSize) - (tileSize / 2),
+	        );
+	     this.handleClick(coords);
 	    });
 	}
 
 	bindKeyboardHandler() {
-		window.addEventListener('keydown', (event) => {
-			if (event.keyCode == '37') {
+		window.addEventListener("keydown", (event) => {
+			if (event.keyCode == "37") {
 				this.rotateBoard(false);
 			}
-			
-			if (event.keyCode == '39') {
+
+			if (event.keyCode == "39") {
 				this.rotateBoard(true);
 			}
 		});
@@ -281,11 +281,10 @@ export class Jetpack {
 	// coords is always x,y,offsetX, offsetY
 	handleClick(coords: Coords) {
 		if (this.editMode) {
-			this.map.cycleTile(coords.x,coords.y);	
+			this.map.cycleTile(coords.x, coords.y);
 		} else {
 			// destroy tile or something
 		}
 	}
 
-	
 }
