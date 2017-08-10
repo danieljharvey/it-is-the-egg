@@ -34,21 +34,23 @@ define("Canvas", ["require", "exports"], function (require, exports) {
     var Canvas = (function () {
         function Canvas(boardSize) {
             this.checkResize = true;
+            this.imagesFolder = "img/";
             this.boardSize = boardSize;
+            this.tileSize = this.sizeCanvas(boardSize);
         }
-        Canvas.prototype.sizeCanvas = function () {
-            if (!this.checkResize)
-                return false;
-            var maxBoardSize = this.getMaxBoardSize();
-            this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
+        // takes BoardSize, returns size of each tile
+        Canvas.prototype.sizeCanvas = function (boardSize) {
+            this.boardSize = boardSize;
+            var maxBoardSize = this.getMaxBoardSize(this.boardSize);
+            //this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
             var controlHeader = document.getElementById("controlHeader");
             controlHeader.style.width = maxBoardSize.toString() + 'px';
             this.tileSize = maxBoardSize / this.boardSize.width;
-            this.loadCanvas();
-            //this.map.markAllForRedraw();
             this.checkResize = false; // all done
+            this.loadCanvas(this.boardSize, this.tileSize);
+            return this.tileSize;
         };
-        Canvas.prototype.getMaxBoardSize = function () {
+        Canvas.prototype.getMaxBoardSize = function (boardSize) {
             var width = window.innerWidth;
             var height = window.innerHeight;
             var wrapper = document.getElementById('wrapper');
@@ -58,12 +60,12 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
             width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
             if (width > height) {
-                var difference = (height % this.boardSize.width);
+                var difference = (height % boardSize.width);
                 height = height - difference;
                 return height;
             }
             else {
-                var difference = (width % this.boardSize.width);
+                var difference = (width % boardSize.width);
                 width = width - difference;
                 return width;
             }
@@ -72,23 +74,26 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             this.ctx.fillStyle = fillStyle;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         };
-        Canvas.prototype.loadCanvas = function () {
+        Canvas.prototype.loadCanvas = function (boardSize, tileSize) {
             this.canvas = document.getElementById("canvas");
-            this.canvas.width = this.boardSize.width * this.tileSize;
-            this.canvas.height = this.boardSize.height * this.tileSize;
+            this.canvas.width = boardSize.width * tileSize;
+            this.canvas.height = boardSize.height * tileSize;
             this.ctx = this.canvas.getContext("2d");
         };
         Canvas.prototype.getDrawingContext = function () {
             if (!this.ctx) {
-                this.loadCanvas();
+                this.loadCanvas(this.boardSize, this.tileSize);
             }
             return this.ctx;
         };
         Canvas.prototype.getCanvas = function () {
             if (!this.canvas) {
-                this.loadCanvas();
+                this.loadCanvas(this.boardSize, this.tileSize);
             }
             return this.canvas;
+        };
+        Canvas.prototype.getImagesFolder = function () {
+            return this.imagesFolder;
         };
         return Canvas;
     }());
@@ -301,41 +306,36 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
     var Renderer = (function () {
-        function Renderer(jetpack, map, tiles, playerTypes, boardSize) {
+        function Renderer(jetpack, map, tiles, playerTypes, boardSize, canvas) {
             this.tileSize = 48;
             this.checkResize = true;
-            this.imagesFolder = "img/";
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
             this.playerTypes = {};
-            this.renderTile = function (x, y, tile, overwriteImage) {
-                if (overwriteImage) {
-                    var img = overwriteImage;
-                }
-                else {
-                    var img = this.tileImages[tile.id];
-                }
+            this.renderTile = function (x, y, tile) {
+                var ctx = this.canvas.getDrawingContext();
+                var img = this.getTileImage(tile.id);
                 if (!img) {
-                    console.log("Could not find tile image for id " + tile.id);
+                    //console.log("Could not find tile image for id " + tile.id);
                     return false;
                 }
                 var left = x * this.tileSize;
                 var top = y * this.tileSize;
                 var opacity = 1;
-                this.ctx.globalAlpha = opacity;
+                ctx.globalAlpha = opacity;
                 if (this.map.renderAngle == 0) {
-                    this.ctx.drawImage(img, left, top, this.tileSize, this.tileSize);
+                    ctx.drawImage(img, left, top, this.tileSize, this.tileSize);
                 }
                 else {
                     var angleInRad = this.map.renderAngle * (Math.PI / 180);
                     var offset = this.tileSize / 2;
                     left = left + offset;
                     top = top + offset;
-                    this.ctx.translate(left, top);
-                    this.ctx.rotate(angleInRad);
-                    this.ctx.drawImage(img, -offset, -offset, this.tileSize, this.tileSize);
-                    this.ctx.rotate(-angleInRad);
-                    this.ctx.translate(-left, -top);
+                    ctx.translate(left, top);
+                    ctx.rotate(angleInRad);
+                    ctx.drawImage(img, -offset, -offset, this.tileSize, this.tileSize);
+                    ctx.rotate(-angleInRad);
+                    ctx.translate(-left, -top);
                 }
                 return true;
             };
@@ -344,125 +344,69 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.tiles = tiles;
             this.playerTypes = playerTypes;
             this.boardSize = boardSize;
+            this.canvas = canvas;
             this.loadTilePalette();
             this.loadPlayerPalette();
-            this.loadCanvas();
+            this.tileSize = this.canvas.sizeCanvas(boardSize);
         }
-        Renderer.prototype.renderTitleScreen = function (callback) {
-            var _this = this;
-            this.sizeCanvas();
-            var titleImage = document.createElement("img");
-            titleImage.addEventListener("load", function () {
-                _this.drawTheBigEgg(titleImage, 0.02, true, callback);
-            }, false);
-            titleImage.setAttribute("src", this.imagesFolder + "large/the-egg.png");
-            titleImage.setAttribute("width", 1024);
-            titleImage.setAttribute("height", 1024);
-        };
-        Renderer.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
-            var _this = this;
-            this.ctx.globalAlpha = 1;
-            this.wipeCanvas("rgb(0,0,0)");
-            this.ctx.globalAlpha = opacity;
-            this.ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
-            if (show) {
-                opacity += 0.01;
-                if (opacity >= 1) {
-                    // wait, fade the egg
-                    var v = setTimeout(function () {
-                        // and start fading!
-                        _this.drawTheBigEgg(titleImage, opacity, false, callback);
-                    }, 1000);
-                    return false;
-                }
-            }
-            else {
-                opacity = opacity - 0.03;
-                if (opacity <= 0) {
-                    callback();
-                    titleImage = null;
-                    return false;
-                }
-            }
-            this.animationHandle = window.requestAnimationFrame(function () {
-                _this.drawTheBigEgg(titleImage, opacity, show, callback);
-            });
-        };
         Renderer.prototype.render = function () {
             var _this = this;
             if (this.jetpack.paused)
                 return false;
-            this.sizeCanvas();
-            //this.wipeCanvas('rgba(0,0,0,0.02)');
             this.renderBoard();
             this.renderPlayers();
             this.renderFrontLayerBoard();
             this.jetpack.doPlayerCalcs();
-            //this.wipeCanvas('rgba(255,255,0,0.04)');
             this.animationHandle = window.requestAnimationFrame(function () { return _this.render(); });
         };
         Renderer.prototype.loadTilePalette = function () {
-            for (var i in this.tiles) {
-                var thisTile = this.tiles[i];
+            var _this = this;
+            var _loop_1 = function (i) {
+                var thisTile = this_1.tiles[i];
                 var tileImage = document.createElement("img");
-                tileImage.setAttribute("src", this.getTileImagePath(thisTile));
+                tileImage.setAttribute("src", this_1.getTileImagePath(thisTile));
                 tileImage.setAttribute("width", SPRITE_SIZE);
                 tileImage.setAttribute("height", SPRITE_SIZE);
-                this.tileImages[thisTile.id] = tileImage;
+                tileImage.addEventListener("load", function () {
+                    _this.markTileImageAsLoaded(thisTile.id);
+                }, false);
+                this_1.tileImages[thisTile.id] = {
+                    image: tileImage,
+                    ready: false
+                };
+            };
+            var this_1 = this;
+            for (var i in this.tiles) {
+                _loop_1(i);
             }
         };
         Renderer.prototype.loadPlayerPalette = function () {
-            for (var i in this.playerTypes) {
-                var playerType = this.playerTypes[i];
+            var _this = this;
+            var _loop_2 = function (i) {
+                var playerType = this_2.playerTypes[i];
                 var playerImage = document.createElement("img");
-                playerImage.setAttribute("src", this.getTileImagePath(playerType));
-                this.playerImages[playerType.img] = playerImage;
+                playerImage.setAttribute("src", this_2.getTileImagePath(playerType));
+                playerImage.addEventListener("load", function () {
+                    _this.markPlayerImageAsLoaded(playerType.img);
+                }, false);
+                this_2.playerImages[playerType.img] = {
+                    image: playerImage,
+                    ready: false
+                };
+            };
+            var this_2 = this;
+            for (var i in this.playerTypes) {
+                _loop_2(i);
             }
+        };
+        Renderer.prototype.markPlayerImageAsLoaded = function (img) {
+            this.playerImages[img].ready = true;
+        };
+        Renderer.prototype.markTileImageAsLoaded = function (id) {
+            this.tileImages[id].ready = true;
         };
         Renderer.prototype.getTileImagePath = function (tile) {
-            return this.imagesFolder + tile.img;
-        };
-        Renderer.prototype.sizeCanvas = function () {
-            if (!this.checkResize)
-                return false;
-            var maxBoardSize = this.getMaxBoardSize();
-            this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
-            var controlHeader = document.getElementById("controlHeader");
-            controlHeader.style.width = maxBoardSize.toString() + 'px';
-            this.tileSize = maxBoardSize / this.boardSize.width;
-            this.loadCanvas();
-            this.map.markAllForRedraw();
-            this.checkResize = false; // all done
-        };
-        Renderer.prototype.getMaxBoardSize = function () {
-            var width = window.innerWidth;
-            var height = window.innerHeight;
-            var wrapper = document.getElementById('wrapper');
-            var wrapMargin = parseInt(window.getComputedStyle(wrapper).margin);
-            var controlHeader = document.getElementById("controlHeader");
-            var controlSpacing = parseInt(window.getComputedStyle(controlHeader).marginTop);
-            height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
-            width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
-            if (width > height) {
-                var difference = (height % this.boardSize.width);
-                height = height - difference;
-                return height;
-            }
-            else {
-                var difference = (width % this.boardSize.width);
-                width = width - difference;
-                return width;
-            }
-        };
-        Renderer.prototype.wipeCanvas = function (fillStyle) {
-            this.ctx.fillStyle = fillStyle;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        };
-        Renderer.prototype.loadCanvas = function () {
-            this.canvas = document.getElementById("canvas");
-            this.canvas.width = this.boardSize.width * this.tileSize;
-            this.canvas.height = this.boardSize.height * this.tileSize;
-            this.ctx = this.canvas.getContext("2d");
+            return this.canvas.imagesFolder + tile.img;
         };
         Renderer.prototype.renderBoard = function () {
             var _this = this;
@@ -486,8 +430,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         };
         Renderer.prototype.drawSkyTile = function (tile, x, y) {
             var skyTile = this.map.getTile(1);
-            var skyTileImage = this.tileImages[skyTile.id];
-            this.renderTile(x, y, tile, skyTileImage);
+            this.renderTile(x, y, skyTile);
         };
         // just go over and draw the over-the-top stuff
         Renderer.prototype.renderFrontLayerBoard = function () {
@@ -497,7 +440,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 if (tile.needsDraw === false)
                     return;
                 if (tile.frontLayer) {
-                    if (_this.renderTile(tile.x, tile.y, tile, false)) {
+                    if (_this.renderTile(tile.x, tile.y, tile)) {
                         tile.needsDraw = false;
                         tile.drawnBefore = true;
                     }
@@ -507,8 +450,9 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         // debugging tools
         Renderer.prototype.showUnrenderedTile = function (x, y) {
             return false;
-            this.ctx.fillStyle = "#f00";
-            this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+            var ctx = this.canvas.getDrawingContext();
+            ctx.fillStyle = "#f00";
+            ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
         };
         Renderer.prototype.renderPlayers = function () {
             for (var i in this.jetpack.players) {
@@ -516,31 +460,51 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 this.renderPlayer(player);
             }
         };
+        Renderer.prototype.getTileImage = function (id) {
+            var tileImage = this.tileImages[id];
+            if (tileImage.ready) {
+                return tileImage.image;
+            }
+            return false;
+        };
+        Renderer.prototype.getPlayerImage = function (img) {
+            var playerImage = this.playerImages[img];
+            if (playerImage.ready) {
+                return playerImage.image;
+            }
+            return false;
+        };
         Renderer.prototype.renderPlayer = function (player) {
+            var ctx = this.canvas.getDrawingContext();
             var offsetRatio = (this.tileSize / SPRITE_SIZE);
             var left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
             var top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
             var clipLeft = player.currentFrame * SPRITE_SIZE;
             var clipTop = 0;
-            this.ctx.globalAlpha = 1;
-            var image = this.playerImages[player.img];
-            this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
+            ctx.globalAlpha = 1;
+            var image = this.getPlayerImage(player.img);
+            if (!image) {
+                //console.log('player image not loaded', player.img);
+                return false;
+            }
+            ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
             if (left < 0) {
                 // also draw on right
                 var secondLeft = (this.tileSize * this.boardSize.width) + player.offsetX;
-                this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
             }
             if ((left + this.tileSize) > (this.tileSize * this.boardSize.width)) {
                 // also draw on left
                 var secondLeft = left - (this.tileSize * this.boardSize.width);
-                this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
             }
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
-            var cw = this.canvas.width;
-            var ch = this.canvas.height;
+            var canvas = this.canvas.getCanvas();
+            var cw = canvas.width;
+            var ch = canvas.height;
             var savedData = new Image();
-            savedData.src = this.canvas.toDataURL("image/png");
+            savedData.src = canvas.toDataURL("image/png");
             if (clockwise) {
                 this.drawRotated(savedData, 1, 0, 90, completed);
             }
@@ -550,6 +514,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         };
         Renderer.prototype.drawRotated = function (savedData, direction, angle, targetAngle, completed) {
             var _this = this;
+            var canvas = this.canvas.getCanvas();
             if (direction > 0) {
                 if (angle >= targetAngle) {
                     completed();
@@ -563,15 +528,16 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 }
             }
             var angleInRad = angle * (Math.PI / 180);
-            var offset = this.canvas.width / 2;
+            var offset = canvas.width / 2;
+            var ctx = this.canvas.getDrawingContext();
             var left = offset;
             var top = offset;
-            this.wipeCanvas("rgba(0,0,0,0.1)");
-            this.ctx.translate(left, top);
-            this.ctx.rotate(angleInRad);
-            this.ctx.drawImage(savedData, -offset, -offset);
-            this.ctx.rotate(-angleInRad);
-            this.ctx.translate(-left, -top);
+            this.canvas.wipeCanvas("rgba(0,0,0,0.1)");
+            ctx.translate(left, top);
+            ctx.rotate(angleInRad);
+            ctx.drawImage(savedData, -offset, -offset);
+            ctx.rotate(-angleInRad);
+            ctx.translate(-left, -top);
             angle += (direction * this.jetpack.moveSpeed);
             this.animationHandle = window.requestAnimationFrame(function () {
                 _this.drawRotated(savedData, direction, angle, targetAngle, completed);
@@ -1166,11 +1132,13 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
                 for (var y = 0; y < boardSize.height; y++) {
                     if (x < currentWidth && y < currentHeight) {
                         // using current board
-                        newBoard[x][y] = board[x][y];
+                        var tile = board[x][y];
+                        newBoard[x][y] = tile;
                     }
                     else {
                         // adding blank tiles
-                        newBoard[x][y] = this.getTile(1);
+                        var tile = this.getTile(1);
+                        newBoard[x][y] = tile;
                     }
                 }
             }
@@ -1227,7 +1195,62 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
-define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize"], function (require, exports, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_1) {
+define("TitleScreen", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var TitleScreen = (function () {
+        function TitleScreen(canvas, imagePath, width, height) {
+            this.canvas = canvas;
+            this.imagePath = this.canvas.getImagesFolder() + imagePath;
+            this.width = width;
+            this.height = height;
+        }
+        TitleScreen.prototype.render = function (callback) {
+            var _this = this;
+            var titleImage = document.createElement("img");
+            titleImage.addEventListener("load", function () {
+                _this.drawTheBigEgg(titleImage, 0.02, true, callback);
+            }, false);
+            titleImage.setAttribute("src", this.imagePath);
+            titleImage.setAttribute("width", this.width);
+            titleImage.setAttribute("height", this.height);
+        };
+        TitleScreen.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
+            var _this = this;
+            var ctx = this.canvas.getDrawingContext();
+            var canvas = this.canvas.getCanvas();
+            ctx.globalAlpha = 1;
+            this.canvas.wipeCanvas("rgb(0,0,0)");
+            ctx.globalAlpha = opacity;
+            ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
+            if (show) {
+                opacity += 0.01;
+                if (opacity >= 1) {
+                    // wait, fade the egg
+                    var v = setTimeout(function () {
+                        // and start fading!
+                        _this.drawTheBigEgg(titleImage, opacity, false, callback);
+                    }, 1000);
+                    return false;
+                }
+            }
+            else {
+                opacity = opacity - 0.03;
+                if (opacity <= 0) {
+                    callback();
+                    titleImage = null;
+                    return false;
+                }
+            }
+            this.animationHandle = window.requestAnimationFrame(function () {
+                _this.drawTheBigEgg(titleImage, opacity, show, callback);
+            });
+        };
+        return TitleScreen;
+    }());
+    exports.TitleScreen = TitleScreen;
+});
+define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_1, TitleScreen_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1249,7 +1272,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
             this.bindClickHandler();
             this.bindKeyboardHandler();
             this.pauseRender();
-            this.renderer.renderTitleScreen(function () {
+            this.getTitleScreen(function () {
                 _this.loadLevel(_this.levelID, function () {
                     _this.createPlayers();
                     _this.resetScore(0);
@@ -1269,9 +1292,17 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
                 _this.startRender();
             }, 1000);
         };
+        Jetpack.prototype.getTitleScreen = function (callback) {
+            var imageSize = { width: 1024, height: 1024 };
+            var imagePath = "large/the-egg.png";
+            var titleScreen = new TitleScreen_1.TitleScreen(this.canvas, imagePath, imageSize.width, imageSize.height);
+            titleScreen.render(callback);
+        };
         // load static stuff - map/renderer etc will be worked out later
         Jetpack.prototype.bootstrap = function () {
             this.tileSet = new TileSet_1.TileSet();
+            var boardSize = new BoardSize_1.BoardSize(this.defaultBoardSize);
+            this.canvas = new Canvas_1.Canvas(boardSize);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
             this.collisions = new Collisions_1.Collisions(this, this.playerTypes); // pass the data, not the object
@@ -1286,7 +1317,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
             this.boardSize = new BoardSize_1.BoardSize(size);
             this.map = new Map_1.Map(this.tileSet, this.boardSize, board);
             var tiles = this.tileSet.getTiles();
-            this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes, this.boardSize);
+            this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes, this.boardSize, this.canvas);
         };
         Jetpack.prototype.startRender = function () {
             var _this = this;
@@ -1474,7 +1505,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
         Jetpack.prototype.bindSizeHandler = function () {
             var _this = this;
             window.addEventListener("resize", function () {
-                _this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+                _this.canvas.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
             });
         };
         Jetpack.prototype.bindClickHandler = function () {
@@ -1561,58 +1592,5 @@ define("Collisions", ["require", "exports"], function (require, exports) {
         return Collisions;
     }());
     exports.Collisions = Collisions;
-});
-define("TitleScreen", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var TitleScreen = (function () {
-        function TitleScreen(canvas, imagePath, width, height) {
-            this.canvas = canvas;
-        }
-        TitleScreen.prototype.render = function (callback) {
-            var _this = this;
-            //this.sizeCanvas();
-            var titleImage = document.createElement("img");
-            titleImage.addEventListener("load", function () {
-                _this.drawTheBigEgg(titleImage, 0.02, true, callback);
-            }, false);
-            titleImage.setAttribute("src", this.imagesFolder + "large/the-egg.png");
-            titleImage.setAttribute("width", 1024);
-            titleImage.setAttribute("height", 1024);
-        };
-        TitleScreen.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
-            var _this = this;
-            var ctx = this.canvas.getDrawingContext();
-            var canvas = this.canvas.getCanvas();
-            ctx.globalAlpha = 1;
-            this.canvas.wipeCanvas("rgb(0,0,0)");
-            ctx.globalAlpha = opacity;
-            ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
-            if (show) {
-                opacity += 0.01;
-                if (opacity >= 1) {
-                    // wait, fade the egg
-                    var v = setTimeout(function () {
-                        // and start fading!
-                        _this.drawTheBigEgg(titleImage, opacity, false, callback);
-                    }, 1000);
-                    return false;
-                }
-            }
-            else {
-                opacity = opacity - 0.03;
-                if (opacity <= 0) {
-                    callback();
-                    titleImage = null;
-                    return false;
-                }
-            }
-            this.animationHandle = window.requestAnimationFrame(function () {
-                _this.drawTheBigEgg(titleImage, opacity, show, callback);
-            });
-        };
-        return TitleScreen;
-    }());
-    exports.TitleScreen = TitleScreen;
 });
 //# sourceMappingURL=Jetpack.js.map

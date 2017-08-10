@@ -1,3 +1,4 @@
+import { Canvas } from "./Canvas";
 import { Collisions } from "./Collisions";
 import { Coords } from "./Coords";
 import { Levels } from "./Levels";
@@ -8,6 +9,7 @@ import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
 import { TileSet } from "./TileSet";
 import { BoardSize } from "./BoardSize";
+import { TitleScreen } from "./TitleScreen";
 
 export class Jetpack {
 
@@ -24,6 +26,7 @@ export class Jetpack {
 	levels: Levels; // Levels object
 	tileSet: TileSet; // TileSet object
 	boardSize: BoardSize; // BoardSize object
+	canvas: Canvas; // Canvas object
 
 	nextPlayerID: number = 1;
 	score: number = 0;
@@ -42,7 +45,7 @@ export class Jetpack {
 		this.bindKeyboardHandler();
 
 		this.pauseRender();
-		this.renderer.renderTitleScreen(() => {
+		this.getTitleScreen(() => {
 			this.loadLevel(this.levelID, () => {
 				this.createPlayers();
 				this.resetScore(0);
@@ -63,10 +66,21 @@ export class Jetpack {
 		}, 1000);
 	}
 
+	getTitleScreen(callback) {
+		const imageSize = {width: 1024, height: 1024}
+		const imagePath = "large/the-egg.png"
+		const titleScreen = new TitleScreen(this.canvas, imagePath, imageSize.width, imageSize.height);
+		titleScreen.render(callback);
+	}
+
 	// load static stuff - map/renderer etc will be worked out later
 	bootstrap() {
 		this.tileSet = new TileSet();
-	
+		
+		const boardSize = new BoardSize(this.defaultBoardSize);
+
+		this.canvas = new Canvas(boardSize);
+
 		const playerTypes = new PlayerTypes();
 		this.playerTypes = playerTypes.getPlayerTypes();
 
@@ -85,7 +99,7 @@ export class Jetpack {
 		this.map = new Map(this.tileSet, this.boardSize, board);
 
 		const tiles = this.tileSet.getTiles();
-		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes, this.boardSize);
+		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes, this.boardSize, this.canvas);
 	}	
 
 	startRender() {
@@ -290,7 +304,7 @@ export class Jetpack {
 
 	bindSizeHandler() {
 		window.addEventListener("resize", () => {
-			this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+			this.canvas.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
 		});
 	}
 

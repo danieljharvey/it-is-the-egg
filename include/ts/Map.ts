@@ -11,7 +11,7 @@ export class Map {
 
 	boardSize: BoardSize;
 
-	board = [];
+	readonly board = [];
 
 	constructor(tileSet: TileSet, boardSize: BoardSize, board = []) {
 		this.tileSet = tileSet;
@@ -60,7 +60,7 @@ export class Map {
 		tiles.map(tile => {
 			tile.needsDraw = true;
 		});
-		return; 
+		return;
 	}
 
 	generateBlankBoard() {
@@ -261,10 +261,12 @@ export class Map {
 			for (let y = 0; y < boardSize.height; y++) {
 				if (x < currentWidth && y < currentHeight) {
 					// using current board
-					newBoard[x][y] = board[x][y];
+					const tile = board[x][y];
+					newBoard[x][y] = tile;
 				} else {
 					// adding blank tiles
-					newBoard[x][y] = this.getTile(1);
+					const tile = this.getTile(1);
+					newBoard[x][y] = tile;
 				}
 			}
 		}

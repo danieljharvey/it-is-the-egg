@@ -7,30 +7,35 @@ export class Canvas {
 	checkResize: boolean = true;
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
+	imagesFolder: string = "img/";
 	boardSize: BoardSize;
+	tileSize: number;
 
 	constructor(boardSize: BoardSize) {
 		this.boardSize = boardSize;
+		this.tileSize = this.sizeCanvas(boardSize);
 	}
 
-	sizeCanvas() {
-		if (!this.checkResize) return false;
-		const maxBoardSize = this.getMaxBoardSize();
+	// takes BoardSize, returns size of each tile
+	sizeCanvas(boardSize: BoardSize) {
+		this.boardSize = boardSize;
 
-		this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
+		const maxBoardSize = this.getMaxBoardSize(this.boardSize);
+
+		//this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
 
 		const controlHeader = document.getElementById("controlHeader");
 		
 		controlHeader.style.width = maxBoardSize.toString() + 'px';		
 
 		this.tileSize = maxBoardSize / this.boardSize.width;
-		this.loadCanvas();
-		//this.map.markAllForRedraw();
-
+		
 		this.checkResize = false; // all done
+		this.loadCanvas(this.boardSize, this.tileSize);
+		return this.tileSize;
 	}
 
-	getMaxBoardSize(): number {
+	getMaxBoardSize(boardSize: BoardSize): number {
 		let width = window.innerWidth;
 		let height = window.innerHeight;
 
@@ -44,11 +49,11 @@ export class Canvas {
 		width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
 
 		if (width > height) {
-			const difference = (height % this.boardSize.width);
+			const difference = (height % boardSize.width);
 			height = height - difference;
 			return height;
 		} else {
-			const difference = (width % this.boardSize.width);
+			const difference = (width % boardSize.width);
 			width = width - difference;
 			return width;
 		}
@@ -59,24 +64,28 @@ export class Canvas {
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 
-	loadCanvas(): void {
+	loadCanvas(boardSize, tileSize): void {
 		this.canvas = document.getElementById("canvas");
-		this.canvas.width = this.boardSize.width * this.tileSize;
-		this.canvas.height = this.boardSize.height * this.tileSize;
+		this.canvas.width = boardSize.width * tileSize;
+		this.canvas.height = boardSize.height * tileSize;
 		this.ctx = this.canvas.getContext("2d");
 	}
 
 	getDrawingContext() {
 		if (!this.ctx) {
-			this.loadCanvas();
+			this.loadCanvas(this.boardSize, this.tileSize);
 		}
 		return this.ctx;
 	}
 
 	getCanvas() {
 		if (!this.canvas) {
-			this.loadCanvas();
+			this.loadCanvas(this.boardSize, this.tileSize);
 		}
 		return this.canvas;
+	}
+
+	getImagesFolder() {
+		return this.imagesFolder;
 	}
 }

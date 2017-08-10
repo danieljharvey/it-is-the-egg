@@ -1,23 +1,29 @@
+import { Canvas } from "./Canvas";
+
 export class TitleScreen {
 	
 	canvas: Canvas;
-	imagePath: string;
-	width: number;
+	imagePath: string; // image to show
+	width: number; // 
 	height: number;
+	animationHandle: number;
 
 	constructor(canvas: Canvas, imagePath: string, width: number, height: number) {
 		this.canvas = canvas;
+		this.imagePath = this.canvas.getImagesFolder() + imagePath;
+		this.width = width;
+		this.height = height;
 	}
 
 	render(callback) {
-		//this.sizeCanvas();
 		const titleImage: HTMLElement = document.createElement("img");
 		titleImage.addEventListener("load", () => {
 		  this.drawTheBigEgg(titleImage, 0.02, true, callback);
 		}, false);
-		titleImage.setAttribute("src", this.imagesFolder + "large/the-egg.png");
-		titleImage.setAttribute("width", 1024);
-		titleImage.setAttribute("height", 1024);
+
+		titleImage.setAttribute("src", this.imagePath);
+		titleImage.setAttribute("width", this.width);
+		titleImage.setAttribute("height", this.height);
 	}
 
 	drawTheBigEgg(titleImage, opacity: number, show: boolean, callback) {
