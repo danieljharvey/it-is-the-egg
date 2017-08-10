@@ -270,6 +270,19 @@ define("Levels", ["require", "exports"], function (require, exports) {
                 failCallback();
             });
         };
+        Levels.prototype.saveData = function (levelID, rotationsUsed, score, callback) {
+            var params = {
+                levelID: levelID,
+                rotationsUsed: rotationsUsed,
+                score: score
+            };
+            this.loader.callServer("saveScore", params, function (data) {
+                console.log(data);
+                callback(data.data);
+            }, function () {
+                callback({ msg: "call failed" });
+            });
+        };
         return Levels;
     }());
     exports.Levels = Levels;
@@ -988,7 +1001,10 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
         Map.prototype.getTileWithCoords = function (coords) {
             var fixedCoords = this.correctForOverflow(coords.x, coords.y);
             var x = fixedCoords.x, y = fixedCoords.y;
-            return this.board[x][y];
+            var tile = this.board[x][y];
+            tile.x = x;
+            tile.y = y;
+            return tile;
         };
         Map.prototype.changeTile = function (coords, tile) {
             var x = coords.x, y = coords.y;
@@ -1111,7 +1127,6 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             return allTiles;
         };
         Map.prototype.cycleTile = function (x, y) {
-            console.log('cycleTile', x, y);
             var currentTile = this.board[x][y];
             var currentKey = currentTile.id;
             var keys = Object.keys(this.tileSet.getTiles());
@@ -1287,6 +1302,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             this.levelID = 1;
             this.nextPlayerID = 1;
             this.score = 0;
+            this.rotationsUsed = 0;
             this.collectable = 0; // total points on screen
             this.playerTypes = {};
             this.defaultBoardSize = 20;
@@ -1303,6 +1319,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
                 _this.loadLevel(_this.levelID, function () {
                     _this.createPlayers();
                     _this.resetScore(0);
+                    _this.rotationsUsed = 0;
                     _this.startRender();
                 });
             });
@@ -1390,8 +1407,12 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             }
         };
         Jetpack.prototype.nextLevel = function () {
-            this.levelID++;
-            this.go();
+            var _this = this;
+            this.pauseRender();
+            this.levels.saveData(this.levelID, this.rotationsUsed, this.score, function (data) {
+                _this.levelID++;
+                _this.go();
+            });
         };
         Jetpack.prototype.pauseRender = function () {
             this.paused = true;
@@ -1478,6 +1499,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             if (this.paused || this.editMode)
                 return false;
             this.pauseRender();
+            this.rotationsUsed++;
             this.map.rotateBoard(clockwise);
             for (var i in this.players) {
                 this.map.rotatePlayer(this.players[i], clockwise);

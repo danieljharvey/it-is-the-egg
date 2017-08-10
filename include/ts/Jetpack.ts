@@ -30,6 +30,7 @@ export class Jetpack {
 
 	nextPlayerID: number = 1;
 	score: number = 0;
+	rotationsUsed: number = 0;
 	collectable: number = 0; // total points on screen
 
 	playerTypes: object = {};
@@ -52,6 +53,7 @@ export class Jetpack {
 			this.loadLevel(this.levelID, () => {
 				this.createPlayers();
 				this.resetScore(0);
+				this.rotationsUsed = 0;
 				this.startRender();
 			});
 		});
@@ -150,8 +152,12 @@ export class Jetpack {
 	}
 
 	nextLevel() {
-		this.levelID ++;
-		this.go();
+		this.pauseRender();
+		this.levels.saveData(this.levelID, this.rotationsUsed, this.score, (data) => {
+			this.levelID ++;
+			this.go();
+		});
+		
 	}
 
 	pauseRender() {
@@ -245,6 +251,8 @@ export class Jetpack {
 	rotateBoard(clockwise) {
 		if (this.paused || this.editMode) return false;
 		this.pauseRender();
+
+		this.rotationsUsed ++;
 
 		this.map.rotateBoard(clockwise);
 

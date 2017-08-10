@@ -1,5 +1,6 @@
 import { Jetpack } from "./Jetpack";
 import { Loader } from "./Loader";
+import { BoardSize } from "./BoardSize";
 
 export class Levels {
 
@@ -55,7 +56,7 @@ export class Levels {
 		return 0;
 	}
 
-	saveLevel(board: object, boardSize: object, levelID: number, callback: (number) => any): void {
+	saveLevel(board: object, boardSize: BoardSize, levelID: number, callback: (number) => any): void {
 		const saveData = {
 			board,
 			boardSize,
@@ -90,5 +91,19 @@ export class Levels {
 			console.log("ERROR: ", errorMsg);
 			failCallback();
 		});
+	}
+
+	saveData(levelID: number, rotationsUsed:number, score: number, callback: (object) => any): void {
+		const params = {
+			levelID,
+			rotationsUsed,
+			score
+		}
+		this.loader.callServer("saveScore",params, (data: object) => {
+			console.log(data);
+			callback(data.data);
+		}, () => {
+			callback({msg:"call failed"})
+		})
 	}
 }

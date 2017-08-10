@@ -29,6 +29,9 @@ class Egg {
 		if ($action=='getLevelsList') {
 			return $this->processGetLevelsList($params);
 		}
+		if ($action=='saveScore') {
+			return $this->processSaveScore($params);
+		}
 		return $this->error("Action {$action} not found!");
 	}
 
@@ -48,6 +51,13 @@ class Egg {
 		} else {
 			return $this->insertLevel($params['data']);
 		}
+	}
+
+	protected function processSaveScore($params) {
+		if (!isset($params['levelID'])) return $this->error("Level ID required");
+		if (!isset($params['score'])) $params['score'] = 0;
+		if (!isset($params['rotationsUsed'])) return $this->error("Number of rotations required!");
+		return $this->insertScore($params['levelID'],$params['score'],$params['rotationsUsed']);
 	}
 
 	protected function processGetLevelsList($params) {
@@ -105,6 +115,19 @@ class Egg {
 		if (!$success) return $this->error("Could not insert new level!");
 		$levelID = $this->dbal->lastInsertId();
 		return $this->success($levelID, "New level ID {$levelID} successfully saved!");
+	}
+
+	protected function insertScore(int $levelID, int $score, int $rotationsUsed) {
+		$now = $this->dbal->fetchColumn("SELECT NOW()");
+		$success = $this->dbal->insert('scores', [
+			'levelID'=>$levelID,
+			'score'=>$score,
+			'rotationsUsed'=>$rotationsUsed,
+			'theDate'=>$now
+		]);
+		if (!$success) return $this->error("Could not save score!");
+		$scoreID = $this->dbal->lastInsertId();
+		return $this->success($scoreID, "Score number {$scoreID} saved!");
 	}
 
 }

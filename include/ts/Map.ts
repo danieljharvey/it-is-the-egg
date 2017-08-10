@@ -110,7 +110,10 @@ export class Map {
 	getTileWithCoords(coords: Coords) {
 		const fixedCoords = this.correctForOverflow(coords.x, coords.y);
 		const { x, y } = fixedCoords;
-		return this.board[x][y];
+		const tile = this.board[x][y];
+		tile.x = x;
+		tile.y = y;
+		return tile;
 	}
 
 	changeTile(coords: Coords, tile: Tile) {
@@ -247,7 +250,6 @@ export class Map {
 	}
 
 	cycleTile(x: number, y: number) {
-		console.log('cycleTile',x,y);
 		const currentTile = this.board[x][y];
 
 		const currentKey = currentTile.id;
