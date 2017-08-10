@@ -1,5 +1,6 @@
 import { Map } from '../Map.ts';
 import { TileSet } from '../TileSet.ts';
+import { BoardSize } from '../BoardSize.ts';
 
 test("Translate rotation", () => {
 	
@@ -14,7 +15,9 @@ test("Translate rotation", () => {
 		{inX: 9, inY: 0, clockwise: false, outX: 0, outY: 0}
 	];
 
-	const map = new Map(undefined, 10);
+	const boardSize = new BoardSize(10);
+
+	const map = new Map(undefined, boardSize);
 
 	rotateData.map(data => {
 		let expected: object = {
@@ -73,7 +76,7 @@ test("Correct board size with shrinking", () => {
 	const tileSet = new TileSet();
 	const map = new Map(tileSet);
 
-	const tile = map.getTile(1);
+	const tile = map.cloneTile(1);
 
 	const expected = [
 		[0,1,0,0,0,tile],
@@ -82,6 +85,32 @@ test("Correct board size with shrinking", () => {
 		[0,1,0,0,0,tile],
 		[0,1,0,0,0,tile],
 		[tile,tile,tile,tile,tile,tile]
+	];
+
+	const result = map.correctBoardSizeChange(board,boardSize);
+	expect(result).toEqual(expected);
+})
+
+test("Correct non-existant empty board to reasonably full one", () => {
+
+	const board = [];
+
+	const boardSize = {
+		width: 5,
+		height: 5
+	}
+
+	const tileSet = new TileSet();
+	const map = new Map(tileSet);
+
+	const tile = map.cloneTile(1);
+
+	const expected = [
+		[tile,tile,tile,tile,tile],
+		[tile,tile,tile,tile,tile],
+		[tile,tile,tile,tile,tile],
+		[tile,tile,tile,tile,tile],
+		[tile,tile,tile,tile,tile]
 	];
 
 	const result = map.correctBoardSizeChange(board,boardSize);

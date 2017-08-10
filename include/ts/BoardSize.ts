@@ -3,7 +3,7 @@ export class BoardSize {
 	width: number;
 	height: number;
 
-	minSize: number = 8;
+	minSize: number = 5;
 	maxSize: number = 40;
 
 	constructor(size: number) {

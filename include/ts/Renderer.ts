@@ -16,15 +16,12 @@ export class Renderer {
 	boardSize: BoardSize;
 	canvas: Canvas;
 
-	tileSize: number = 48;
-
 	checkResize: boolean = true;
-
-	animationHandle: number;
 
 	tileImages: object = {}; // image elements of tiles
 	playerImages: object = {}; // image element of players
 	playerTypes: object = {};
+	tileSize: number;
 
 	constructor(jetpack: Jetpack, map: Map, tiles: object, playerTypes: object, boardSize: BoardSize, canvas: Canvas) {
 		this.jetpack = jetpack;
@@ -35,18 +32,18 @@ export class Renderer {
 		this.canvas = canvas;
 		this.loadTilePalette();
 		this.loadPlayerPalette();
-		this.tileSize = this.canvas.sizeCanvas(boardSize);
+		this.tileSize = this.canvas.calcTileSize(boardSize);
 	}
 
 	render() {
-		if (this.jetpack.paused) return false;
-		
 		this.renderBoard();
 		this.renderPlayers();
 		this.renderFrontLayerBoard();
-		this.jetpack.doPlayerCalcs();
-		
-		this.animationHandle = window.requestAnimationFrame(() => this.render());
+	}
+
+	resize() {
+		this.tileSize = this.canvas.sizeCanvas(this.boardSize);
+		this.map.markAllForRedraw();
 	}
 
 	loadTilePalette() {
@@ -113,7 +110,7 @@ export class Renderer {
 	}
 
 	drawSkyTile(tile: Tile, x: number, y: number) {
-		const skyTile = this.map.getTile(1);
+		const skyTile = this.map.cloneTile(1);
 		this.renderTile(x, y, skyTile);
 	}
 
@@ -134,9 +131,11 @@ export class Renderer {
  	// debugging tools
 	showUnrenderedTile(x: number, y: number) {
 		return false;
+
+		const tileSize = this.tileSize;
 		const ctx = this.canvas.getDrawingContext();
 		ctx.fillStyle = "#f00";
-		ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+		ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 	}
 
 	renderPlayers() {
@@ -157,6 +156,7 @@ export class Renderer {
 	renderTile = function(x: number, y: number, tile: Tile): boolean {
 
 		const ctx = this.canvas.getDrawingContext();
+		const tileSize = this.tileSize;
 
 	    const img = this.getTileImage(tile.id);
 
@@ -165,19 +165,19 @@ export class Renderer {
 	    	return false;
 	    }
 
-	    let left = x * this.tileSize;
-	    let top = y * this.tileSize;
+	    let left = x * tileSize;
+	    let top = y * tileSize;
 	    const opacity = 1;
 
 	    ctx.globalAlpha = opacity;
 
 		if (this.map.renderAngle == 0) {
-			ctx.drawImage(img, left, top, this.tileSize, this.tileSize);
+			ctx.drawImage(img, left, top, tileSize, tileSize);
 		} else {
 
 			const angleInRad = this.map.renderAngle * (Math.PI / 180);
 
-			const offset = this.tileSize / 2;
+			const offset = tileSize / 2;
 
 			left = left + offset;
 			top = top + offset;
@@ -185,7 +185,7 @@ export class Renderer {
 		 	ctx.translate( left, top );
 		 	ctx.rotate( angleInRad );
 
-		 	ctx.drawImage(img, -offset, -offset, this.tileSize, this.tileSize);
+		 	ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
 
 		 	ctx.rotate( -angleInRad );
 		 	ctx.translate( -left, -top );
@@ -205,11 +205,12 @@ export class Renderer {
 	renderPlayer(player: Player) {
 
 		const ctx = this.canvas.getDrawingContext();
+		const tileSize = this.tileSize;
 
-		const offsetRatio = (this.tileSize / SPRITE_SIZE);
+		const offsetRatio = (tileSize / SPRITE_SIZE);
 
-		const left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
-		const top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
+		const left = (player.x * tileSize) + (player.offsetX * offsetRatio);
+		const top = (player.y * tileSize) + (player.offsetY * offsetRatio);
 
 		const clipLeft = player.currentFrame * SPRITE_SIZE;
 		const clipTop = 0;
@@ -222,18 +223,18 @@ export class Renderer {
 			return false;
 		}
 
-		ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
+		ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
 
 	 	if (left < 0) {
 	    	// also draw on right
-	    	const secondLeft = (this.tileSize * this.boardSize.width) + player.offsetX;
-	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
+	    	const secondLeft = (tileSize * this.boardSize.width) + player.offsetX;
+	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
 	    }
 
-	 	if ((left + this.tileSize) > (this.tileSize * this.boardSize.width)) {
+	 	if ((left + tileSize) > (tileSize * this.boardSize.width)) {
 	    	// also draw on left
-	    	const secondLeft = left - (this.tileSize * this.boardSize.width);
-	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
+	    	const secondLeft = left - (tileSize * this.boardSize.width);
+	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
 	    }
 	}
 
@@ -291,7 +292,7 @@ export class Renderer {
 
 	 	angle += (direction * this.jetpack.moveSpeed);
 
-	 	this.animationHandle = window.requestAnimationFrame(() => {
+	 	this.jetpack.animationHandle = window.requestAnimationFrame(() => {
 	    	this.drawRotated(savedData, direction, angle, targetAngle, completed);
 	    });
 	}

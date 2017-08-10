@@ -11,12 +11,12 @@ export class Map {
 
 	boardSize: BoardSize;
 
-	readonly board = [];
+	protected board = [];
 
 	constructor(tileSet: TileSet, boardSize: BoardSize, board = []) {
 		this.tileSet = tileSet;
 		this.boardSize = boardSize;
-		this.board = this.correctBoardSizeChange(board, boardSize);
+		this.board = board;
 		this.markAllForRedraw();
 	}
 
@@ -69,7 +69,7 @@ export class Map {
 		for (let x = 0; x < this.boardSize.width; x++) {
 			board[x] = [];
 			for (let y = 0; y < this.boardSize.height; y++) {
-				const blankTile = this.getTile(1);
+				const blankTile = this.cloneTile(1);
 				board[x][y] = blankTile;
 			}
 		}
@@ -89,11 +89,40 @@ export class Map {
 		return board;
 	}
 
+	getTilesSurrounding(coords: Coords) {
+		const tiles=[];
+		// first just do the stuff around player
+		for (let x = coords.x - 1; x < coords.x + 2; x++) {
+			for (let y = coords.y - 1; y < coords.y + 2; y++) {
+				const fixedCoords = this.correctForOverflow(x,y);
+				const tile = this.getTileWithCoords(fixedCoords);
+				tiles.push(tile);
+			}
+		}
+		return tiles;
+	}
+
+	getTile(x: number, y: number) {
+		const coords = new Coords(x,y);
+		return this.getTileWithCoords(coords);
+	}
+
+	getTileWithCoords(coords: Coords) {
+		const fixedCoords = this.correctForOverflow(coords.x, coords.y);
+		const { x, y } = fixedCoords;
+		return this.board[x][y];
+	}
+
+	changeTile(coords: Coords, tile: Tile) {
+		const { x, y } = coords;
+		this.board[x][y] = tile;
+	}
+
 	getPrototypeTile(id) {
 		return this.tileSet.getTile(id);
 	}
 
-	getTile(id): Tile {
+	cloneTile(id): Tile {
 		const prototypeTile = this.getPrototypeTile(id);
 		const tile = new Tile(prototypeTile); // create new Tile object with these 
 		return tile;
@@ -103,7 +132,7 @@ export class Map {
 		const randomProperty = (obj) => {
 		    const keys = Object.keys(obj);
 		    const randomKey = keys[ keys.length * Math.random() << 0];
-		    return this.getTile(randomKey);
+		    return this.cloneTile(randomKey);
 		};
 		
 		const theseTiles = this.tileSet.getTiles();
@@ -218,7 +247,7 @@ export class Map {
 	}
 
 	cycleTile(x: number, y: number) {
-
+		console.log('cycleTile',x,y);
 		const currentTile = this.board[x][y];
 
 		const currentKey = currentTile.id;
@@ -235,18 +264,20 @@ export class Map {
 			}
 		}
 		
-		const tile = this.getTile(newKey);
+		const tile = this.cloneTile(newKey);
 	 	this.board[x][y] = tile;
 	}
 
 	shrinkBoard() {
 		this.boardSize.shrink();
 		this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+		return this.boardSize;
 	}
 
 	growBoard() {
 		this.boardSize.grow();
 		this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+		return this.boardSize;
 	}
 
 	correctBoardSizeChange(board, boardSize: BoardSize) {
@@ -254,7 +285,11 @@ export class Map {
 		const newBoard = [];
 
 		const currentWidth = board.length;
-		const currentHeight = board[0].length;
+		if (currentWidth > 0) {
+			const currentHeight = board[0].length;	
+		} else {
+			const currentHeight = 0;
+		}
 
 		for (let x = 0; x < boardSize.width; x++) {
 			newBoard[x] = [];
@@ -262,10 +297,12 @@ export class Map {
 				if (x < currentWidth && y < currentHeight) {
 					// using current board
 					const tile = board[x][y];
+					tile.needsDraw = true;
 					newBoard[x][y] = tile;
 				} else {
 					// adding blank tiles
-					const tile = this.getTile(1);
+					const tile = this.cloneTile(1);
+					tile.needsDraw = true;
 					newBoard[x][y] = tile;
 				}
 			}

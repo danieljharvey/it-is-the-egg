@@ -37,6 +37,9 @@ export class Jetpack {
 	players: Player[];
 
 	defaultBoardSize: number = 20;
+	checkResize: boolean = false;
+
+	animationHandle: number;
 
 	go() {
 		this.bootstrap();
@@ -61,6 +64,8 @@ export class Jetpack {
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
+		this.createRenderer();
+
 		const s = setTimeout(() => {
 			this.startRender();
 		}, 1000);
@@ -69,7 +74,7 @@ export class Jetpack {
 	getTitleScreen(callback) {
 		const imageSize = {width: 1024, height: 1024}
 		const imagePath = "large/the-egg.png"
-		const titleScreen = new TitleScreen(this.canvas, imagePath, imageSize.width, imageSize.height);
+		const titleScreen = new TitleScreen(this,this.canvas, imagePath, imageSize.width, imageSize.height);
 		titleScreen.render(callback);
 	}
 
@@ -97,7 +102,7 @@ export class Jetpack {
 	createRenderer(board = [], size: number = 12) {
 		this.boardSize = new BoardSize(size);
 		this.map = new Map(this.tileSet, this.boardSize, board);
-
+		this.map.updateBoard(this.map.correctBoardSizeChange(board, this.boardSize), this.boardSize);
 		const tiles = this.tileSet.getTiles();
 		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes, this.boardSize, this.canvas);
 	}	
@@ -105,10 +110,21 @@ export class Jetpack {
 	startRender() {
 		if (!this.paused) return false;
 		window.cancelAnimationFrame(this.animationHandle);
-		this.map.markAllForRedraw();
 		this.paused = false;
 		this.showControls();
-		this.animationHandle = window.requestAnimationFrame(() => this.renderer.render());
+		this.animationHandle = window.requestAnimationFrame(() => this.eventLoop());
+	}
+
+	eventLoop() {
+		if (this.paused) return false;
+		this.doPlayerCalcs();
+		if (this.checkResize) {
+			this.canvas.sizeCanvas(this.boardSize);
+			this.renderer.resize();
+			this.checkResize = false;
+		}
+		this.renderer.render();
+		this.animationHandle = window.requestAnimationFrame(() => this.eventLoop());
 	}
 
 	resetScore(score) {
@@ -212,7 +228,6 @@ export class Jetpack {
 		const playerType = this.playerTypes[type];
 		const params = JSON.parse(JSON.stringify(playerType));
 		params.id = this.nextPlayerID++;
-		params.currentFrame = 0;
 		params.x = coords.x; // x in tiles
 		params.y = coords.y; // y in tiles
 		params.direction = direction;
@@ -294,24 +309,26 @@ export class Jetpack {
 
 	growBoard() {
 		if (!this.editMode) return false;
-		this.map.growBoard();
+		this.boardSize = this.map.growBoard();
+		this.checkResize = true;
 	}
 
 	shrinkBoard() {
 		if (!this.editMode) return false;
-		this.map.shrinkBoard();
+		this.boardSize = this.map.shrinkBoard();
+		this.checkResize = true;
 	}
 
 	bindSizeHandler() {
 		window.addEventListener("resize", () => {
-			this.canvas.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+			this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
 		});
 	}
 
 	bindClickHandler() {
 		const canvas = document.getElementById("canvas");
 		canvas.addEventListener("click", (event) => {
-		    const tileSize = this.renderer.tileSize;
+		    const tileSize = this.canvas.calcTileSize(this.boardSize);
 		    const coords = new Coords(
 		    	(event.offsetX / tileSize) as number,
 	        	(event.offsetY / tileSize) as number,

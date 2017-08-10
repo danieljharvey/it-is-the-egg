@@ -3,7 +3,7 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var BoardSize = (function () {
         function BoardSize(size) {
-            this.minSize = 8;
+            this.minSize = 5;
             this.maxSize = 40;
             if (size < this.minSize)
                 size = this.minSize;
@@ -33,22 +33,25 @@ define("Canvas", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var Canvas = (function () {
         function Canvas(boardSize) {
-            this.checkResize = true;
             this.imagesFolder = "img/";
             this.boardSize = boardSize;
-            this.tileSize = this.sizeCanvas(boardSize);
+            var tileSize = this.sizeCanvas(boardSize);
+            this.loadCanvas(boardSize, tileSize);
         }
         // takes BoardSize, returns size of each tile
         Canvas.prototype.sizeCanvas = function (boardSize) {
-            this.boardSize = boardSize;
-            var maxBoardSize = this.getMaxBoardSize(this.boardSize);
-            //this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
+            var maxBoardSize = this.getMaxBoardSize(boardSize);
             var controlHeader = document.getElementById("controlHeader");
             controlHeader.style.width = maxBoardSize.toString() + 'px';
-            this.tileSize = maxBoardSize / this.boardSize.width;
-            this.checkResize = false; // all done
-            this.loadCanvas(this.boardSize, this.tileSize);
-            return this.tileSize;
+            var tileSize = this.calcTileSize(boardSize);
+            this.loadCanvas(boardSize, tileSize);
+            this.boardSize = boardSize;
+            return tileSize;
+        };
+        Canvas.prototype.calcTileSize = function (boardSize) {
+            var maxBoardSize = this.getMaxBoardSize(this.boardSize);
+            var tileSize = maxBoardSize / boardSize.width;
+            return tileSize;
         };
         Canvas.prototype.getMaxBoardSize = function (boardSize) {
             var width = window.innerWidth;
@@ -81,15 +84,9 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             this.ctx = this.canvas.getContext("2d");
         };
         Canvas.prototype.getDrawingContext = function () {
-            if (!this.ctx) {
-                this.loadCanvas(this.boardSize, this.tileSize);
-            }
             return this.ctx;
         };
         Canvas.prototype.getCanvas = function () {
-            if (!this.canvas) {
-                this.loadCanvas(this.boardSize, this.tileSize);
-            }
             return this.canvas;
         };
         Canvas.prototype.getImagesFolder = function () {
@@ -307,33 +304,33 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     var SPRITE_SIZE = 64;
     var Renderer = (function () {
         function Renderer(jetpack, map, tiles, playerTypes, boardSize, canvas) {
-            this.tileSize = 48;
             this.checkResize = true;
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
             this.playerTypes = {};
             this.renderTile = function (x, y, tile) {
                 var ctx = this.canvas.getDrawingContext();
+                var tileSize = this.tileSize;
                 var img = this.getTileImage(tile.id);
                 if (!img) {
                     //console.log("Could not find tile image for id " + tile.id);
                     return false;
                 }
-                var left = x * this.tileSize;
-                var top = y * this.tileSize;
+                var left = x * tileSize;
+                var top = y * tileSize;
                 var opacity = 1;
                 ctx.globalAlpha = opacity;
                 if (this.map.renderAngle == 0) {
-                    ctx.drawImage(img, left, top, this.tileSize, this.tileSize);
+                    ctx.drawImage(img, left, top, tileSize, tileSize);
                 }
                 else {
                     var angleInRad = this.map.renderAngle * (Math.PI / 180);
-                    var offset = this.tileSize / 2;
+                    var offset = tileSize / 2;
                     left = left + offset;
                     top = top + offset;
                     ctx.translate(left, top);
                     ctx.rotate(angleInRad);
-                    ctx.drawImage(img, -offset, -offset, this.tileSize, this.tileSize);
+                    ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
                     ctx.rotate(-angleInRad);
                     ctx.translate(-left, -top);
                 }
@@ -347,17 +344,16 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.canvas = canvas;
             this.loadTilePalette();
             this.loadPlayerPalette();
-            this.tileSize = this.canvas.sizeCanvas(boardSize);
+            this.tileSize = this.canvas.calcTileSize(boardSize);
         }
         Renderer.prototype.render = function () {
-            var _this = this;
-            if (this.jetpack.paused)
-                return false;
             this.renderBoard();
             this.renderPlayers();
             this.renderFrontLayerBoard();
-            this.jetpack.doPlayerCalcs();
-            this.animationHandle = window.requestAnimationFrame(function () { return _this.render(); });
+        };
+        Renderer.prototype.resize = function () {
+            this.tileSize = this.canvas.sizeCanvas(this.boardSize);
+            this.map.markAllForRedraw();
         };
         Renderer.prototype.loadTilePalette = function () {
             var _this = this;
@@ -429,7 +425,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             });
         };
         Renderer.prototype.drawSkyTile = function (tile, x, y) {
-            var skyTile = this.map.getTile(1);
+            var skyTile = this.map.cloneTile(1);
             this.renderTile(x, y, skyTile);
         };
         // just go over and draw the over-the-top stuff
@@ -450,9 +446,10 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         // debugging tools
         Renderer.prototype.showUnrenderedTile = function (x, y) {
             return false;
+            var tileSize = this.tileSize;
             var ctx = this.canvas.getDrawingContext();
             ctx.fillStyle = "#f00";
-            ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+            ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
         };
         Renderer.prototype.renderPlayers = function () {
             for (var i in this.jetpack.players) {
@@ -476,9 +473,10 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         };
         Renderer.prototype.renderPlayer = function (player) {
             var ctx = this.canvas.getDrawingContext();
-            var offsetRatio = (this.tileSize / SPRITE_SIZE);
-            var left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
-            var top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
+            var tileSize = this.tileSize;
+            var offsetRatio = (tileSize / SPRITE_SIZE);
+            var left = (player.x * tileSize) + (player.offsetX * offsetRatio);
+            var top = (player.y * tileSize) + (player.offsetY * offsetRatio);
             var clipLeft = player.currentFrame * SPRITE_SIZE;
             var clipTop = 0;
             ctx.globalAlpha = 1;
@@ -487,16 +485,16 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 //console.log('player image not loaded', player.img);
                 return false;
             }
-            ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
+            ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
             if (left < 0) {
                 // also draw on right
-                var secondLeft = (this.tileSize * this.boardSize.width) + player.offsetX;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
+                var secondLeft = (tileSize * this.boardSize.width) + player.offsetX;
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
             }
-            if ((left + this.tileSize) > (this.tileSize * this.boardSize.width)) {
+            if ((left + tileSize) > (tileSize * this.boardSize.width)) {
                 // also draw on left
-                var secondLeft = left - (this.tileSize * this.boardSize.width);
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
+                var secondLeft = left - (tileSize * this.boardSize.width);
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
             }
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
@@ -539,7 +537,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             ctx.rotate(-angleInRad);
             ctx.translate(-left, -top);
             angle += (direction * this.jetpack.moveSpeed);
-            this.animationHandle = window.requestAnimationFrame(function () {
+            this.jetpack.animationHandle = window.requestAnimationFrame(function () {
                 _this.drawRotated(savedData, direction, angle, targetAngle, completed);
             });
         };
@@ -587,13 +585,11 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             return new Coords_1.Coords(this.x, this.y, this.offsetX, this.offsetY);
         };
         Player.prototype.setRedrawAroundPlayer = function () {
-            // first just do the stuff around player
-            for (var x = this.x - 1; x < this.x + 2; x++) {
-                for (var y = this.y - 1; y < this.y + 2; y++) {
-                    var coords = this.map.correctForOverflow(x, y);
-                    this.map.board[coords.x][coords.y].needsDraw = true;
-                }
-            }
+            var coords = new Coords_1.Coords(this.x, this.y);
+            var tiles = this.map.getTilesSurrounding(coords);
+            tiles.map(function (tile) {
+                tile.needsDraw = true;
+            });
         };
         Player.prototype.incrementPlayerFrame = function () {
             if (this.direction === 0 && this.oldDirection === 0 && this.currentFrame === 0) {
@@ -621,36 +617,28 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             if (this.offsetX != 0 || this.offsetY != 0)
                 return false;
             var coords = this.map.correctForOverflow(this.x, this.y);
-            var board = this.map.board;
-            var tile = board[coords.x][coords.y];
+            var tile = this.map.getTileWithCoords(coords);
             if (tile.collectable > 0) {
                 var score = tile.collectable * this.multiplier;
-                var blankTile = this.map.getTile(1);
+                var blankTile = this.map.cloneTile(1);
                 blankTile.needsDraw = true;
-                board[coords.x][coords.y] = blankTile;
+                this.map.changeTile(coords, blankTile);
                 this.jetpack.addScore(score);
                 return true;
             }
-            if (this.falling) {
-                var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1);
-                var tile_1 = board[belowCoords.x][belowCoords.y];
-                if (tile_1.breakable) {
-                    board[belowCoords.x][belowCoords.y] = this.map.getTile(1); // smash block, replace with empty
-                    return true;
-                }
-            }
-            var tile = board[coords.x][coords.y];
-            if (tile.action == "rotateLeft") {
-                this.jetpack.rotateBoard(false);
-            }
-            else if (tile.action == "rotateRight") {
-                this.jetpack.rotateBoard(true);
-            }
-            else if (tile.action == "completeLevel") {
-                this.jetpack.completeLevel();
+            if (tile.action == "completeLevel") {
+                return this.jetpack.completeLevel();
             }
             else if (tile.action == "teleport") {
-                this.teleport();
+                return this.teleport();
+            }
+            if (this.falling) {
+                var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1);
+                var belowTile = this.map.getTileWithCoords(belowCoords);
+                if (belowTile.breakable) {
+                    this.map.changeTile(belowCoords, this.map.cloneTile(1)); // smash block, replace with empty
+                    return true;
+                }
             }
         };
         Player.prototype.checkPlayerCollisions = function () {
@@ -768,7 +756,7 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             if (this.offsetX !== 0)
                 return false;
             var coords = this.map.correctForOverflow(this.x, this.y + 1);
-            var tile = this.map.board[coords.x][coords.y];
+            var tile = this.map.getTileWithCoords(coords);
             if (tile.background) {
                 var moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
                 var fallAmount = Math.round(moveAmount * 1.5);
@@ -917,7 +905,7 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             this.board = [];
             this.tileSet = tileSet;
             this.boardSize = boardSize;
-            this.board = this.correctBoardSizeChange(board, boardSize);
+            this.board = board;
             this.markAllForRedraw();
         }
         Map.prototype.updateBoard = function (board, boardSize) {
@@ -964,7 +952,7 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             for (var x = 0; x < this.boardSize.width; x++) {
                 board[x] = [];
                 for (var y = 0; y < this.boardSize.height; y++) {
-                    var blankTile = this.getTile(1);
+                    var blankTile = this.cloneTile(1);
                     board[x][y] = blankTile;
                 }
             }
@@ -981,10 +969,35 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             }
             return board;
         };
+        Map.prototype.getTilesSurrounding = function (coords) {
+            var tiles = [];
+            // first just do the stuff around player
+            for (var x = coords.x - 1; x < coords.x + 2; x++) {
+                for (var y = coords.y - 1; y < coords.y + 2; y++) {
+                    var fixedCoords = this.correctForOverflow(x, y);
+                    var tile = this.getTileWithCoords(fixedCoords);
+                    tiles.push(tile);
+                }
+            }
+            return tiles;
+        };
+        Map.prototype.getTile = function (x, y) {
+            var coords = new Coords_2.Coords(x, y);
+            return this.getTileWithCoords(coords);
+        };
+        Map.prototype.getTileWithCoords = function (coords) {
+            var fixedCoords = this.correctForOverflow(coords.x, coords.y);
+            var x = fixedCoords.x, y = fixedCoords.y;
+            return this.board[x][y];
+        };
+        Map.prototype.changeTile = function (coords, tile) {
+            var x = coords.x, y = coords.y;
+            this.board[x][y] = tile;
+        };
         Map.prototype.getPrototypeTile = function (id) {
             return this.tileSet.getTile(id);
         };
-        Map.prototype.getTile = function (id) {
+        Map.prototype.cloneTile = function (id) {
             var prototypeTile = this.getPrototypeTile(id);
             var tile = new Tile_1.Tile(prototypeTile); // create new Tile object with these 
             return tile;
@@ -994,7 +1007,7 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             var randomProperty = function (obj) {
                 var keys = Object.keys(obj);
                 var randomKey = keys[keys.length * Math.random() << 0];
-                return _this.getTile(randomKey);
+                return _this.cloneTile(randomKey);
             };
             var theseTiles = this.tileSet.getTiles();
             Object.entries(theseTiles).filter(function (_a) {
@@ -1098,6 +1111,7 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             return allTiles;
         };
         Map.prototype.cycleTile = function (x, y) {
+            console.log('cycleTile', x, y);
             var currentTile = this.board[x][y];
             var currentKey = currentTile.id;
             var keys = Object.keys(this.tileSet.getTiles());
@@ -1112,32 +1126,41 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
                     nextKey = false;
                 }
             }
-            var tile = this.getTile(newKey);
+            var tile = this.cloneTile(newKey);
             this.board[x][y] = tile;
         };
         Map.prototype.shrinkBoard = function () {
             this.boardSize.shrink();
             this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+            return this.boardSize;
         };
         Map.prototype.growBoard = function () {
             this.boardSize.grow();
             this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+            return this.boardSize;
         };
         Map.prototype.correctBoardSizeChange = function (board, boardSize) {
             var newBoard = [];
             var currentWidth = board.length;
-            var currentHeight = board[0].length;
+            if (currentWidth > 0) {
+                var currentHeight = board[0].length;
+            }
+            else {
+                var currentHeight = 0;
+            }
             for (var x = 0; x < boardSize.width; x++) {
                 newBoard[x] = [];
                 for (var y = 0; y < boardSize.height; y++) {
                     if (x < currentWidth && y < currentHeight) {
                         // using current board
                         var tile = board[x][y];
+                        tile.needsDraw = true;
                         newBoard[x][y] = tile;
                     }
                     else {
                         // adding blank tiles
-                        var tile = this.getTile(1);
+                        var tile = this.cloneTile(1);
+                        tile.needsDraw = true;
                         newBoard[x][y] = tile;
                     }
                 }
@@ -1195,11 +1218,12 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
-define("TitleScreen", ["require", "exports"], function (require, exports) {
+define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TitleScreen = (function () {
-        function TitleScreen(canvas, imagePath, width, height) {
+        function TitleScreen(jetpack, canvas, imagePath, width, height) {
+            this.jetpack = jetpack;
             this.canvas = canvas;
             this.imagePath = this.canvas.getImagesFolder() + imagePath;
             this.width = width;
@@ -1207,13 +1231,15 @@ define("TitleScreen", ["require", "exports"], function (require, exports) {
         }
         TitleScreen.prototype.render = function (callback) {
             var _this = this;
+            var boardSize = new BoardSize_1.BoardSize(10);
+            this.canvas.sizeCanvas(boardSize);
             var titleImage = document.createElement("img");
             titleImage.addEventListener("load", function () {
                 _this.drawTheBigEgg(titleImage, 0.02, true, callback);
             }, false);
             titleImage.setAttribute("src", this.imagePath);
-            titleImage.setAttribute("width", this.width);
-            titleImage.setAttribute("height", this.height);
+            titleImage.setAttribute("width", this.width.toString());
+            titleImage.setAttribute("height", this.height.toString());
         };
         TitleScreen.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
             var _this = this;
@@ -1242,7 +1268,7 @@ define("TitleScreen", ["require", "exports"], function (require, exports) {
                     return false;
                 }
             }
-            this.animationHandle = window.requestAnimationFrame(function () {
+            this.jetpack.animationHandle = window.requestAnimationFrame(function () {
                 _this.drawTheBigEgg(titleImage, opacity, show, callback);
             });
         };
@@ -1250,7 +1276,7 @@ define("TitleScreen", ["require", "exports"], function (require, exports) {
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_1, TitleScreen_1) {
+define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_2, TitleScreen_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1264,6 +1290,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             this.collectable = 0; // total points on screen
             this.playerTypes = {};
             this.defaultBoardSize = 20;
+            this.checkResize = false;
         }
         Jetpack.prototype.go = function () {
             var _this = this;
@@ -1288,6 +1315,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             this.editMode = true;
             this.bindSizeHandler();
             this.bindClickHandler();
+            this.createRenderer();
             var s = setTimeout(function () {
                 _this.startRender();
             }, 1000);
@@ -1295,13 +1323,13 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         Jetpack.prototype.getTitleScreen = function (callback) {
             var imageSize = { width: 1024, height: 1024 };
             var imagePath = "large/the-egg.png";
-            var titleScreen = new TitleScreen_1.TitleScreen(this.canvas, imagePath, imageSize.width, imageSize.height);
+            var titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
             titleScreen.render(callback);
         };
         // load static stuff - map/renderer etc will be worked out later
         Jetpack.prototype.bootstrap = function () {
             this.tileSet = new TileSet_1.TileSet();
-            var boardSize = new BoardSize_1.BoardSize(this.defaultBoardSize);
+            var boardSize = new BoardSize_2.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
@@ -1314,8 +1342,9 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         Jetpack.prototype.createRenderer = function (board, size) {
             if (board === void 0) { board = []; }
             if (size === void 0) { size = 12; }
-            this.boardSize = new BoardSize_1.BoardSize(size);
+            this.boardSize = new BoardSize_2.BoardSize(size);
             this.map = new Map_1.Map(this.tileSet, this.boardSize, board);
+            this.map.updateBoard(this.map.correctBoardSizeChange(board, this.boardSize), this.boardSize);
             var tiles = this.tileSet.getTiles();
             this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes, this.boardSize, this.canvas);
         };
@@ -1324,10 +1353,22 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             if (!this.paused)
                 return false;
             window.cancelAnimationFrame(this.animationHandle);
-            this.map.markAllForRedraw();
             this.paused = false;
             this.showControls();
-            this.animationHandle = window.requestAnimationFrame(function () { return _this.renderer.render(); });
+            this.animationHandle = window.requestAnimationFrame(function () { return _this.eventLoop(); });
+        };
+        Jetpack.prototype.eventLoop = function () {
+            var _this = this;
+            if (this.paused)
+                return false;
+            this.doPlayerCalcs();
+            if (this.checkResize) {
+                this.canvas.sizeCanvas(this.boardSize);
+                this.renderer.resize();
+                this.checkResize = false;
+            }
+            this.renderer.render();
+            this.animationHandle = window.requestAnimationFrame(function () { return _this.eventLoop(); });
         };
         Jetpack.prototype.resetScore = function (score) {
             this.score = 0;
@@ -1419,7 +1460,6 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             var playerType = this.playerTypes[type];
             var params = JSON.parse(JSON.stringify(playerType));
             params.id = this.nextPlayerID++;
-            params.currentFrame = 0;
             params.x = coords.x; // x in tiles
             params.y = coords.y; // y in tiles
             params.direction = direction;
@@ -1495,24 +1535,26 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         Jetpack.prototype.growBoard = function () {
             if (!this.editMode)
                 return false;
-            this.map.growBoard();
+            this.boardSize = this.map.growBoard();
+            this.checkResize = true;
         };
         Jetpack.prototype.shrinkBoard = function () {
             if (!this.editMode)
                 return false;
-            this.map.shrinkBoard();
+            this.boardSize = this.map.shrinkBoard();
+            this.checkResize = true;
         };
         Jetpack.prototype.bindSizeHandler = function () {
             var _this = this;
             window.addEventListener("resize", function () {
-                _this.canvas.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+                _this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
             });
         };
         Jetpack.prototype.bindClickHandler = function () {
             var _this = this;
             var canvas = document.getElementById("canvas");
             canvas.addEventListener("click", function (event) {
-                var tileSize = _this.renderer.tileSize;
+                var tileSize = _this.canvas.calcTileSize(_this.boardSize);
                 var coords = new Coords_3.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
                 _this.handleClick(coords);
             });

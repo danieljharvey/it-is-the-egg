@@ -28,6 +28,7 @@ export class Player {
 	moveSpeed: number = 1;
 	lastAction: string = "string";
 	value: number = 1;
+	img: string;
 
 	constructor(params: object, map: Map, renderer: Renderer, jetpack: Jetpack, collisions: Collisions) {
 		for (const i in params) {
@@ -52,13 +53,11 @@ export class Player {
 	}
 
 	setRedrawAroundPlayer() {
-		// first just do the stuff around player
-		for (let x = this.x - 1; x < this.x + 2; x++) {
-			for (let y = this.y - 1; y < this.y + 2; y++) {
-				const coords = this.map.correctForOverflow(x, y);
-				this.map.board[coords.x][coords.y].needsDraw = true;
-			}
-		}
+		const coords = new Coords(this.x, this.y);
+		const tiles = this.map.getTilesSurrounding(coords);
+		tiles.map(tile => {
+			tile.needsDraw = true;
+		});
 	}
 
 	incrementPlayerFrame() {
@@ -90,41 +89,34 @@ export class Player {
 
 		const coords: Coords = this.map.correctForOverflow(this.x, this.y);
 
-		const board = this.map.board;
-
-		const tile = board[coords.x][coords.y];
+		const tile = this.map.getTileWithCoords(coords);
 
 		if (tile.collectable > 0) {
 			const score = tile.collectable * this.multiplier;
-			const blankTile = this.map.getTile(1);
+			const blankTile = this.map.cloneTile(1);
 			blankTile.needsDraw = true;
-			board[coords.x][coords.y] = blankTile;
+			this.map.changeTile(coords,blankTile);
 			this.jetpack.addScore(score);
 			return true;
+		}
+
+		if (tile.action == "completeLevel") {
+			return this.jetpack.completeLevel();
+		} else if (tile.action == "teleport") {
+			return this.teleport();
 		}
 
 		if (this.falling) {
 			const belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1);
 
-			const tile = board[belowCoords.x][belowCoords.y];
+			const belowTile = this.map.getTileWithCoords(belowCoords);
 
-			if (tile.breakable) {
-				board[belowCoords.x][belowCoords.y] = this.map.getTile(1); // smash block, replace with empty
+			if (belowTile.breakable) {
+				this.map.changeTile(belowCoords,this.map.cloneTile(1)); // smash block, replace with empty
 				return true;
 			}
 		}
 
-		const tile = board[coords.x][coords.y];
-
-		if (tile.action == "rotateLeft") {
-			this.jetpack.rotateBoard(false);
-		} else if (tile.action == "rotateRight") {
-			this.jetpack.rotateBoard(true);
-		} else if (tile.action == "completeLevel") {
-			this.jetpack.completeLevel();
-		} else if (tile.action == "teleport") {
-			this.teleport();
-		}
 	}
 
 	checkPlayerCollisions() {
@@ -247,7 +239,7 @@ export class Player {
 
 		const coords = this.map.correctForOverflow(this.x, this.y + 1);
 
-		const tile = this.map.board[coords.x][coords.y];
+		const tile = this.map.getTileWithCoords(coords);
 
 		if (tile.background) {
 			const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);

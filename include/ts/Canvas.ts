@@ -4,35 +4,37 @@ import { BoardSize } from "./BoardSize";
 
 export class Canvas {
 	
-	checkResize: boolean = true;
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
 	imagesFolder: string = "img/";
 	boardSize: BoardSize;
-	tileSize: number;
 
 	constructor(boardSize: BoardSize) {
 		this.boardSize = boardSize;
-		this.tileSize = this.sizeCanvas(boardSize);
+		const tileSize = this.sizeCanvas(boardSize);
+		this.loadCanvas(boardSize, tileSize);
 	}
 
 	// takes BoardSize, returns size of each tile
 	sizeCanvas(boardSize: BoardSize) {
-		this.boardSize = boardSize;
-
-		const maxBoardSize = this.getMaxBoardSize(this.boardSize);
-
-		//this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
+		const maxBoardSize = this.getMaxBoardSize(boardSize);
 
 		const controlHeader = document.getElementById("controlHeader");
-		
 		controlHeader.style.width = maxBoardSize.toString() + 'px';		
 
-		this.tileSize = maxBoardSize / this.boardSize.width;
+		const tileSize = this.calcTileSize(boardSize);
 		
-		this.checkResize = false; // all done
-		this.loadCanvas(this.boardSize, this.tileSize);
-		return this.tileSize;
+		this.loadCanvas(boardSize, tileSize);
+		
+		this.boardSize = boardSize;
+
+		return tileSize;
+	}
+
+	calcTileSize(boardSize: BoardSize) {
+		const maxBoardSize = this.getMaxBoardSize(this.boardSize);
+		const tileSize = maxBoardSize / boardSize.width;
+		return tileSize;
 	}
 
 	getMaxBoardSize(boardSize: BoardSize): number {
@@ -72,16 +74,10 @@ export class Canvas {
 	}
 
 	getDrawingContext() {
-		if (!this.ctx) {
-			this.loadCanvas(this.boardSize, this.tileSize);
-		}
 		return this.ctx;
 	}
 
 	getCanvas() {
-		if (!this.canvas) {
-			this.loadCanvas(this.boardSize, this.tileSize);
-		}
 		return this.canvas;
 	}
 
