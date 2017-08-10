@@ -38,7 +38,6 @@ export class Levels {
 		    const el = document.createElement("option");
 		    el.textContent = levelID.toString();
 		    el.value = levelID.toString();
-		    console.log(levelID, this.levelID);
 		    if (levelID == this.levelID) {
 		    	el.selected = true;
 		    }

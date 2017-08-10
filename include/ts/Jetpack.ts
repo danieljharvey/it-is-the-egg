@@ -7,13 +7,14 @@ import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
 import { TileSet } from "./TileSet";
+import { BoardSize } from "./BoardSize";
 
 export class Jetpack {
 
 	paused: boolean = true;
 	editMode: boolean = false;
 
-	moveSpeed: number = 10;
+	moveSpeed: number = 15;
 
 	levelID: number = 1;
 
@@ -21,6 +22,8 @@ export class Jetpack {
 	renderer: Renderer; // Renderer object
 	collisions: Collisions; // Collisions object
 	levels: Levels; // Levels object
+	tileSet: TileSet; // TileSet object
+	boardSize: BoardSize; // BoardSize object
 
 	nextPlayerID: number = 1;
 	score: number = 0;
@@ -29,6 +32,8 @@ export class Jetpack {
 	playerTypes: object = {};
 
 	players: Player[];
+
+	defaultBoardSize: number = 20;
 
 	go() {
 		this.bootstrap();
@@ -58,16 +63,12 @@ export class Jetpack {
 		}, 1000);
 	}
 
+	// load static stuff - map/renderer etc will be worked out later
 	bootstrap() {
-		const tileSet = new TileSet();
-		const tiles = tileSet.getTiles();
-
-		this.map = new Map(tiles);
-
+		this.tileSet = new TileSet();
+	
 		const playerTypes = new PlayerTypes();
 		this.playerTypes = playerTypes.getPlayerTypes();
-
-		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
 
 		this.collisions = new Collisions(this, this.playerTypes); // pass the data, not the object
 
@@ -77,6 +78,15 @@ export class Jetpack {
 
 		this.levels = new Levels(this, loader);
 	}
+
+	// with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+	createRenderer(board = [], size: number = 12) {
+		this.boardSize = new BoardSize(size);
+		this.map = new Map(this.tileSet, this.boardSize, board);
+
+		const tiles = this.tileSet.getTiles();
+		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes, this.boardSize);
+	}	
 
 	startRender() {
 		if (!this.paused) return false;
@@ -154,7 +164,7 @@ export class Jetpack {
 		this.destroyPlayers();
 		const tiles = this.map.getAllTiles();
 		tiles.map((tile) => {
-			const type = this.map.getTileProperty(tile, "createPlayer");
+			const type = tile.createPlayer;
 			if (type) {
 				const coords = new Coords(tile.x, tile.y);
 				this.createNewPlayer(type, coords, 1);
@@ -171,7 +181,7 @@ export class Jetpack {
 		let collectable = 0;
 		const tiles = this.map.getAllTiles();
 		tiles.map((tile) => {
-			const score = this.map.getTileProperty(tile, "collectable");
+			const score = tile.collectable;
 			if (score > 0) {
 				collectable += score;
 			}
@@ -243,9 +253,9 @@ export class Jetpack {
 
 	loadLevelFromList() {
 		const select = document.getElementById("levelList");
-  const index = select.selectedIndex;
-  const levelID = select.options[index].value;
-  this.loadLevel(levelID, function() {
+  		const index = select.selectedIndex;
+  		const levelID = select.options[index].value;
+  		this.loadLevel(levelID, function() {
     		console.log("loaded!");
     	});
 	}
@@ -254,12 +264,28 @@ export class Jetpack {
 		this.levels.loadLevel(levelID, (data) => {
 			const text = "Level " + data.levelID + " loaded!";
 			this.showEditMessage(text);
-			this.map.updateBoard(data.board, data.boardSize);
+			this.createRenderer(data.board, data.boardSize.width);
 			callback();
 		}, () => {
-			this.map.board = this.map.generateRandomBoard();
+			this.createRenderer();
+			this.map.board = this.generateRandomBoard();
 			callback();
 		});
+	}
+
+	generateRandomBoard() {
+		this.map.board = this.map.generateRandomBoard();
+		return this.map.board;
+	}
+
+	growBoard() {
+		if (!this.editMode) return false;
+		this.map.growBoard();
+	}
+
+	shrinkBoard() {
+		if (!this.editMode) return false;
+		this.map.shrinkBoard();
 	}
 
 	bindSizeHandler() {

@@ -1,27 +1,28 @@
 import { Coords } from "./Coords";
 import { Player } from "./Player";
+import { Tile } from "./Tile";
+import { TileSet } from "./TileSet";
+import { BoardSize } from "./BoardSize";
 
 export class Map {
 
-	tiles: object;
+	tileSet: TileSet;
 	renderAngle: number = 0;
 
-	boardSize: object = {
-		width: 14,
-		height: 14,
-	};
+	boardSize: BoardSize;
 
-	board: array = [];
+	board = [];
 
-	constructor(tiles: object) {
-		this.tiles = tiles;
-		this.board = this.generateBlankBoard();
+	constructor(tileSet: TileSet, boardSize: BoardSize, board = []) {
+		this.tileSet = tileSet;
+		this.boardSize = boardSize;
+		this.board = this.correctBoardSizeChange(board, boardSize);
+		this.markAllForRedraw();
 	}
 
-	updateBoard(board: object, boardSize: object) {
+	updateBoard(board, boardSize: BoardSize) {
 		this.board = board;
 		this.boardSize = boardSize;
-		this.markAllForRedraw();
 	}
 
 	correctForOverflow(x: number, y: number): Coords {
@@ -44,16 +45,6 @@ export class Map {
 		return new Coords(newX, newY);
 	}
 
-	getTileProperty(tile, property) {
-		if (!tile.hasOwnProperty(property)) return false;
-		return tile[property];
-
-	}
-
-	tileIsBreakable(tile) {
-		return this.getTileProperty(tile, "breakable");
-	}
-
 	// is intended next tile empty / a wall?
 	checkTileIsEmpty(x, y) {
 
@@ -65,16 +56,11 @@ export class Map {
 	}
 
 	markAllForRedraw() {
-		// force redraw
-		for (const x in this.board) {
-			for (const y in this.board[x]) {
-				this.board[x][y].needsDraw = true;
-			}
-		}
-	}
-
-	getTileAction(tile) {
-		return this.getTileProperty(tile, "action");
+		const tiles = this.getAllTiles();
+		tiles.map(tile => {
+			tile.needsDraw = true;
+		});
+		return; 
 	}
 
 	generateBlankBoard() {
@@ -103,8 +89,13 @@ export class Map {
 		return board;
 	}
 
-	getTile(id) {
-		const tile = JSON.parse(JSON.stringify(this.tiles[id])); // create copy of object so we're not changing original
+	getPrototypeTile(id) {
+		return this.tileSet.getTile(id);
+	}
+
+	getTile(id): Tile {
+		const prototypeTile = this.getPrototypeTile(id);
+		const tile = new Tile(prototypeTile); // create new Tile object with these 
 		return tile;
 	}
 
@@ -114,17 +105,16 @@ export class Map {
 		    const randomKey = keys[ keys.length * Math.random() << 0];
 		    return this.getTile(randomKey);
 		};
-
-		const theseTiles = JSON.parse(JSON.stringify(tiles));
-		// remove unwanted tiles
-		for (const i in theseTiles) {
-			if (this.getTileProperty(theseTiles[i], "dontAdd")) {
-		    	delete theseTiles[i];
-		    }
-		}
+		
+		const theseTiles = this.tileSet.getTiles();
+		Object.entries(theseTiles).filter(([key, tile]) => {
+			if (tile.dontAdd) delete theseTiles[key];
+			return true;
+		})
 		return randomProperty(theseTiles);
 	}
 
+	// get empty grid without tiles in
 	getBlankBoard() {
 		const newBoard = [];
 		for (let x = 0; x < this.boardSize.width; x++) {
@@ -136,7 +126,7 @@ export class Map {
 		return newBoard;
 	}
 
-	translateRotation(x, y, clockwise) {
+	translateRotation(x: number, y: number, clockwise: boolean) {
 		const coords = {
 			x: 0,
 			y: 0,
@@ -218,7 +208,7 @@ export class Map {
 		for (const x in this.board) {
 			for (const y in this.board[x]) {
 				const id = this.board[x][y].id;
-				const tile = this.getTile(id);
+				const tile = this.board[x][y];
 				tile.x = x;
 				tile.y = y;
 				allTiles.push(tile);
@@ -233,7 +223,7 @@ export class Map {
 
 		const currentKey = currentTile.id;
 
-		const keys = Object.keys(this.tiles);
+		const keys = Object.keys(this.tileSet.getTiles());
 
 		let newKey = false, nextKey = false;
 		for (const i in keys) {
@@ -244,8 +234,41 @@ export class Map {
 				nextKey = false;
 			}
 		}
-	 const tile = this.getTile(newKey);
-	 this.board[x][y] = tile;
+		
+		const tile = this.getTile(newKey);
+	 	this.board[x][y] = tile;
+	}
+
+	shrinkBoard() {
+		this.boardSize.shrink();
+		this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+	}
+
+	growBoard() {
+		this.boardSize.grow();
+		this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+	}
+
+	correctBoardSizeChange(board, boardSize: BoardSize) {
+		
+		const newBoard = [];
+
+		const currentWidth = board.length;
+		const currentHeight = board[0].length;
+
+		for (let x = 0; x < boardSize.width; x++) {
+			newBoard[x] = [];
+			for (let y = 0; y < boardSize.height; y++) {
+				if (x < currentWidth && y < currentHeight) {
+					// using current board
+					newBoard[x][y] = board[x][y];
+				} else {
+					// adding blank tiles
+					newBoard[x][y] = this.getTile(1);
+				}
+			}
+		}
+		return newBoard;
 	}
 
 }

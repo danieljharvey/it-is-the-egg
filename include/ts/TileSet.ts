@@ -1,7 +1,8 @@
 export class TileSet {
+	tiles: object = {};
 
 	getTiles() {
-		const tiles = {
+		this.tiles = {
 			1: {
 				id: 1,
 				title: "Sky",
@@ -88,6 +89,7 @@ export class TileSet {
 				needsDraw: true,
 				frontLayer: true,
 				collectable: 100,
+				dontAdd: true,
 			},
 			14: {
 				id: 14,
@@ -99,6 +101,13 @@ export class TileSet {
 				action: "teleport",
 			},
 		};
-		return tiles;
+		// return a copy rather than letting this get messed with
+		return JSON.parse(JSON.stringify(this.tiles));
+	}
+
+	getTile(id) {
+		const tiles = this.getTiles();
+		if (tiles.hasOwnProperty(id)) return tiles[id];
+		return false;
 	}
 }

@@ -32,15 +32,19 @@
 		}
 	</style>
 	<body>
-		<div id='controlHeader'>
-			<button onClick='jetpack.saveLevel();'>SAVE</button>
-			<span id='message'>EDIT MODE</span>
-			<select id='levelList'>
-			</select>
-			<button onClick='jetpack.loadLevelFromList();'>LOAD</button>
+		<div id='wrapper'>
+			<div id='controlHeader'>
+				<button onClick='jetpack.saveLevel();'>SAVE</button>
+				<span id='message'>EDIT MODE</span>
+				<select id='levelList'>
+				</select>
+				<button onClick='jetpack.loadLevelFromList();'>LOAD</button>
+				<button onClick='jetpack.generateRandomBoard();'>RANDOM</button>
+				<button onClick='jetpack.shrinkBoard();'> - </button>
+				<button onClick='jetpack.growBoard();'> + </button>
+			</div>
+			<canvas id='canvas'></canvas>
 		</div>
-		<canvas id='canvas'></canvas>
-		
 	</body>
 </html>
 

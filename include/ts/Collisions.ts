@@ -55,26 +55,6 @@ export class Collisions {
 			}
 		}
 		return false;
-		/*if (player1.type=='egg' && player2.type=='egg') {
-			var type='red-egg';
-			this.jetpack.createNewPlayer(type, player2, player2.direction);
-		} else if (player1.type=='egg' && player2.type=='red-egg') {
-			var type='blue-egg';
-			this.jetpack.createNewPlayer(type, player2, player2.direction);
-		} else if (player1.type=='red-egg' && player2.type=='egg') {
-			var type='blue-egg';
-			this.jetpack.createNewPlayer(type, player1, player1.direction);
-		} else if (player1.type=='egg' && player2.type=='blue-egg') {
-			var type='yellow-egg';
-			this.jetpack.createNewPlayer(type, player2, player2.direction);
-		} else if (player1.type=='blue-egg' && player2.type=='egg') {
-			var type='yellow-egg';
-			this.jetpack.createNewPlayer(type, player1, player1.direction);
-		} else if (player1.type=='red-egg' && player2.type=='red-egg') {
-			var type='yellow-egg';
-			this.jetpack.createNewPlayer(type, player2, player2.direction);
-		} */
-
 	}
 
 }

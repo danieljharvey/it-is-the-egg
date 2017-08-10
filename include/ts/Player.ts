@@ -42,9 +42,9 @@ export class Player {
 	doCalcs() {
 		this.setRedrawAroundPlayer();
 		this.incrementPlayerFrame();
-	 this.checkFloorBelowPlayer();
-	 this.incrementPlayerDirection();
-	 this.checkPlayerCollisions();
+	 	this.checkFloorBelowPlayer();
+	 	this.incrementPlayerDirection();
+	 	this.checkPlayerCollisions();
 	}
 
 	getCoords() {
@@ -92,12 +92,10 @@ export class Player {
 
 		const board = this.map.board;
 
-		let tile = board[coords.x][coords.y];
+		const tile = board[coords.x][coords.y];
 
-		const collectable = this.map.getTileProperty(tile, "collectable");
-
-		if (collectable) {
-			const score = collectable * this.multiplier;
+		if (tile.collectable > 0) {
+			const score = tile.collectable * this.multiplier;
 			const blankTile = this.map.getTile(1);
 			blankTile.needsDraw = true;
 			board[coords.x][coords.y] = blankTile;
@@ -110,22 +108,21 @@ export class Player {
 
 			const tile = board[belowCoords.x][belowCoords.y];
 
-			if (this.map.tileIsBreakable(tile)) {
+			if (tile.breakable) {
 				board[belowCoords.x][belowCoords.y] = this.map.getTile(1); // smash block, replace with empty
 				return true;
 			}
 		}
 
 		const tile = board[coords.x][coords.y];
-		const action = this.map.getTileAction(tile);
 
-		if (action == "rotateLeft") {
+		if (tile.action == "rotateLeft") {
 			this.jetpack.rotateBoard(false);
-		} else if (action == "rotateRight") {
+		} else if (tile.action == "rotateRight") {
 			this.jetpack.rotateBoard(true);
-		} else if (action == "completeLevel") {
+		} else if (tile.action == "completeLevel") {
 			this.jetpack.completeLevel();
-		} else if (action == "teleport") {
+		} else if (tile.action == "teleport") {
 			this.teleport();
 		}
 	}
@@ -252,17 +249,15 @@ export class Player {
 
 		const tile = this.map.board[coords.x][coords.y];
 
-		const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
-		const fallAmount: number = Math.round(moveAmount * 1.5);
-
 		if (tile.background) {
+			const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
+			const fallAmount: number = Math.round(moveAmount * 1.5);		
 			this.falling = true;
 			this.offsetY += fallAmount;
-		} else if (this.falling && this.map.tileIsBreakable(tile)) {
-			this.offsetY += fallAmount;
+		} else if (this.falling && tile.breakable) {
+			this.checkPlayerTileAction();
 		} else {
 			this.falling = false;
-			//this.checkPlayerTileAction();
 		}
 
 		this.checkIfPlayerIsInNewTile();
