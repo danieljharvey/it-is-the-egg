@@ -1037,49 +1037,54 @@ define("TileSet", ["require", "exports"], function (require, exports) {
     }());
     exports.TileSet = TileSet;
 });
-var PlayerTypes = (function () {
-    function PlayerTypes() {
-        this.playerTypes = {
-            egg: {
-                type: 'egg',
-                title: "It is of course the egg",
-                'img': 'egg-sprite.png',
-                'frames': 18,
-                'multiplier': 1,
-                'value': 1
-            },
-            'red-egg': {
-                'type': 'red-egg',
-                'title': "It is of course the red egg",
-                'img': 'egg-sprite-red.png',
-                'frames': 18,
-                'multiplier': 2,
-                value: 2
-            },
-            'blue-egg': {
-                'type': 'blue-egg',
-                'title': "It is of course the blue egg",
-                'img': 'egg-sprite-blue.png',
-                'frames': 18,
-                'multiplier': 5,
-                value: 3
-            },
-            'yellow-egg': {
-                'type': 'yellow-egg',
-                'title': "It is of course the yellow egg",
-                'img': 'egg-sprite-yellow.png',
-                'frames': 18,
-                'multiplier': 10,
-                value: 4
-            }
+define("PlayerTypes", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var PlayerTypes = (function () {
+        function PlayerTypes() {
+            this.playerTypes = {
+                egg: {
+                    type: 'egg',
+                    title: "It is of course the egg",
+                    'img': 'egg-sprite.png',
+                    'frames': 18,
+                    'multiplier': 1,
+                    'value': 1
+                },
+                'red-egg': {
+                    'type': 'red-egg',
+                    'title': "It is of course the red egg",
+                    'img': 'egg-sprite-red.png',
+                    'frames': 18,
+                    'multiplier': 2,
+                    value: 2
+                },
+                'blue-egg': {
+                    'type': 'blue-egg',
+                    'title': "It is of course the blue egg",
+                    'img': 'egg-sprite-blue.png',
+                    'frames': 18,
+                    'multiplier': 5,
+                    value: 3
+                },
+                'yellow-egg': {
+                    'type': 'yellow-egg',
+                    'title': "It is of course the yellow egg",
+                    'img': 'egg-sprite-yellow.png',
+                    'frames': 18,
+                    'multiplier': 10,
+                    value: 4
+                }
+            };
+        }
+        PlayerTypes.prototype.getPlayerTypes = function () {
+            return this.playerTypes;
         };
-    }
-    PlayerTypes.prototype.getPlayerTypes = function () {
-        return this.playerTypes;
-    };
-    return PlayerTypes;
-}());
-define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Renderer", "Player", "TileSet", "Loader", "Coords", "./PlayerTypes"], function (require, exports, Collisions_1, Map_1, Levels_1, Renderer_1, Player_1, TileSet_1, Loader_1, Coords_3, PlayerTypes_1) {
+        return PlayerTypes;
+    }());
+    exports.PlayerTypes = PlayerTypes;
+});
+define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Renderer", "Player", "TileSet", "Loader", "Coords", "PlayerTypes"], function (require, exports, Collisions_1, Map_1, Levels_1, Renderer_1, Player_1, TileSet_1, Loader_1, Coords_3, PlayerTypes_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1127,7 +1132,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Map", "Levels", "Rendere
             this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
-            this.collisions = new Collisions_1.Collisions(this, playerTypes);
+            this.collisions = new Collisions_1.Collisions(this, this.playerTypes); // pass the data, not the object
             var apiLocation = 'http://' + window.location.hostname + '/levels/';
             var loader = new Loader_1.Loader(apiLocation);
             this.levels = new Levels_1.Levels(this, loader);
@@ -1348,8 +1353,7 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             if (distance < 0)
                 distance = distance * -1;
             if (distance < 40) {
-                this.combinePlayers(player1, player2);
-                return true;
+                return this.combinePlayers(player1, player2);
             }
             return false;
         };
@@ -1365,14 +1369,15 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             //console.log('combinePlayers', player1, player2);
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            var playerTypes = this.playerTypes.getPlayerTypes();
-            for (var type in playerTypes) {
-                if (playerTypes[type].value == newValue) {
+            for (var type in this.playerTypes) {
+                if (this.playerTypes[type].value == newValue) {
                     this.jetpack.createNewPlayer(type, higherPlayer, higherPlayer.direction);
                     this.jetpack.deletePlayer(player1);
                     this.jetpack.deletePlayer(player2);
+                    return true;
                 }
             }
+            return false;
             /*if (player1.type=='egg' && player2.type=='egg') {
                 var type='red-egg';
                 this.jetpack.createNewPlayer(type, player2, player2.direction);

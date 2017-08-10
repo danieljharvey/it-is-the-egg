@@ -1,4 +1,4 @@
-class PlayerTypes {
+export class PlayerTypes {
     playerTypes:object = {
 		egg: {
 			type:'egg',
