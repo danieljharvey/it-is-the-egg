@@ -188,6 +188,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.imagesFolder = "img/";
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
+            this.playerTypes = {};
             this.renderTile = function (x, y, tile, overwriteImage) {
                 if (overwriteImage) {
                     var img = overwriteImage;
@@ -307,6 +308,9 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 return false;
             var maxBoardSize = this.getMaxBoardSize();
             this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
+            var controlHeader = document.getElementById("controlHeader");
+            console.log('controlheader', controlHeader);
+            controlHeader.style.width = maxBoardSize.toString() + 'px';
             this.tileSize = maxBoardSize / this.map.boardSize.width;
             this.loadCanvas();
             this.map.markAllForRedraw();
@@ -315,9 +319,12 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         Renderer.prototype.getMaxBoardSize = function () {
             var width = window.innerWidth;
             var height = window.innerHeight;
+            var wrapper = document.getElementById('wrapper');
+            var wrapMargin = parseInt(window.getComputedStyle(wrapper).margin);
             var controlHeader = document.getElementById("controlHeader");
-            height = height - (controlHeader.offsetHeight * 2);
-            width = width - (controlHeader.offsetHeight * 2);
+            var controlSpacing = parseInt(window.getComputedStyle(controlHeader).marginTop);
+            height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
+            width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
             if (width > height) {
                 var difference = (height % this.map.boardSize.width);
                 height = height - difference;
@@ -1091,7 +1098,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
         function Jetpack() {
             this.paused = true;
             this.editMode = false;
-            this.moveSpeed = 8;
+            this.moveSpeed = 10;
             this.levelID = 1;
             this.nextPlayerID = 1;
             this.score = 0;
@@ -1129,9 +1136,9 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
             var tileSet = new TileSet_1.TileSet();
             var tiles = tileSet.getTiles();
             this.map = new Map_1.Map(tiles);
-            this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
+            this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes);
             this.collisions = new Collisions_1.Collisions(this, this.playerTypes); // pass the data, not the object
             var apiLocation = "http://" + window.location.hostname + "/levels/";
             var loader = new Loader_1.Loader(apiLocation);
@@ -1144,6 +1151,7 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
             window.cancelAnimationFrame(this.animationHandle);
             this.map.markAllForRedraw();
             this.paused = false;
+            this.showControls();
             this.animationHandle = window.requestAnimationFrame(function () { return _this.renderer.render(); });
         };
         Jetpack.prototype.resetScore = function (score) {
@@ -1171,7 +1179,20 @@ define("Jetpack", ["require", "exports", "Collisions", "Coords", "Levels", "Load
         };
         Jetpack.prototype.pauseRender = function () {
             this.paused = true;
+            this.hideControls();
             window.cancelAnimationFrame(this.animationHandle);
+        };
+        Jetpack.prototype.showControls = function () {
+            var controlHeader = document.getElementById('controlHeader');
+            if (controlHeader.classList.contains('hidden')) {
+                controlHeader.classList.remove('hidden');
+            }
+        };
+        Jetpack.prototype.hideControls = function () {
+            var controlHeader = document.getElementById('controlHeader');
+            if (!controlHeader.classList.contains('hidden')) {
+                controlHeader.classList.add('hidden');
+            }
         };
         Jetpack.prototype.doPlayerCalcs = function () {
             for (var i in this.players) {

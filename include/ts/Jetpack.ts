@@ -13,7 +13,7 @@ export class Jetpack {
 	paused: boolean = true;
 	editMode: boolean = false;
 
-	moveSpeed: number = 8;
+	moveSpeed: number = 10;
 
 	levelID: number = 1;
 
@@ -64,10 +64,10 @@ export class Jetpack {
 
 		this.map = new Map(tiles);
 
-		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
-
 		const playerTypes = new PlayerTypes();
 		this.playerTypes = playerTypes.getPlayerTypes();
+
+		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
 
 		this.collisions = new Collisions(this, this.playerTypes); // pass the data, not the object
 
@@ -83,6 +83,7 @@ export class Jetpack {
 		window.cancelAnimationFrame(this.animationHandle);
 		this.map.markAllForRedraw();
 		this.paused = false;
+		this.showControls();
 		this.animationHandle = window.requestAnimationFrame(() => this.renderer.render());
 	}
 
@@ -115,7 +116,22 @@ export class Jetpack {
 
 	pauseRender() {
 		this.paused = true;
+		this.hideControls();
 		window.cancelAnimationFrame(this.animationHandle);
+	}
+
+	showControls() {
+		const controlHeader = document.getElementById('controlHeader');
+		if (controlHeader.classList.contains('hidden')) {
+			controlHeader.classList.remove('hidden');
+		}
+	}
+
+	hideControls() {
+		const controlHeader = document.getElementById('controlHeader');
+		if (!controlHeader.classList.contains('hidden')) {
+			controlHeader.classList.add('hidden');
+		}
 	}
 
 	doPlayerCalcs() {

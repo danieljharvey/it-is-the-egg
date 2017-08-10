@@ -21,6 +21,7 @@ export class Renderer {
 	ctx; // canvas context for drawing
 	tileImages: object = {}; // image elements of tiles
 	playerImages: object = {}; // image element of players
+	playerTypes: object = {};
 
 	constructor(jetpack: Jetpack, map: Map, tiles: object, playerTypes: object) {
 		this.jetpack = jetpack;
@@ -99,7 +100,7 @@ export class Renderer {
 	}
 
 	loadPlayerPalette() {
-		for (const i in this.playerTypes) {
+		for (let i in this.playerTypes) {
 			const playerType = this.playerTypes[i];
 			const playerImage = document.createElement("img");
 			playerImage.setAttribute("src", this.getTileImagePath(playerType));
@@ -117,6 +118,10 @@ export class Renderer {
 
 		this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + "px";
 
+		const controlHeader = document.getElementById("controlHeader");
+		console.log('controlheader',controlHeader);
+		controlHeader.style.width = maxBoardSize.toString() + 'px';		
+
 		this.tileSize = maxBoardSize / this.map.boardSize.width;
 		this.loadCanvas();
 		this.map.markAllForRedraw();
@@ -128,10 +133,14 @@ export class Renderer {
 		let width = window.innerWidth;
 		let height = window.innerHeight;
 
-		const controlHeader = document.getElementById("controlHeader");
+		const wrapper = document.getElementById('wrapper');
+		const wrapMargin = parseInt(window.getComputedStyle(wrapper).margin);
 
-		height = height - (controlHeader.offsetHeight * 2);
-		width = width - (controlHeader.offsetHeight * 2);
+		const controlHeader = document.getElementById("controlHeader");
+		const controlSpacing = parseInt(window.getComputedStyle(controlHeader).marginTop);
+
+		height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
+		width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
 
 		if (width > height) {
 			const difference = (height % this.map.boardSize.width);
@@ -265,25 +274,25 @@ export class Renderer {
 
 		const offsetRatio = (this.tileSize / SPRITE_SIZE);
 
-	 const left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
-	 const top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
+		const left = (player.x * this.tileSize) + (player.offsetX * offsetRatio);
+		const top = (player.y * this.tileSize) + (player.offsetY * offsetRatio);
 
-	 const clipLeft = player.currentFrame * SPRITE_SIZE;
-	 const clipTop = 0;
+		const clipLeft = player.currentFrame * SPRITE_SIZE;
+		const clipTop = 0;
 
-	 this.ctx.globalAlpha = 1;
+		this.ctx.globalAlpha = 1;
+		
+		const image = this.playerImages[player.img];
 
-	 const image = this.playerImages[player.img];
+		this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
 
-	 this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, this.tileSize, this.tileSize);
-
-	 if (left < 0) {
+	 	if (left < 0) {
 	    	// also draw on right
 	    	const secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
 	    	this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);
 	    }
 
-	 if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
+	 	if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
 	    	// also draw on left
 	    	const secondLeft = left - (this.tileSize * this.map.boardSize.width);
 	    	this.ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, this.tileSize, this.tileSize);

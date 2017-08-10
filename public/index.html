@@ -8,32 +8,68 @@
 			margin: 0px;
 			padding: 0px;
 		}
+		#wrapper {
+			margin: 10px;
+			padding: 0px;
+		}
 		#controlHeader {
-			height: 30px;
+			height: 50px;
 			width: 100%;
 			text-align: center;
-			line-height:30px;
+			line-height:50px;
+			margin: 10px auto 0px auto;
+			opacity: 1;
+			-webkit-transition: opacity 0.5s ease-in-out;
+			-moz-transition: opacity 0.5s ease-in-out;
+			transition: opacity 0.5s ease-in-out;
+		}
+		#controlHeader.hidden {
+			opacity: 0;
 		}
 		#canvas {
-			display: block;
 			margin: 0px auto;
+			display: block;
 		}
 		#score {
 			color: white;
-			margin-left: 20px;
-			margin-right: 20px;
+			width: 30%;
 			text-align: center;
 			font-family: Helvetica;
+			line-height: 50px;
+			font-size: 30px;
+			display:inline-block;
+		}
+	
+		.bigButton {
+			color: white;
+			background-color: black;
+			line-height: 50px;
+			height: 50px;
+			font-size: 40px;
+			width: 33%;
+			display:inline-block;
+		}
+		.bigButton:hover {
+			cursor: pointer;
+		}
+		.bigButton:active {
+			background-color: white;
+			color: black;
 		}
 	</style>
-	<body>
-		<div id='controlHeader'>
-			<button onClick='jetpack.rotateBoard(false);'>ROTATE ANTICLOCKWISE</button>
-			<span id='score'>0</span>
-			<button onClick='jetpack.rotateBoard(true);'>ROTATE CLOCKWISE</button>
+	<body>	
+		<div id='wrapper'>
+			<canvas id='canvas'></canvas>	
+			<div id='controlHeader' class='hidden'>
+				<div id='leftButton' class='bigButton side' onClick='jetpack.rotateBoard(false);'>
+					&larr;
+				</div>
+				<span id='score'>0</span>
+				<div id='rightButton' class='bigButton side' onClick='jetpack.rotateBoard(true);'>
+					&rarr;
+				</div>
+			</div>	
 		</div>
-		<canvas id='canvas'></canvas>
-		
 	</body>
 </html>
 
