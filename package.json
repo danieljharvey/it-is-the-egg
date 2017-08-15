@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-	"lint": "tslint include/ts/*.ts"
+    "lint": "tslint include/ts/*.ts"
   },
   "repository": {
     "type": "git",
@@ -26,16 +26,18 @@
     "ts-jest": "^20.0.7",
     "typescript": "^2.4.2"
   },
-	"jest": {
-		"transform": {
-			".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
-		},
-		"testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
-		"moduleFileExtensions": [
-			"ts",
-			"tsx",
-			"js"
-		]
-	}
-
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ]
+  },
+  "dependencies": {
+    "ramda": "^0.24.1"
+  }
 }

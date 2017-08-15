@@ -45,7 +45,7 @@ class Egg {
 
 	protected function processSaveLevel($params) {
 		if (!isset($params['data'])) return $this->error("No level data supplied!");
-		if (isset($params['levelID'])) {
+		if (isset($params['levelID']) && $params['levelID'] > 0) {
 			if (!is_numeric($params['levelID'])) return $this->error("Level ID must be a valid integer!");
 			return $this->updateLevel($params['levelID'], $params['data']);
 		} else {

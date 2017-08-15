@@ -9,6 +9,7 @@ import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
 import { TileSet } from "./TileSet";
 import { BoardSize } from "./BoardSize";
+import { SavedLevel } from "./SavedLevel";
 import { TitleScreen } from "./TitleScreen";
 
 export class Jetpack {
@@ -282,14 +283,14 @@ export class Jetpack {
 	}
 
 	saveLevel() {
-		this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, (levelID) => {
+		this.levels.saveLevel(this.map.getBoard(), this.map.boardSize, this.levels.levelID, (levelID) => {
 			const text = "Level " + levelID + " saved";
 			this.showEditMessage(text);
 		});
 	}
 
 	loadLevelFromList() {
-		const select = document.getElementById("levelList");
+		const select = <HTMLSelectElement> document.getElementById("levelList");
   		const index = select.selectedIndex;
   		const levelID = select.options[index].value;
   		this.loadLevel(levelID, function() {
@@ -298,21 +299,16 @@ export class Jetpack {
 	}
 
 	loadLevel(levelID, callback) {
-		this.levels.loadLevel(levelID, (data) => {
-			const text = "Level " + data.levelID + " loaded!";
+		this.levels.loadLevel(levelID, (savedLevel: SavedLevel) => {
+			const text = "Level " + savedLevel.levelID.toString() + " loaded!";
 			this.showEditMessage(text);
-			this.createRenderer(data.board, data.boardSize.width);
+			this.createRenderer(savedLevel.board, savedLevel.boardSize.width);
 			callback();
 		}, () => {
 			this.createRenderer();
-			this.map.board = this.generateRandomBoard();
+			this.map.updateBoardWithRandom(this.boardSize);
 			callback();
 		});
-	}
-
-	generateRandomBoard() {
-		this.map.board = this.map.generateRandomBoard();
-		return this.map.board;
 	}
 
 	growBoard() {
@@ -349,11 +345,10 @@ export class Jetpack {
 
 	bindKeyboardHandler() {
 		window.addEventListener("keydown", (event) => {
-			if (event.keyCode == "37") {
+			if (event.keyCode === 37) {
 				this.rotateBoard(false);
 			}
-
-			if (event.keyCode == "39") {
+			if (event.keyCode === 39) {
 				this.rotateBoard(true);
 			}
 		});

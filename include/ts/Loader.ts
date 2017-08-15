@@ -6,9 +6,9 @@ export class Loader {
 		this.apiLocation = apiLocation;
 	}
 
-	callServer(action: string, params: object, callback: (object) => any, failCallback: (string) => any) {
+	callServer(action: string, params: any, callback: (object) => any, failCallback: (string) => any) {
 		const xhr = new XMLHttpRequest();
-
+		
 		params.action = action;
 
 		xhr.open("POST", this.apiLocation, true);
@@ -18,12 +18,17 @@ export class Loader {
   			const DONE: number = 4; // readyState 4 means the request is done.
   			const OK: number = 200; // status 200 is a successful return.
 			  if (xhr.readyState == DONE) {
-				if (xhr.status == OK) {
-					const object = JSON.parse(xhr.responseText);
+				if (xhr.status == OK) {	
+					let object;
+					try {
+						object = JSON.parse(xhr.responseText);
+					} catch(e) {
+						failCallback("Could not decode this JSON: " + xhr.responseText);
+					}
 					if (object.rc > 0) {
 						failCallback(object.msg);
 					} else {
-						callback(object);
+						callback(object.data);
 					}
 				} else {
 					failCallback("Error: " + xhr.status);

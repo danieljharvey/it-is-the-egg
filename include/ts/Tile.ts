@@ -14,7 +14,7 @@ export class Tile {
 
 	constructor(params: object) {
 		// fill this object with entries from params
-		Object.entries(params).map(([key, value]) => {
+		(<any>Object).entries(params).map(([key, value]) => {
 			this[key] = value;
 		});
 	}

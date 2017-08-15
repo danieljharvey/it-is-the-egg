@@ -36,9 +36,9 @@ export class Collisions {
 	}
 
 	chooseHigherLevelPlayer(player1: Player, player2: Player) {
-		if (player1.level > player2.level) return player1;
-		if (player2.level > player1.level) return player2;
-		if (player1.level == player2.level) return player1;
+		if (player1.value > player2.value) return player1;
+		if (player2.value > player1.value) return player2;
+		if (player1.value == player2.value) return player1;
 	}
 
 	combinePlayers(player1: Player, player2: Player) {
@@ -48,7 +48,7 @@ export class Collisions {
 
 		for (const type in this.playerTypes) {
 			if (this.playerTypes[type].value == newValue) {
-				this.jetpack.createNewPlayer(type, higherPlayer, higherPlayer.direction);
+				this.jetpack.createNewPlayer(type, higherPlayer.getCoords(), higherPlayer.direction);
 				this.jetpack.deletePlayer(player1);
 				this.jetpack.deletePlayer(player2);
 				return true;

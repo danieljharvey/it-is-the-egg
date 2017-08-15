@@ -67,7 +67,7 @@ export class Canvas {
 	}
 
 	loadCanvas(boardSize, tileSize): void {
-		this.canvas = document.getElementById("canvas");
+		this.canvas = <HTMLCanvasElement> document.getElementById("canvas");
 		this.canvas.width = boardSize.width * tileSize;
 		this.canvas.height = boardSize.height * tileSize;
 		this.ctx = this.canvas.getContext("2d");

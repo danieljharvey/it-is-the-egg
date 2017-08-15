@@ -20,7 +20,6 @@ export class Renderer {
 
 	tileImages: object = {}; // image elements of tiles
 	playerImages: object = {}; // image element of players
-	playerTypes: object = {};
 	tileSize: number;
 
 	constructor(jetpack: Jetpack, map: Map, tiles: object, playerTypes: object, boardSize: BoardSize, canvas: Canvas) {
@@ -51,8 +50,8 @@ export class Renderer {
 			const thisTile = this.tiles[i];
 			const tileImage = document.createElement("img");
 			tileImage.setAttribute("src", this.getTileImagePath(thisTile));
-			tileImage.setAttribute("width", SPRITE_SIZE);
-			tileImage.setAttribute("height", SPRITE_SIZE);
+			tileImage.setAttribute("width", SPRITE_SIZE.toString());
+			tileImage.setAttribute("height", SPRITE_SIZE.toString());
 			tileImage.addEventListener("load", () => {
 		  		this.markTileImageAsLoaded(thisTile.id);
 			}, false);
@@ -98,7 +97,7 @@ export class Renderer {
     			return;
     		}
     		if (!tile.frontLayer) {
-    			if (this.renderTile(tile.x, tile.y, tile, false)) {
+    			if (this.renderTile(tile.x, tile.y, tile)) {
 	    			tile.needsDraw = false;
 				    tile.drawnBefore = true;
 				}
@@ -255,7 +254,7 @@ export class Renderer {
 		}
 	}
 
-	drawRotated(savedData: Image, direction: number, angle: number, targetAngle: number, completed: () => void) {
+	drawRotated(savedData: HTMLImageElement, direction: number, angle: number, targetAngle: number, completed: () => void) {
 			
 		const canvas = this.canvas.getCanvas();
 

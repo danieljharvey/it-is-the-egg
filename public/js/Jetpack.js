@@ -23,6 +23,12 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
             if (this.height > this.minSize)
                 this.height--;
         };
+        BoardSize.prototype.getData = function () {
+            return {
+                width: this.width,
+                height: this.height
+            };
+        };
         return BoardSize;
     }());
     exports.BoardSize = BoardSize;
@@ -142,12 +148,18 @@ define("Loader", ["require", "exports"], function (require, exports) {
                 var OK = 200; // status 200 is a successful return.
                 if (xhr.readyState == DONE) {
                     if (xhr.status == OK) {
-                        var object = JSON.parse(xhr.responseText);
+                        var object = void 0;
+                        try {
+                            object = JSON.parse(xhr.responseText);
+                        }
+                        catch (e) {
+                            failCallback("Could not decode this JSON: " + xhr.responseText);
+                        }
                         if (object.rc > 0) {
                             failCallback(object.msg);
                         }
                         else {
-                            callback(object);
+                            callback(object.data);
                         }
                     }
                     else {
@@ -182,7 +194,31 @@ define("Loader", ["require", "exports"], function (require, exports) {
     }());
     exports.Loader = Loader;
 });
-define("Levels", ["require", "exports"], function (require, exports) {
+define("SavedLevel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var SavedLevel = (function () {
+        function SavedLevel(boardSize, board, levelID) {
+            this.boardSize = boardSize;
+            this.board = board;
+            this.levelID = levelID;
+        }
+        SavedLevel.prototype.toString = function () {
+            var data = this.getData();
+            return JSON.stringify(data);
+        };
+        SavedLevel.prototype.getData = function () {
+            return {
+                levelID: this.levelID,
+                boardSize: this.boardSize.getData(),
+                board: this.board,
+            };
+        };
+        return SavedLevel;
+    }());
+    exports.SavedLevel = SavedLevel;
+});
+define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (require, exports, BoardSize_1, SavedLevel_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Levels = (function () {
@@ -196,25 +232,28 @@ define("Levels", ["require", "exports"], function (require, exports) {
         Levels.prototype.getLevelList = function () {
             var _this = this;
             this.loader.callServer("getLevelsList", {}, function (data) {
-                _this.levelList = data.data;
+                _this.levelList = data;
+                _this.populateLevelsList();
+            }, function () {
+                _this.levelList = [];
                 _this.populateLevelsList();
             });
         };
         Levels.prototype.populateLevelsList = function () {
             var select = document.getElementById("levelList");
             if (!select)
-                return false;
+                return;
             while (select.firstChild) {
                 select.removeChild(select.firstChild);
             }
             var nullEl = document.createElement("option");
             nullEl.textContent = "New";
-            nullEl.value = false;
+            nullEl.value = "";
             if (!this.levelID)
                 nullEl.selected = true;
             select.appendChild(nullEl);
             for (var i in this.levelList) {
-                var levelID = parseInt(this.levelList[i]);
+                var levelID = this.levelList[i];
                 var el = document.createElement("option");
                 el.textContent = levelID.toString();
                 el.value = levelID.toString();
@@ -226,8 +265,7 @@ define("Levels", ["require", "exports"], function (require, exports) {
         };
         Levels.prototype.generateLevelID = function () {
             for (var levelID = 1; levelID < 10000; levelID++) {
-                var levelIDString = levelID.toString();
-                if (this.levelList.indexOf(levelIDString) == -1) {
+                if (this.levelList.indexOf(levelID) == -1) {
                     return levelID;
                 }
             }
@@ -235,13 +273,8 @@ define("Levels", ["require", "exports"], function (require, exports) {
         };
         Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
             var _this = this;
-            var saveData = {
-                board: board,
-                boardSize: boardSize,
-                levelID: levelID,
-            };
-            var saveString = JSON.stringify(saveData);
-            var saveKey = levelID.toString();
+            var saveData = new SavedLevel_1.SavedLevel(boardSize, board, levelID);
+            var saveString = saveData.toString();
             var params = {
                 data: saveString,
                 levelID: 0,
@@ -249,9 +282,9 @@ define("Levels", ["require", "exports"], function (require, exports) {
             if (levelID) {
                 params.levelID = levelID;
             }
-            this.loader.callServer("saveLevel", params, function (data) {
-                _this.levelID = data.data;
-                callback(data.data);
+            this.loader.callServer("saveLevel", params, function (levelID) {
+                _this.levelID = levelID;
+                callback(levelID);
             }, function (errorMsg) {
                 console.log("ERROR: ", errorMsg);
             });
@@ -264,7 +297,9 @@ define("Levels", ["require", "exports"], function (require, exports) {
             };
             this.loader.callServer("getLevel", params, function (data) {
                 _this.levelID = levelID;
-                callback(data.data);
+                var boardSize = new BoardSize_1.BoardSize(data.boardSize.width);
+                var savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
+                callback(savedLevel);
             }, function (errorMsg) {
                 console.log("ERROR: ", errorMsg);
                 failCallback();
@@ -277,8 +312,7 @@ define("Levels", ["require", "exports"], function (require, exports) {
                 score: score
             };
             this.loader.callServer("saveScore", params, function (data) {
-                console.log(data);
-                callback(data.data);
+                callback(data);
             }, function () {
                 callback({ msg: "call failed" });
             });
@@ -320,7 +354,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.checkResize = true;
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
-            this.playerTypes = {};
             this.renderTile = function (x, y, tile) {
                 var ctx = this.canvas.getDrawingContext();
                 var tileSize = this.tileSize;
@@ -374,8 +407,8 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 var thisTile = this_1.tiles[i];
                 var tileImage = document.createElement("img");
                 tileImage.setAttribute("src", this_1.getTileImagePath(thisTile));
-                tileImage.setAttribute("width", SPRITE_SIZE);
-                tileImage.setAttribute("height", SPRITE_SIZE);
+                tileImage.setAttribute("width", SPRITE_SIZE.toString());
+                tileImage.setAttribute("height", SPRITE_SIZE.toString());
                 tileImage.addEventListener("load", function () {
                     _this.markTileImageAsLoaded(thisTile.id);
                 }, false);
@@ -426,7 +459,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                     return;
                 }
                 if (!tile.frontLayer) {
-                    if (_this.renderTile(tile.x, tile.y, tile, false)) {
+                    if (_this.renderTile(tile.x, tile.y, tile)) {
                         tile.needsDraw = false;
                         tile.drawnBefore = true;
                     }
@@ -925,6 +958,10 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             this.board = board;
             this.boardSize = boardSize;
         };
+        Map.prototype.updateBoardWithRandom = function (boardSize) {
+            this.boardSize = boardSize;
+            this.board = this.generateRandomBoard(boardSize);
+        };
         Map.prototype.correctForOverflow = function (x, y) {
             var newX, newY;
             if (x < 0) {
@@ -971,12 +1008,12 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             }
             return board;
         };
-        Map.prototype.generateRandomBoard = function () {
+        Map.prototype.generateRandomBoard = function (boardSize) {
             var board = [];
-            for (var x = 0; x < this.boardSize.width; x++) {
+            for (var x = 0; x < boardSize.width; x++) {
                 board[x] = [];
-                for (var y = 0; y < this.boardSize.height; y++) {
-                    var blankTile = this.getRandomTile(this.tiles);
+                for (var y = 0; y < boardSize.height; y++) {
+                    var blankTile = this.getRandomTile(this.tileSet.getTiles());
                     board[x][y] = blankTile;
                 }
             }
@@ -1071,16 +1108,18 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             return coords;
         };
         Map.prototype.rotateBoard = function (clockwise) {
+            var _this = this;
             var newBoard = this.getBlankBoard();
             var width = this.boardSize.width - 1;
             var height = this.boardSize.height - 1;
-            for (var x in this.board) {
-                for (var y in this.board[x]) {
-                    var coords = this.translateRotation(x, y, clockwise);
-                    newBoard[coords.x][coords.y] = this.board[x][y];
-                    newBoard[coords.x][coords.y].needsDraw = true;
-                }
-            }
+            var tiles = this.getAllTiles();
+            tiles.map(function (tile) {
+                var newCoords = _this.translateRotation(tile.x, tile.y, clockwise);
+                tile.x = newCoords.x;
+                tile.y = newCoords.y;
+                tile.needsDraw = true;
+                newBoard[newCoords.x][newCoords.y] = tile;
+            });
             if (clockwise) {
                 this.renderAngle = this.renderAngle + 90;
                 if (this.renderAngle > 360) {
@@ -1130,10 +1169,12 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
             var currentTile = this.board[x][y];
             var currentKey = currentTile.id;
             var keys = Object.keys(this.tileSet.getTiles());
-            var newKey = false, nextKey = false;
+            var newKey = "";
+            var nextKey = false;
             for (var i in keys) {
-                if (newKey === false || nextKey)
+                if (newKey === "" || nextKey) {
                     newKey = keys[i];
+                }
                 if (keys[i] == currentKey) {
                     nextKey = true;
                 }
@@ -1157,11 +1198,12 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
         Map.prototype.correctBoardSizeChange = function (board, boardSize) {
             var newBoard = [];
             var currentWidth = board.length;
+            var currentHeight;
             if (currentWidth > 0) {
-                var currentHeight = board[0].length;
+                currentHeight = board[0].length;
             }
             else {
-                var currentHeight = 0;
+                currentHeight = 0;
             }
             for (var x = 0; x < boardSize.width; x++) {
                 newBoard[x] = [];
@@ -1181,6 +1223,9 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
                 }
             }
             return newBoard;
+        };
+        Map.prototype.getBoard = function () {
+            return this.board;
         };
         return Map;
     }());
@@ -1233,7 +1278,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
-define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_1) {
+define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TitleScreen = (function () {
@@ -1246,7 +1291,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
         }
         TitleScreen.prototype.render = function (callback) {
             var _this = this;
-            var boardSize = new BoardSize_1.BoardSize(10);
+            var boardSize = new BoardSize_2.BoardSize(10);
             this.canvas.sizeCanvas(boardSize);
             var titleImage = document.createElement("img");
             titleImage.addEventListener("load", function () {
@@ -1291,7 +1336,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_2, TitleScreen_1) {
+define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_3, TitleScreen_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1346,7 +1391,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         // load static stuff - map/renderer etc will be worked out later
         Jetpack.prototype.bootstrap = function () {
             this.tileSet = new TileSet_1.TileSet();
-            var boardSize = new BoardSize_2.BoardSize(this.defaultBoardSize);
+            var boardSize = new BoardSize_3.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
@@ -1359,7 +1404,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         Jetpack.prototype.createRenderer = function (board, size) {
             if (board === void 0) { board = []; }
             if (size === void 0) { size = 12; }
-            this.boardSize = new BoardSize_2.BoardSize(size);
+            this.boardSize = new BoardSize_3.BoardSize(size);
             this.map = new Map_1.Map(this.tileSet, this.boardSize, board);
             this.map.updateBoard(this.map.correctBoardSizeChange(board, this.boardSize), this.boardSize);
             var tiles = this.tileSet.getTiles();
@@ -1524,7 +1569,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         };
         Jetpack.prototype.saveLevel = function () {
             var _this = this;
-            this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, function (levelID) {
+            this.levels.saveLevel(this.map.getBoard(), this.map.boardSize, this.levels.levelID, function (levelID) {
                 var text = "Level " + levelID + " saved";
                 _this.showEditMessage(text);
             });
@@ -1539,20 +1584,16 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         };
         Jetpack.prototype.loadLevel = function (levelID, callback) {
             var _this = this;
-            this.levels.loadLevel(levelID, function (data) {
-                var text = "Level " + data.levelID + " loaded!";
+            this.levels.loadLevel(levelID, function (savedLevel) {
+                var text = "Level " + savedLevel.levelID.toString() + " loaded!";
                 _this.showEditMessage(text);
-                _this.createRenderer(data.board, data.boardSize.width);
+                _this.createRenderer(savedLevel.board, savedLevel.boardSize.width);
                 callback();
             }, function () {
                 _this.createRenderer();
-                _this.map.board = _this.generateRandomBoard();
+                _this.map.updateBoardWithRandom(_this.boardSize);
                 callback();
             });
-        };
-        Jetpack.prototype.generateRandomBoard = function () {
-            this.map.board = this.map.generateRandomBoard();
-            return this.map.board;
         };
         Jetpack.prototype.growBoard = function () {
             if (!this.editMode)
@@ -1584,10 +1625,10 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         Jetpack.prototype.bindKeyboardHandler = function () {
             var _this = this;
             window.addEventListener("keydown", function (event) {
-                if (event.keyCode == "37") {
+                if (event.keyCode === 37) {
                     _this.rotateBoard(false);
                 }
-                if (event.keyCode == "39") {
+                if (event.keyCode === 39) {
                     _this.rotateBoard(true);
                 }
             });
@@ -1632,11 +1673,11 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             return false;
         };
         Collisions.prototype.chooseHigherLevelPlayer = function (player1, player2) {
-            if (player1.level > player2.level)
+            if (player1.value > player2.value)
                 return player1;
-            if (player2.level > player1.level)
+            if (player2.value > player1.value)
                 return player2;
-            if (player1.level == player2.level)
+            if (player1.value == player2.value)
                 return player1;
         };
         Collisions.prototype.combinePlayers = function (player1, player2) {
@@ -1645,7 +1686,7 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
             for (var type in this.playerTypes) {
                 if (this.playerTypes[type].value == newValue) {
-                    this.jetpack.createNewPlayer(type, higherPlayer, higherPlayer.direction);
+                    this.jetpack.createNewPlayer(type, higherPlayer.getCoords(), higherPlayer.direction);
                     this.jetpack.deletePlayer(player1);
                     this.jetpack.deletePlayer(player2);
                     return true;

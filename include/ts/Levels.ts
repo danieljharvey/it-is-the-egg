@@ -1,12 +1,13 @@
 import { Jetpack } from "./Jetpack";
 import { Loader } from "./Loader";
 import { BoardSize } from "./BoardSize";
+import { SavedLevel } from "./SavedLevel";
 
 export class Levels {
 
 	levelID: number = 0;
 	levels: object = {};
-	levelList: array = [];
+	levelList: number[] = [];
 	jetpack: Jetpack;
 	loader: Loader;
 
@@ -17,25 +18,30 @@ export class Levels {
 
 	getLevelList(): void {
 		this.loader.callServer("getLevelsList", {}, (data) => {
-			this.levelList = data.data;
+			this.levelList = data;
+			this.populateLevelsList();
+		}, () => {
+			this.levelList = [];
 			this.populateLevelsList();
 		});
 	}
 
 	populateLevelsList(): void {
 		const select = document.getElementById("levelList");
-		if (!select) return false;
+		
+		if (!select) return;
+
 		while (select.firstChild) {
 		    select.removeChild(select.firstChild);
 		}
 		const nullEl = document.createElement("option");
 		nullEl.textContent = "New";
-		nullEl.value = false;
+		nullEl.value = "";
 		if (!this.levelID) nullEl.selected = true;
 		select.appendChild(nullEl);
 
 		for (const i in this.levelList) {
-		    const levelID: number = parseInt(this.levelList[i]);
+		    const levelID: number = this.levelList[i];
 		    const el = document.createElement("option");
 		    el.textContent = levelID.toString();
 		    el.value = levelID.toString();
@@ -48,8 +54,7 @@ export class Levels {
 
 	generateLevelID(): number {
 		for (let levelID = 1; levelID < 10000; levelID++) {
-			const levelIDString: string = levelID.toString();
-			if (this.levelList.indexOf(levelIDString) == -1) {
+			if (this.levelList.indexOf(levelID) == -1) {
 				return levelID;
 			}
 		}
@@ -57,13 +62,8 @@ export class Levels {
 	}
 
 	saveLevel(board: object, boardSize: BoardSize, levelID: number, callback: (number) => any): void {
-		const saveData = {
-			board,
-			boardSize,
-			levelID,
-		};
-		const saveString: string = JSON.stringify(saveData);
-		const saveKey: string = levelID.toString();
+		const saveData = new SavedLevel(boardSize,board,levelID);
+		const saveString: string = saveData.toString();
 		const params = {
 			data: saveString,
 			levelID: 0,
@@ -71,22 +71,24 @@ export class Levels {
 		if (levelID) {
 			params.levelID = levelID;
 		}
-		this.loader.callServer("saveLevel", params, (data: object) => {
-			this.levelID = data.data;
-			callback(data.data);
+		this.loader.callServer("saveLevel", params, (levelID) => {
+			this.levelID = levelID;
+			callback(levelID);
 		}, function(errorMsg: string) {
 			console.log("ERROR: ", errorMsg);
 		});
 	}
 
-	loadLevel(levelID: number, callback: (object) => any, failCallback: () => any): void {
+	loadLevel(levelID: number, callback: (SavedLevel) => any, failCallback: () => any): void {
 		this.getLevelList();
 		const params = {
 			levelID,
 		};
-		this.loader.callServer("getLevel", params, (data: object) => {
+		this.loader.callServer("getLevel", params, (data) => {
 			this.levelID = levelID;
-			callback(data.data);
+			const boardSize = new BoardSize(data.boardSize.width);
+			const savedLevel = new SavedLevel(boardSize, data.board, levelID);
+			callback(savedLevel);
 		}, function(errorMsg: string) {
 			console.log("ERROR: ", errorMsg);
 			failCallback();
@@ -100,8 +102,7 @@ export class Levels {
 			score
 		}
 		this.loader.callServer("saveScore",params, (data: object) => {
-			console.log(data);
-			callback(data.data);
+			callback(data);
 		}, () => {
 			callback({msg:"call failed"})
 		})

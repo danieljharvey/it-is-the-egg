@@ -25,6 +25,11 @@ export class Map {
 		this.boardSize = boardSize;
 	}
 
+	updateBoardWithRandom(boardSize: BoardSize) {
+		this.boardSize = boardSize;
+		this.board = this.generateRandomBoard(boardSize);
+	}
+
 	correctForOverflow(x: number, y: number): Coords {
 		let newX, newY;
 		if (x < 0) {
@@ -76,13 +81,13 @@ export class Map {
 		return board;
 	}
 
-	generateRandomBoard() {
+	generateRandomBoard(boardSize: BoardSize) {
 		const board = [];
 
-		for (let x = 0; x < this.boardSize.width; x++) {
+		for (let x = 0; x < boardSize.width; x++) {
 			board[x] = [];
-			for (let y = 0; y < this.boardSize.height; y++) {
-				const blankTile = this.getRandomTile(this.tiles);
+			for (let y = 0; y < boardSize.height; y++) {
+				const blankTile = this.getRandomTile(this.tileSet.getTiles());
 				board[x][y] = blankTile;
 			}
 		}
@@ -139,7 +144,7 @@ export class Map {
 		};
 		
 		const theseTiles = this.tileSet.getTiles();
-		Object.entries(theseTiles).filter(([key, tile]) => {
+		(<any>Object).entries(theseTiles).filter(([key, tile]) => {
 			if (tile.dontAdd) delete theseTiles[key];
 			return true;
 		})
@@ -191,13 +196,16 @@ export class Map {
 		const width = this.boardSize.width - 1;
 		const height = this.boardSize.height - 1;
 
-		for (const x in this.board) {
-			for (const y in this.board[x]) {
-				const coords = this.translateRotation(x, y, clockwise);
-				newBoard[coords.x][coords.y] = this.board[x][y];
-				newBoard[coords.x][coords.y].needsDraw = true;
-			}
-		}
+		const tiles = this.getAllTiles();
+
+		tiles.map(tile => {
+			const newCoords = this.translateRotation(tile.x, tile.y,clockwise);
+			tile.x = newCoords.x;
+			tile.y = newCoords.y;
+			tile.needsDraw = true;
+			newBoard[newCoords.x][newCoords.y] = tile;
+		});
+
 		if (clockwise) {
 			this.renderAngle = this.renderAngle + 90;
 			if (this.renderAngle > 360) {
@@ -256,9 +264,13 @@ export class Map {
 
 		const keys = Object.keys(this.tileSet.getTiles());
 
-		let newKey = false, nextKey = false;
+		let newKey: string = "";
+		let nextKey: boolean = false;
+
 		for (const i in keys) {
-			if (newKey === false || nextKey) newKey = keys[i];
+			if (newKey === "" || nextKey) {
+				newKey = keys[i];
+			}
 			if (keys[i] == currentKey) {
 				nextKey = true;
 			} else {
@@ -286,11 +298,12 @@ export class Map {
 		
 		const newBoard = [];
 
-		const currentWidth = board.length;
+		const currentWidth: number = board.length;
+		let currentHeight: number;
 		if (currentWidth > 0) {
-			const currentHeight = board[0].length;	
+			currentHeight = board[0].length;	
 		} else {
-			const currentHeight = 0;
+			currentHeight = 0;
 		}
 
 		for (let x = 0; x < boardSize.width; x++) {
@@ -312,4 +325,7 @@ export class Map {
 		return newBoard;
 	}
 
+	getBoard() {
+		return this.board;
+	}
 }
