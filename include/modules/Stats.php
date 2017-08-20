@@ -25,6 +25,7 @@ class Stats {
 		];
 	}
 
+	// takes multidimensional array, returns array of just one of the columns, as such
 	protected function subArray(String $key, Array $array) {
 		return array_map(function($item) use ($key) {
 		    return $item[$key];
