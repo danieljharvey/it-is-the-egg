@@ -3,7 +3,8 @@
     "description": "Backend for egg-based game",
     "type": "project",
     "require": {
-        "doctrine/dbal": "^2.5"
+        "doctrine/dbal": "^2.5",
+        "spatie/phpunit-snapshot-assertions": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.2"

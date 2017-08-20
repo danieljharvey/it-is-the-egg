@@ -15,6 +15,13 @@ class Stats {
 
 	protected function basicStats(String $key, Array $scores) {
 		$data = $this->subArray($key,$scores);
+		if (count($data)===0) {
+			return [
+				'min'=>0,
+				'max'=>0,
+				'average'=>0
+			];
+		}
 		return [
 			'min'=>min($data),
 			'max'=>max($data),
