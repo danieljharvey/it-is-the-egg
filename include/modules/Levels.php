@@ -28,14 +28,20 @@ class Levels {
 		} catch (Exception $e) {
 			return false;
 		}
+		$data['levelID'] = $levelID; // levelIDs not always saved right - so make sure we assign before returning!
 		return $data;
 	}	
 
-	public function updateLevel(int $levelID, $data) {
+	public function updateLevel(int $levelID, $json) {
+
+		// include levelID in code
+		$data = json_decode($json,true);
+		$data['levelID'] = $levelID;
+		$newJSON = json_encode($data);
 
 		$sql = "UPDATE levels SET data = ? WHERE levelID = ?";
 
-		$savedRows =  $this->dbal->executeUpdate($sql, [$data, $levelID]);
+		$savedRows =  $this->dbal->executeUpdate($sql, [$newJSON, $levelID]);
 
 		if (!$savedRows) {
 			return false;
