@@ -66,8 +66,8 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             var wrapMargin = parseInt(window.getComputedStyle(wrapper).margin);
             var controlHeader = document.getElementById("controlHeader");
             var controlSpacing = parseInt(window.getComputedStyle(controlHeader).marginTop);
-            height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
-            width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
+            height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) - controlSpacing;
+            width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) - controlSpacing;
             if (width > height) {
                 var difference = (height % boardSize.width);
                 height = height - difference;

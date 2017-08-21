@@ -47,8 +47,8 @@ export class Canvas {
 		const controlHeader = document.getElementById("controlHeader");
 		const controlSpacing = parseInt(window.getComputedStyle(controlHeader).marginTop);
 
-		height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
-		width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) + controlSpacing;
+		height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) - controlSpacing;
+		width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) - controlSpacing;
 
 		if (width > height) {
 			const difference = (height % boardSize.width);
