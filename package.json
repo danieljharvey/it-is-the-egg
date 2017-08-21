@@ -38,6 +38,7 @@
     ]
   },
   "dependencies": {
+    "fastclick": "^1.0.6",
     "ramda": "^0.24.1"
   }
 }

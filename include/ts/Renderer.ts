@@ -1,7 +1,7 @@
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
-import { Tile} from "./Tile";
+import { Tile } from "./Tile";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 

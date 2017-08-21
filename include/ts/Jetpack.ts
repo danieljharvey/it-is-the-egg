@@ -99,6 +99,7 @@ export class Jetpack {
 		const loader: Loader = new Loader(apiLocation);
 
 		this.levels = new Levels(this, loader);
+
 	}
 
 	// with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
