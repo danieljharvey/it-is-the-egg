@@ -154,16 +154,20 @@ define("Loader", ["require", "exports"], function (require, exports) {
                         }
                         catch (e) {
                             failCallback("Could not decode this JSON: " + xhr.responseText);
+                            return;
                         }
                         if (object.rc > 0) {
                             failCallback(object.msg);
+                            return false;
                         }
                         else {
                             callback(object.data);
+                            return true;
                         }
                     }
                     else {
                         failCallback("Error: " + xhr.status);
+                        return false;
                     }
                 }
             };
@@ -225,21 +229,33 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
         function Levels(jetpack, loader) {
             this.levelID = 0;
             this.levels = {};
-            this.levelList = [];
             this.jetpack = jetpack;
             this.loader = loader;
         }
-        Levels.prototype.getLevelList = function () {
+        Levels.prototype.getLevelList = function (callback) {
             var _this = this;
             this.loader.callServer("getLevelsList", {}, function (data) {
-                _this.levelList = data;
-                _this.populateLevelsList();
+                var levelList = _this.cleanLevelList(data);
+                callback(levelList);
             }, function () {
-                _this.levelList = [];
-                _this.populateLevelsList();
+                var levelList = _this.cleanLevelList([]);
+                callback(levelList);
             });
         };
-        Levels.prototype.populateLevelsList = function () {
+        // turn array of numbers into list key'd by levelID with object of won/lost
+        Levels.prototype.cleanLevelList = function (list) {
+            var levelList = [];
+            for (var i in list) {
+                var levelID = parseInt(list[i]);
+                levelList[levelID] = {
+                    levelID: levelID,
+                    completed: false
+                };
+            }
+            ;
+            return levelList;
+        };
+        Levels.prototype.populateLevelsList = function (levelList) {
             var select = document.getElementById("levelList");
             if (!select)
                 return;
@@ -252,8 +268,8 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
             if (!this.levelID)
                 nullEl.selected = true;
             select.appendChild(nullEl);
-            for (var i in this.levelList) {
-                var levelID = this.levelList[i];
+            for (var i in levelList) {
+                var levelID = parseInt(i);
                 var el = document.createElement("option");
                 el.textContent = levelID.toString();
                 el.value = levelID.toString();
@@ -262,14 +278,6 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
                 }
                 select.appendChild(el);
             }
-        };
-        Levels.prototype.generateLevelID = function () {
-            for (var levelID = 1; levelID < 10000; levelID++) {
-                if (this.levelList.indexOf(levelID) == -1) {
-                    return levelID;
-                }
-            }
-            return 0;
         };
         Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
             var _this = this;
@@ -291,7 +299,8 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
         };
         Levels.prototype.loadLevel = function (levelID, callback, failCallback) {
             var _this = this;
-            this.getLevelList();
+            this.getLevelList(function () {
+            });
             var params = {
                 levelID: levelID,
             };
@@ -941,7 +950,31 @@ define("TileSet", ["require", "exports"], function (require, exports) {
     }());
     exports.TileSet = TileSet;
 });
-define("Map", ["require", "exports", "Coords", "Tile"], function (require, exports, Coords_2, Tile_1) {
+define("Utils", ["require", "exports", "ramda"], function (require, exports, _) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // wee lad full of reusable functions
+    var Utils = (function () {
+        function Utils() {
+        }
+        Utils.getRandomObjectKey = function (object) {
+            var keys = Object.keys(object);
+            return this.returnRandomKey(keys);
+        };
+        Utils.getRandomArrayKey = function (array) {
+            var keys = _.keys(array);
+            return this.returnRandomKey(keys);
+        };
+        Utils.returnRandomKey = function (keys) {
+            if (keys.length === 0)
+                return false;
+            return keys[keys.length * Math.random() << 0];
+        };
+        return Utils;
+    }());
+    exports.Utils = Utils;
+});
+define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (require, exports, Coords_2, Tile_1, Utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Map = (function () {
@@ -1058,8 +1091,7 @@ define("Map", ["require", "exports", "Coords", "Tile"], function (require, expor
         Map.prototype.getRandomTile = function (tiles) {
             var _this = this;
             var randomProperty = function (obj) {
-                var keys = Object.keys(obj);
-                var randomKey = keys[keys.length * Math.random() << 0];
+                var randomKey = Utils_1.Utils.getRandomObjectKey(obj);
                 return _this.cloneTile(randomKey);
             };
             var theseTiles = this.tileSet.getTiles();
@@ -1336,7 +1368,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_3, TitleScreen_1) {
+define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen", "Utils"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_3, TitleScreen_1, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1345,6 +1377,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             this.editMode = false;
             this.moveSpeed = 15;
             this.levelID = 1;
+            this.levelList = [];
             this.nextPlayerID = 1;
             this.score = 0;
             this.rotationsUsed = 0;
@@ -1353,15 +1386,15 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             this.defaultBoardSize = 20;
             this.checkResize = false;
         }
-        Jetpack.prototype.go = function () {
+        Jetpack.prototype.go = function (levelID) {
             var _this = this;
-            this.bootstrap();
+            //this.bootstrap();
             this.bindSizeHandler();
             this.bindClickHandler();
             this.bindKeyboardHandler();
             this.pauseRender();
             this.getTitleScreen(function () {
-                _this.loadLevel(_this.levelID, function () {
+                _this.loadLevel(levelID, function () {
                     _this.createPlayers();
                     _this.resetScore(0);
                     _this.rotationsUsed = 0;
@@ -1372,8 +1405,8 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         // go function but for edit mode
         Jetpack.prototype.edit = function () {
             var _this = this;
-            this.bootstrap();
-            this.levels.getLevelList();
+            //this.bootstrap();
+            this.levels.populateLevelsList(this.levelList);
             this.editMode = true;
             this.bindSizeHandler();
             this.bindClickHandler();
@@ -1389,7 +1422,8 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             titleScreen.render(callback);
         };
         // load static stuff - map/renderer etc will be worked out later
-        Jetpack.prototype.bootstrap = function () {
+        Jetpack.prototype.bootstrap = function (callback) {
+            var _this = this;
             this.tileSet = new TileSet_1.TileSet();
             var boardSize = new BoardSize_3.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
@@ -1399,6 +1433,31 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             var apiLocation = "http://" + window.location.hostname + "/levels/";
             var loader = new Loader_1.Loader(apiLocation);
             this.levels = new Levels_1.Levels(this, loader);
+            this.getLevelList(function (levelList) {
+                var levelID = _this.chooseLevelID(levelList);
+                _this.levelID = levelID;
+                callback(levelID);
+            });
+        };
+        Jetpack.prototype.getLevelList = function (callback) {
+            var _this = this;
+            this.levels.getLevelList(function (levelList) {
+                _this.levelList = levelList;
+                callback(levelList);
+            });
+        };
+        // select a random level that has not been completed yet
+        // a return of false means none available (generate a random one)
+        Jetpack.prototype.chooseLevelID = function (levelList) {
+            var availableLevels = levelList.filter(function (level) {
+                return (level.completed === false);
+            });
+            var chosenKey = Utils_2.Utils.getRandomArrayKey(availableLevels);
+            if (!chosenKey)
+                return false;
+            var levelID = availableLevels[chosenKey].levelID;
+            console.log('jetpack->chooseLevelID', levelID);
+            return levelID;
         };
         // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
         Jetpack.prototype.createRenderer = function (board, size) {
@@ -1455,9 +1514,14 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             var _this = this;
             this.pauseRender();
             this.levels.saveData(this.levelID, this.rotationsUsed, this.score, function (data) {
-                _this.levelID++;
-                _this.go();
+                _this.levelList = _this.markLevelAsCompleted(_this.levelList, _this.levelID);
+                _this.levelID = _this.chooseLevelID(_this.levelList);
+                _this.go(_this.levelID);
             });
+        };
+        Jetpack.prototype.markLevelAsCompleted = function (levelList, levelID) {
+            levelList[levelID].completed = true;
+            return levelList;
         };
         Jetpack.prototype.pauseRender = function () {
             this.paused = true;

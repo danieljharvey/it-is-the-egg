@@ -9,5 +9,7 @@ requirejs.config({
 
 requirejs(['Jetpack'], function(stuff) {
     jetpack = new stuff.Jetpack;
-	jetpack.edit();	
+	jetpack.bootstrap(levelID => {
+		jetpack.edit(levelID);
+	});	
 });

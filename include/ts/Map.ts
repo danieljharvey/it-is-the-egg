@@ -3,6 +3,7 @@ import { Player } from "./Player";
 import { Tile } from "./Tile";
 import { TileSet } from "./TileSet";
 import { BoardSize } from "./BoardSize";
+import { Utils } from "./Utils";
 
 export class Map {
 
@@ -138,8 +139,7 @@ export class Map {
 
 	getRandomTile(tiles) {
 		const randomProperty = (obj) => {
-		    const keys = Object.keys(obj);
-		    const randomKey = keys[ keys.length * Math.random() << 0];
+		    const randomKey = Utils.getRandomObjectKey(obj);
 		    return this.cloneTile(randomKey);
 		};
 		

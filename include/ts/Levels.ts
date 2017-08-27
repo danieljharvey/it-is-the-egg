@@ -7,7 +7,6 @@ export class Levels {
 
 	levelID: number = 0;
 	levels: object = {};
-	levelList: number[] = [];
 	jetpack: Jetpack;
 	loader: Loader;
 
@@ -16,17 +15,30 @@ export class Levels {
 		this.loader = loader;
 	}
 
-	getLevelList(): void {
+	getLevelList(callback) {
 		this.loader.callServer("getLevelsList", {}, (data) => {
-			this.levelList = data;
-			this.populateLevelsList();
+			const levelList = this.cleanLevelList(data);
+			callback(levelList);
 		}, () => {
-			this.levelList = [];
-			this.populateLevelsList();
+			const levelList = this.cleanLevelList([]);
+			callback(levelList);
 		});
 	}
 
-	populateLevelsList(): void {
+	// turn array of numbers into list key'd by levelID with object of won/lost
+	cleanLevelList(list) {
+		const levelList = [];
+		for (const i in list) {
+			const levelID = parseInt(list[i]);
+			levelList[levelID] = {
+				levelID: levelID,
+				completed: false
+			}
+		};
+		return levelList;
+	}
+
+	populateLevelsList(levelList): void {
 		const select = document.getElementById("levelList");
 		
 		if (!select) return;
@@ -40,8 +52,8 @@ export class Levels {
 		if (!this.levelID) nullEl.selected = true;
 		select.appendChild(nullEl);
 
-		for (const i in this.levelList) {
-		    const levelID: number = this.levelList[i];
+		for (const i in levelList) {
+		    const levelID: number = parseInt(i);
 		    const el = document.createElement("option");
 		    el.textContent = levelID.toString();
 		    el.value = levelID.toString();
@@ -50,15 +62,6 @@ export class Levels {
 		    }
 		    select.appendChild(el);
 		}​
-	}
-
-	generateLevelID(): number {
-		for (let levelID = 1; levelID < 10000; levelID++) {
-			if (this.levelList.indexOf(levelID) == -1) {
-				return levelID;
-			}
-		}
-		return 0;
 	}
 
 	saveLevel(board: object, boardSize: BoardSize, levelID: number, callback: (number) => any): void {
@@ -80,7 +83,9 @@ export class Levels {
 	}
 
 	loadLevel(levelID: number, callback: (SavedLevel) => any, failCallback: () => any): void {
-		this.getLevelList();
+		this.getLevelList(() => {
+
+		});
 		const params = {
 			levelID,
 		};

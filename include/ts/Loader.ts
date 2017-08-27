@@ -24,14 +24,18 @@ export class Loader {
 						object = JSON.parse(xhr.responseText);
 					} catch(e) {
 						failCallback("Could not decode this JSON: " + xhr.responseText);
+						return
 					}
 					if (object.rc > 0) {
 						failCallback(object.msg);
+						return false;
 					} else {
 						callback(object.data);
+						return true;
 					}
 				} else {
 					failCallback("Error: " + xhr.status);
+					return false;
 				}
 			}
 		};

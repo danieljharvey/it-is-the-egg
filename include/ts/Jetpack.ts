@@ -11,6 +11,7 @@ import { TileSet } from "./TileSet";
 import { BoardSize } from "./BoardSize";
 import { SavedLevel } from "./SavedLevel";
 import { TitleScreen } from "./TitleScreen";
+import { Utils } from "./Utils";
 
 export class Jetpack {
 
@@ -20,6 +21,7 @@ export class Jetpack {
 	moveSpeed: number = 15;
 
 	levelID: number = 1;
+	levelList: number[] = [];
 
 	map: Map; // Map object
 	renderer: Renderer; // Renderer object
@@ -43,15 +45,15 @@ export class Jetpack {
 
 	animationHandle: number;
 
-	go() {
-		this.bootstrap();
+	go(levelID) {
+		//this.bootstrap();
 		this.bindSizeHandler();
 		this.bindClickHandler();
 		this.bindKeyboardHandler();
-
+		
 		this.pauseRender();
 		this.getTitleScreen(() => {
-			this.loadLevel(this.levelID, () => {
+			this.loadLevel(levelID, () => {
 				this.createPlayers();
 				this.resetScore(0);
 				this.rotationsUsed = 0;
@@ -62,8 +64,9 @@ export class Jetpack {
 
 	// go function but for edit mode
 	edit() {
-		this.bootstrap();
-		this.levels.getLevelList();
+		//this.bootstrap();
+		this.levels.populateLevelsList(this.levelList);
+		
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
@@ -82,7 +85,7 @@ export class Jetpack {
 	}
 
 	// load static stuff - map/renderer etc will be worked out later
-	bootstrap() {
+	bootstrap(callback) {
 		this.tileSet = new TileSet();
 		
 		const boardSize = new BoardSize(this.defaultBoardSize);
@@ -100,6 +103,31 @@ export class Jetpack {
 
 		this.levels = new Levels(this, loader);
 
+		this.getLevelList(levelList => {
+			const levelID = this.chooseLevelID(levelList);
+			this.levelID = levelID;
+			callback(levelID);
+		});
+	}
+
+	getLevelList(callback) {
+		this.levels.getLevelList(levelList => {
+			this.levelList = levelList;
+			callback(levelList);
+		});
+	}
+
+	// select a random level that has not been completed yet
+	// a return of false means none available (generate a random one)
+	chooseLevelID(levelList) {
+		const availableLevels = levelList.filter((level) => {
+			return (level.completed === false);
+		});
+		const chosenKey = Utils.getRandomArrayKey(availableLevels);
+		if (!chosenKey) return false;
+		const levelID = availableLevels[chosenKey].levelID;
+		console.log('jetpack->chooseLevelID',levelID);
+		return levelID;
 	}
 
 	// with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
@@ -156,10 +184,15 @@ export class Jetpack {
 	nextLevel() {
 		this.pauseRender();
 		this.levels.saveData(this.levelID, this.rotationsUsed, this.score, (data) => {
-			this.levelID ++;
-			this.go();
+			this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
+			this.levelID = this.chooseLevelID(this.levelList);
+			this.go(this.levelID);
 		});
-		
+	}
+
+	markLevelAsCompleted(levelList,levelID) {
+		levelList[levelID].completed = true;
+		return levelList;
 	}
 
 	pauseRender() {
