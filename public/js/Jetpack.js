@@ -1019,8 +1019,7 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         };
         // is intended next tile empty / a wall?
         Map.prototype.checkTileIsEmpty = function (x, y) {
-            var coords = this.correctForOverflow(x, y);
-            var tile = this.board[coords.x][coords.y];
+            var tile = this.getTile(x, y);
             return tile.background;
         };
         Map.prototype.markAllForRedraw = function () {
@@ -1310,6 +1309,62 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
+define("TileChooser", ["require", "exports", "ramda"], function (require, exports, _) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // used in editor, draws a bunch of 32x32 tiles for selecting
+    var TileChooser = (function () {
+        function TileChooser(tileSet, renderer) {
+            this.chosenTileID = 0;
+            this.tileSet = tileSet;
+            this.renderer = renderer;
+        }
+        TileChooser.prototype.chooseTile = function (id) {
+            this.chosenTileID = id;
+            this.highlightChosenTile(id);
+        };
+        TileChooser.prototype.highlightChosenTile = function (id) {
+            var tileChooser = document.getElementById("tileChooser");
+            var children = tileChooser.children;
+            for (var i = 0; i < children.length; i++) {
+                var child = children[i];
+                var className = child.getAttribute("class");
+                if (className == "tile" + id) {
+                    child.setAttribute("style", "border: 1px red solid;");
+                }
+                else {
+                    child.setAttribute("style", "border: 1px white solid;");
+                }
+            }
+        };
+        TileChooser.prototype.makeTileImages = function (tiles) {
+            var _this = this;
+            return _.map(function (tile) {
+                var tileImage = document.createElement("img");
+                tileImage.setAttribute("src", _this.renderer.getTileImagePath(tile));
+                tileImage.setAttribute("width", "32");
+                tileImage.setAttribute("height", "32");
+                tileImage.setAttribute("padding", "2px");
+                tileImage.setAttribute("style", "border: 1px white solid;");
+                tileImage.setAttribute("class", "tile" + tile.id);
+                tileImage.onclick = function () {
+                    _this.chooseTile(tile.id);
+                };
+                return tileImage;
+            }, tiles);
+        };
+        TileChooser.prototype.render = function () {
+            var tiles = this.tileSet.getTiles();
+            var images = this.makeTileImages(tiles);
+            var tileChooser = document.getElementById("tileChooser");
+            for (var i in images) {
+                tileChooser.appendChild(images[i]);
+            }
+        };
+        return TileChooser;
+    }());
+    exports.TileChooser = TileChooser;
+});
 define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1368,7 +1423,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TitleScreen", "Utils"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_3, TitleScreen_1, Utils_2) {
+define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "TileSet", "BoardSize", "TileChooser", "TitleScreen", "Utils"], function (require, exports, Canvas_1, Collisions_1, Coords_3, Levels_1, Loader_1, Map_1, Player_1, PlayerTypes_1, Renderer_1, TileSet_1, BoardSize_3, TileChooser_1, TitleScreen_1, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1390,7 +1445,6 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             var _this = this;
             //this.bootstrap();
             this.bindSizeHandler();
-            this.bindClickHandler();
             this.bindKeyboardHandler();
             this.pauseRender();
             this.getTitleScreen(function () {
@@ -1410,7 +1464,10 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             this.editMode = true;
             this.bindSizeHandler();
             this.bindClickHandler();
+            this.bindMouseMoveHandler();
             this.createRenderer();
+            this.tileChooser = new TileChooser_1.TileChooser(this.tileSet, this.renderer);
+            this.tileChooser.render();
             var s = setTimeout(function () {
                 _this.startRender();
             }, 1000);
@@ -1677,15 +1734,6 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
                 _this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
             });
         };
-        Jetpack.prototype.bindClickHandler = function () {
-            var _this = this;
-            var canvas = document.getElementById("canvas");
-            canvas.addEventListener("click", function (event) {
-                var tileSize = _this.canvas.calcTileSize(_this.boardSize);
-                var coords = new Coords_3.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
-                _this.handleClick(coords);
-            });
-        };
         Jetpack.prototype.bindKeyboardHandler = function () {
             var _this = this;
             window.addEventListener("keydown", function (event) {
@@ -1697,14 +1745,34 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
                 }
             });
         };
+        Jetpack.prototype.bindClickHandler = function () {
+            var _this = this;
+            var canvas = document.getElementById("canvas");
+            canvas.addEventListener("click", function (event) {
+                _this.handleDrawEvent(event);
+            });
+        };
+        Jetpack.prototype.bindMouseMoveHandler = function () {
+            var _this = this;
+            var canvas = document.getElementById("canvas");
+            canvas.addEventListener("mousemove", function (event) {
+                if (event.button > 0 || event.buttons > 0) {
+                    _this.handleDrawEvent(event);
+                }
+            });
+        };
+        Jetpack.prototype.handleDrawEvent = function (event) {
+            var tileSize = this.canvas.calcTileSize(this.boardSize);
+            var coords = new Coords_3.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), (event.offsetX % tileSize) - (tileSize / 2), (event.offsetY % tileSize) - (tileSize / 2));
+            this.drawCurrentTile(coords);
+        };
         // coords is always x,y,offsetX, offsetY
-        Jetpack.prototype.handleClick = function (coords) {
-            if (this.editMode) {
-                this.map.cycleTile(coords.x, coords.y);
-            }
-            else {
-                // destroy tile or something
-            }
+        Jetpack.prototype.drawCurrentTile = function (coords) {
+            var tileID = this.tileChooser.chosenTileID;
+            if (tileID < 1)
+                return false;
+            var tile = this.map.getPrototypeTile(tileID);
+            this.map.changeTile(coords, tile);
         };
         return Jetpack;
     }());

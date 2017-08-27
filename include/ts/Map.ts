@@ -53,11 +53,7 @@ export class Map {
 
 	// is intended next tile empty / a wall?
 	checkTileIsEmpty(x, y) {
-
-		const coords = this.correctForOverflow(x, y);
-
-		const tile = this.board[coords.x][coords.y];
-
+		const tile = this.getTile(x,y);
 		return tile.background;
 	}
 

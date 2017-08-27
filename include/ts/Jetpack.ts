@@ -10,6 +10,7 @@ import { Renderer } from "./Renderer";
 import { TileSet } from "./TileSet";
 import { BoardSize } from "./BoardSize";
 import { SavedLevel } from "./SavedLevel";
+import { TileChooser } from "./TileChooser";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
@@ -30,7 +31,8 @@ export class Jetpack {
 	tileSet: TileSet; // TileSet object
 	boardSize: BoardSize; // BoardSize object
 	canvas: Canvas; // Canvas object
-
+	tileChooser: TileChooser;
+	
 	nextPlayerID: number = 1;
 	score: number = 0;
 	rotationsUsed: number = 0;
@@ -48,7 +50,6 @@ export class Jetpack {
 	go(levelID) {
 		//this.bootstrap();
 		this.bindSizeHandler();
-		this.bindClickHandler();
 		this.bindKeyboardHandler();
 		
 		this.pauseRender();
@@ -70,7 +71,10 @@ export class Jetpack {
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
+		this.bindMouseMoveHandler();
 		this.createRenderer();
+		this.tileChooser = new TileChooser(this.tileSet, this.renderer);
+		this.tileChooser.render();
 
 		const s = setTimeout(() => {
 			this.startRender();
@@ -363,20 +367,6 @@ export class Jetpack {
 		});
 	}
 
-	bindClickHandler() {
-		const canvas = document.getElementById("canvas");
-		canvas.addEventListener("click", (event) => {
-		    const tileSize = this.canvas.calcTileSize(this.boardSize);
-		    const coords = new Coords(
-		    	(event.offsetX / tileSize) as number,
-	        	(event.offsetY / tileSize) as number,
-	        	(event.offsetX % tileSize) - (tileSize / 2),
-	        	(event.offsetY % tileSize) - (tileSize / 2),
-	        );
-	     this.handleClick(coords);
-	    });
-	}
-
 	bindKeyboardHandler() {
 		window.addEventListener("keydown", (event) => {
 			if (event.keyCode === 37) {
@@ -388,13 +378,40 @@ export class Jetpack {
 		});
 	}
 
+	bindClickHandler() {
+		const canvas = document.getElementById("canvas");
+		canvas.addEventListener("click", (event) => {
+		    this.handleDrawEvent(event);
+	    });
+	}
+
+	bindMouseMoveHandler() {
+		const canvas = document.getElementById("canvas");
+		canvas.addEventListener("mousemove", (event) => {
+	        if (event.button > 0 || event.buttons > 0) {
+	        	this.handleDrawEvent(event);
+	        }
+	    });
+	}
+
+	handleDrawEvent(event) {
+		const tileSize = this.canvas.calcTileSize(this.boardSize);
+	    const coords = new Coords(
+	    	(event.offsetX / tileSize) as number,
+        	(event.offsetY / tileSize) as number,
+        	(event.offsetX % tileSize) - (tileSize / 2),
+        	(event.offsetY % tileSize) - (tileSize / 2),
+        );
+		this.drawCurrentTile(coords);
+	}
+
 	// coords is always x,y,offsetX, offsetY
-	handleClick(coords: Coords) {
-		if (this.editMode) {
-			this.map.cycleTile(coords.x, coords.y);
-		} else {
-			// destroy tile or something
-		}
+	drawCurrentTile(coords: Coords) {
+		const tileID = this.tileChooser.chosenTileID;
+		if (tileID < 1) return false;
+		const tile = this.map.getPrototypeTile(tileID);
+		this.map.changeTile(coords, tile);
+
 	}
 
 }
