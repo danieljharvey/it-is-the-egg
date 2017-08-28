@@ -17,5 +17,21 @@ export class Utils {
 		if (keys.length===0) return false;
 		return keys[ keys.length * Math.random() << 0];
 	}
-    //static doSomethingElse(val: string) { return val; }
+
+	static getControlStyle(id, property) {
+		const controlHeader = document.getElementById(id);
+		if (!controlHeader) return 0;
+		const style=window.getComputedStyle(controlHeader);
+		const value = style[property];
+		if (isNaN(value)) return parseInt(value);
+		return value;
+	}
+
+	static getControlProperty(id, property) {
+		const controlHeader = document.getElementById(id);
+		if (!controlHeader) return 0;
+		const value = controlHeader[property];
+		if (isNaN(value)) return parseInt(value);
+		return value;
+	}
 }

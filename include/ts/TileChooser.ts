@@ -50,6 +50,7 @@ export class TileChooser {
 			return tileImage;
 		}, tiles);
 	}
+	
 	render() {
 		const tiles = this.tileSet.getTiles();
 		const images = this.makeTileImages(tiles);

@@ -19,7 +19,7 @@ export class Jetpack {
 	paused: boolean = true;
 	editMode: boolean = false;
 
-	moveSpeed: number = 15;
+	moveSpeed: number = 5;
 
 	levelID: number = 1;
 	levelList: number[] = [];
@@ -130,7 +130,6 @@ export class Jetpack {
 		const chosenKey = Utils.getRandomArrayKey(availableLevels);
 		if (!chosenKey) return false;
 		const levelID = availableLevels[chosenKey].levelID;
-		console.log('jetpack->chooseLevelID',levelID);
 		return levelID;
 	}
 
@@ -148,19 +147,31 @@ export class Jetpack {
 		window.cancelAnimationFrame(this.animationHandle);
 		this.paused = false;
 		this.showControls();
-		this.animationHandle = window.requestAnimationFrame(() => this.eventLoop());
+		this.animationHandle = window.requestAnimationFrame((time) => this.eventLoop(time, 0));
 	}
 
-	eventLoop() {
+	eventLoop(time, lastTime) {
 		if (this.paused) return false;
-		this.doPlayerCalcs();
-		if (this.checkResize) {
-			this.canvas.sizeCanvas(this.boardSize);
-			this.renderer.resize();
-			this.checkResize = false;
-		}
+		const timePassed = this.calcTimePassed(time, lastTime);
+		this.doPlayerCalcs(timePassed);
+		this.sizeCanvas();
 		this.renderer.render();
-		this.animationHandle = window.requestAnimationFrame(() => this.eventLoop());
+		this.animationHandle = window.requestAnimationFrame((newTime) => this.eventLoop(newTime, time));
+	}
+
+	calcTimePassed(time, lastTime) {
+		const difference = Math.min(time - lastTime,20);
+		const frameRate = 60 / difference;
+		return frameRate.toFixed(5);
+	}
+
+	sizeCanvas() {
+		if (!this.checkResize) return false;
+
+		this.canvas.sizeCanvas(this.boardSize);
+		this.renderer.resize();
+		this.checkResize = false;
+	
 	}
 
 	resetScore(score) {
@@ -207,23 +218,22 @@ export class Jetpack {
 
 	showControls() {
 		const controlHeader = document.getElementById('controlHeader');
-		if (controlHeader.classList.contains('hidden')) {
+		if (controlHeader && controlHeader.classList.contains('hidden')) {
 			controlHeader.classList.remove('hidden');
 		}
 	}
 
 	hideControls() {
 		const controlHeader = document.getElementById('controlHeader');
-		if (!controlHeader.classList.contains('hidden')) {
+		if (controlHeader && !controlHeader.classList.contains('hidden')) {
 			controlHeader.classList.add('hidden');
 		}
 	}
 
-	doPlayerCalcs() {
-		for (const i in this.players) {
-			const player: Player = this.players[i];
-			player.doCalcs();
-		}
+	doPlayerCalcs(timePassed: number) {
+		this.players.map(player => {
+			player.doCalcs(timePassed);
+		})
 	}
 
 	countPlayers(): number {

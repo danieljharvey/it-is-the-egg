@@ -48,6 +48,7 @@ test("only check tile action when in whole grid", () => {
 
 test("Calculate move amount", () => {
 	var player = new Player();
-	expect(player.calcMoveAmount(10,64)).toEqual(10);
-	expect(player.calcMoveAmount(10,32)).toEqual(5);
+	expect(player.calcMoveAmount(10,64,2)).toEqual(10);
+	expect(player.calcMoveAmount(10,32,2)).toEqual(5);
+	expect(player.calcMoveAmount(10,32,4)).toEqual(10);
 }

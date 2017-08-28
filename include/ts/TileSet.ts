@@ -100,6 +100,54 @@ export class TileSet {
 				frontLayer: true,
 				action: "teleport",
 			},
+			15: {
+				id: 15,
+				title: "Pink door open",
+				img: "pink-door-open.png",
+				background: true,
+				needsDraw: true,
+				frontLayer: true,
+			},
+			16: {
+				id: 16,
+				title: "Pink door closed",
+				img: "pink-door.png",
+				background: false,
+				needsDraw: true,
+			},
+			17: {
+				id: 17,
+				title: "Pink door switch",
+				img: "pink-switch.png",
+				background: true,
+				needsDraw: true,
+				frontLayer: true,
+				action: "pink-switch",
+			},
+			18: {
+				id: 18,
+				title: "Green door open",
+				img: "green-door-open.png",
+				background: true,
+				needsDraw: true,
+				frontLayer: true,
+			},
+			19: {
+				id: 19,
+				title: "Green door closed",
+				img: "green-door.png",
+				background: false,
+				needsDraw: true,
+			},
+			20: {
+				id: 20,
+				title: "Green door switch",
+				img: "green-switch.png",
+				background: true,
+				needsDraw: true,
+				frontLayer: true,
+				action: "green-switch",
+			}
 		};
 		// return a copy rather than letting this get messed with
 		return JSON.parse(JSON.stringify(this.tiles));

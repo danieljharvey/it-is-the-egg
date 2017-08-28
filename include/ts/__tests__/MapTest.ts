@@ -77,7 +77,7 @@ test("Correct board size with shrinking", () => {
 	const map = new Map(tileSet);
 
 	const tile = map.cloneTile(1);
-
+	
 	const expected = [
 		[0,1,0,0,0,tile],
 		[0,1,0,0,0,tile],

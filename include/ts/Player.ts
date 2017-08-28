@@ -40,16 +40,23 @@ export class Player {
 		this.collisions = collisions;
 	}
 
-	doCalcs() {
+	doCalcs(timePassed: number) {
 		this.setRedrawAroundPlayer();
 		this.incrementPlayerFrame();
-	 	this.checkFloorBelowPlayer();
-	 	this.incrementPlayerDirection();
+	 	this.checkFloorBelowPlayer(timePassed);
+	 	this.incrementPlayerDirection(timePassed);
 	 	this.checkPlayerCollisions();
 	}
 
 	getCoords() {
 		return new Coords(this.x, this.y, this.offsetX, this.offsetY);
+	}
+
+	setCoords(coords: Coords) {
+		this.x = coords.x;
+		this.y = coords.y;
+		this.offsetX = coords.offsetX;
+		this.offsetY = coords.offsetY;
 	}
 
 	setRedrawAroundPlayer() {
@@ -79,7 +86,7 @@ export class Player {
 		// if going left, reduce frame
 		if (this.direction > 0 || this.oldDirection > 0) {
 			this.currentFrame++;
-		 if (this.currentFrame >= this.frames) this.currentFrame = 0;
+			if (this.currentFrame >= this.frames) this.currentFrame = 0;
 		}
 	}
 
@@ -104,6 +111,10 @@ export class Player {
 			return this.jetpack.completeLevel();
 		} else if (tile.action == "teleport") {
 			return this.teleport();
+		} else if (tile.action == 'pink-switch') {
+			return this.switchTiles(15,16);
+		} else if (tile.action == 'green-switch') {
+			return this.switchTiles(18,19);
 		}
 
 		if (this.falling) {
@@ -116,7 +127,6 @@ export class Player {
 				return true;
 			}
 		}
-
 	}
 
 	checkPlayerCollisions() {
@@ -138,6 +148,19 @@ export class Player {
 		}
 	}
 
+	switchTiles(id1, id2) {
+		const tiles = this.map.getAllTiles();
+		tiles.map((tile) => {
+			if (tile.id === id1) {
+				const coords = new Coords(tile.x,tile.y);
+				this.map.changeTile(coords,this.map.cloneTile(id2));
+			} else if (tile.id === id2) {
+				const coords = new Coords(tile.x,tile.y);
+				this.map.changeTile(coords,this.map.cloneTile(id1));
+			}
+		});
+	}
+
 	// find random tile of type
 	findTile(id) {
 		const tiles = this.map.getAllTiles();
@@ -150,18 +173,11 @@ export class Player {
 		return newTile;
 	}
 
-	incrementPlayerDirection() {
+	incrementPlayerDirection(timePassed: number) {
 
 		if (this.falling) return false;
-		/*
-		if (this.direction !== 0 && !this.checkTileIsEmpty(this.x - 1, this.y) && !this.checkTileIsEmpty(this.x + 1, this.y)) {
-			// trapped
-			this.oldDirection = this.direction;
-			this.direction = 0;
-			return false;
-		}*/
-
-		const moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
+		
+		const moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
 
 		if (this.direction < 0) {
 			if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
@@ -193,13 +209,17 @@ export class Player {
 				this.offsetX += moveAmount;
 			}
 		}
-		this.checkIfPlayerIsInNewTile();
+		const newTile = this.checkIfPlayerIsInNewTile();
+		if (newTile) {
+			this.checkPlayerTileAction();
+		}
 	}
 
-	calcMoveAmount(moveSpeed: number, tileSize: number) {
+	calcMoveAmount(moveSpeed: number, tileSize: number, timePassed: number) {
 		const fullSize = SPRITE_SIZE; // size of image tiles
 		const moveAmount: number = (tileSize / fullSize) * moveSpeed;
-		return Math.round(moveAmount);
+		const frameRateAdjusted = moveAmount * (timePassed / 2);
+		return frameRateAdjusted;
 	}
 
 	checkIfPlayerIsInNewTile() {
@@ -207,33 +227,34 @@ export class Player {
 			this.offsetX = 0;
 			this.x ++;
 			this.lastAction = "";
-			this.checkPlayerTileAction();
+			return true;
 		}
 		if (this.offsetX < (-1 * SPRITE_SIZE)) {
 			this.offsetX = 0;
 			this.x --;
 			this.lastAction = "";
-			this.checkPlayerTileAction();
+			return true;
 		}
 		if (this.offsetY > SPRITE_SIZE) {
 			this.offsetY = 0;
 			this.y ++;
 			this.lastAction = "";
-			this.checkPlayerTileAction();
+			return true;
 		}
 		if (this.offsetY < (-1 * SPRITE_SIZE)) {
 			this.offsetY = 0;
 			this.y --;
 			this.lastAction = "";
-			this.checkPlayerTileAction();
+			return true;
 		}
 		// have we gone over the edge?
 		const coords = this.map.correctForOverflow(this.x, this.y);
 		this.x = coords.x;
 		this.y = coords.y;
+		return false;
 	}
 
-	checkFloorBelowPlayer() {
+	checkFloorBelowPlayer(timePassed: number) {
 
 		if (this.offsetX !== 0) return false;
 
@@ -242,7 +263,7 @@ export class Player {
 		const tile = this.map.getTileWithCoords(coords);
 
 		if (tile.background) {
-			const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize);
+			const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
 			const fallAmount: number = Math.round(moveAmount * 1.5);		
 			this.falling = true;
 			this.offsetY += fallAmount;

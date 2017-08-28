@@ -1,6 +1,7 @@
 // responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
 
 import { BoardSize } from "./BoardSize";
+import { Utils } from "./Utils";
 
 export class Canvas {
 	
@@ -19,8 +20,7 @@ export class Canvas {
 	sizeCanvas(boardSize: BoardSize) {
 		const maxBoardSize = this.getMaxBoardSize(boardSize);
 
-		const controlHeader = document.getElementById("controlHeader");
-		controlHeader.style.width = maxBoardSize.toString() + 'px';		
+		this.sizeControls(maxBoardSize);
 
 		const tileSize = this.calcTileSize(boardSize);
 		
@@ -29,6 +29,13 @@ export class Canvas {
 		this.boardSize = boardSize;
 
 		return tileSize;
+	}
+
+	sizeControls(boardSize: number) {
+		const controlHeader = document.getElementById("controlHeader");
+		if (controlHeader) {
+			controlHeader.style.width = boardSize.toString() + 'px';			
+		}
 	}
 
 	calcTileSize(boardSize: BoardSize) {
@@ -44,11 +51,13 @@ export class Canvas {
 		const wrapper = document.getElementById('wrapper');
 		const wrapMargin = parseInt(window.getComputedStyle(wrapper).margin);
 
-		const controlHeader = document.getElementById("controlHeader");
-		const controlSpacing = parseInt(window.getComputedStyle(controlHeader).marginTop);
+		const controlSpacing = Utils.getControlStyle('controlHeader', 'marginTop');
+		const editSpacing = Utils.getControlStyle('editHeader','marginTop');
+		
+		const offsetHeight = Utils.getControlProperty('controlHeader', 'offsetHeight');
 
-		height = height - (controlHeader.offsetHeight) - (2 * wrapMargin) - controlSpacing;
-		width = width - (controlHeader.offsetHeight) - (2 * wrapMargin) - controlSpacing;
+		height = height - (offsetHeight) - (2 * wrapMargin) - controlSpacing - editSpacing;
+		width = width - (offsetHeight) - (2 * wrapMargin) - controlSpacing - editSpacing;
 
 		if (width > height) {
 			const difference = (height % boardSize.width);
