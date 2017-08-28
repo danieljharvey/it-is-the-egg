@@ -13,21 +13,21 @@ export class Utils {
 		return this.returnRandomKey(keys);
 	}
 
-	static returnRandomKey(keys) {
+	static returnRandomKey(keys: any[]) {
 		if (keys.length===0) return false;
 		return keys[ keys.length * Math.random() << 0];
 	}
 
-	static getControlStyle(id, property) {
+	static getControlStyle(id: string, property: string) {
 		const controlHeader = document.getElementById(id);
 		if (!controlHeader) return 0;
-		const style=window.getComputedStyle(controlHeader);
+		const style = window.getComputedStyle(controlHeader);
 		const value = style[property];
 		if (isNaN(value)) return parseInt(value);
 		return value;
 	}
 
-	static getControlProperty(id, property) {
+	static getControlProperty(id: string, property: string) {
 		const controlHeader = document.getElementById(id);
 		if (!controlHeader) return 0;
 		const value = controlHeader[property];

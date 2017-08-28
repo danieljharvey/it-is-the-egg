@@ -48,8 +48,7 @@ export class Canvas {
 		let width = window.innerWidth;
 		let height = window.innerHeight;
 
-		const wrapper = document.getElementById('wrapper');
-		const wrapMargin = parseInt(window.getComputedStyle(wrapper).margin);
+		const wrapMargin = Utils.getControlStyle('wrapper', 'margin');
 
 		const controlSpacing = Utils.getControlStyle('controlHeader', 'marginTop');
 		const editSpacing = Utils.getControlStyle('editHeader','marginTop');

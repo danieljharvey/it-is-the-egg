@@ -42,10 +42,13 @@ export class Player {
 
 	doCalcs(timePassed: number) {
 		this.setRedrawAroundPlayer();
-		this.incrementPlayerFrame();
+		const newFrames = this.incrementPlayerFrame(this.direction, this.oldDirection, this.frames, this.currentFrame);
+		this.currentFrame = newFrames.currentFrame;
+		this.oldDirection = newFrames.oldDirection;
 	 	this.checkFloorBelowPlayer(timePassed);
 	 	this.incrementPlayerDirection(timePassed);
 	 	this.checkPlayerCollisions();
+	 	this.setRedrawAroundPlayer();
 	}
 
 	getCoords() {
@@ -67,34 +70,43 @@ export class Player {
 		});
 	}
 
-	incrementPlayerFrame() {
-		if (this.direction === 0 && this.oldDirection === 0 && this.currentFrame === 0) {
+	incrementPlayerFrame(direction: number, oldDirection: number, frames: number, currentFrame: number) {
+		if (direction === 0 && oldDirection === 0 && currentFrame === 0) {
 			// we are still, as it should be
-			return false;
+			return {
+				currentFrame: 0,
+				oldDirection: 0
+			}
 		}
-		if (this.direction === 0 && this.currentFrame === 0) {
+
+		if (direction === 0 && currentFrame === 0) {
 			// if we're still, and have returned to main frame, disregard old movement
-			this.oldDirection = 0;
+			oldDirection = 0;
 		}
 
 		// if going left, reduce frame
-		if (this.direction < 0 || this.oldDirection < 0) {
-			this.currentFrame --;
-			if (this.currentFrame < 0) this.currentFrame = (this.frames - 1);
+		if (direction < 0 || oldDirection < 0) {
+			currentFrame --;
+			if (currentFrame < 0) currentFrame = (frames - 1);
 		}
 
-		// if going left, reduce frame
-		if (this.direction > 0 || this.oldDirection > 0) {
-			this.currentFrame++;
-			if (this.currentFrame >= this.frames) this.currentFrame = 0;
+		// if going right, increase frame
+		if (direction > 0 || oldDirection > 0) {
+			currentFrame++;
+			if (currentFrame >= frames) currentFrame = 0;
+		}
+		return {
+			direction: direction,
+			frames: frames,
+			currentFrame: currentFrame,
+			oldDirection: oldDirection
 		}
 	}
 
-	checkPlayerTileAction() {
+	checkPlayerTileAction(currentCoords: Coords) {
 
-		if (this.offsetX != 0 || this.offsetY != 0) return false;
-
-		const coords: Coords = this.map.correctForOverflow(this.x, this.y);
+		if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) return false;
+		const coords = this.map.correctForOverflow(currentCoords.x, currentCoords.y);
 
 		const tile = this.map.getTileWithCoords(coords);
 
@@ -102,7 +114,7 @@ export class Player {
 			const score = tile.collectable * this.multiplier;
 			const blankTile = this.map.cloneTile(1);
 			blankTile.needsDraw = true;
-			this.map.changeTile(coords,blankTile);
+			this.map.changeTile(coords, blankTile);
 			this.jetpack.addScore(score);
 			return true;
 		}
@@ -130,10 +142,9 @@ export class Player {
 	}
 
 	checkPlayerCollisions() {
-		for (const i in this.jetpack.players) {
-			const player = this.jetpack.players[i];
-			this.collisions.checkCollision(this, player);
-		}
+		this.jetpack.players.map((player) => {
+			this.collisions.checkCollision(this,player);
+		});
 	}
 
 	// find another teleport and go to it
@@ -174,12 +185,10 @@ export class Player {
 	}
 
 	incrementPlayerDirection(timePassed: number) {
-
-		if (this.falling) return false;
 		
 		const moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
 
-		if (this.direction < 0) {
+		if (this.direction < 0 && this.falling === false) {
 			if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
 				// turn around
 				this.direction = 1;
@@ -190,7 +199,7 @@ export class Player {
 			}
 		}
 
-		if (this.direction > 0) {
+		if (this.direction > 0 && this.falling === false) {
 			if (!this.map.checkTileIsEmpty(this.x + 1, this.y)) {
 				// turn around
 				this.offsetX = 0;
@@ -202,7 +211,7 @@ export class Player {
 		}
 
 		// if we've stopped and ended up not quite squared up, correct this
-		if (this.direction == 0 && this.falling == false) {
+		if (this.direction == 0 && this.falling === false) {
 			if (this.offsetX > 0) {
 				this.offsetX -= moveAmount;
 			} else if (this.offsetX < 0) {
@@ -211,14 +220,15 @@ export class Player {
 		}
 		const newTile = this.checkIfPlayerIsInNewTile();
 		if (newTile) {
-			this.checkPlayerTileAction();
+			this.lastAction == "";
 		}
+		this.checkPlayerTileAction(this.getCoords());
 	}
 
 	calcMoveAmount(moveSpeed: number, tileSize: number, timePassed: number) {
 		const fullSize = SPRITE_SIZE; // size of image tiles
 		const moveAmount: number = (tileSize / fullSize) * moveSpeed;
-		const frameRateAdjusted = moveAmount * (timePassed / 2);
+		const frameRateAdjusted: number = moveAmount * (timePassed / 2);
 		return frameRateAdjusted;
 	}
 
@@ -226,31 +236,28 @@ export class Player {
 		if (this.offsetX > SPRITE_SIZE) {
 			this.offsetX = 0;
 			this.x ++;
-			this.lastAction = "";
 			return true;
 		}
 		if (this.offsetX < (-1 * SPRITE_SIZE)) {
 			this.offsetX = 0;
 			this.x --;
-			this.lastAction = "";
 			return true;
 		}
 		if (this.offsetY > SPRITE_SIZE) {
 			this.offsetY = 0;
 			this.y ++;
-			this.lastAction = "";
 			return true;
 		}
 		if (this.offsetY < (-1 * SPRITE_SIZE)) {
 			this.offsetY = 0;
 			this.y --;
-			this.lastAction = "";
 			return true;
 		}
-		// have we gone over the edge?
+		
 		const coords = this.map.correctForOverflow(this.x, this.y);
 		this.x = coords.x;
 		this.y = coords.y;
+		
 		return false;
 	}
 
@@ -268,7 +275,7 @@ export class Player {
 			this.falling = true;
 			this.offsetY += fallAmount;
 		} else if (this.falling && tile.breakable) {
-			this.checkPlayerTileAction();
+			this.checkPlayerTileAction(this.getCoords());
 		} else {
 			this.falling = false;
 		}

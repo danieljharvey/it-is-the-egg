@@ -150,7 +150,7 @@ export class Jetpack {
 		this.animationHandle = window.requestAnimationFrame((time) => this.eventLoop(time, 0));
 	}
 
-	eventLoop(time, lastTime) {
+	eventLoop(time: number, lastTime: number) {
 		if (this.paused) return false;
 		const timePassed = this.calcTimePassed(time, lastTime);
 		this.doPlayerCalcs(timePassed);
@@ -159,10 +159,10 @@ export class Jetpack {
 		this.animationHandle = window.requestAnimationFrame((newTime) => this.eventLoop(newTime, time));
 	}
 
-	calcTimePassed(time, lastTime) {
+	calcTimePassed(time: number, lastTime: number) {
 		const difference = Math.min(time - lastTime,20);
 		const frameRate = 60 / difference;
-		return frameRate.toFixed(5);
+		return frameRate;
 	}
 
 	sizeCanvas() {

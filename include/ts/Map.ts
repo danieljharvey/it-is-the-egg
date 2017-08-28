@@ -31,7 +31,7 @@ export class Map {
 		this.board = this.generateRandomBoard(boardSize);
 	}
 
-	correctForOverflow(x: number, y: number): Coords {
+	correctForOverflow(x: number, y: number, offsetX: number = 0, offsetY: number = 0): Coords {
 		let newX, newY;
 		if (x < 0) {
 			newX = this.boardSize.width - 1;
