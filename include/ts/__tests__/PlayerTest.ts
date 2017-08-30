@@ -13,22 +13,23 @@ test("Create a player and check defaults", () => {
 
 test("Stay still when not moving", () => {
 	var player = new Player();
-	expect(player.incrementPlayerFrame()).toEqual(false);
+	const response = player.incrementPlayerFrame(0, 0, player.frames, player.currentFrame);
+	expect(response.currentFrame).toEqual(player.currentFrame);
 }
 
 test("Wipe old direction when stopped", () => {
 	var player = new Player();
 	player.oldDirection = 1;
-	player.incrementPlayerFrame();
-	expect(player.oldDirection).toEqual(0);
+	const response = player.incrementPlayerFrame(player.direction, player.oldDirection, player.frames, player.currentFrame);
+	expect(response.oldDirection).toEqual(0);
 }
 
 test("change frame left", () => {
 	var player = new Player();
 	player.currentFrame = 3;
 	player.direction = -1;
-	player.incrementPlayerFrame();
-	expect(player.currentFrame).toEqual(2);
+	const response = player.incrementPlayerFrame(player.direction, player.oldDirection, player.frames, player.currentFrame);
+	expect(response.currentFrame).toEqual(2);
 }
 
 test("change frame right", () => {
@@ -36,14 +37,14 @@ test("change frame right", () => {
 	player.currentFrame = 10;
 	player.frames = 11;
 	player.oldDirection = 1;
-	player.incrementPlayerFrame();
-	expect(player.currentFrame).toEqual(0);
+	const response = player.incrementPlayerFrame(player.direction, player.oldDirection, player.frames, player.currentFrame);
+	expect(response.currentFrame).toEqual(0);
 }
 
 test("only check tile action when in whole grid", () => {
 	var player = new Player();
 	player.offsetX = 12;
-	expect(player.checkPlayerTileAction()).toEqual(false);
+	expect(player.checkPlayerTileAction(player.getCoords())).toEqual(false);
 }
 
 test("Calculate move amount", () => {

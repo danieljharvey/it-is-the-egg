@@ -48,7 +48,7 @@ export class Map {
 		} else {
 			newY = y;
 		}
-		return new Coords(newX, newY);
+		return new Coords(newX, newY, offsetX, offsetY);
 	}
 
 	// is intended next tile empty / a wall?

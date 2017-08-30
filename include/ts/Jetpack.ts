@@ -231,6 +231,7 @@ export class Jetpack {
 	}
 
 	doPlayerCalcs(timePassed: number) {
+		if (!this.players) return false;
 		this.players.map(player => {
 			player.doCalcs(timePassed);
 		})

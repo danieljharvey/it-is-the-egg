@@ -41,14 +41,36 @@ export class Player {
 	}
 
 	doCalcs(timePassed: number) {
+		const startCoords = this.getCoords();
 		this.setRedrawAroundPlayer();
+
 		const newFrames = this.incrementPlayerFrame(this.direction, this.oldDirection, this.frames, this.currentFrame);
 		this.currentFrame = newFrames.currentFrame;
 		this.oldDirection = newFrames.oldDirection;
-	 	this.checkFloorBelowPlayer(timePassed);
-	 	this.incrementPlayerDirection(timePassed);
+	 	
+	 	this.setCoords(
+		 	this.checkFloorBelowPlayer(this.getCoords(), timePassed)
+		);
+
+	 	this.setCoords(
+	 		this.incrementPlayerDirection(this.getCoords(), timePassed)
+	 	);
+
+	 	this.setCoords(
+	 		this.correctTileOverflow(this.getCoords())
+	 	);
+
+		this.checkPlayerTileAction(this.getCoords());
+
 	 	this.checkPlayerCollisions();
 	 	this.setRedrawAroundPlayer();
+
+	 	const endCoords = this.getCoords();
+	 	if (!endCoords.equals(startCoords)) {
+	 		// if in new square, wipe action so we can teleport again etc
+	 		console.log('wipe action!');
+	 		this.lastAction == "";
+	 	}
 	}
 
 	getCoords() {
@@ -56,14 +78,15 @@ export class Player {
 	}
 
 	setCoords(coords: Coords) {
-		this.x = coords.x;
-		this.y = coords.y;
-		this.offsetX = coords.offsetX;
-		this.offsetY = coords.offsetY;
+		const fixedCoords = this.map.correctForOverflow(coords.x, coords.y, coords.offsetX, coords.offsetY);
+		this.x = fixedCoords.x;
+		this.y = fixedCoords.y;
+		this.offsetX = fixedCoords.offsetX;
+		this.offsetY = fixedCoords.offsetY;
 	}
 
 	setRedrawAroundPlayer() {
-		const coords = new Coords(this.x, this.y);
+		const coords = this.getCoords();
 		const tiles = this.map.getTilesSurrounding(coords);
 		tiles.map(tile => {
 			tile.needsDraw = true;
@@ -74,6 +97,8 @@ export class Player {
 		if (direction === 0 && oldDirection === 0 && currentFrame === 0) {
 			// we are still, as it should be
 			return {
+				direction: 0,
+				frames: frames,
 				currentFrame: 0,
 				oldDirection: 0
 			}
@@ -106,10 +131,11 @@ export class Player {
 	checkPlayerTileAction(currentCoords: Coords) {
 
 		if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) return false;
+		
 		const coords = this.map.correctForOverflow(currentCoords.x, currentCoords.y);
 
 		const tile = this.map.getTileWithCoords(coords);
-
+		
 		if (tile.collectable > 0) {
 			const score = tile.collectable * this.multiplier;
 			const blankTile = this.map.cloneTile(1);
@@ -127,17 +153,6 @@ export class Player {
 			return this.switchTiles(15,16);
 		} else if (tile.action == 'green-switch') {
 			return this.switchTiles(18,19);
-		}
-
-		if (this.falling) {
-			const belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1);
-
-			const belowTile = this.map.getTileWithCoords(belowCoords);
-
-			if (belowTile.breakable) {
-				this.map.changeTile(belowCoords,this.map.cloneTile(1)); // smash block, replace with empty
-				return true;
-			}
 		}
 	}
 
@@ -184,45 +199,45 @@ export class Player {
 		return newTile;
 	}
 
-	incrementPlayerDirection(timePassed: number) {
-		
+	incrementPlayerDirection(coords: Coords, timePassed: number) {
+
 		const moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
 
 		if (this.direction < 0 && this.falling === false) {
-			if (!this.map.checkTileIsEmpty(this.x - 1, this.y)) {
+			if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y)) {
 				// turn around
 				this.direction = 1;
-				this.offsetX = 0;
+				return new Coords(coords.x, coords.y, 0, coords.offsetY);
 			} else {
 				// move
-				this.offsetX -= moveAmount;
+				console.log('move');
+				return new Coords(coords.x, coords.y, coords.offsetX - moveAmount, coords.offsetY);
 			}
 		}
 
 		if (this.direction > 0 && this.falling === false) {
-			if (!this.map.checkTileIsEmpty(this.x + 1, this.y)) {
+			if (!this.map.checkTileIsEmpty(coords.x + 1, coords.y)) {
 				// turn around
-				this.offsetX = 0;
 				this.direction = -1;
+				return new Coords(coords.x, coords.y, 0, coords.offsetY);
 			} else {
 				// move
-				this.offsetX += moveAmount;
+				console.log('move');
+				return new Coords(coords.x, coords.y, coords.offsetX + moveAmount, coords.offsetY);
 			}
 		}
 
 		// if we've stopped and ended up not quite squared up, correct this
 		if (this.direction == 0 && this.falling === false) {
-			if (this.offsetX > 0) {
-				this.offsetX -= moveAmount;
+			if (coords.offsetX > 0) {
+				console.log('move');
+				return new Coords(coords.x, coords.y, coords.offsetX - moveAmount, coords.offsetY);
 			} else if (this.offsetX < 0) {
-				this.offsetX += moveAmount;
+				console.log('move');
+				return new Coords(coords.x, coords.y, coords.offsetX + moveAmount, coords.offsetY);
 			}
 		}
-		const newTile = this.checkIfPlayerIsInNewTile();
-		if (newTile) {
-			this.lastAction == "";
-		}
-		this.checkPlayerTileAction(this.getCoords());
+		return coords;
 	}
 
 	calcMoveAmount(moveSpeed: number, tileSize: number, timePassed: number) {
@@ -232,54 +247,45 @@ export class Player {
 		return frameRateAdjusted;
 	}
 
-	checkIfPlayerIsInNewTile() {
-		if (this.offsetX > SPRITE_SIZE) {
-			this.offsetX = 0;
-			this.x ++;
-			return true;
+	correctTileOverflow(coords: Coords) {
+
+		if (coords.offsetX > SPRITE_SIZE) {
+			return new Coords(coords.x + 1, coords.y, 0, coords.offsetY);
 		}
-		if (this.offsetX < (-1 * SPRITE_SIZE)) {
-			this.offsetX = 0;
-			this.x --;
-			return true;
+
+		if (coords.offsetX < (-1 * SPRITE_SIZE)) {
+			return new Coords(coords.x -1, coords.y, 0, coords.offsetY);
 		}
-		if (this.offsetY > SPRITE_SIZE) {
-			this.offsetY = 0;
-			this.y ++;
-			return true;
+
+		if (coords.offsetY > SPRITE_SIZE) {
+			return new Coords(coords.x, coords.y + 1, coords.offsetX, 0);
 		}
-		if (this.offsetY < (-1 * SPRITE_SIZE)) {
-			this.offsetY = 0;
-			this.y --;
-			return true;
+
+		if (coords.offsetY < (-1 * SPRITE_SIZE)) {
+			return new Coords(coords.x, coords.y - 1, coords.offsetX, 0);
 		}
 		
-		const coords = this.map.correctForOverflow(this.x, this.y);
-		this.x = coords.x;
-		this.y = coords.y;
-		
-		return false;
+		return coords;
 	}
 
-	checkFloorBelowPlayer(timePassed: number) {
+	checkFloorBelowPlayer(coords: Coords, timePassed: number) {
 
-		if (this.offsetX !== 0) return false;
+		if (coords.offsetX !== 0) return coords;
 
-		const coords = this.map.correctForOverflow(this.x, this.y + 1);
+		const belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1, coords.offsetX, coords.offsetY);
 
-		const tile = this.map.getTileWithCoords(coords);
+		const tile = this.map.getTileWithCoords(belowCoords);
 
 		if (tile.background) {
 			const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
 			const fallAmount: number = Math.round(moveAmount * 1.5);		
 			this.falling = true;
-			this.offsetY += fallAmount;
+			return new Coords(coords.x, coords.y, coords.offsetX, coords.offsetY + fallAmount);
 		} else if (this.falling && tile.breakable) {
-			this.checkPlayerTileAction(this.getCoords());
+			this.map.changeTile(belowCoords,this.map.cloneTile(1)); // smash block, replace with empty
 		} else {
 			this.falling = false;
 		}
-
-		this.checkIfPlayerIsInNewTile();
+		return coords;
 	}
 }

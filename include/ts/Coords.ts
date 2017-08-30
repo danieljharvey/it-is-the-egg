@@ -21,4 +21,12 @@ export class Coords {
             fullY,
         };
     }
+
+    equals(otherCoords: Coords) {
+        if (this.x !== otherCoords.x) return false;
+        if (this.y !== otherCoords.y) return false;
+        if (this.offsetX !== otherCoords.offsetX) return false;
+        if (this.offsetY !== otherCoords.offsetY) return false;
+        return true;
+    }
 }
