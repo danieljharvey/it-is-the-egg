@@ -678,6 +678,7 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             this.falling = false;
             this.type = "egg";
             this.moveSpeed = 1;
+            this.fallSpeed = 1;
             this.lastAction = "string";
             this.value = 1;
             for (var i in params) {
@@ -697,15 +698,14 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             this.setCoords(this.checkFloorBelowPlayer(this.getCoords(), timePassed));
             this.setCoords(this.incrementPlayerDirection(this.getCoords(), timePassed));
             this.setCoords(this.correctTileOverflow(this.getCoords()));
-            this.checkPlayerTileAction(this.getCoords());
-            this.checkPlayerCollisions();
-            this.setRedrawAroundPlayer();
             var endCoords = this.getCoords();
             if (!endCoords.equals(startCoords)) {
                 // if in new square, wipe action so we can teleport again etc
-                console.log('wipe action!');
                 this.lastAction == "";
+                this.checkPlayerTileAction(this.getCoords());
             }
+            this.checkPlayerCollisions();
+            this.setRedrawAroundPlayer();
         };
         Player.prototype.getCoords = function () {
             return new Coords_1.Coords(this.x, this.y, this.offsetX, this.offsetY);
@@ -830,7 +830,15 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             return newTile;
         };
         Player.prototype.incrementPlayerDirection = function (coords, timePassed) {
+            if (this.moveSpeed === 0) {
+                return coords;
+            }
             var moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
+            if (this.direction !== 0 && this.falling === false) {
+                if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y) && !this.map.checkTileIsEmpty(coords.x + 1, coords.y)) {
+                    return coords;
+                }
+            }
             if (this.direction < 0 && this.falling === false) {
                 if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y)) {
                     // turn around
@@ -839,7 +847,6 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
                 }
                 else {
                     // move
-                    console.log('move');
                     return new Coords_1.Coords(coords.x, coords.y, coords.offsetX - moveAmount, coords.offsetY);
                 }
             }
@@ -851,18 +858,15 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
                 }
                 else {
                     // move
-                    console.log('move');
                     return new Coords_1.Coords(coords.x, coords.y, coords.offsetX + moveAmount, coords.offsetY);
                 }
             }
             // if we've stopped and ended up not quite squared up, correct this
             if (this.direction == 0 && this.falling === false) {
                 if (coords.offsetX > 0) {
-                    console.log('move');
                     return new Coords_1.Coords(coords.x, coords.y, coords.offsetX - moveAmount, coords.offsetY);
                 }
                 else if (this.offsetX < 0) {
-                    console.log('move');
                     return new Coords_1.Coords(coords.x, coords.y, coords.offsetX + moveAmount, coords.offsetY);
                 }
             }
@@ -895,8 +899,7 @@ define("Player", ["require", "exports", "Coords"], function (require, exports, C
             var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1, coords.offsetX, coords.offsetY);
             var tile = this.map.getTileWithCoords(belowCoords);
             if (tile.background) {
-                var moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
-                var fallAmount = Math.round(moveAmount * 1.5);
+                var fallAmount = this.calcMoveAmount(this.fallSpeed, this.renderer.tileSize, timePassed);
                 this.falling = true;
                 return new Coords_1.Coords(coords.x, coords.y, coords.offsetX, coords.offsetY + fallAmount);
             }
@@ -1065,6 +1068,15 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                     needsDraw: true,
                     frontLayer: true,
                     action: "green-switch",
+                },
+                21: {
+                    id: 21,
+                    title: "Silver Egg Cup",
+                    img: "silver-egg-cup.png",
+                    background: true,
+                    needsDraw: true,
+                    frontLayer: true,
+                    createPlayer: "silver-egg",
                 }
             };
             // return a copy rather than letting this get messed with
@@ -1408,6 +1420,16 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     multiplier: 10,
                     value: 4,
                 },
+                "silver-egg": {
+                    type: "silver-egg",
+                    title: "It is of course the silver egg",
+                    img: "silver-egg.png",
+                    frames: 1,
+                    multiplier: 10,
+                    value: 0,
+                    moveSpeed: 0,
+                    fallSpeed: 10
+                },
             };
         }
         PlayerTypes.prototype.getPlayerTypes = function () {
@@ -1678,7 +1700,7 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
         // or at least try
         Jetpack.prototype.completeLevel = function () {
             this.collectable = this.getCollectable();
-            var playerCount = this.countPlayers();
+            var playerCount = this.countPlayers(this.players);
             if (this.collectable < 1 && playerCount < 2) {
                 this.nextLevel();
             }
@@ -1720,13 +1742,11 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
                 player.doCalcs(timePassed);
             });
         };
-        Jetpack.prototype.countPlayers = function () {
-            var count = 0;
-            for (var i in this.players) {
-                if (this.players[i])
-                    count++;
-            }
-            return count;
+        Jetpack.prototype.countPlayers = function (players) {
+            var validPlayers = players.filter(function (player) {
+                return player && player.value > 0;
+            });
+            return validPlayers.length;
         };
         // cycle through all map tiles, find egg cups etc and create players
         Jetpack.prototype.createPlayers = function () {
@@ -1771,7 +1791,10 @@ define("Jetpack", ["require", "exports", "Canvas", "Collisions", "Coords", "Leve
             params.falling = false; // can't move when falling
             params.offsetX = coords.offsetX;
             params.offsetY = coords.offsetY;
-            params.moveSpeed = this.moveSpeed;
+            if (!Object.hasOwnProperty.call(params, 'moveSpeed')) {
+                params.moveSpeed = this.moveSpeed;
+                params.fallSpeed = this.moveSpeed * 1.2;
+            }
             var player = new Player_1.Player(params, this.map, this.renderer, this, this.collisions);
             this.players[player.id] = player;
             return player;

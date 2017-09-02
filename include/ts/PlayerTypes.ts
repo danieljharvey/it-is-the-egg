@@ -32,6 +32,16 @@ export class PlayerTypes {
 			multiplier: 10,
 			value: 4,
 		},
+		"silver-egg": {
+			type: "silver-egg",
+			title: "It is of course the silver egg",
+			img: "silver-egg.png",
+			frames: 1,
+			multiplier: 10,
+			value: 0,
+			moveSpeed: 0,
+			fallSpeed: 10
+		},
 	};
 
     getPlayerTypes() {

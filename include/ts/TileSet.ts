@@ -147,6 +147,15 @@ export class TileSet {
 				needsDraw: true,
 				frontLayer: true,
 				action: "green-switch",
+			},
+			21: {
+				id: 21,
+				title: "Silver Egg Cup",
+				img: "silver-egg-cup.png",
+				background: true,
+				needsDraw: true,
+				frontLayer: true,
+				createPlayer: "silver-egg",
 			}
 		};
 		// return a copy rather than letting this get messed with

@@ -26,6 +26,7 @@ export class Player {
 	falling: boolean = false;
 	type: string = "egg";
 	moveSpeed: number = 1;
+	fallSpeed: number = 1;
 	lastAction: string = "string";
 	value: number = 1;
 	img: string;
@@ -41,6 +42,7 @@ export class Player {
 	}
 
 	doCalcs(timePassed: number) {
+
 		const startCoords = this.getCoords();
 		this.setRedrawAroundPlayer();
 
@@ -60,17 +62,17 @@ export class Player {
 	 		this.correctTileOverflow(this.getCoords())
 	 	);
 
-		this.checkPlayerTileAction(this.getCoords());
+	 	const endCoords = this.getCoords();
+	 	
+	 	if (!endCoords.equals(startCoords)) {
+	 		// if in new square, wipe action so we can teleport again etc
+	 		this.lastAction == "";
+	 		this.checkPlayerTileAction(this.getCoords());
+	 	}
 
 	 	this.checkPlayerCollisions();
 	 	this.setRedrawAroundPlayer();
-
-	 	const endCoords = this.getCoords();
-	 	if (!endCoords.equals(startCoords)) {
-	 		// if in new square, wipe action so we can teleport again etc
-	 		console.log('wipe action!');
-	 		this.lastAction == "";
-	 	}
+	 	
 	}
 
 	getCoords() {
@@ -201,7 +203,17 @@ export class Player {
 
 	incrementPlayerDirection(coords: Coords, timePassed: number) {
 
+		if (this.moveSpeed === 0 ) {
+			return coords;
+		}
+
 		const moveAmount = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
+
+		if (this.direction !== 0 && this.falling === false) {
+			if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y) && !this.map.checkTileIsEmpty(coords.x + 1, coords.y)) {
+				return coords;
+			}
+		}
 
 		if (this.direction < 0 && this.falling === false) {
 			if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y)) {
@@ -210,7 +222,6 @@ export class Player {
 				return new Coords(coords.x, coords.y, 0, coords.offsetY);
 			} else {
 				// move
-				console.log('move');
 				return new Coords(coords.x, coords.y, coords.offsetX - moveAmount, coords.offsetY);
 			}
 		}
@@ -222,7 +233,6 @@ export class Player {
 				return new Coords(coords.x, coords.y, 0, coords.offsetY);
 			} else {
 				// move
-				console.log('move');
 				return new Coords(coords.x, coords.y, coords.offsetX + moveAmount, coords.offsetY);
 			}
 		}
@@ -230,10 +240,8 @@ export class Player {
 		// if we've stopped and ended up not quite squared up, correct this
 		if (this.direction == 0 && this.falling === false) {
 			if (coords.offsetX > 0) {
-				console.log('move');
 				return new Coords(coords.x, coords.y, coords.offsetX - moveAmount, coords.offsetY);
 			} else if (this.offsetX < 0) {
-				console.log('move');
 				return new Coords(coords.x, coords.y, coords.offsetX + moveAmount, coords.offsetY);
 			}
 		}
@@ -277,8 +285,7 @@ export class Player {
 		const tile = this.map.getTileWithCoords(belowCoords);
 
 		if (tile.background) {
-			const moveAmount: number = this.calcMoveAmount(this.moveSpeed, this.renderer.tileSize, timePassed);
-			const fallAmount: number = Math.round(moveAmount * 1.5);		
+			const fallAmount: number = this.calcMoveAmount(this.fallSpeed, this.renderer.tileSize, timePassed);		
 			this.falling = true;
 			return new Coords(coords.x, coords.y, coords.offsetX, coords.offsetY + fallAmount);
 		} else if (this.falling && tile.breakable) {

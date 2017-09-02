@@ -190,7 +190,7 @@ export class Jetpack {
 	// or at least try
 	completeLevel() {
 		this.collectable = this.getCollectable();
-		const playerCount: number = this.countPlayers();
+		const playerCount: number = this.countPlayers(this.players);
 		if (this.collectable < 1 && playerCount < 2) {
 			this.nextLevel();
 		}
@@ -237,12 +237,11 @@ export class Jetpack {
 		})
 	}
 
-	countPlayers(): number {
-		let count: number = 0;
-		for (const i in this.players) {
-			if (this.players[i]) count++;
-		}
-		return count;
+	countPlayers(players: Player[]): number {
+		const validPlayers = players.filter(player => {
+			return player && player.value > 0;
+		});
+		return validPlayers.length;
 	}
 
 	// cycle through all map tiles, find egg cups etc and create players
@@ -291,7 +290,10 @@ export class Jetpack {
 		params.falling = false; // can't move when falling
 		params.offsetX = coords.offsetX;
 		params.offsetY = coords.offsetY;
-		params.moveSpeed = this.moveSpeed;
+		if (!Object.hasOwnProperty.call(params,'moveSpeed')) {
+			params.moveSpeed = this.moveSpeed;
+			params.fallSpeed = this.moveSpeed * 1.2;
+		}
 		const player = new Player(params, this.map, this.renderer, this, this.collisions);
 		this.players[player.id] = player;
 		return player;
