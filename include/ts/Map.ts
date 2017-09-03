@@ -159,11 +159,37 @@ export class Map {
 		return newBoard;
 	}
 
-	translateRotation(x: number, y: number, clockwise: boolean) {
-		const coords = {
-			x: 0,
-			y: 0,
-		};
+	// swap two tiles on map
+	switchTiles(id1, id2) {
+		const tiles = this.getAllTiles();
+		const count = tiles.map((tile) => {
+			if (tile.id === id1) {
+				const coords = new Coords(tile.x,tile.y);
+				this.changeTile(coords,this.cloneTile(id2));
+				return 1;
+			} else if (tile.id === id2) {
+				const coords = new Coords(tile.x,tile.y);
+				this.changeTile(coords,this.cloneTile(id1));
+				return 1;
+			}
+			return 0;
+		});
+		return count.reduce((a, b) => a + b, 0);
+	}
+
+	// find random tile of type that is NOT at currentCoords
+	findTile(currentCoords: Coords, id) {
+		const tiles = this.getAllTiles();
+		const teleporters = tiles.filter((tile) => {
+			if (tile.x == currentCoords.x && tile.y == currentCoords.y) return false;
+			return (tile.id == id);
+		});
+		if (teleporters.length == 0) return false; // no options
+		const newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
+		return newTile;
+	}
+
+	translateRotation(coords: Coords, clockwise: boolean) : Coords {
 
 		const width = this.boardSize.width - 1;
 		const height = this.boardSize.height - 1;
@@ -173,17 +199,20 @@ export class Map {
 			// 9,0 -> 9,9
 			// 9,9 -> 0,9
 			// 0,9 -> 0,0
-			coords.x = width - y;
-			coords.y = x;
+			return coords.modify({
+				x: width - coords.y,
+				y: coords.x
+			});
 		} else {
 			// 0,0 -> 0,9
  			// 0,9 -> 9,9
  			// 9,9 -> 9,0
  			// 9,0 -> 0,0
-			coords.x = y;
-			coords.y = height - x;
+			return coords.modify({
+				x: coords.y,
+				y: height - coords.x
+			});
 		}
-		return coords;
 	}
 
 	rotateBoard(clockwise) {
@@ -195,7 +224,8 @@ export class Map {
 		const tiles = this.getAllTiles();
 
 		tiles.map(tile => {
-			const newCoords = this.translateRotation(tile.x, tile.y,clockwise);
+			const coords = new Coords(tile.x, tile.y);
+			const newCoords = this.translateRotation(coords, clockwise);
 			tile.x = newCoords.x;
 			tile.y = newCoords.y;
 			tile.needsDraw = true;
@@ -221,21 +251,25 @@ export class Map {
 
 	rotatePlayer(player: Player, clockwise) {
 
-		const coords = this.translateRotation(player.x, player.y, clockwise);
+		const newCoords = this.translateRotation(player.coords, clockwise);
 
-		player.x = coords.x;
-		player.y = coords.y;
-		player.offsetX = 0; //offsetX;
-		player.offsetY = 0; //offsetY;
-
+		let direction = player.direction;
 		// if player is still, nudge them in rotation direction
-		if (player.direction == 0) {
+		if (direction == 0) {
 			if (clockwise) {
-				player.direction = 1;
+				direction = 1;
 			} else {
-				player.direction = -1;
+				direction = -1;
 			}
 		}
+
+		return player.modify({
+			coords: newCoords.modify({
+				offsetX: 0,
+				offsetY: 0
+			}),
+			direction: direction
+		});
 	}
 
 	// return array with all tiles in (with x and y added)

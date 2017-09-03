@@ -1,3 +1,5 @@
+import { Utils } from "./Utils";
+
 const SPRITE_SIZE: number = 64;
 
 export class Coords {
@@ -28,5 +30,10 @@ export class Coords {
         if (this.offsetX !== otherCoords.offsetX) return false;
         if (this.offsetY !== otherCoords.offsetY) return false;
         return true;
+    }
+
+    modify(params: object) : Coords {
+        const newParams = Object.assign({}, this, params);
+        return new Coords(newParams.x, newParams.y, newParams.offsetX, newParams.offsetY);
     }
 }

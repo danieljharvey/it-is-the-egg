@@ -8,9 +8,27 @@ export class Collisions {
 	jetpack: Jetpack;
 	playerTypes: object;
 
+	players: Player[];
+
 	constructor(jetpack: Jetpack, playerTypes: object) {
 		this.jetpack = jetpack;
 		this.playerTypes = playerTypes;
+	}
+
+	checkAllCollisions(players: Player[]) {
+		this.players = players;
+
+		players.map(player => {
+			this.checkPlayerCollisions(player, players);
+		});
+		return players;
+	}
+
+	// cycles through all players and check
+	checkPlayerCollisions(player: Player, otherPlayers: Player[]) {
+		otherPlayers.map((otherPlayer) => {
+			this.checkCollision(player,otherPlayer);
+		});
 	}
 
 	// only deal with horizontal collisions for now
@@ -20,10 +38,10 @@ export class Collisions {
 
 		if (player1.id == player2.id) return false;
 
-		if (player1.y != player2.y) return false;
+		const coords1 = player1.coords;
+		const coords2 = player2.coords;
 
-		const coords1 = player1.getCoords();
-		const coords2 = player2.getCoords();
+		if (coords1.y != coords2.y) return false;
 
 		let distance = coords1.getActualPosition().fullX - coords2.getActualPosition().fullX;
 		if (distance < 0) distance = distance * -1;
@@ -32,7 +50,19 @@ export class Collisions {
 			return this.combinePlayers(player1, player2);
 		}
 
-		return false;
+		// nothing changes
+		return {
+			player1: player1,
+			player2: player2
+		}
+	}
+
+	deletePlayer(player: Player) {
+		delete this.players[player.id];
+	}
+
+	addPlayer(player: Player) {
+		this.players[player.id] = player;
 	}
 
 	chooseHigherLevelPlayer(player1: Player, player2: Player) {
@@ -48,13 +78,19 @@ export class Collisions {
 
 		for (const type in this.playerTypes) {
 			if (this.playerTypes[type].value == newValue) {
-				this.jetpack.createNewPlayer(type, higherPlayer.getCoords(), higherPlayer.direction);
-				this.jetpack.deletePlayer(player1);
-				this.jetpack.deletePlayer(player2);
+				const newPlayer = this.jetpack.createNewPlayer(type, higherPlayer.coords, higherPlayer.direction);
+				this.addPlayer(newPlayer);
+				this.deletePlayer(player1);
+				this.deletePlayer(player2);
 				return true;
 			}
 		}
-		return false;
+
+		// nothing changes
+		return {
+			player1: player1,
+			player2: player2
+		}
 	}
 
 }

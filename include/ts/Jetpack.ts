@@ -4,6 +4,7 @@ import { Coords } from "./Coords";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
 import { Map } from "./Map";
+import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
@@ -231,10 +232,13 @@ export class Jetpack {
 	}
 
 	doPlayerCalcs(timePassed: number) {
-		if (!this.players) return false;
-		this.players.map(player => {
-			player.doCalcs(timePassed);
-		})
+		const movement = new Movement(this.map, this.renderer, this);
+		const newPlayers = movement.doCalcs(this.players, timePassed);
+
+		const collisions = new Collisions(this, this.playerTypes);
+		const sortedPlayers = collisions.checkAllCollisions(newPlayers);
+
+		this.players = sortedPlayers; // replace with new objects
 	}
 
 	countPlayers(players: Player[]): number {
@@ -248,11 +252,12 @@ export class Jetpack {
 	createPlayers() {
 		this.destroyPlayers();
 		const tiles = this.map.getAllTiles();
-		tiles.map((tile) => {
+		const players = tiles.map((tile) => {
 			const type = tile.createPlayer;
 			if (type) {
 				const coords = new Coords(tile.x, tile.y);
-				this.createNewPlayer(type, coords, 1);
+				const player = this.createNewPlayer(type, coords, 1);
+				this.players[player.id] = player;
 			}
 		});
 	}
@@ -283,18 +288,15 @@ export class Jetpack {
 		const playerType = this.playerTypes[type];
 		const params = JSON.parse(JSON.stringify(playerType));
 		params.id = this.nextPlayerID++;
-		params.x = coords.x; // x in tiles
-		params.y = coords.y; // y in tiles
+		params.coords = coords;
 		params.direction = direction;
 		params.oldDirection = 0;
 		params.falling = false; // can't move when falling
-		params.offsetX = coords.offsetX;
-		params.offsetY = coords.offsetY;
 		if (!Object.hasOwnProperty.call(params,'moveSpeed')) {
 			params.moveSpeed = this.moveSpeed;
 			params.fallSpeed = this.moveSpeed * 1.2;
 		}
-		const player = new Player(params, this.map, this.renderer, this, this.collisions);
+		const player = new Player(params);
 		this.players[player.id] = player;
 		return player;
 	}
@@ -308,9 +310,14 @@ export class Jetpack {
 
 		this.map.rotateBoard(clockwise);
 
-		for (const i in this.players) {
-			this.map.rotatePlayer(this.players[i], clockwise);
-		}
+		const rotatedPlayers = this.players.map(player => {
+			return this.map.rotatePlayer(player, clockwise);
+		});
+
+		this.players = [];
+		rotatedPlayers.map(player => {
+			this.players[player.id] = player;
+		})
 
 		this.renderer.drawRotatingBoard(clockwise, () => {
 			this.startRender();

@@ -208,8 +208,10 @@ export class Renderer {
 
 		const offsetRatio = (tileSize / SPRITE_SIZE);
 
-		const left = (player.x * tileSize) + (player.offsetX * offsetRatio);
-		const top = (player.y * tileSize) + (player.offsetY * offsetRatio);
+		const coords = player.coords;
+
+		const left = Math.floor((coords.x * tileSize) + (coords.offsetX * offsetRatio));
+		const top = Math.floor((coords.y * tileSize) + (coords.offsetY * offsetRatio));
 
 		const clipLeft = player.currentFrame * SPRITE_SIZE;
 		const clipTop = 0;
@@ -226,7 +228,7 @@ export class Renderer {
 
 	 	if (left < 0) {
 	    	// also draw on right
-	    	const secondLeft = (tileSize * this.boardSize.width) + player.offsetX;
+	    	const secondLeft = (tileSize * this.boardSize.width) + coords.offsetX;
 	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
 	    }
 

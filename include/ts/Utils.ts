@@ -34,4 +34,14 @@ export class Utils {
 		if (isNaN(value)) return parseInt(value);
 		return value;
 	}
+
+	static removeParams(params:object, removeList: string[]) {
+		let goodParams={};
+		for (const i in params) {
+			if (removeList.indexOf(i) === -1) {
+				goodParams[i] = params[i];
+			}
+		}
+		return goodParams;
+	}
 }
