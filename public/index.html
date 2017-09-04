@@ -1,39 +1,115 @@
 <html style='background-color: black;'>
 	<head>
-		<title>Jetpack</title>
+		<title>It Is The Egg</title>
 		<script data-main="main" type="text/javascript" src='js/require.js'></script>
+		<link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+		<link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+		<link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+		<link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+		<link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+		<link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+		<link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+		<link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+		<link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+		<link rel="manifest" href="/manifest.json">
+		<meta name="msapplication-TileColor" content="#ffffff">
+		<meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+		<meta name="theme-color" content="#ffffff">
+
+		<meta name="description" content="It Is The Egg is a game in which there is an egg." />
+
+		<!-- Twitter Card data -->
+		<meta name="twitter:card" content="summary">
+		<meta name="twitter:site" content="@danieljharvey">
+		<meta name="twitter:title" content="It Is The Egg">
+		<meta name="twitter:description" content="It Is The Egg is a game in which there is an egg.">
+		<meta name="twitter:creator" content="@danieljharvey">
+
+		<meta name="twitter:image" content="http://itistheegg.com/img/large/the-egg.png">
+
+		<!-- Open Graph data -->
+		<meta property="og:title" content="It Is The Egg" />
+		<meta property="og:type" content="article" />
+		<meta property="og:url" content="http://itistheegg.com/" />
+		<meta property="og:image" content="http://itistheegg.com/img/large/the-egg.png" />
+		<meta property="og:description" content="It Is The Egg is a game in which there is an egg." /> 
+		<meta property="fb:admins" content="10158451487210128" />
+		<meta name="viewport" content="width=640">
 	</head>
 	<style>
 		html, body {
 			margin: 0px;
 			padding: 0px;
+			height: 100%;
+			width: 100%;
+			overflow: hidden;
+		}
+		#wrapper {
+			margin: 0px;
+			padding: 0px;
 		}
 		#controlHeader {
-			height: 30px;
+			height: 25px;
 			width: 100%;
 			text-align: center;
-			line-height:30px;
+			line-height: 25px;
+			margin: 10px auto 0px auto;
+			opacity: 1;
+			-webkit-transition: opacity 0.5s ease-in-out;
+			-moz-transition: opacity 0.5s ease-in-out;
+			transition: opacity 0.5s ease-in-out;
+		}
+		#controlHeader.hidden {
+			opacity: 0;
 		}
 		#canvas {
-			display: block;
 			margin: 0px auto;
+			display: block;
 		}
 		#score {
 			color: white;
-			margin-left: 20px;
-			margin-right: 20px;
+			width: 30%;
 			text-align: center;
 			font-family: Helvetica;
+			line-height: 25px;
+			font-size: 25px;
+			display:inline-block;
+		}
+	
+		.bigButton {
+			color: white;
+			background-color: black;
+			line-height: 25px;
+			height: 25px;
+			font-size: 25px;
+			width: 33%;
+			display:inline-block;
+		}
+		.bigButton:hover {
+			cursor: pointer;
+		}
+		.bigButton:active {
+			background-color: white;
+			color: black;
 		}
 	</style>
-	<body>
-		<div id='controlHeader'>
-			<button onClick='jetpack.rotateBoard(false);'>ROTATE ANTICLOCKWISE</button>
-			<span id='score'>0</span>
-			<button onClick='jetpack.rotateBoard(true);'>ROTATE CLOCKWISE</button>
+	<body>	
+		<div id='wrapper'>
+			<canvas id='canvas'></canvas>	
+			<div id='controlHeader' class='hidden'>
+				<div id='leftButton' class='bigButton side' onClick='jetpack.rotateBoard(false);'>
+					&larr;
+				</div>
+				<span id='score'>0</span>
+				<div id='rightButton' class='bigButton side' onClick='jetpack.rotateBoard(true);'>
+					&rarr;
+				</div>
+			</div>	
 		</div>
-		<canvas id='canvas'></canvas>
-		
 	</body>
 </html>
 

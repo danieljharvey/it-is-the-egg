@@ -1,316 +1,462 @@
-import { Collisions } from './Collisions';
-import { Map } from './Map';
-import { Levels } from './Levels';
-import { Renderer } from './Renderer';
-import { Player } from './Player';
-import { TileSet } from './TileSet';
-import { Loader } from './Loader';
-import { Coords } from './Coords';
+import { BoardSize } from "./BoardSize";
+import { Canvas } from "./Canvas";
+import { Collisions } from "./Collisions";
+import { Coords } from "./Coords";
+import { Levels } from "./Levels";
+import { Loader } from "./Loader";
+import { Map } from "./Map";
+import { Movement } from "./Movement";
+import { Player } from "./Player";
+import { PlayerTypes } from "./PlayerTypes";
+import { Renderer } from "./Renderer";
+import { SavedLevel } from "./SavedLevel";
+import { TileChooser } from "./TileChooser";
+import { TileSet } from "./TileSet";
+import { TitleScreen } from "./TitleScreen";
+import { Utils } from "./Utils";
 
 export class Jetpack {
+  paused: boolean = true;
+  editMode: boolean = false;
 
-	paused: boolean = true;
-	editMode: boolean = false;
+  moveSpeed: number = 5;
 
-	moveSpeed: number = 8;
+  levelID: number = 1;
+  levelList: number[] = [];
 
-	levelID: number = 1;
+  map: Map; // Map object
+  renderer: Renderer; // Renderer object
+  collisions: Collisions; // Collisions object
+  levels: Levels; // Levels object
+  tileSet: TileSet; // TileSet object
+  boardSize: BoardSize; // BoardSize object
+  canvas: Canvas; // Canvas object
+  tileChooser: TileChooser;
 
-	map: Map; // Map object
-	renderer: Renderer; // Renderer object
-	collisions: Collisions; // Collisions object
-	levels: Levels; // Levels object
+  nextPlayerID: number = 1;
+  score: number = 0;
+  rotationsUsed: number = 0;
+  collectable: number = 0; // total points on screen
 
-	nextPlayerID: number = 1;
-	score: number = 0;
-	collectable: number = 0; // total points on screen
+  playerTypes: object = {};
 
-	playerTypes: object ={
-		'egg': {
-			'type':'egg',
-			'title':"It is of course the egg",
-			'img':'egg-sprite.png',
-			'frames':18,
-			'multiplier':1
-		},
-		'red-egg': {
-			'type':'red-egg',
-			'title':"It is of course the red egg",
-			'img':'egg-sprite-red.png',
-			'frames':18,
-			'multiplier':2
-		},
-		'blue-egg': {
-			'type':'blue-egg',
-			'title':"It is of course the blue egg",
-			'img':'egg-sprite-blue.png',
-			'frames':18,
-			'multiplier':5
-		},
-		'yellow-egg': {
-			'type':'yellow-egg',
-			'title':"It is of course the yellow egg",
-			'img':'egg-sprite-yellow.png',
-			'frames':18,
-			'multiplier':10
-		}
-	}
+  players: Player[];
 
-	players: Player[];
+  defaultBoardSize: number = 20;
+  checkResize: boolean = false;
 
-	go() {
-		this.bootstrap();
-		this.bindSizeHandler();
-		this.bindClickHandler();
-		this.bindKeyboardHandler();
-		
-		this.pauseRender();
-		this.renderer.renderTitleScreen(() => {
-			this.loadLevel(this.levelID, () => {
-				this.createPlayers();
-				this.resetScore(0);
-				this.startRender();	
-			});	
-		});
-	}
+  animationHandle: number;
 
-	// go function but for edit mode
-	edit() {
-		this.bootstrap();
-		this.levels.getLevelList();
-		this.editMode = true;
-		this.bindSizeHandler();
-		this.bindClickHandler();
-		var s = setTimeout(() => {
-			this.startRender();
-		},1000);
-	}
+  go(levelID) {
+    //this.bootstrap();
+    this.bindSizeHandler();
+    this.bindKeyboardHandler();
 
-	bootstrap() {
-		var tileSet = new TileSet();
-		var tiles = tileSet.getTiles();
+    this.pauseRender();
+    this.getTitleScreen(() => {
+      this.loadLevel(levelID, () => {
+        this.createPlayers();
+        this.resetScore(0);
+        this.rotationsUsed = 0;
+        this.startRender();
+      });
+    });
+  }
 
-		this.map = new Map(tiles);
+  // go function but for edit mode
+  edit() {
+    //this.bootstrap();
+    this.levels.populateLevelsList(this.levelList);
 
-		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes);
+    this.editMode = true;
+    this.bindSizeHandler();
+    this.bindClickHandler();
+    this.bindMouseMoveHandler();
+    this.createRenderer();
+    this.tileChooser = new TileChooser(this.tileSet, this.renderer);
+    this.tileChooser.render();
 
-		this.collisions = new Collisions(this);
-		
-		var apiLocation = 'http://' + window.location.hostname + '/levels/';
-		
-		var loader: Loader = new Loader(apiLocation);
-		
-		this.levels = new Levels(this, loader);
-	}
+    const s = setTimeout(() => {
+      this.startRender();
+    }, 1000);
+  }
 
-	startRender() {
-		if (!this.paused) return false;
-		window.cancelAnimationFrame(this.animationHandle);
-		this.map.markAllForRedraw();
-		this.paused = false;
-		this.animationHandle = window.requestAnimationFrame(() => this.renderer.render());
-	}
+  getTitleScreen(callback) {
+    const imageSize = { width: 1024, height: 1024 };
+    const imagePath = "large/the-egg.png";
+    const titleScreen = new TitleScreen(
+      this,
+      this.canvas,
+      imagePath,
+      imageSize.width,
+      imageSize.height
+    );
+    titleScreen.render(callback);
+  }
 
-	resetScore(score) {
-		this.score = 0;
-		this.addScore(0);
-	}
+  // load static stuff - map/renderer etc will be worked out later
+  bootstrap(callback) {
+    this.tileSet = new TileSet();
 
-	addScore(amount) {
-		this.score += amount;
-		var scoreElement = document.getElementById('score');
-		if (scoreElement) {
-			scoreElement.innerHTML = this.score.toString();
-		}
-	}
+    const boardSize = new BoardSize(this.defaultBoardSize);
 
-	// or at least try
-	completeLevel() {
-		this.collectable = this.getCollectable();
-		var playerCount: number = this.countPlayers();
-		if (this.collectable < 1 && playerCount < 2) {
-			this.nextLevel();
-		}
-	}
+    this.canvas = new Canvas(boardSize);
 
-	nextLevel() {
-		this.levelID ++;
-		this.go();
-	}
+    const playerTypes = new PlayerTypes();
+    this.playerTypes = playerTypes.getPlayerTypes();
 
-	pauseRender() {
-		this.paused = true;
-		window.cancelAnimationFrame(this.animationHandle);
-	}
+    this.collisions = new Collisions(this, this.playerTypes); // pass the data, not the object
 
-	doPlayerCalcs() {
-		for (var i in this.players) {
-			var player: Player = this.players[i]
-			player.doCalcs();
-		}
-	}
+    const apiLocation = "http://" + window.location.hostname + "/levels/";
 
-	countPlayers() : number {
-		var count: number = 0;
-		for (var i in this.players) {
-			if (this.players[i]) count++;
-		}
-		return count;
-	}
+    const loader: Loader = new Loader(apiLocation);
 
-	// cycle through all map tiles, find egg cups etc and create players
-	createPlayers() {
-		this.destroyPlayers();
-		var tiles = this.map.getAllTiles();
-		tiles.map((tile) => {
-			var type = this.map.getTileProperty(tile,'createPlayer');
-			if (type) {
-				var coords = new Coords(tile.x, tile.y);
-				this.createNewPlayer(type, coords, 1);
-			}
-		});
-	}
+    this.levels = new Levels(this, loader);
 
-	destroyPlayers() {
-		this.players = [];
-	}
+    this.getLevelList(levelList => {
+      const levelID = this.chooseLevelID(levelList);
+      this.levelID = levelID;
+      callback(levelID);
+    });
+  }
 
-	// cycle through all map tiles, find egg cups etc and create players
-	getCollectable() {
-		var collectable = 0;
-		var tiles = this.map.getAllTiles();
-		tiles.map((tile) => {
-			var score = this.map.getTileProperty(tile,'collectable');
-			if (score > 0) {
-				collectable += score;
-			}
-		});
-		return collectable;
-	}
+  getLevelList(callback) {
+    this.levels.getLevelList(levelList => {
+      this.levelList = levelList;
+      callback(levelList);
+    });
+  }
 
-	deletePlayer(player:Player) {
-		delete this.players[player.id];
-	}
+  // select a random level that has not been completed yet
+  // a return of false means none available (generate a random one)
+  chooseLevelID(levelList) {
+    const availableLevels = levelList.filter(level => {
+      return level.completed === false;
+    });
+    const chosenKey = Utils.getRandomArrayKey(availableLevels);
+    if (!chosenKey) return false;
+    const levelID = availableLevels[chosenKey].levelID;
+    return levelID;
+  }
 
-	// create player and load their sprite
-	createNewPlayer(type: string, coords: Coords, direction:number) : Player {
-		var playerType = this.playerTypes[type];
-		var params = JSON.parse(JSON.stringify(playerType));
-		params.id = this.nextPlayerID++;
-		params.currentFrame = 0;
-		params.x = coords.x; // x in tiles
-		params.y = coords.y; // y in tiles
-		params.direction = direction;
-		params.oldDirection = 0;
-		params.falling = false; // can't move when falling
-		params.offsetX = coords.offsetX;
-		params.offsetY = coords.offsetY;
-		params.moveSpeed = this.moveSpeed;
-		var player = new Player(params, this.map, this.renderer, this, this.collisions);
-		this.players[player.id] = player;
-		return player;
-	}
+  // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+  createRenderer(board = [], size: number = 12) {
+    this.boardSize = new BoardSize(size);
+    this.map = new Map(this.tileSet, this.boardSize, board);
+    this.map.updateBoard(
+      this.map.correctBoardSizeChange(board, this.boardSize),
+      this.boardSize
+    );
+    const tiles = this.tileSet.getTiles();
+    this.renderer = new Renderer(
+      this,
+      this.map,
+      tiles,
+      this.playerTypes,
+      this.boardSize,
+      this.canvas
+    );
+  }
 
-	// make this actually fucking rotate, and choose direction, and do the visual effect thing
-	rotateBoard(clockwise) {
-		if (this.paused || this.editMode) return false;
-		this.pauseRender();
+  startRender() {
+    if (!this.paused) return false;
+    window.cancelAnimationFrame(this.animationHandle);
+    this.paused = false;
+    this.showControls();
+    this.animationHandle = window.requestAnimationFrame(time =>
+      this.eventLoop(time, 0)
+    );
+  }
 
-		this.map.rotateBoard(clockwise);
+  eventLoop(time: number, lastTime: number) {
+    if (this.paused) return false;
+    const timePassed = this.calcTimePassed(time, lastTime);
+    this.doPlayerCalcs(timePassed);
+    this.sizeCanvas();
+    this.renderer.render();
+    this.animationHandle = window.requestAnimationFrame(newTime =>
+      this.eventLoop(newTime, time)
+    );
+  }
 
-		for (var i in this.players) {
-			this.map.rotatePlayer(this.players[i], clockwise);
-		}
+  calcTimePassed(time: number, lastTime: number) {
+    const difference = Math.min(time - lastTime, 20);
+    const frameRate = 60 / difference;
+    return frameRate;
+  }
 
-		this.renderer.drawRotatingBoard(clockwise, () => {
-			this.startRender();
-		});
+  sizeCanvas() {
+    if (!this.checkResize) return false;
 
-		return true;
-	}
+    this.canvas.sizeCanvas(this.boardSize);
+    this.renderer.resize();
+    this.checkResize = false;
+  }
 
-	revertEditMessage() {
-		var s = setTimeout(function() {
-			var message = document.getElementById('message');
-			message.innerHTML="EDIT MODE";
-		},3000);
-	}
+  resetScore(score) {
+    this.score = 0;
+    this.addScore(0);
+  }
 
-	showEditMessage(text) {
-		if (!this.editMode) return false;
-		var message = document.getElementById('message');
-		message.innerHTML = text;
-		this.revertEditMessage();
-	}
+  addScore(amount) {
+    this.score += amount;
+    const scoreElement = document.getElementById("score");
+    if (scoreElement) {
+      scoreElement.innerHTML = this.score.toString();
+    }
+  }
 
-	saveLevel() {
-		this.levels.saveLevel(this.map.board, this.map.boardSize, this.levels.levelID, (levelID) => {
-			var text = "Level " + levelID + " saved";
-			this.showEditMessage(text);
-		});
-	}
+  // or at least try
+  completeLevel() {
+    this.collectable = this.getCollectable();
+    const playerCount: number = this.countPlayers(this.players);
+    if (this.collectable < 1 && playerCount < 2) {
+      this.nextLevel();
+    }
+  }
 
-	loadLevelFromList() {
-		var select = document.getElementById('levelList');
-        var index = select.selectedIndex;
-        var levelID = select.options[index].value;
-    	this.loadLevel(levelID, function() {
-    		console.log('loaded!');
-    	});        
-	}
+  nextLevel() {
+    this.pauseRender();
+    this.levels.saveData(this.levelID, this.rotationsUsed, this.score, data => {
+      this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
+      this.levelID = this.chooseLevelID(this.levelList);
+      this.go(this.levelID);
+    });
+  }
 
-	loadLevel(levelID, callback) {
-		this.levels.loadLevel(levelID, (data) => {
-			var text = "Level " + data.levelID + " loaded!";
-			this.showEditMessage(text);
-			this.map.updateBoard(data.board, data.boardSize);
-			callback();
-		},() => {
-			this.map.board = this.map.generateRandomBoard();
-			callback();
-		})
-	}
+  markLevelAsCompleted(levelList, levelID) {
+    levelList[levelID].completed = true;
+    return levelList;
+  }
 
-	bindSizeHandler() {
-		window.addEventListener('resize', () => {
-			this.renderer.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
-		});
-	}
+  pauseRender() {
+    this.paused = true;
+    this.hideControls();
+    window.cancelAnimationFrame(this.animationHandle);
+  }
 
-	bindClickHandler() {
-		var canvas = document.getElementById('canvas');
-		canvas.addEventListener('click', (event) => {
-		    var tileSize = this.renderer.tileSize;
-		    var coords = new Coords(
-		    	(event.offsetX / tileSize) as number,
-	        	(event.offsetY / tileSize) as number,
-	        	(event.offsetX % tileSize) - (tileSize / 2),
-	        	(event.offsetY % tileSize) - (tileSize / 2)
-	        )
-	        this.handleClick(coords);
-	    });
-	}
+  showControls() {
+    const controlHeader = document.getElementById("controlHeader");
+    if (controlHeader && controlHeader.classList.contains("hidden")) {
+      controlHeader.classList.remove("hidden");
+    }
+  }
 
-	bindKeyboardHandler() {
-		window.addEventListener('keydown', (event) => {
-			if (event.keyCode == '37') {
-				this.rotateBoard(false);
-			}
-			
-			if (event.keyCode == '39') {
-				this.rotateBoard(true);
-			}
-		});
-	}
+  hideControls() {
+    const controlHeader = document.getElementById("controlHeader");
+    if (controlHeader && !controlHeader.classList.contains("hidden")) {
+      controlHeader.classList.add("hidden");
+    }
+  }
 
-	// coords is always x,y,offsetX, offsetY
-	handleClick(coords: Coords) {
-		if (this.editMode) {
-			this.map.cycleTile(coords.x,coords.y);	
-		} else {
-			// destroy tile or something
-		}
-	}
+  doPlayerCalcs(timePassed: number) {
+    const movement = new Movement(this.map, this.renderer, this);
+    const newPlayers = movement.doCalcs(this.players, timePassed);
 
-	
+    const collisions = new Collisions(this, this.playerTypes);
+    const sortedPlayers = collisions.checkAllCollisions(newPlayers);
+
+    this.players = sortedPlayers; // replace with new objects
+  }
+
+  countPlayers(players: Player[]): number {
+    const validPlayers = players.filter(player => {
+      return player && player.value > 0;
+    });
+    return validPlayers.length;
+  }
+
+  // cycle through all map tiles, find egg cups etc and create players
+  createPlayers() {
+    this.destroyPlayers();
+    const tiles = this.map.getAllTiles();
+    const players = tiles.map(tile => {
+      const type = tile.createPlayer;
+      if (type) {
+        const coords = new Coords(tile.x, tile.y);
+        const player = this.createNewPlayer(type, coords, 1);
+        this.players[player.id] = player;
+      }
+    });
+  }
+
+  destroyPlayers() {
+    this.players = [];
+  }
+
+  // cycle through all map tiles, find egg cups etc and create players
+  getCollectable() {
+    let collectable = 0;
+    const tiles = this.map.getAllTiles();
+    tiles.map(tile => {
+      const score = tile.collectable;
+      if (score > 0) {
+        collectable += score;
+      }
+    });
+    return collectable;
+  }
+
+  deletePlayer(player: Player) {
+    delete this.players[player.id];
+  }
+
+  // create player and load their sprite
+  createNewPlayer(type: string, coords: Coords, direction: number): Player {
+    const playerType = this.playerTypes[type];
+    const params = JSON.parse(JSON.stringify(playerType));
+    params.id = this.nextPlayerID++;
+    params.coords = coords;
+    params.direction = direction;
+    params.oldDirection = 0;
+    params.falling = false; // can't move when falling
+    if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
+      params.moveSpeed = this.moveSpeed;
+      params.fallSpeed = this.moveSpeed * 1.2;
+    }
+    const player = new Player(params);
+    this.players[player.id] = player;
+    return player;
+  }
+
+  // make this actually fucking rotate, and choose direction, and do the visual effect thing
+  rotateBoard(clockwise) {
+    if (this.paused || this.editMode) return false;
+    this.pauseRender();
+
+    this.rotationsUsed++;
+
+    this.map.rotateBoard(clockwise);
+
+    const rotatedPlayers = this.players.map(player => {
+      return this.map.rotatePlayer(player, clockwise);
+    });
+
+    this.players = [];
+    rotatedPlayers.map(player => {
+      this.players[player.id] = player;
+    });
+
+    this.renderer.drawRotatingBoard(clockwise, () => {
+      this.startRender();
+    });
+
+    return true;
+  }
+
+  revertEditMessage() {
+    const s = setTimeout(function() {
+      const message = document.getElementById("message");
+      message.innerHTML = "EDIT MODE";
+    }, 3000);
+  }
+
+  showEditMessage(text) {
+    if (!this.editMode) return false;
+    const message = document.getElementById("message");
+    message.innerHTML = text;
+    this.revertEditMessage();
+  }
+
+  saveLevel() {
+    this.levels.saveLevel(
+      this.map.getBoard(),
+      this.map.boardSize,
+      this.levels.levelID,
+      levelID => {
+        const text = "Level " + levelID + " saved";
+        this.showEditMessage(text);
+      }
+    );
+  }
+
+  loadLevelFromList() {
+    const select = document.getElementById("levelList") as HTMLSelectElement;
+    const index = select.selectedIndex;
+    const levelID = select.options[index].value;
+    this.loadLevel(levelID, function() {
+      console.log("loaded!");
+    });
+  }
+
+  loadLevel(levelID, callback) {
+    this.levels.loadLevel(
+      levelID,
+      (savedLevel: SavedLevel) => {
+        const text = "Level " + savedLevel.levelID.toString() + " loaded!";
+        this.showEditMessage(text);
+        this.createRenderer(savedLevel.board, savedLevel.boardSize.width);
+        callback();
+      },
+      () => {
+        this.createRenderer();
+        this.map.updateBoardWithRandom(this.boardSize);
+        callback();
+      }
+    );
+  }
+
+  growBoard() {
+    if (!this.editMode) return false;
+    this.boardSize = this.map.growBoard();
+    this.checkResize = true;
+  }
+
+  shrinkBoard() {
+    if (!this.editMode) return false;
+    this.boardSize = this.map.shrinkBoard();
+    this.checkResize = true;
+  }
+
+  bindSizeHandler() {
+    window.addEventListener("resize", () => {
+      this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+    });
+  }
+
+  bindKeyboardHandler() {
+    window.addEventListener("keydown", event => {
+      if (event.keyCode === 37) {
+        this.rotateBoard(false);
+      }
+      if (event.keyCode === 39) {
+        this.rotateBoard(true);
+      }
+    });
+  }
+
+  bindClickHandler() {
+    const canvas = document.getElementById("canvas");
+    canvas.addEventListener("click", event => {
+      this.handleDrawEvent(event);
+    });
+  }
+
+  bindMouseMoveHandler() {
+    const canvas = document.getElementById("canvas");
+    canvas.addEventListener("mousemove", event => {
+      if (event.button > 0 || event.buttons > 0) {
+        this.handleDrawEvent(event);
+      }
+    });
+  }
+
+  handleDrawEvent(event) {
+    const tileSize = this.canvas.calcTileSize(this.boardSize);
+    const coords = new Coords(
+      (event.offsetX / tileSize) as number,
+      (event.offsetY / tileSize) as number,
+      event.offsetX % tileSize - tileSize / 2,
+      event.offsetY % tileSize - tileSize / 2
+    );
+    this.drawCurrentTile(coords);
+  }
+
+  // coords is always x,y,offsetX, offsetY
+  drawCurrentTile(coords: Coords) {
+    const tileID = this.tileChooser.chosenTileID;
+    if (tileID < 1) return false;
+    const tile = this.map.cloneTile(tileID);
+    this.map.changeTile(coords, tile);
+  }
 }

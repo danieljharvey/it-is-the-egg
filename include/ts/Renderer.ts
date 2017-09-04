@@ -1,341 +1,345 @@
+import { BoardSize } from "./BoardSize";
+import { Canvas } from "./Canvas";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
+import { Player } from "./Player";
+import { Tile } from "./Tile";
+
+const SPRITE_SIZE: number = 64;
 
 export class Renderer {
+  protected jetpack: Jetpack;
+  protected map: Map;
+  protected tiles: object;
+  protected playerTypes: object;
+  protected boardSize: BoardSize;
+  protected canvas: Canvas;
 
-	jetpack: Jetpack;
-	map: Map;
-	tiles: object;
-	playerTypes: object;
+  protected checkResize: boolean = true;
 
-	tileSize:number = 48;
+  protected tileImages: object = {}; // image elements of tiles
+  protected playerImages: object = {}; // image element of players
+  public tileSize: number;
 
-	checkResize:boolean = true;
-	imagesFolder:string = 'img/';
+  constructor(
+    jetpack: Jetpack,
+    map: Map,
+    tiles: object,
+    playerTypes: object,
+    boardSize: BoardSize,
+    canvas: Canvas
+  ) {
+    this.jetpack = jetpack;
+    this.map = map;
+    this.tiles = tiles;
+    this.playerTypes = playerTypes;
+    this.boardSize = boardSize;
+    this.canvas = canvas;
+    this.loadTilePalette();
+    this.loadPlayerPalette();
+    this.tileSize = this.canvas.calcTileSize(boardSize);
+  }
 
-	animationHandle: number;
+  public render() {
+    this.renderBoard();
+    this.renderPlayers();
+    this.renderFrontLayerBoard();
+  }
 
-	canvas; // canvas object
-	ctx; // canvas context for drawing
-	tileImages:object = {}; // image elements of tiles
-	playerImages:object = {}; // image element of players
+  public resize() {
+    this.tileSize = this.canvas.sizeCanvas(this.boardSize);
+    this.map.markAllForRedraw();
+  }
 
-	constructor(jetpack:Jetpack, map:Map, tiles: object, playerTypes: object) {
-		this.jetpack = jetpack;
-		this.map = map;
-		this.tiles = tiles;
-		this.playerTypes = playerTypes;
-		this.loadTilePalette();
-		this.loadPlayerPalette();
-		this.loadCanvas();
-	}
+  loadTilePalette() {
+    for (const i in this.tiles) {
+      const thisTile = this.tiles[i];
+      const tileImage = document.createElement("img");
+      tileImage.setAttribute("src", this.getTileImagePath(thisTile));
+      tileImage.setAttribute("width", SPRITE_SIZE.toString());
+      tileImage.setAttribute("height", SPRITE_SIZE.toString());
+      tileImage.addEventListener(
+        "load",
+        () => {
+          this.markTileImageAsLoaded(thisTile.id);
+        },
+        false
+      );
+      this.tileImages[thisTile.id] = {
+        image: tileImage,
+        ready: false
+      };
+    }
+  }
 
-	renderTitleScreen(callback) {
-		this.sizeCanvas();
-		var titleImage: HTMLElement = document.createElement('img');
-		titleImage.addEventListener('load', () => {
-		  this.drawTheBigEgg(titleImage, 0.02, true, callback);
-		}, false);
-		titleImage.setAttribute('src', this.imagesFolder + 'large/the-egg.png');
-		titleImage.setAttribute('width', 1024);
-		titleImage.setAttribute('height', 1024);
-	}
+  loadPlayerPalette() {
+    for (const i in this.playerTypes) {
+      const playerType = this.playerTypes[i];
+      const playerImage = document.createElement("img");
+      playerImage.setAttribute("src", this.getTileImagePath(playerType));
+      playerImage.addEventListener(
+        "load",
+        () => {
+          this.markPlayerImageAsLoaded(playerType.img);
+        },
+        false
+      );
+      this.playerImages[playerType.img] = {
+        image: playerImage,
+        ready: false
+      };
+    }
+  }
 
-	drawTheBigEgg(titleImage, opacity, show, callback) {
+  protected markPlayerImageAsLoaded(img: string) {
+    this.playerImages[img].ready = true;
+  }
 
-		this.ctx.globalAlpha = 1;
-		this.wipeCanvas('rgb(0,0,0)');
+  protected markTileImageAsLoaded(id: number) {
+    this.tileImages[id].ready = true;
+  }
 
-		this.ctx.globalAlpha = opacity;
-		//this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
+  getTileImagePath(tile: Tile): string {
+    return this.canvas.imagesFolder + tile.img;
+  }
 
-		this.ctx.drawImage(titleImage,0,0,titleImage.width,titleImage.height, 0, 0, this.canvas.width, this.canvas.height);
-		if (show) {
-			opacity += 0.01;
-			if (opacity >= 1) {
-				// wait, fade the egg
-				var v = setTimeout(() => {
-					// and start fading!
-					this.drawTheBigEgg(titleImage, opacity, false, callback);
-				},1000);
-				return false;
-			}
-		} else {
-			opacity = opacity - 0.03;
-			if (opacity <= 0) {
-				callback();
-				titleImage = null;
-				return false;
-			}
-		}
-		this.animationHandle = window.requestAnimationFrame(() => {
-	    	this.drawTheBigEgg(titleImage, opacity, show, callback);
-	    });
-	}
+  renderBoard(): void {
+    const tiles = this.map.getAllTiles();
+    tiles.map(tile => {
+      if (tile.needsDraw === false) {
+        this.showUnrenderedTile(tile.x, tile.y);
+        return;
+      }
+      if (!tile.frontLayer) {
+        if (this.renderTile(tile.x, tile.y, tile)) {
+          tile.needsDraw = false;
+          tile.drawnBefore = true;
+        }
+      } else {
+        // render sky behind see through tiles
+        this.drawSkyTile(tile, tile.x, tile.y);
+      }
+    });
+  }
 
-	render() {
-		if (this.jetpack.paused) return false;
-		this.sizeCanvas();
-		//this.wipeCanvas('rgba(0,0,0,0.02)');
-		this.renderBoard();
-		this.renderPlayers();	
-		this.renderFrontLayerBoard();
-		this.jetpack.doPlayerCalcs();
-		//this.wipeCanvas('rgba(255,255,0,0.04)');	
-		this.animationHandle = window.requestAnimationFrame(() => this.render());
-	}
+  drawSkyTile(tile: Tile, x: number, y: number) {
+    const skyTile = this.map.cloneTile(1);
+    this.renderTile(x, y, skyTile);
+  }
 
-	loadTilePalette() {
-		for (var i in this.tiles) {
-			var thisTile = this.tiles[i];
-			var tileImage = document.createElement("img");
-			tileImage.setAttribute('src', this.getTileImagePath(thisTile));
-			tileImage.setAttribute('width', 64);
-			tileImage.setAttribute('height', 64);
-			this.tileImages[thisTile.id] = tileImage;
-		}
-	}
+  // just go over and draw the over-the-top stuff
+  renderFrontLayerBoard() {
+    const tiles = this.map.getAllTiles();
+    tiles.map(tile => {
+      if (tile.needsDraw === false) return;
+      if (tile.frontLayer) {
+        if (this.renderTile(tile.x, tile.y, tile)) {
+          tile.needsDraw = false;
+          tile.drawnBefore = true;
+        }
+      }
+    });
+  }
 
-	loadPlayerPalette() {
-		for (var i in this.playerTypes) {
-			var playerType = this.playerTypes[i];
-			var playerImage = document.createElement('img');
-			playerImage.setAttribute('src', this.getTileImagePath(playerType));
-			this.playerImages[playerType.img] = playerImage;
-		}
-	}
+  // debugging tools
+  showUnrenderedTile(x: number, y: number) {
+    return false;
 
-	getTileImagePath(tile:object) : string {
-		return this.imagesFolder + tile.img;
-	}
+    const tileSize = this.tileSize;
+    const ctx = this.canvas.getDrawingContext();
+    ctx.fillStyle = "#f00";
+    ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+  }
 
-	sizeCanvas() {
-		if (!this.checkResize) return false;
-		var maxBoardSize = this.getMaxBoardSize();
+  renderPlayers() {
+    for (const i in this.jetpack.players) {
+      const player = this.jetpack.players[i];
+      this.renderPlayer(player);
+    }
+  }
 
-		this.canvas.top = parseInt((window.innerHeight - maxBoardSize) / 2) + 'px';
+  getTileImage(id: number) {
+    const tileImage = this.tileImages[id];
+    if (tileImage.ready) {
+      return tileImage.image;
+    }
+    return false;
+  }
 
-		this.tileSize = maxBoardSize / this.map.boardSize.width;
-		this.loadCanvas();
-		this.map.markAllForRedraw();
+  protected renderTile = function(x: number, y: number, tile: Tile): boolean {
+    const ctx = this.canvas.getDrawingContext();
+    const tileSize = this.tileSize;
 
-		this.checkResize = false; // all done
-	}
+    const img = this.getTileImage(tile.id);
 
-	getMaxBoardSize() : number {
-		var width = window.innerWidth;
-		var height = window.innerHeight;
-		
-		var controlHeader = document.getElementById('controlHeader');
+    if (!img) {
+      //console.log("Could not find tile image for id " + tile.id);
+      return false;
+    }
 
-		height = height - (controlHeader.offsetHeight * 2);
-		width = width - (controlHeader.offsetHeight * 2);
+    let left = x * tileSize;
+    let top = y * tileSize;
+    const opacity = 1;
 
-		if (width > height) {
-			var difference = (height % this.map.boardSize.width);
-			height = height - difference;
-			return height;
-		} else {
-			var difference = (width % this.map.boardSize.width);
-			width = width - difference;
-			return width;
-		}
-	}
+    ctx.globalAlpha = opacity;
 
-	wipeCanvas(fillStyle: string) : void {
-		this.ctx.fillStyle = fillStyle;
-		this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
-	}
+    if (this.map.renderAngle == 0) {
+      ctx.drawImage(img, left, top, tileSize, tileSize);
+    } else {
+      const angleInRad = this.map.renderAngle * (Math.PI / 180);
 
-	loadCanvas() : void {
-		this.canvas = document.getElementById("canvas");
-		this.canvas.width = this.map.boardSize.width * this.tileSize;
-		this.canvas.height = this.map.boardSize.height * this.tileSize;
-		this.ctx = this.canvas.getContext("2d");
-	}
+      const offset = tileSize / 2;
 
-	renderBoard() : void {
-	    for (var x =0; x < this.map.boardSize.width; x++) {
-	    	for (var y =0; y < this.map.boardSize.height; y++) {
-	    		var tile = this.map.board[x][y];
-	    		
-	    		if (tile.needsDraw === false) {
-	    			this.showUnrenderedTile(x,y);
-	    			continue;
-	    		}
-	    		var frontLayer = this.tileIsFrontLayer(tile);
-	    		if (!frontLayer) {
-	    			if (this.renderTile(x,y,tile,false)) {
-		    			tile.needsDraw = false;
-					    tile.drawnBefore = true;	
-					}
-	    		} else {
-	    			// render sky behind see through tiles
-	    			this.drawSkyTile(tile,x,y);
-	    		}
-	    	}
-	    }
-	}
+      left = left + offset;
+      top = top + offset;
 
-	tileIsFrontLayer(tile:object) {
-		return this.map.getTileProperty(tile,'frontLayer');
-	}
+      ctx.translate(left, top);
+      ctx.rotate(angleInRad);
 
-	drawSkyTile(tile:object, x:number, y:number) {
-		var skyTile = this.map.getTile(1);
-		var skyTileImage = this.tileImages[skyTile.id];
-		this.renderTile(x, y, tile, skyTileImage);
-	}
+      ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
 
-	// just go over and draw the over-the-top stuff
-	renderFrontLayerBoard() {
-	    for (var x =0; x < this.map.boardSize.width; x++) {
-	    	for (var y =0; y < this.map.boardSize.height; y++) {
-	    		var tile = this.map.board[x][y];
-	    		if (tile.needsDraw === false) continue;
-	    		if (this.tileIsFrontLayer(tile)) {
-	    			if (this.renderTile(x,y,tile,false)) {
-	    				tile.needsDraw = false;
-					    tile.drawnBefore = true;	
-	    			}		
-	    		}
-	    	}
-	    }
-	}
+      ctx.rotate(-angleInRad);
+      ctx.translate(-left, -top);
+    }
 
- 	// debugging tools
-	showUnrenderedTile(x:number, y:number) {
-		return false;
-		this.ctx.fillStyle = '#f00';
-		this.ctx.fillRect(x * this.tileSize,y * this.tileSize,this.tileSize,this.tileSize);
-	}
+    return true;
+  };
 
-	renderPlayers() {
-		for (var i in this.jetpack.players) {
-			var player = this.jetpack.players[i];
-			this.renderPlayer(player);
-		}
-	}
+  getPlayerImage(img: string) {
+    const playerImage = this.playerImages[img];
+    if (playerImage.ready) {
+      return playerImage.image;
+    }
+    return false;
+  }
 
-	renderTile = function(x:number, y:number, tile: object, overwriteImage: object|boolean) : boolean {
+  renderPlayer(player: Player) {
+    const ctx = this.canvas.getDrawingContext();
+    const tileSize = this.tileSize;
 
-	    if (overwriteImage) {
-	    	var img = overwriteImage;
-	    } else {
-	    	var img = this.tileImages[tile.id];	
-	    }
-	    
-	    if (!img) {
-	    	console.log("Could not find tile image for id "+tile.id);
-	    	return false;
-	    }
+    const offsetRatio = tileSize / SPRITE_SIZE;
 
-	    var left = x * this.tileSize;
-	    var top = y * this.tileSize;
-	    var opacity = 1;
+    const coords = player.coords;
 
-	    this.ctx.globalAlpha = opacity;
+    const left = Math.floor(coords.x * tileSize + coords.offsetX * offsetRatio);
+    const top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
 
-		if (this.map.renderAngle == 0 || this.map.getTileProperty(tile,'dontRotate')) {
-			this.ctx.drawImage(img,left,top,this.tileSize,this.tileSize);
-		} else {
-			
-			var angleInRad = this.map.renderAngle * (Math.PI/180);
-			
-			var offset = this.tileSize / 2;
+    const clipLeft = player.currentFrame * SPRITE_SIZE;
+    const clipTop = 0;
 
-			left = left + offset;
-		    top = top + offset;
+    ctx.globalAlpha = 1;
 
-		    this.ctx.translate( left, top );
-		  	this.ctx.rotate( angleInRad );
+    const image = this.getPlayerImage(player.img);
+    if (!image) {
+      //console.log('player image not loaded', player.img);
+      return false;
+    }
 
-		    this.ctx.drawImage(img, -offset, -offset, this.tileSize,this.tileSize);
+    ctx.drawImage(
+      image,
+      clipLeft,
+      0,
+      SPRITE_SIZE,
+      SPRITE_SIZE,
+      left,
+      top,
+      tileSize,
+      tileSize
+    );
 
-		    this.ctx.rotate( -angleInRad );
-		    this.ctx.translate( -left, -top );
-		}    
-	    
-	    return true;
-	}
+    if (left < 0) {
+      // also draw on right
+      const secondLeft = tileSize * this.boardSize.width + coords.offsetX;
+      ctx.drawImage(
+        image,
+        clipLeft,
+        0,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+        secondLeft,
+        top,
+        tileSize,
+        tileSize
+      );
+    }
 
-	renderPlayer(player: Player) {
-	 	var left = (player.x * this.tileSize) + player.offsetX;
-	    var top = (player.y * this.tileSize) + player.offsetY;
+    if (left + tileSize > tileSize * this.boardSize.width) {
+      // also draw on left
+      const secondLeft = left - tileSize * this.boardSize.width;
+      ctx.drawImage(
+        image,
+        clipLeft,
+        0,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+        secondLeft,
+        top,
+        tileSize,
+        tileSize
+      );
+    }
+  }
 
-	    var clipLeft = player.currentFrame * 64;
-	    var clipTop = 0;
+  drawRotatingBoard(clockwise: boolean, completed: () => void) {
+    const canvas = this.canvas.getCanvas();
 
-	    this.ctx.globalAlpha = 1;
+    const cw = canvas.width;
+    const ch = canvas.height;
 
-	    var image = this.playerImages[player.img];
+    const savedData = new Image();
+    savedData.src = canvas.toDataURL("image/png");
 
-	    this.ctx.drawImage(image, clipLeft, 0, 64, 64, left,top,this.tileSize,this.tileSize);
+    if (clockwise) {
+      this.drawRotated(savedData, 1, 0, 90, completed);
+    } else {
+      this.drawRotated(savedData, -1, 0, -90, completed);
+    }
+  }
 
-	    if (left < 0) {
-	    	// also draw on right
-	    	var secondLeft = (this.tileSize * this.map.boardSize.width) + player.offsetX;
-	    	this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
-	    }
+  protected drawRotated(
+    savedData: HTMLImageElement,
+    direction: number,
+    angle: number,
+    targetAngle: number,
+    completed: () => void
+  ) {
+    const canvas = this.canvas.getCanvas();
 
-	    if ((left + this.tileSize) > (this.tileSize * this.map.boardSize.width)) {
-	    	// also draw on left
-	    	var secondLeft = left - (this.tileSize * this.map.boardSize.width);
-	    	this.ctx.drawImage(image, clipLeft, 0, 64, 64, secondLeft,top,this.tileSize,this.tileSize);
-	    }
-	}
+    if (direction > 0) {
+      if (angle >= targetAngle) {
+        completed();
+        return false;
+      }
+    } else {
+      if (angle <= targetAngle) {
+        completed();
+        return false;
+      }
+    }
 
+    const angleInRad = angle * (Math.PI / 180);
 
-	drawRotatingBoard(clockwise: boolean, completed: () => void) {
+    const offset = canvas.width / 2;
 
-	    var cw=this.canvas.width;
-	    var ch=this.canvas.height;
+    const ctx = this.canvas.getDrawingContext();
 
-		var savedData = new Image();
-	    savedData.src = this.canvas.toDataURL("image/png");
+    const left = offset;
+    const top = offset;
 
-		if (clockwise) {
-			this.drawRotated(savedData, 1, 0, 90, completed);
-		} else {
-			this.drawRotated(savedData, -1, 0,-90, completed);
-		}
-	}
+    this.canvas.wipeCanvas("rgba(0,0,0,0.1)");
 
-	drawRotated(savedData: Image, direction: number, angle: number, targetAngle: number, completed: () => void) {
-		if (direction>0) {
-			if (angle >= targetAngle) {
-				completed();
-				return false;
-			}
-		} else {
-			if (angle <= targetAngle) {
-				completed();
-				return false;
-			}
-		}
+    ctx.translate(left, top);
+    ctx.rotate(angleInRad);
 
-		var angleInRad = angle * (Math.PI/180);
-			
-		var offset = this.canvas.width / 2;
+    ctx.drawImage(savedData, -offset, -offset);
 
-		var left = offset;
-	    var top = offset;
+    ctx.rotate(-angleInRad);
+    ctx.translate(-left, -top);
 
-	    this.wipeCanvas('rgba(0,0,0,0.1)');
+    angle += direction * this.jetpack.moveSpeed;
 
-	    this.ctx.translate( left, top );
-	  	this.ctx.rotate( angleInRad );
-
-	    this.ctx.drawImage(savedData, -offset, -offset);
-
-	    this.ctx.rotate( -angleInRad );
-	    this.ctx.translate( -left, -top );
-
-	    angle+= (direction * this.jetpack.moveSpeed);
-
-	    this.animationHandle = window.requestAnimationFrame(() => {
-	    	this.drawRotated(savedData, direction,angle,targetAngle, completed)
-	    });
-	}
-
+    this.jetpack.animationHandle = window.requestAnimationFrame(() => {
+      this.drawRotated(savedData, direction, angle, targetAngle, completed);
+    });
+  }
 }

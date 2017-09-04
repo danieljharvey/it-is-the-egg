@@ -1,252 +1,344 @@
-import { Coords } from './Coords';
-import { Player } from './Player';
+import { BoardSize } from "./BoardSize";
+import { Coords } from "./Coords";
+import { Player } from "./Player";
+import { Tile } from "./Tile";
+import { TileSet } from "./TileSet";
+import { Utils } from "./Utils";
 
 export class Map {
+  tileSet: TileSet;
+  renderAngle: number = 0;
 
-	tiles: object;
-	renderAngle: number = 0;
+  boardSize: BoardSize;
 
-	boardSize: object = {
-		width: 14,
-		height: 14
-	};
+  protected board = [];
 
-	board: array = [];
-	
-	constructor(tiles: object) {
-		this.tiles = tiles;
-		this.board = this.generateBlankBoard();
-	}
+  constructor(tileSet: TileSet, boardSize: BoardSize, board = []) {
+    this.tileSet = tileSet;
+    this.boardSize = boardSize;
+    this.board = board;
+    this.markAllForRedraw();
+  }
 
-	updateBoard(board: object, boardSize: object) {
-		this.board = board;
-		this.boardSize = boardSize;
-		this.markAllForRedraw();
-	}
+  // return array with all tiles in (with x and y added)
+  public getAllTiles() {
+    const allTiles = [];
+    for (const x in this.board) {
+      for (const y in this.board[x]) {
+        const id = this.board[x][y].id;
+        const tile = this.board[x][y];
+        tile.x = x;
+        tile.y = y;
+        allTiles.push(tile);
+      }
+    }
+    return allTiles;
+  }
 
-	correctForOverflow(x:number, y:number): Coords {
-		var newX, newY;
-		if (x < 0) {
-			newX = this.boardSize.width - 1;
-		} else if (x >= this.boardSize.width) {
-			newX = 0;
-		} else {
-			newX = x;
-		}
+  public shrinkBoard() {
+    this.boardSize.shrink();
+    this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+    return this.boardSize;
+  }
 
-		if (y < 0) {
-			newY = this.boardSize.height - 1;
-		} else if (y >= this.boardSize.height) {
-			newY = 0;
-		} else {
-			newY = y;
-		}
-		return new Coords(newX, newY);
-	}
+  public growBoard() {
+    this.boardSize.grow();
+    this.board = this.correctBoardSizeChange(this.board, this.boardSize);
+    return this.boardSize;
+  }
 
-	getTileProperty(tile, property) {
-		if (!tile.hasOwnProperty(property)) return false;
-		return tile[property];
+  public correctBoardSizeChange(board, boardSize: BoardSize) {
+    const newBoard = [];
 
-	}
-	
-	tileIsBreakable(tile) {
-		return this.getTileProperty(tile,'breakable');
-	}
+    const currentWidth: number = board.length;
+    let currentHeight: number;
+    if (currentWidth > 0) {
+      currentHeight = board[0].length;
+    } else {
+      currentHeight = 0;
+    }
 
-	// is intended next tile empty / a wall?
-	checkTileIsEmpty(x,y) {
+    for (let x = 0; x < boardSize.width; x++) {
+      newBoard[x] = [];
+      for (let y = 0; y < boardSize.height; y++) {
+        if (x < currentWidth && y < currentHeight) {
+          // using current board
+          const tile = board[x][y];
+          tile.needsDraw = true;
+          newBoard[x][y] = tile;
+        } else {
+          // adding blank tiles
+          const tile = this.cloneTile(1);
+          tile.needsDraw = true;
+          newBoard[x][y] = tile;
+        }
+      }
+    }
+    return newBoard;
+  }
 
-		var coords = this.correctForOverflow(x,y);
+  public getBoard() {
+    return this.board;
+  }
 
-		var tile = this.board[coords.x][coords.y];
+  public updateBoard(board, boardSize: BoardSize) {
+    this.board = board;
+    this.boardSize = boardSize;
+  }
 
-		return tile.background;
-	}
+  public updateBoardWithRandom(boardSize: BoardSize) {
+    this.boardSize = boardSize;
+    this.board = this.generateRandomBoard(boardSize);
+  }
 
-	markAllForRedraw() {
-		// force redraw
-		for (var x in this.board) {
-			for (var y in this.board[x]) {
-				this.board[x][y].needsDraw = true;
-			}
-		}
-	}
+  public correctForOverflow(
+    x: number,
+    y: number,
+    offsetX: number = 0,
+    offsetY: number = 0
+  ): Coords {
+    let newX, newY;
+    if (x < 0) {
+      newX = this.boardSize.width - 1;
+    } else if (x >= this.boardSize.width) {
+      newX = 0;
+    } else {
+      newX = x;
+    }
 
-	getTileAction(tile) {
-		return this.getTileProperty(tile,'action');
-	}
+    if (y < 0) {
+      newY = this.boardSize.height - 1;
+    } else if (y >= this.boardSize.height) {
+      newY = 0;
+    } else {
+      newY = y;
+    }
+    return new Coords(newX, newY, offsetX, offsetY);
+  }
 
-	generateBlankBoard() {
-		var board=[];
+  // is intended next tile empty / a wall?
+  public checkTileIsEmpty(x, y) {
+    const tile = this.getTile(x, y);
+    return tile.background;
+  }
 
-		for (var x = 0; x < this.boardSize.width; x++) {
-			board[x] = [];
-			for (var y = 0; y < this.boardSize.height; y++) {
-				var blankTile = this.getTile(1);
-				board[x][y] = blankTile;
-			}
-		}
-		return board;
-	}
+  public markAllForRedraw() {
+    const tiles = this.getAllTiles();
+    tiles.map(tile => {
+      tile.needsDraw = true;
+    });
+    return;
+  }
 
-	generateRandomBoard() {
-		var board=[];
+  public getTilesSurrounding(coords: Coords) {
+    const tiles = [];
 
-		for (var x = 0; x < this.boardSize.width; x++) {
-			board[x] = [];
-			for (var y = 0; y < this.boardSize.height; y++) {
-				var blankTile = this.getRandomTile(this.tiles);
-				board[x][y] = blankTile;
-			}
-		}
-		return board;
-	}
+    const startX = coords.x - 1;
+    const endX = coords.x + 1;
+    const startY = coords.y - 1;
+    const endY = coords.y + 2;
 
-	getTile(id) {
-		var tile = JSON.parse(JSON.stringify(this.tiles[id])); // create copy of object so we're not changing original
-		return tile;
-	}
+    // first just do the stuff around player
+    for (let x = startX; x < endX; x++) {
+      for (let y = startY; y < endY; y++) {
+        const tile = this.getTile(x, y);
+        tiles.push(tile);
+      }
+    }
+    return tiles;
+  }
 
-	getRandomTile(tiles) {
-		var randomProperty = (obj) => {
-		    var keys = Object.keys(obj);
-		    var randomKey = keys[ keys.length * Math.random() << 0];
-		    return this.getTile(randomKey);
-		};
+  public getTileWithCoords(coords: Coords) {
+    const fixedCoords = this.correctForOverflow(coords.x, coords.y);
+    const { x, y } = fixedCoords;
+    const tile = this.board[x][y];
+    tile.x = x;
+    tile.y = y;
+    return tile;
+  }
 
-		var theseTiles = JSON.parse(JSON.stringify(tiles));
-		// remove unwanted tiles
-		for (var i in theseTiles) {
-			if (this.getTileProperty(theseTiles[i],'dontAdd')) {
-		    	delete theseTiles[i];
-		    }
-		}
-		return randomProperty(theseTiles);
-	}
+  public changeTile(coords: Coords, tile: Tile) {
+    const { x, y } = coords;
+    this.board[x][y] = tile;
+  }
 
-	getBlankBoard() {
-		var newBoard=[];
-		for (var x =0; x < this.boardSize.width; x++) {
-			newBoard[x]=[];
-			for (var y = 0; y < this.boardSize.height; y++) {
-				newBoard[x][y] = [];
-			}
-		}
-		return newBoard;
-	}
+  public rotatePlayer(player: Player, clockwise) {
+    const newCoords = this.translateRotation(player.coords, clockwise);
 
-	translateRotation(x,y,clockwise) {
-		var coords={
-			x:0,
-			y:0
-		}
-		
-		var width = this.boardSize.width - 1;
-		var height = this.boardSize.height - 1;
+    let direction = player.direction;
+    // if player is still, nudge them in rotation direction
+    if (direction == 0) {
+      if (clockwise) {
+        direction = 1;
+      } else {
+        direction = -1;
+      }
+    }
 
-		if (clockwise) {
-			// 0,0 -> 9,0
-			// 9,0 -> 9,9
-			// 9,9 -> 0,9
-			// 0,9 -> 0,0
-			coords.x = width - y;
-			coords.y = x;
-		} else {
-			// 0,0 -> 0,9
- 			// 0,9 -> 9,9
- 			// 9,9 -> 9,0
- 			// 9,0 -> 0,0
-			coords.x = y;
-			coords.y = height - x;
-		}
-		return coords;
-	}
+    return player.modify({
+      coords: newCoords.modify({
+        offsetX: 0,
+        offsetY: 0
+      }),
+      direction
+    });
+  }
 
-	rotateBoard(clockwise) {
-		var newBoard=this.getBlankBoard();
+  public cloneTile(id): Tile {
+    const prototypeTile = this.getPrototypeTile(id);
+    const tile = new Tile(prototypeTile); // create new Tile object with these
+    return tile;
+  }
 
-		var width = this.boardSize.width -1;
-		var height = this.boardSize.height -1;
+  public getRandomTile(tiles) {
+    const randomProperty = obj => {
+      const randomKey = Utils.getRandomObjectKey(obj);
+      return this.cloneTile(randomKey);
+    };
 
-		for (var x in this.board) {
-			for (var y in this.board[x]) {
-				var coords = this.translateRotation(x,y,clockwise)
-				newBoard[coords.x][coords.y] = this.board[x][y];
-				newBoard[coords.x][coords.y].needsDraw = true;
-			}
-		}
-		if (clockwise) {
-			this.renderAngle = this.renderAngle + 90;
-			if (this.renderAngle > 360) {
-				this.renderAngle = this.renderAngle - 360;
-			}	
-		} else {
-			this.renderAngle = this.renderAngle - 90;
-			if (this.renderAngle < 0) {
-				this.renderAngle = 360 + this.renderAngle;
-			}
-		}
-		
-		this.board = newBoard;
-		
-		return true;
-	}
+    const theseTiles = this.tileSet.getTiles();
+    (Object as any).entries(theseTiles).filter(([key, tile]) => {
+      if (tile.dontAdd) {
+        delete theseTiles[key];
+      }
+      return true;
+    });
+    return randomProperty(theseTiles);
+  }
 
+  // swap two tiles on map
+  public switchTiles(id1, id2) {
+    const tiles = this.getAllTiles();
+    const count = tiles.map(tile => {
+      if (tile.id === id1) {
+        const coords = new Coords(tile.x, tile.y);
+        this.changeTile(coords, this.cloneTile(id2));
+        return 1;
+      } else if (tile.id === id2) {
+        const coords = new Coords(tile.x, tile.y);
+        this.changeTile(coords, this.cloneTile(id1));
+        return 1;
+      }
+      return 0;
+    });
+    return count.reduce((a, b) => a + b, 0);
+  }
 
-	rotatePlayer(player: Player, clockwise) {
-		
-		var coords = this.translateRotation(player.x, player.y, clockwise);
-		
-		player.x = coords.x;
-		player.y = coords.y;
-		player.offsetX = 0; //offsetX;
-		player.offsetY = 0; //offsetY;
+  // find random tile of type that is NOT at currentCoords
+  public findTile(currentCoords: Coords, id) {
+    const tiles = this.getAllTiles();
+    const teleporters = tiles.filter(tile => {
+      if (tile.x == currentCoords.x && tile.y == currentCoords.y) return false;
+      return tile.id == id;
+    });
+    if (teleporters.length == 0) return false; // no options
+    const newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
+    return newTile;
+  }
 
-		// if player is still, nudge them in rotation direction
-		if (player.direction==0) {
-			if (clockwise) {
-				player.direction = 1;
-			} else {
-				player.direction = -1;
-			}
-		}
-	}
+  public rotateBoard(clockwise) {
+    const newBoard = this.getBlankBoard();
 
-	// return array with all tiles in (with x and y added)
-	getAllTiles() {
-		var allTiles = [];
-		for (var x in this.board) {
-			for (var y in this.board[x]) {
-				var id = this.board[x][y].id;
-				var tile = this.getTile(id);
-				tile.x = x;
-				tile.y = y;
-				allTiles.push(tile);
-			}
-		}
-		return allTiles;
-	}
-	
-	cycleTile(x:number, y:number) {
+    const width = this.boardSize.width - 1;
+    const height = this.boardSize.height - 1;
 
-		var currentTile = this.board[x][y];
+    const tiles = this.getAllTiles();
 
-		var currentKey = currentTile.id;
+    tiles.map(tile => {
+      const coords = new Coords(tile.x, tile.y);
+      const newCoords = this.translateRotation(coords, clockwise);
+      tile.x = newCoords.x;
+      tile.y = newCoords.y;
+      tile.needsDraw = true;
+      newBoard[newCoords.x][newCoords.y] = tile;
+    });
 
-		var keys = Object.keys(this.tiles);
-		
-		var newKey = false, nextKey = false;
-		for (var i in keys) {
-			if (newKey===false || nextKey) newKey = keys[i];
-			if (keys[i]==currentKey) {
-				nextKey = true;
-			} else {
-				nextKey = false;
-			}
-		}
-	    var tile = this.getTile(newKey);
-	    this.board[x][y] = tile;
-	}
+    if (clockwise) {
+      this.renderAngle = this.renderAngle + 90;
+      if (this.renderAngle > 360) {
+        this.renderAngle = this.renderAngle - 360;
+      }
+    } else {
+      this.renderAngle = this.renderAngle - 90;
+      if (this.renderAngle < 0) {
+        this.renderAngle = 360 + this.renderAngle;
+      }
+    }
 
+    this.board = newBoard;
+
+    return true;
+  }
+
+  protected getTile(x: number, y: number) {
+    const coords = new Coords(x, y);
+    return this.getTileWithCoords(coords);
+  }
+
+  protected generateBlankBoard() {
+    const board = [];
+
+    for (let x = 0; x < this.boardSize.width; x++) {
+      board[x] = [];
+      for (let y = 0; y < this.boardSize.height; y++) {
+        const blankTile = this.cloneTile(1);
+        board[x][y] = blankTile;
+      }
+    }
+    return board;
+  }
+
+  protected generateRandomBoard(boardSize: BoardSize) {
+    const board = [];
+
+    for (let x = 0; x < boardSize.width; x++) {
+      board[x] = [];
+      for (let y = 0; y < boardSize.height; y++) {
+        const blankTile = this.getRandomTile(this.tileSet.getTiles());
+        board[x][y] = blankTile;
+      }
+    }
+    return board;
+  }
+
+  protected getPrototypeTile(id) {
+    return this.tileSet.getTile(id);
+  }
+
+  protected translateRotation(coords: Coords, clockwise: boolean): Coords {
+    const width = this.boardSize.width - 1;
+    const height = this.boardSize.height - 1;
+
+    if (clockwise) {
+      // 0,0 -> 9,0
+      // 9,0 -> 9,9
+      // 9,9 -> 0,9
+      // 0,9 -> 0,0
+      return coords.modify({
+        x: width - coords.y,
+        y: coords.x
+      });
+    } else {
+      // 0,0 -> 0,9
+      // 0,9 -> 9,9
+      // 9,9 -> 9,0
+      // 9,0 -> 0,0
+      return coords.modify({
+        x: coords.y,
+        y: height - coords.x
+      });
+    }
+  }
+
+  // get empty grid without tiles in
+  protected getBlankBoard() {
+    const newBoard = [];
+    for (let x = 0; x < this.boardSize.width; x++) {
+      newBoard[x] = [];
+      for (let y = 0; y < this.boardSize.height; y++) {
+        newBoard[x][y] = [];
+      }
+    }
+    return newBoard;
+  }
 }

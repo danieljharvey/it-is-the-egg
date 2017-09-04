@@ -3,31 +3,52 @@
 use Doctrine\Common\ClassLoader;
 
 require_once(dirname(__FILE__)."/vendor/autoload.php");
-require_once(dirname(__FILE__)."/Egg.php");
-require_once(dirname(__FILE__)."/Level.php");
+require_once(dirname(__FILE__)."/modules/Egg.php");
+require_once(dirname(__FILE__)."/modules/Stats.php");
+require_once(dirname(__FILE__)."/modules/Scores.php");
+require_once(dirname(__FILE__)."/modules/Levels.php");
+require_once(dirname(__FILE__)."/modules/API.php");
 
-$classLoader = new ClassLoader('Doctrine', '/path/to/doctrine');
-$classLoader->register();
+function getEgg() {
+	try {
+		$conn = getDBAL();
+	} catch (Exception $e) {
+		return false;
+	}
 
-$config = new \Doctrine\DBAL\Configuration();
+	$levels = new Levels($conn);
+	$scores = new Scores($conn);
+	$stats = new Stats();
 
-$configFilename = dirname(__FILE__)."/settings/connection.json";
-$configJSON = file_get_contents($configFilename);
-if ($configJSON) {
-	$configArray = json_decode($configJSON,true);
-	$connectionParams = array(
-		'dbname' => $configArray['dbname'],
-		'user' => $configArray['user'],
-		'password' => $configArray['password'],
-		'host' => $configArray['host'],
-		'driver' => 'pdo_mysql',
-	);
-} else {
-	throw new Exception("Could not read /settings/connection.json");
+	$api = new API($levels, $scores, $stats);
+
+	$egg = new Egg($conn, $api);
+
+	return $egg;
 }
 
-$conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
+function getDBAL() {
+	$classLoader = new ClassLoader('Doctrine', '/path/to/doctrine');
+	$classLoader->register();
 
-$egg = new Egg($conn);
+	$config = new \Doctrine\DBAL\Configuration();
 
+	$configFilename = dirname(__FILE__)."/settings/connection.json";
+	$configJSON = file_get_contents($configFilename);
+	if ($configJSON) {
+		$configArray = json_decode($configJSON,true);
+		$connectionParams = array(
+			'dbname' => $configArray['dbname'],
+			'user' => $configArray['user'],
+			'password' => $configArray['password'],
+			'host' => $configArray['host'],
+			'driver' => 'pdo_mysql',
+		);
+	} else {
+		throw new Exception("Could not read /settings/connection.json");
+	}
+
+	$conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
+	return $conn;
+}
 
