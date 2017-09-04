@@ -1,3 +1,4 @@
+import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Collisions } from "./Collisions";
 import { Coords } from "./Coords";
@@ -8,10 +9,9 @@ import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
-import { TileSet } from "./TileSet";
-import { BoardSize } from "./BoardSize";
 import { SavedLevel } from "./SavedLevel";
 import { TileChooser } from "./TileChooser";
+import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
@@ -33,7 +33,7 @@ export class Jetpack {
 	boardSize: BoardSize; // BoardSize object
 	canvas: Canvas; // Canvas object
 	tileChooser: TileChooser;
-	
+
 	nextPlayerID: number = 1;
 	score: number = 0;
 	rotationsUsed: number = 0;
@@ -52,7 +52,7 @@ export class Jetpack {
 		//this.bootstrap();
 		this.bindSizeHandler();
 		this.bindKeyboardHandler();
-		
+
 		this.pauseRender();
 		this.getTitleScreen(() => {
 			this.loadLevel(levelID, () => {
@@ -68,7 +68,7 @@ export class Jetpack {
 	edit() {
 		//this.bootstrap();
 		this.levels.populateLevelsList(this.levelList);
-		
+
 		this.editMode = true;
 		this.bindSizeHandler();
 		this.bindClickHandler();
@@ -83,16 +83,16 @@ export class Jetpack {
 	}
 
 	getTitleScreen(callback) {
-		const imageSize = {width: 1024, height: 1024}
-		const imagePath = "large/the-egg.png"
-		const titleScreen = new TitleScreen(this,this.canvas, imagePath, imageSize.width, imageSize.height);
+		const imageSize = {width: 1024, height: 1024};
+		const imagePath = "large/the-egg.png";
+		const titleScreen = new TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
 		titleScreen.render(callback);
 	}
 
 	// load static stuff - map/renderer etc will be worked out later
 	bootstrap(callback) {
 		this.tileSet = new TileSet();
-		
+
 		const boardSize = new BoardSize(this.defaultBoardSize);
 
 		this.canvas = new Canvas(boardSize);
@@ -108,7 +108,7 @@ export class Jetpack {
 
 		this.levels = new Levels(this, loader);
 
-		this.getLevelList(levelList => {
+		this.getLevelList((levelList) => {
 			const levelID = this.chooseLevelID(levelList);
 			this.levelID = levelID;
 			callback(levelID);
@@ -116,7 +116,7 @@ export class Jetpack {
 	}
 
 	getLevelList(callback) {
-		this.levels.getLevelList(levelList => {
+		this.levels.getLevelList((levelList) => {
 			this.levelList = levelList;
 			callback(levelList);
 		});
@@ -141,7 +141,7 @@ export class Jetpack {
 		this.map.updateBoard(this.map.correctBoardSizeChange(board, this.boardSize), this.boardSize);
 		const tiles = this.tileSet.getTiles();
 		this.renderer = new Renderer(this, this.map, tiles, this.playerTypes, this.boardSize, this.canvas);
-	}	
+	}
 
 	startRender() {
 		if (!this.paused) return false;
@@ -161,7 +161,7 @@ export class Jetpack {
 	}
 
 	calcTimePassed(time: number, lastTime: number) {
-		const difference = Math.min(time - lastTime,20);
+		const difference = Math.min(time - lastTime, 20);
 		const frameRate = 60 / difference;
 		return frameRate;
 	}
@@ -172,7 +172,7 @@ export class Jetpack {
 		this.canvas.sizeCanvas(this.boardSize);
 		this.renderer.resize();
 		this.checkResize = false;
-	
+
 	}
 
 	resetScore(score) {
@@ -206,7 +206,7 @@ export class Jetpack {
 		});
 	}
 
-	markLevelAsCompleted(levelList,levelID) {
+	markLevelAsCompleted(levelList, levelID) {
 		levelList[levelID].completed = true;
 		return levelList;
 	}
@@ -218,16 +218,16 @@ export class Jetpack {
 	}
 
 	showControls() {
-		const controlHeader = document.getElementById('controlHeader');
-		if (controlHeader && controlHeader.classList.contains('hidden')) {
-			controlHeader.classList.remove('hidden');
+		const controlHeader = document.getElementById("controlHeader");
+		if (controlHeader && controlHeader.classList.contains("hidden")) {
+			controlHeader.classList.remove("hidden");
 		}
 	}
 
 	hideControls() {
-		const controlHeader = document.getElementById('controlHeader');
-		if (controlHeader && !controlHeader.classList.contains('hidden')) {
-			controlHeader.classList.add('hidden');
+		const controlHeader = document.getElementById("controlHeader");
+		if (controlHeader && !controlHeader.classList.contains("hidden")) {
+			controlHeader.classList.add("hidden");
 		}
 	}
 
@@ -242,7 +242,7 @@ export class Jetpack {
 	}
 
 	countPlayers(players: Player[]): number {
-		const validPlayers = players.filter(player => {
+		const validPlayers = players.filter((player) => {
 			return player && player.value > 0;
 		});
 		return validPlayers.length;
@@ -292,7 +292,7 @@ export class Jetpack {
 		params.direction = direction;
 		params.oldDirection = 0;
 		params.falling = false; // can't move when falling
-		if (!Object.hasOwnProperty.call(params,'moveSpeed')) {
+		if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
 			params.moveSpeed = this.moveSpeed;
 			params.fallSpeed = this.moveSpeed * 1.2;
 		}
@@ -310,14 +310,14 @@ export class Jetpack {
 
 		this.map.rotateBoard(clockwise);
 
-		const rotatedPlayers = this.players.map(player => {
+		const rotatedPlayers = this.players.map((player) => {
 			return this.map.rotatePlayer(player, clockwise);
 		});
 
 		this.players = [];
-		rotatedPlayers.map(player => {
+		rotatedPlayers.map((player) => {
 			this.players[player.id] = player;
-		})
+		});
 
 		this.renderer.drawRotatingBoard(clockwise, () => {
 			this.startRender();
@@ -348,10 +348,10 @@ export class Jetpack {
 	}
 
 	loadLevelFromList() {
-		const select = <HTMLSelectElement> document.getElementById("levelList");
-  		const index = select.selectedIndex;
-  		const levelID = select.options[index].value;
-  		this.loadLevel(levelID, function() {
+		const select = document.getElementById("levelList") as HTMLSelectElement;
+  const index = select.selectedIndex;
+  const levelID = select.options[index].value;
+  this.loadLevel(levelID, function() {
     		console.log("loaded!");
     	});
 	}
@@ -416,7 +416,7 @@ export class Jetpack {
 
 	handleDrawEvent(event) {
 		const tileSize = this.canvas.calcTileSize(this.boardSize);
-	    const coords = new Coords(
+	 const coords = new Coords(
 	    	(event.offsetX / tileSize) as number,
         	(event.offsetY / tileSize) as number,
         	(event.offsetX % tileSize) - (tileSize / 2),

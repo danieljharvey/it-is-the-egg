@@ -1,9 +1,9 @@
+import * as _ from "ramda";
 import { Coords } from "./Coords";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
 import { Renderer } from "./Renderer";
-import * as _ from 'ramda'; 
 
 const SPRITE_SIZE: number = 64;
 
@@ -27,48 +27,48 @@ export class Movement {
 	doCalcs(players: Player[], timePassed: number) {
 		if (!players) return [];
 		this.players = players; // store so we can compare
-		const newPlayers = players.map(player => {
+		const newPlayers = players.map((player) => {
 			return this.doPlayerCalcs(player, timePassed);
-		})
+		});
 		return newPlayers;
 	}
 
-	doPlayerCalcs(player: Player, timePassed: number) : Player {
+	doPlayerCalcs(player: Player, timePassed: number): Player {
 		const startCoords = player.coords;
 
 		this.setRedrawAroundPlayer(player);
 
 		const newPlayer = this.incrementPlayerFrame(player);
 
-		const newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);	 	
+		const newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);
 
 		const evenNewerPlayer = this.incrementPlayerDirection(timePassed, newerPlayer);
-	 	
-	 	const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
-	 	
-	 	const absolutelyNewestPlayer = this.checkTileAction(startCoords, newestPlayer);
-	 	
-	 	this.setRedrawAroundPlayer(absolutelyNewestPlayer);
-	 	
-	 	return absolutelyNewestPlayer;
+
+	 const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
+
+	 const absolutelyNewestPlayer = this.checkTileAction(startCoords, newestPlayer);
+
+	 this.setRedrawAroundPlayer(absolutelyNewestPlayer);
+
+	 return absolutelyNewestPlayer;
 	}
 
-	checkTileAction(startCoords: Coords, player: Player) : Player {
+	checkTileAction(startCoords: Coords, player: Player): Player {
 		if (!startCoords.equals(player.coords)) {
 	 		return this.checkPlayerTileAction(player);
 	 	}
-	 	return player;
+	 return player;
 	}
 
-	setRedrawAroundPlayer(player: Player) : Player {
+	setRedrawAroundPlayer(player: Player): Player {
 		const tiles = this.map.getTilesSurrounding(player.coords);
-		tiles.map(tile => {
+		tiles.map((tile) => {
 			tile.needsDraw = true;
 		});
 		return player;
 	}
 
-	incrementPlayerFrame(player: Player) : Player {
+	incrementPlayerFrame(player: Player): Player {
 		if (player.direction === 0 && player.oldDirection === 0 && player.currentFrame === 0) {
 			// we are still, as it should be
 			return player;
@@ -77,7 +77,7 @@ export class Movement {
 		if (player.direction === 0 && player.currentFrame === 0) {
 			// if we're still, and have returned to main frame, disregard old movement
 			return player.modify({
-				oldDirection: 0
+				oldDirection: 0,
 			});
 		}
 
@@ -96,20 +96,20 @@ export class Movement {
 		}
 
 		return player.modify({
-			currentFrame: newFrame
+			currentFrame: newFrame,
 		});
 	}
 
-	checkPlayerTileAction(player: Player) : Player {
+	checkPlayerTileAction(player: Player): Player {
 
 		const currentCoords = player.coords;
 
 		if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) return player;
-		
+
 		const coords = this.map.correctForOverflow(currentCoords.x, currentCoords.y);
 
 		const tile = this.map.getTileWithCoords(coords);
-		
+
 		if (tile.collectable > 0) {
 			const score = tile.collectable * player.multiplier;
 			const blankTile = this.map.cloneTile(1);
@@ -123,32 +123,32 @@ export class Movement {
 			this.jetpack.completeLevel();
 		} else if (tile.action == "teleport") {
 			return this.teleport(player); // only action that changes player state
-		} else if (tile.action == 'pink-switch') {
-			this.map.switchTiles(15,16);
-		} else if (tile.action == 'green-switch') {
-			this.map.switchTiles(18,19);
+		} else if (tile.action == "pink-switch") {
+			this.map.switchTiles(15, 16);
+		} else if (tile.action == "green-switch") {
+			this.map.switchTiles(18, 19);
 		}
 		return player; // player returned unchanged
 	}
 
 	// find another teleport and go to it
 	// if no others, do nothing
-	teleport(player: Player) : Player {
+	teleport(player: Player): Player {
 		//if (player.lastAction == "teleport") return false;
 		const newTile = this.map.findTile(player.coords, 14);
 		if (newTile) {
 			return player.modify({
 				coords: player.coords.modify({
 					x: newTile.x,
-					y: newTile.y
+					y: newTile.y,
 				}),
-				lastAction: "teleport"
+				lastAction: "teleport",
 			});
 		}
 		return player;
-	}	
+	}
 
-	incrementPlayerDirection(timePassed: number, player: Player) : Player {
+	incrementPlayerDirection(timePassed: number, player: Player): Player {
 
 		if (player.moveSpeed === 0 ) {
 			return player;
@@ -169,17 +169,17 @@ export class Movement {
 				// turn around
 				return player.modify({
 					coords: coords.modify({
-						offsetX: 0
+						offsetX: 0,
 					}),
-					direction: 1
+					direction: 1,
 				});
 			} else {
 				// move left
 				const newOffsetX = coords.offsetX - moveAmount;
 				return player.modify({
 					coords: coords.modify({
-						offsetX: newOffsetX
-					})
+						offsetX: newOffsetX,
+					}),
 				});
 			}
 		}
@@ -189,17 +189,17 @@ export class Movement {
 				// turn around
 				return player.modify({
 					coords: coords.modify({
-						offsetX: 0
+						offsetX: 0,
 					}),
-					direction: -1
+					direction: -1,
 				});
 			} else {
 				// move right
 				const newOffsetX = coords.offsetX + moveAmount;
 				return player.modify({
 					coords: coords.modify({
-						offsetX: newOffsetX
-					})
+						offsetX: newOffsetX,
+					}),
 				});
 			}
 		}
@@ -211,16 +211,16 @@ export class Movement {
 				const newOffsetX = coords.offsetX - moveAmount;
 				return player.modify({
 					coords: coords.modify({
-						offsetX: newOffsetX
-					})
+						offsetX: newOffsetX,
+					}),
 				});
 			} else if (coords.offsetX < 0) {
 				// shuffle right
 				const newOffsetX = coords.offsetX + moveAmount;
 				return player.modify({
 					coords: coords.modify({
-						offsetX: newOffsetX
-					})
+						offsetX: newOffsetX,
+					}),
 				});
 			}
 		}
@@ -228,31 +228,31 @@ export class Movement {
 		return player;
 	}
 
-	calcMoveAmount(moveSpeed: number, tileSize: number, timePassed: number) : number {
+	calcMoveAmount(moveSpeed: number, tileSize: number, timePassed: number): number {
 		const fullSize = SPRITE_SIZE; // size of image tiles
 		const moveAmount: number = (tileSize / fullSize) * moveSpeed;
 		const frameRateAdjusted: number = moveAmount * (timePassed / 2);
 		return frameRateAdjusted;
 	}
 
-	correctPlayerOverflow(player: Player) : Player {
+	correctPlayerOverflow(player: Player): Player {
 		const newCoords = this.correctTileOverflow(player.coords);
 		const loopedCoords = this.map.correctForOverflow(newCoords.x, newCoords.y, newCoords.offsetX, newCoords.offsetY);
-		
+
 		return player.modify({
 			coords: loopedCoords,
-			lastAction: ""
-		});	
-		
+			lastAction: "",
+		});
+
 	}
 
-	correctTileOverflow(coords: Coords) : Coords {
+	correctTileOverflow(coords: Coords): Coords {
 
 		if (coords.offsetX > SPRITE_SIZE) {
 			// move one tile to right
 			return coords.modify({
 				x: coords.x + 1,
-				offsetX: 0
+				offsetX: 0,
 			});
 		}
 
@@ -260,7 +260,7 @@ export class Movement {
 			// move one tile to left
 			return coords.modify({
 				x: coords.x - 1,
-				offsetX: 0
+				offsetX: 0,
 			});
 		}
 
@@ -268,7 +268,7 @@ export class Movement {
 			// move one tile down
 			return coords.modify({
 				y: coords.y + 1,
-				offsetY: 0
+				offsetY: 0,
 			});
 		}
 
@@ -276,10 +276,10 @@ export class Movement {
 			// move one tile up
 			return coords.modify({
 				y: coords.y - 1,
-				offsetY: 0
+				offsetY: 0,
 			});
 		}
-		
+
 		return coords;
 	}
 
@@ -296,17 +296,17 @@ export class Movement {
 		if (tile.background) {
 			const fallAmount: number = this.calcMoveAmount(player.fallSpeed, this.renderer.tileSize, timePassed);
 			const coords = player.coords.modify({
-				offsetY: player.coords.offsetY + fallAmount
+				offsetY: player.coords.offsetY + fallAmount,
 			});
 			return player.modify({
-				coords: coords,
-				falling: true
+				coords,
+				falling: true,
 			});
 		} else if (player.falling && tile.breakable) {
-			this.map.changeTile(belowCoords,this.map.cloneTile(1)); // smash block, replace with empty
+			this.map.changeTile(belowCoords, this.map.cloneTile(1)); // smash block, replace with empty
 		} else {
 			return player.modify({
-				falling: false
+				falling: false,
 			});
 		}
 		return player; // no change

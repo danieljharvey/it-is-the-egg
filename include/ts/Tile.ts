@@ -1,5 +1,5 @@
 export class Tile {
-	
+
 	id: number;
 	title: string;
 	img: string;
@@ -14,7 +14,7 @@ export class Tile {
 
 	constructor(params: object) {
 		// fill this object with entries from params
-		(<any>Object).entries(params).map(([key, value]) => {
+		(Object as any).entries(params).map(([key, value]) => {
 			this[key] = value;
 		});
 	}

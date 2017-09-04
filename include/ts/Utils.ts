@@ -1,9 +1,9 @@
-import * as _ from 'ramda'; 
+import * as _ from "ramda";
 
 // wee lad full of reusable functions
 
 export class Utils {
-    static getRandomObjectKey(object: object) {
+	static getRandomObjectKey(object: object) {
 		const keys = Object.keys(object);
 		return this.returnRandomKey(keys);
 	}
@@ -14,29 +14,39 @@ export class Utils {
 	}
 
 	static returnRandomKey(keys: any[]) {
-		if (keys.length===0) return false;
-		return keys[ keys.length * Math.random() << 0];
+		if (keys.length === 0) {
+			return false;
+		}
+		return keys[keys.length * Math.random() << 0];
 	}
 
 	static getControlStyle(id: string, property: string) {
 		const controlHeader = document.getElementById(id);
-		if (!controlHeader) return 0;
+		if (!controlHeader) {
+			return 0;
+		}
 		const style = window.getComputedStyle(controlHeader);
 		const value = style[property];
-		if (isNaN(value)) return parseInt(value);
+		if (isNaN(value)) {
+			return parseInt(value, 10);
+		}
 		return value;
 	}
 
 	static getControlProperty(id: string, property: string) {
 		const controlHeader = document.getElementById(id);
-		if (!controlHeader) return 0;
+		if (!controlHeader) {
+			return 0;
+		}
 		const value = controlHeader[property];
-		if (isNaN(value)) return parseInt(value);
+		if (isNaN(value)) {
+			return parseInt(value, 10);
+		}
 		return value;
 	}
 
-	static removeParams(params:object, removeList: string[]) {
-		let goodParams={};
+	static removeParams(params: object, removeList: string[]) {
+		const goodParams = {};
 		for (const i in params) {
 			if (removeList.indexOf(i) === -1) {
 				goodParams[i] = params[i];

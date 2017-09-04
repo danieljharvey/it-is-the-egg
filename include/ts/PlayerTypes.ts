@@ -40,7 +40,7 @@ export class PlayerTypes {
 			multiplier: 10,
 			value: 0,
 			moveSpeed: 0,
-			fallSpeed: 10
+			fallSpeed: 10,
 		},
 	};
 

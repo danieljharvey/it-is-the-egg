@@ -1,14 +1,14 @@
+import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Jetpack } from "./Jetpack";
-import { BoardSize } from "./BoardSize";
 
 export class TitleScreen {
-		
-	jetpack: Jetpack;
-	canvas: Canvas;
-	imagePath: string; // image to show
-	width: number; // 
-	height: number;
+
+	protected jetpack: Jetpack;
+	protected canvas: Canvas;
+	protected imagePath: string; // image to show
+	protected width: number; //
+	protected height: number;
 
 	constructor(jetpack: Jetpack, canvas: Canvas, imagePath: string, width: number, height: number) {
 		this.jetpack = jetpack;
@@ -18,11 +18,11 @@ export class TitleScreen {
 		this.height = height;
 	}
 
-	render(callback) {
+	public render(callback) {
 
 		const boardSize = new BoardSize(10);
 		this.canvas.sizeCanvas(boardSize);
-		
+
 		const titleImage: HTMLElement = document.createElement("img");
 		titleImage.addEventListener("load", () => {
 		  this.drawTheBigEgg(titleImage, 0.02, true, callback);
@@ -33,7 +33,7 @@ export class TitleScreen {
 		titleImage.setAttribute("height", this.height.toString());
 	}
 
-	drawTheBigEgg(titleImage, opacity: number, show: boolean, callback) {
+	protected drawTheBigEgg(titleImage, opacity: number, show: boolean, callback) {
 
 		const ctx = this.canvas.getDrawingContext();
 		const canvas = this.canvas.getCanvas();
@@ -63,8 +63,8 @@ export class TitleScreen {
 			}
 		}
 		this.jetpack.animationHandle = window.requestAnimationFrame(() => {
-	    	this.drawTheBigEgg(titleImage, opacity, show, callback);
-	    });
+			this.drawTheBigEgg(titleImage, opacity, show, callback);
+		});
 	}
 
 }

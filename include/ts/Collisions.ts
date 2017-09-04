@@ -18,7 +18,7 @@ export class Collisions {
 	checkAllCollisions(players: Player[]) {
 		this.players = players;
 
-		players.map(player => {
+		players.map((player) => {
 			this.checkPlayerCollisions(player, players);
 		});
 		return players;
@@ -27,7 +27,7 @@ export class Collisions {
 	// cycles through all players and check
 	checkPlayerCollisions(player: Player, otherPlayers: Player[]) {
 		otherPlayers.map((otherPlayer) => {
-			this.checkCollision(player,otherPlayer);
+			this.checkCollision(player, otherPlayer);
 		});
 	}
 
@@ -52,9 +52,9 @@ export class Collisions {
 
 		// nothing changes
 		return {
-			player1: player1,
-			player2: player2
-		}
+			player1,
+			player2,
+		};
 	}
 
 	deletePlayer(player: Player) {
@@ -88,9 +88,9 @@ export class Collisions {
 
 		// nothing changes
 		return {
-			player1: player1,
-			player2: player2
-		}
+			player1,
+			player2,
+		};
 	}
 
 }

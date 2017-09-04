@@ -32,7 +32,7 @@ export class Coords {
         return true;
     }
 
-    modify(params: object) : Coords {
+    modify(params: object): Coords {
         const newParams = Object.assign({}, this, params);
         return new Coords(newParams.x, newParams.y, newParams.offsetX, newParams.offsetY);
     }

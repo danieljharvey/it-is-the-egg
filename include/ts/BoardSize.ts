@@ -1,5 +1,5 @@
 export class BoardSize {
-	
+
 	width: number;
 	height: number;
 
@@ -12,12 +12,12 @@ export class BoardSize {
 		this.width = this.height = size;
 	}
 
-	grow() : void {
+	grow(): void {
 		if (this.width < this.maxSize) this.width++;
 		if (this.height < this.maxSize) this.height++;
 	}
 
-	shrink() : void {
+	shrink(): void {
 		if (this.width > this.minSize) this.width--;
 		if (this.height > this.minSize) this.height--;
 	}
@@ -25,7 +25,7 @@ export class BoardSize {
 	getData(){
 		return {
 			width: this.width,
-			height: this.height
-		}
+			height: this.height,
+		};
 	}
 }

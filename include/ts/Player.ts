@@ -33,7 +33,7 @@ export class Player {
 		}
 	}
 
-	modify(params: object) : Player {
+	modify(params: object): Player {
 		const newParams = Object.assign({}, this, params);
 		return new Player(newParams);
 	}

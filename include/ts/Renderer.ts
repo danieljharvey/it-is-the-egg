@@ -1,9 +1,9 @@
+import { BoardSize } from "./BoardSize";
+import { Canvas } from "./Canvas";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
 import { Tile } from "./Tile";
-import { BoardSize } from "./BoardSize";
-import { Canvas } from "./Canvas";
 
 const SPRITE_SIZE: number = 64;
 
@@ -56,14 +56,14 @@ export class Renderer {
 		  		this.markTileImageAsLoaded(thisTile.id);
 			}, false);
 			this.tileImages[thisTile.id] = {
-				image:tileImage,
-				ready: false
-			}
+				image: tileImage,
+				ready: false,
+			};
 		}
 	}
 
 	loadPlayerPalette() {
-		for (let i in this.playerTypes) {
+		for (const i in this.playerTypes) {
 			const playerType = this.playerTypes[i];
 			const playerImage = document.createElement("img");
 			playerImage.setAttribute("src", this.getTileImagePath(playerType));
@@ -72,8 +72,8 @@ export class Renderer {
 			}, false);
 			this.playerImages[playerType.img] = {
 				image: playerImage,
-				ready: false
-			}
+				ready: false,
+			};
 		}
 	}
 
@@ -91,12 +91,12 @@ export class Renderer {
 
 	renderBoard(): void {
 		const tiles = this.map.getAllTiles();
-		tiles.map(tile => {
+		tiles.map((tile) => {
 			if (tile.needsDraw === false) {
     			this.showUnrenderedTile(tile.x, tile.y);
     			return;
     		}
-    		if (!tile.frontLayer) {
+   if (!tile.frontLayer) {
     			if (this.renderTile(tile.x, tile.y, tile)) {
 	    			tile.needsDraw = false;
 				    tile.drawnBefore = true;
@@ -116,7 +116,7 @@ export class Renderer {
 	// just go over and draw the over-the-top stuff
 	renderFrontLayerBoard() {
 	    const tiles = this.map.getAllTiles();
-		tiles.map(tile => {
+		   tiles.map((tile) => {
     		if (tile.needsDraw === false) return;
     		if (tile.frontLayer) {
     			if (this.renderTile(tile.x, tile.y, tile)) {
@@ -124,7 +124,7 @@ export class Renderer {
 				    tile.drawnBefore = true;
     			}
     		}
-	    })
+	    });
 	}
 
  	// debugging tools
@@ -157,18 +157,18 @@ export class Renderer {
 		const ctx = this.canvas.getDrawingContext();
 		const tileSize = this.tileSize;
 
-	    const img = this.getTileImage(tile.id);
+	 const img = this.getTileImage(tile.id);
 
-	    if (!img) {
+	 if (!img) {
 	    	//console.log("Could not find tile image for id " + tile.id);
 	    	return false;
 	    }
 
-	    let left = x * tileSize;
-	    let top = y * tileSize;
-	    const opacity = 1;
+	 let left = x * tileSize;
+	 let top = y * tileSize;
+	 const opacity = 1;
 
-	    ctx.globalAlpha = opacity;
+	 ctx.globalAlpha = opacity;
 
 		if (this.map.renderAngle == 0) {
 			ctx.drawImage(img, left, top, tileSize, tileSize);
@@ -181,16 +181,16 @@ export class Renderer {
 			left = left + offset;
 			top = top + offset;
 
-		 	ctx.translate( left, top );
-		 	ctx.rotate( angleInRad );
+		 ctx.translate( left, top );
+		 ctx.rotate( angleInRad );
 
-		 	ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
+		 ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
 
-		 	ctx.rotate( -angleInRad );
-		 	ctx.translate( -left, -top );
+		 ctx.rotate( -angleInRad );
+		 ctx.translate( -left, -top );
 		}
 
-	    return true;
+	 return true;
 	};
 
 	getPlayerImage(img: string) {
@@ -217,7 +217,7 @@ export class Renderer {
 		const clipTop = 0;
 
 		ctx.globalAlpha = 1;
-		
+
 		const image = this.getPlayerImage(player.img);
 		if (!image) {
 			//console.log('player image not loaded', player.img);
@@ -226,13 +226,13 @@ export class Renderer {
 
 		ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
 
-	 	if (left < 0) {
+	 if (left < 0) {
 	    	// also draw on right
 	    	const secondLeft = (tileSize * this.boardSize.width) + coords.offsetX;
 	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
 	    }
 
-	 	if ((left + tileSize) > (tileSize * this.boardSize.width)) {
+	 if ((left + tileSize) > (tileSize * this.boardSize.width)) {
 	    	// also draw on left
 	    	const secondLeft = left - (tileSize * this.boardSize.width);
 	    	ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
@@ -243,11 +243,11 @@ export class Renderer {
 
 		const canvas = this.canvas.getCanvas();
 
-	    const cw = canvas.width;
-	    const ch = canvas.height;
+	 const cw = canvas.width;
+	 const ch = canvas.height;
 
 		const savedData = new Image();
-	    savedData.src = canvas.toDataURL("image/png");
+	 savedData.src = canvas.toDataURL("image/png");
 
 		if (clockwise) {
 			this.drawRotated(savedData, 1, 0, 90, completed);
@@ -257,7 +257,7 @@ export class Renderer {
 	}
 
 	drawRotated(savedData: HTMLImageElement, direction: number, angle: number, targetAngle: number, completed: () => void) {
-			
+
 		const canvas = this.canvas.getCanvas();
 
 		if (direction > 0) {
@@ -279,21 +279,21 @@ export class Renderer {
 		const ctx = this.canvas.getDrawingContext();
 
 		const left = offset;
-	 	const top = offset;
+	 const top = offset;
 
-	 	this.canvas.wipeCanvas("rgba(0,0,0,0.1)");
+	 this.canvas.wipeCanvas("rgba(0,0,0,0.1)");
 
-	 	ctx.translate( left, top );
-	 	ctx.rotate( angleInRad );
+	 ctx.translate( left, top );
+	 ctx.rotate( angleInRad );
 
-	 	ctx.drawImage(savedData, -offset, -offset);
+	 ctx.drawImage(savedData, -offset, -offset);
 
-	 	ctx.rotate( -angleInRad );
-	 	ctx.translate( -left, -top );
+	 ctx.rotate( -angleInRad );
+	 ctx.translate( -left, -top );
 
-	 	angle += (direction * this.jetpack.moveSpeed);
+	 angle += (direction * this.jetpack.moveSpeed);
 
-	 	this.jetpack.animationHandle = window.requestAnimationFrame(() => {
+	 this.jetpack.animationHandle = window.requestAnimationFrame(() => {
 	    	this.drawRotated(savedData, direction, angle, targetAngle, completed);
 	    });
 	}

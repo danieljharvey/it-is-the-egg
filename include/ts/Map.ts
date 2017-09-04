@@ -1,8 +1,8 @@
+import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
 import { Player } from "./Player";
 import { Tile } from "./Tile";
 import { TileSet } from "./TileSet";
-import { BoardSize } from "./BoardSize";
 import { Utils } from "./Utils";
 
 export class Map {
@@ -53,13 +53,13 @@ export class Map {
 
 	// is intended next tile empty / a wall?
 	checkTileIsEmpty(x, y) {
-		const tile = this.getTile(x,y);
+		const tile = this.getTile(x, y);
 		return tile.background;
 	}
 
 	markAllForRedraw() {
 		const tiles = this.getAllTiles();
-		tiles.map(tile => {
+		tiles.map((tile) => {
 			tile.needsDraw = true;
 		});
 		return;
@@ -92,11 +92,11 @@ export class Map {
 	}
 
 	getTilesSurrounding(coords: Coords) {
-		const tiles=[];
+		const tiles = [];
 		// first just do the stuff around player
 		for (let x = coords.x - 1; x < coords.x + 2; x++) {
 			for (let y = coords.y - 1; y < coords.y + 2; y++) {
-				const fixedCoords = this.correctForOverflow(x,y);
+				const fixedCoords = this.correctForOverflow(x, y);
 				const tile = this.getTileWithCoords(fixedCoords);
 				tiles.push(tile);
 			}
@@ -105,7 +105,7 @@ export class Map {
 	}
 
 	getTile(x: number, y: number) {
-		const coords = new Coords(x,y);
+		const coords = new Coords(x, y);
 		return this.getTileWithCoords(coords);
 	}
 
@@ -129,7 +129,7 @@ export class Map {
 
 	cloneTile(id): Tile {
 		const prototypeTile = this.getPrototypeTile(id);
-		const tile = new Tile(prototypeTile); // create new Tile object with these 
+		const tile = new Tile(prototypeTile); // create new Tile object with these
 		return tile;
 	}
 
@@ -138,12 +138,12 @@ export class Map {
 		    const randomKey = Utils.getRandomObjectKey(obj);
 		    return this.cloneTile(randomKey);
 		};
-		
+
 		const theseTiles = this.tileSet.getTiles();
-		(<any>Object).entries(theseTiles).filter(([key, tile]) => {
+		(Object as any).entries(theseTiles).filter(([key, tile]) => {
 			if (tile.dontAdd) delete theseTiles[key];
 			return true;
-		})
+		});
 		return randomProperty(theseTiles);
 	}
 
@@ -164,12 +164,12 @@ export class Map {
 		const tiles = this.getAllTiles();
 		const count = tiles.map((tile) => {
 			if (tile.id === id1) {
-				const coords = new Coords(tile.x,tile.y);
-				this.changeTile(coords,this.cloneTile(id2));
+				const coords = new Coords(tile.x, tile.y);
+				this.changeTile(coords, this.cloneTile(id2));
 				return 1;
 			} else if (tile.id === id2) {
-				const coords = new Coords(tile.x,tile.y);
-				this.changeTile(coords,this.cloneTile(id1));
+				const coords = new Coords(tile.x, tile.y);
+				this.changeTile(coords, this.cloneTile(id1));
 				return 1;
 			}
 			return 0;
@@ -189,7 +189,7 @@ export class Map {
 		return newTile;
 	}
 
-	translateRotation(coords: Coords, clockwise: boolean) : Coords {
+	translateRotation(coords: Coords, clockwise: boolean): Coords {
 
 		const width = this.boardSize.width - 1;
 		const height = this.boardSize.height - 1;
@@ -201,7 +201,7 @@ export class Map {
 			// 0,9 -> 0,0
 			return coords.modify({
 				x: width - coords.y,
-				y: coords.x
+				y: coords.x,
 			});
 		} else {
 			// 0,0 -> 0,9
@@ -210,7 +210,7 @@ export class Map {
  			// 9,0 -> 0,0
 			return coords.modify({
 				x: coords.y,
-				y: height - coords.x
+				y: height - coords.x,
 			});
 		}
 	}
@@ -223,7 +223,7 @@ export class Map {
 
 		const tiles = this.getAllTiles();
 
-		tiles.map(tile => {
+		tiles.map((tile) => {
 			const coords = new Coords(tile.x, tile.y);
 			const newCoords = this.translateRotation(coords, clockwise);
 			tile.x = newCoords.x;
@@ -266,9 +266,9 @@ export class Map {
 		return player.modify({
 			coords: newCoords.modify({
 				offsetX: 0,
-				offsetY: 0
+				offsetY: 0,
 			}),
-			direction: direction
+			direction,
 		});
 	}
 
@@ -307,9 +307,9 @@ export class Map {
 				nextKey = false;
 			}
 		}
-		
+
 		const tile = this.cloneTile(newKey);
-	 	this.board[x][y] = tile;
+	 this.board[x][y] = tile;
 	}
 
 	shrinkBoard() {
@@ -325,13 +325,13 @@ export class Map {
 	}
 
 	correctBoardSizeChange(board, boardSize: BoardSize) {
-		
+
 		const newBoard = [];
 
 		const currentWidth: number = board.length;
 		let currentHeight: number;
 		if (currentWidth > 0) {
-			currentHeight = board[0].length;	
+			currentHeight = board[0].length;
 		} else {
 			currentHeight = 0;
 		}

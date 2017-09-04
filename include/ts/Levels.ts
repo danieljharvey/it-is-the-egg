@@ -1,6 +1,6 @@
+import { BoardSize } from "./BoardSize";
 import { Jetpack } from "./Jetpack";
 import { Loader } from "./Loader";
-import { BoardSize } from "./BoardSize";
 import { SavedLevel } from "./SavedLevel";
 
 export class Levels {
@@ -31,16 +31,16 @@ export class Levels {
 		for (const i in list) {
 			const levelID = parseInt(list[i]);
 			levelList[levelID] = {
-				levelID: levelID,
-				completed: false
-			}
-		};
+				levelID,
+				completed: false,
+			};
+		}
 		return levelList;
 	}
 
 	populateLevelsList(levelList): void {
 		const select = document.getElementById("levelList");
-		
+
 		if (!select) return;
 
 		while (select.firstChild) {
@@ -65,7 +65,7 @@ export class Levels {
 	}
 
 	saveLevel(board: object, boardSize: BoardSize, levelID: number, callback: (number) => any): void {
-		const saveData = new SavedLevel(boardSize,board,levelID);
+		const saveData = new SavedLevel(boardSize, board, levelID);
 		const saveString: string = saveData.toString();
 		const params = {
 			data: saveString,
@@ -100,16 +100,16 @@ export class Levels {
 		});
 	}
 
-	saveData(levelID: number, rotationsUsed:number, score: number, callback: (object) => any): void {
+	saveData(levelID: number, rotationsUsed: number, score: number, callback: (object) => any): void {
 		const params = {
 			levelID,
 			rotationsUsed,
-			score
-		}
-		this.loader.callServer("saveScore",params, (data: object) => {
+			score,
+		};
+		this.loader.callServer("saveScore", params, (data: object) => {
 			callback(data);
 		}, () => {
-			callback({msg:"call failed"})
-		})
+			callback({msg: "call failed"});
+		});
 	}
 }
