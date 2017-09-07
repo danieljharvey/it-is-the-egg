@@ -1,3 +1,11 @@
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 define("BoardSize", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5,23 +13,29 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
         function BoardSize(size) {
             this.minSize = 5;
             this.maxSize = 40;
-            if (size < this.minSize)
+            if (size < this.minSize) {
                 size = this.minSize;
-            if (size > this.maxSize)
+            }
+            if (size > this.maxSize) {
                 size = this.maxSize;
+            }
             this.width = this.height = size;
         }
         BoardSize.prototype.grow = function () {
-            if (this.width < this.maxSize)
+            if (this.width < this.maxSize) {
                 this.width++;
-            if (this.height < this.maxSize)
+            }
+            if (this.height < this.maxSize) {
                 this.height++;
+            }
         };
         BoardSize.prototype.shrink = function () {
-            if (this.width > this.minSize)
+            if (this.width > this.minSize) {
                 this.width--;
-            if (this.height > this.minSize)
+            }
+            if (this.height > this.minSize) {
                 this.height--;
+            }
         };
         BoardSize.prototype.getData = function () {
             return {
@@ -431,11 +445,15 @@ define("Tile", ["require", "exports"], function (require, exports) {
                 _this[key] = value;
             });
         }
+        Tile.prototype.modify = function (params) {
+            var newParams = Object.assign({}, this, params);
+            return new Tile(newParams);
+        };
         return Tile;
     }());
     exports.Tile = Tile;
 });
-define("Renderer", ["require", "exports"], function (require, exports) {
+define("Renderer", ["require", "exports", "Coords"], function (require, exports, Coords_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
@@ -449,7 +467,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 var tileSize = this.tileSize;
                 var img = this.getTileImage(tile.id);
                 if (!img) {
-                    //console.log("Could not find tile image for id " + tile.id);
+                    // console.log("Could not find tile image for id " + tile.id);
                     return false;
                 }
                 var left = x * tileSize;
@@ -490,6 +508,22 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         Renderer.prototype.resize = function () {
             this.tileSize = this.canvas.sizeCanvas(this.boardSize);
             this.map.markAllForRedraw();
+        };
+        Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
+            var canvas = this.canvas.getCanvas();
+            var cw = canvas.width;
+            var ch = canvas.height;
+            var savedData = new Image();
+            savedData.src = canvas.toDataURL("image/png");
+            if (clockwise) {
+                this.drawRotated(savedData, 1, 0, 90, completed);
+            }
+            else {
+                this.drawRotated(savedData, -1, 0, -90, completed);
+            }
+        };
+        Renderer.prototype.getTileImagePath = function (tile) {
+            return this.canvas.imagesFolder + tile.img;
         };
         Renderer.prototype.loadTilePalette = function () {
             var _this = this;
@@ -537,9 +571,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         Renderer.prototype.markTileImageAsLoaded = function (id) {
             this.tileImages[id].ready = true;
         };
-        Renderer.prototype.getTileImagePath = function (tile) {
-            return this.canvas.imagesFolder + tile.img;
-        };
         Renderer.prototype.renderBoard = function () {
             var _this = this;
             var tiles = this.map.getAllTiles();
@@ -550,8 +581,12 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 }
                 if (!tile.frontLayer) {
                     if (_this.renderTile(tile.x, tile.y, tile)) {
-                        tile.needsDraw = false;
-                        tile.drawnBefore = true;
+                        var coords = new Coords_1.Coords(tile.x, tile.y);
+                        var newTile = tile.modify({
+                            drawnBefore: true,
+                            needsDraw: false
+                        });
+                        _this.map.changeTile(coords, newTile);
                     }
                 }
                 else {
@@ -569,12 +604,17 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             var _this = this;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                if (tile.needsDraw === false)
+                if (tile.needsDraw === false) {
                     return;
+                }
                 if (tile.frontLayer) {
                     if (_this.renderTile(tile.x, tile.y, tile)) {
-                        tile.needsDraw = false;
-                        tile.drawnBefore = true;
+                        var coords = new Coords_1.Coords(tile.x, tile.y);
+                        var newTile = tile.modify({
+                            drawnBefore: true,
+                            needsDraw: false,
+                        });
+                        _this.map.changeTile(coords, newTile);
                     }
                 }
             });
@@ -584,13 +624,15 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             return false;
             var tileSize = this.tileSize;
             var ctx = this.canvas.getDrawingContext();
-            ctx.fillStyle = "#f00";
+            ctx.fillStyle = "rgba(0,0,0,0.01)";
             ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
         };
         Renderer.prototype.renderPlayers = function () {
             for (var i in this.jetpack.players) {
-                var player = this.jetpack.players[i];
-                this.renderPlayer(player);
+                if (this.jetpack.players[i]) {
+                    var player = this.jetpack.players[i];
+                    this.renderPlayer(player);
+                }
             }
         };
         Renderer.prototype.getTileImage = function (id) {
@@ -632,19 +674,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 // also draw on left
                 var secondLeft = left - tileSize * this.boardSize.width;
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
-            }
-        };
-        Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
-            var canvas = this.canvas.getCanvas();
-            var cw = canvas.width;
-            var ch = canvas.height;
-            var savedData = new Image();
-            savedData.src = canvas.toDataURL("image/png");
-            if (clockwise) {
-                this.drawRotated(savedData, 1, 0, 90, completed);
-            }
-            else {
-                this.drawRotated(savedData, -1, 0, -90, completed);
             }
         };
         Renderer.prototype.drawRotated = function (savedData, direction, angle, targetAngle, completed) {
@@ -894,7 +923,7 @@ define("TileSet", ["require", "exports"], function (require, exports) {
     }());
     exports.TileSet = TileSet;
 });
-define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (require, exports, Coords_1, Tile_1, Utils_2) {
+define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (require, exports, Coords_2, Tile_1, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Map = (function () {
@@ -909,17 +938,15 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         }
         // return array with all tiles in (with x and y added)
         Map.prototype.getAllTiles = function () {
-            var allTiles = [];
-            for (var x in this.board) {
-                for (var y in this.board[x]) {
-                    var id = this.board[x][y].id;
-                    var tile = this.board[x][y];
-                    tile.x = x;
-                    tile.y = y;
-                    allTiles.push(tile);
-                }
-            }
-            return allTiles;
+            var allTiles = this.board.map(function (column, mapX) {
+                return column.map(function (item, mapY) {
+                    return new Tile_1.Tile(__assign({}, item, { x: mapX, y: mapY }));
+                });
+            });
+            var reducedTiles = allTiles.reduce(function (total, item) {
+                return total.concat(item);
+            }, []);
+            return reducedTiles;
         };
         Map.prototype.shrinkBoard = function () {
             this.boardSize.shrink();
@@ -993,7 +1020,7 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             else {
                 newY = y;
             }
-            return new Coords_1.Coords(newX, newY, offsetX, offsetY);
+            return new Coords_2.Coords(newX, newY, offsetX, offsetY);
         };
         // is intended next tile empty / a wall?
         Map.prototype.checkTileIsEmpty = function (x, y) {
@@ -1001,26 +1028,29 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             return tile.background;
         };
         Map.prototype.markAllForRedraw = function () {
+            var _this = this;
             var tiles = this.getAllTiles();
             tiles.map(function (tile) {
-                tile.needsDraw = true;
+                var coords = new Coords_2.Coords(tile.x, tile.y);
+                var newTile = tile.modify({
+                    needsDraw: true
+                });
+                _this.changeTile(coords, newTile);
             });
             return;
         };
         Map.prototype.getTilesSurrounding = function (coords) {
-            var tiles = [];
-            var startX = coords.x - 1;
-            var endX = coords.x + 1;
-            var startY = coords.y - 1;
-            var endY = coords.y + 2;
-            // first just do the stuff around player
-            for (var x = startX; x < endX; x++) {
-                for (var y = startY; y < endY; y++) {
-                    var tile = this.getTile(x, y);
-                    tiles.push(tile);
+            var startX = (coords.offsetX < 0) ? coords.x - 1 : coords.x;
+            var endX = (coords.offsetX > 0) ? coords.x + 1 : coords.x;
+            var startY = (coords.offsetY < 0) ? coords.y - 1 : coords.y;
+            var endY = (coords.offsetY > 0) ? coords.y + 1 : coords.y;
+            var allTiles = this.getAllTiles();
+            return allTiles.filter(function (tile) {
+                if (tile.x >= startX && tile.x <= endX && tile.y >= startY && tile.y <= endY) {
+                    return true;
                 }
-            }
-            return tiles;
+                return false;
+            });
         };
         Map.prototype.getTileWithCoords = function (coords) {
             var fixedCoords = this.correctForOverflow(coords.x, coords.y);
@@ -1081,12 +1111,12 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             var tiles = this.getAllTiles();
             var count = tiles.map(function (tile) {
                 if (tile.id === id1) {
-                    var coords = new Coords_1.Coords(tile.x, tile.y);
+                    var coords = new Coords_2.Coords(tile.x, tile.y);
                     _this.changeTile(coords, _this.cloneTile(id2));
                     return 1;
                 }
                 else if (tile.id === id2) {
-                    var coords = new Coords_1.Coords(tile.x, tile.y);
+                    var coords = new Coords_2.Coords(tile.x, tile.y);
                     _this.changeTile(coords, _this.cloneTile(id1));
                     return 1;
                 }
@@ -1098,12 +1128,14 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         Map.prototype.findTile = function (currentCoords, id) {
             var tiles = this.getAllTiles();
             var teleporters = tiles.filter(function (tile) {
-                if (tile.x == currentCoords.x && tile.y == currentCoords.y)
+                if (tile.x === currentCoords.x && tile.y === currentCoords.y) {
                     return false;
-                return tile.id == id;
+                }
+                return tile.id === id;
             });
-            if (teleporters.length == 0)
+            if (teleporters.length == 0) {
                 return false; // no options
+            }
             var newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
             return newTile;
         };
@@ -1114,12 +1146,14 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             var height = this.boardSize.height - 1;
             var tiles = this.getAllTiles();
             tiles.map(function (tile) {
-                var coords = new Coords_1.Coords(tile.x, tile.y);
+                var coords = new Coords_2.Coords(tile.x, tile.y);
                 var newCoords = _this.translateRotation(coords, clockwise);
-                tile.x = newCoords.x;
-                tile.y = newCoords.y;
-                tile.needsDraw = true;
-                newBoard[newCoords.x][newCoords.y] = tile;
+                var newTile = tile.modify({
+                    needsDraw: true,
+                    x: newCoords.x,
+                    y: newCoords.y
+                });
+                newBoard[newCoords.x][newCoords.y] = newTile;
             });
             if (clockwise) {
                 this.renderAngle = this.renderAngle + 90;
@@ -1137,7 +1171,7 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             return true;
         };
         Map.prototype.getTile = function (x, y) {
-            var coords = new Coords_1.Coords(x, y);
+            var coords = new Coords_2.Coords(x, y);
             return this.getTileWithCoords(coords);
         };
         Map.prototype.generateBlankBoard = function () {
@@ -1204,7 +1238,7 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
     }());
     exports.Map = Map;
 });
-define("Movement", ["require", "exports"], function (require, exports) {
+define("Movement", ["require", "exports", "Coords"], function (require, exports, Coords_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
@@ -1246,9 +1280,14 @@ define("Movement", ["require", "exports"], function (require, exports) {
             return player;
         };
         Movement.prototype.setRedrawAroundPlayer = function (player) {
+            var _this = this;
             var tiles = this.map.getTilesSurrounding(player.coords);
             tiles.map(function (tile) {
-                tile.needsDraw = true;
+                var newTile = tile.modify({
+                    needsDraw: true
+                });
+                var coords = new Coords_3.Coords(tile.x, tile.y);
+                _this.map.changeTile(coords, newTile);
             });
             return player;
         };
@@ -1651,7 +1690,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Movement", "Player", "PlayerTypes", "Renderer", "TileChooser", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_3, Canvas_1, Collisions_1, Coords_2, Levels_1, Loader_1, Map_1, Movement_1, Player_1, PlayerTypes_1, Renderer_1, TileChooser_1, TileSet_1, TitleScreen_1, Utils_3) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Movement", "Player", "PlayerTypes", "Renderer", "TileChooser", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_3, Canvas_1, Collisions_1, Coords_4, Levels_1, Loader_1, Map_1, Movement_1, Player_1, PlayerTypes_1, Renderer_1, TileChooser_1, TileSet_1, TitleScreen_1, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1858,7 +1897,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var players = tiles.map(function (tile) {
                 var type = tile.createPlayer;
                 if (type) {
-                    var coords = new Coords_2.Coords(tile.x, tile.y);
+                    var coords = new Coords_4.Coords(tile.x, tile.y);
                     var player = _this.createNewPlayer(type, coords, 1);
                     _this.players[player.id] = player;
                 }
@@ -2007,7 +2046,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         Jetpack.prototype.handleDrawEvent = function (event) {
             var tileSize = this.canvas.calcTileSize(this.boardSize);
-            var coords = new Coords_2.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), event.offsetX % tileSize - tileSize / 2, event.offsetY % tileSize - tileSize / 2);
+            var coords = new Coords_4.Coords((event.offsetX / tileSize), (event.offsetY / tileSize), event.offsetX % tileSize - tileSize / 2, event.offsetY % tileSize - tileSize / 2);
             this.drawCurrentTile(coords);
         };
         // coords is always x,y,offsetX, offsetY

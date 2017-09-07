@@ -1,5 +1,6 @@
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
+import { Coords } from "./Coords";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
@@ -51,7 +52,27 @@ export class Renderer {
     this.map.markAllForRedraw();
   }
 
-  loadTilePalette() {
+  public drawRotatingBoard(clockwise: boolean, completed: () => void) {
+    const canvas = this.canvas.getCanvas();
+
+    const cw = canvas.width;
+    const ch = canvas.height;
+
+    const savedData = new Image();
+    savedData.src = canvas.toDataURL("image/png");
+
+    if (clockwise) {
+      this.drawRotated(savedData, 1, 0, 90, completed);
+    } else {
+      this.drawRotated(savedData, -1, 0, -90, completed);
+    }
+  }
+
+  public getTileImagePath(tile: Tile): string {
+    return this.canvas.imagesFolder + tile.img;
+  }
+
+  protected loadTilePalette() {
     for (const i in this.tiles) {
       const thisTile = this.tiles[i];
       const tileImage = document.createElement("img");
@@ -72,7 +93,7 @@ export class Renderer {
     }
   }
 
-  loadPlayerPalette() {
+  protected loadPlayerPalette() {
     for (const i in this.playerTypes) {
       const playerType = this.playerTypes[i];
       const playerImage = document.createElement("img");
@@ -99,11 +120,7 @@ export class Renderer {
     this.tileImages[id].ready = true;
   }
 
-  getTileImagePath(tile: Tile): string {
-    return this.canvas.imagesFolder + tile.img;
-  }
-
-  renderBoard(): void {
+  protected renderBoard(): void {
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
       if (tile.needsDraw === false) {
@@ -112,8 +129,12 @@ export class Renderer {
       }
       if (!tile.frontLayer) {
         if (this.renderTile(tile.x, tile.y, tile)) {
-          tile.needsDraw = false;
-          tile.drawnBefore = true;
+          const coords = new Coords(tile.x, tile.y);
+          const newTile = tile.modify({
+            drawnBefore: true,
+            needsDraw: false
+          });
+          this.map.changeTile(coords, newTile);
         }
       } else {
         // render sky behind see through tiles
@@ -122,43 +143,51 @@ export class Renderer {
     });
   }
 
-  drawSkyTile(tile: Tile, x: number, y: number) {
+  protected drawSkyTile(tile: Tile, x: number, y: number) {
     const skyTile = this.map.cloneTile(1);
     this.renderTile(x, y, skyTile);
   }
 
   // just go over and draw the over-the-top stuff
-  renderFrontLayerBoard() {
+  protected renderFrontLayerBoard() {
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
-      if (tile.needsDraw === false) return;
+      if (tile.needsDraw === false) {
+        return;
+      }
       if (tile.frontLayer) {
         if (this.renderTile(tile.x, tile.y, tile)) {
-          tile.needsDraw = false;
-          tile.drawnBefore = true;
+          const coords = new Coords(tile.x, tile.y);
+          const newTile = tile.modify({
+            drawnBefore: true,
+            needsDraw: false,
+            
+          });
+          this.map.changeTile(coords, newTile);
         }
       }
     });
   }
 
   // debugging tools
-  showUnrenderedTile(x: number, y: number) {
+  protected showUnrenderedTile(x: number, y: number) {
     return false;
-
     const tileSize = this.tileSize;
     const ctx = this.canvas.getDrawingContext();
-    ctx.fillStyle = "#f00";
+    ctx.fillStyle = "rgba(0,0,0,0.01)";
     ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   }
 
-  renderPlayers() {
+  protected renderPlayers() {
     for (const i in this.jetpack.players) {
-      const player = this.jetpack.players[i];
-      this.renderPlayer(player);
+      if (this.jetpack.players[i]) {
+        const player = this.jetpack.players[i];
+        this.renderPlayer(player);
+      }
     }
   }
 
-  getTileImage(id: number) {
+  protected getTileImage(id: number) {
     const tileImage = this.tileImages[id];
     if (tileImage.ready) {
       return tileImage.image;
@@ -173,7 +202,7 @@ export class Renderer {
     const img = this.getTileImage(tile.id);
 
     if (!img) {
-      //console.log("Could not find tile image for id " + tile.id);
+      // console.log("Could not find tile image for id " + tile.id);
       return false;
     }
 
@@ -205,7 +234,7 @@ export class Renderer {
     return true;
   };
 
-  getPlayerImage(img: string) {
+  protected getPlayerImage(img: string) {
     const playerImage = this.playerImages[img];
     if (playerImage.ready) {
       return playerImage.image;
@@ -213,7 +242,7 @@ export class Renderer {
     return false;
   }
 
-  renderPlayer(player: Player) {
+  protected renderPlayer(player: Player) {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
@@ -277,22 +306,6 @@ export class Renderer {
         tileSize,
         tileSize
       );
-    }
-  }
-
-  drawRotatingBoard(clockwise: boolean, completed: () => void) {
-    const canvas = this.canvas.getCanvas();
-
-    const cw = canvas.width;
-    const ch = canvas.height;
-
-    const savedData = new Image();
-    savedData.src = canvas.toDataURL("image/png");
-
-    if (clockwise) {
-      this.drawRotated(savedData, 1, 0, 90, completed);
-    } else {
-      this.drawRotated(savedData, -1, 0, -90, completed);
     }
   }
 

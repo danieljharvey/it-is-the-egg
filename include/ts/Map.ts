@@ -22,17 +22,20 @@ export class Map {
 
   // return array with all tiles in (with x and y added)
   public getAllTiles() {
-    const allTiles = [];
-    for (const x in this.board) {
-      for (const y in this.board[x]) {
-        const id = this.board[x][y].id;
-        const tile = this.board[x][y];
-        tile.x = x;
-        tile.y = y;
-        allTiles.push(tile);
-      }
-    }
-    return allTiles;
+    const allTiles = this.board.map((column, mapX) => {
+      return column.map((item, mapY) => {
+        return new Tile({
+          ...item,
+          x: mapX,
+          y: mapY
+        });
+      });
+    });
+    const reducedTiles = allTiles.reduce((total, item) => {
+      return total.concat(item);
+    }, []);
+
+    return reducedTiles;
   }
 
   public shrinkBoard() {
@@ -125,27 +128,31 @@ export class Map {
   public markAllForRedraw() {
     const tiles = this.getAllTiles();
     tiles.map(tile => {
-      tile.needsDraw = true;
+      const coords = new Coords(tile.x, tile.y);
+      const newTile = tile.modify({
+        needsDraw: true
+      });
+      this.changeTile(coords, newTile);
     });
     return;
   }
 
   public getTilesSurrounding(coords: Coords) {
-    const tiles = [];
 
-    const startX = coords.x - 1;
-    const endX = coords.x + 1;
-    const startY = coords.y - 1;
-    const endY = coords.y + 2;
+    const startX =  (coords.offsetX < 0) ? coords.x - 1 : coords.x;
+    const endX = (coords.offsetX > 0) ? coords.x + 1 : coords.x;
 
-    // first just do the stuff around player
-    for (let x = startX; x < endX; x++) {
-      for (let y = startY; y < endY; y++) {
-        const tile = this.getTile(x, y);
-        tiles.push(tile);
+    const startY =  (coords.offsetY < 0) ? coords.y - 1 : coords.y;
+    const endY = (coords.offsetY > 0) ? coords.y + 1 : coords.y;
+
+    const allTiles = this.getAllTiles();
+
+    return allTiles.filter(tile => {
+      if (tile.x >= startX && tile.x <= endX && tile.y >= startY && tile.y <= endY) {
+        return true;
       }
-    }
-    return tiles;
+      return false;
+    });
   }
 
   public getTileWithCoords(coords: Coords) {
@@ -228,10 +235,14 @@ export class Map {
   public findTile(currentCoords: Coords, id) {
     const tiles = this.getAllTiles();
     const teleporters = tiles.filter(tile => {
-      if (tile.x == currentCoords.x && tile.y == currentCoords.y) return false;
-      return tile.id == id;
+      if (tile.x === currentCoords.x && tile.y === currentCoords.y) {
+        return false;
+      }
+      return tile.id === id;
     });
-    if (teleporters.length == 0) return false; // no options
+    if (teleporters.length == 0) {
+      return false; // no options
+    }
     const newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
     return newTile;
   }
@@ -247,10 +258,12 @@ export class Map {
     tiles.map(tile => {
       const coords = new Coords(tile.x, tile.y);
       const newCoords = this.translateRotation(coords, clockwise);
-      tile.x = newCoords.x;
-      tile.y = newCoords.y;
-      tile.needsDraw = true;
-      newBoard[newCoords.x][newCoords.y] = tile;
+      const newTile = tile.modify({
+        needsDraw: true,
+        x: newCoords.x,
+        y: newCoords.y
+      });
+      newBoard[newCoords.x][newCoords.y] = newTile;
     });
 
     if (clockwise) {

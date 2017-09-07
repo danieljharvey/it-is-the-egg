@@ -23,7 +23,7 @@ export class Movement {
   }
 
   // loop through passed players[] array, do changes, return new one
-  doCalcs(players: Player[], timePassed: number) {
+  public doCalcs(players: Player[], timePassed: number) {
     if (!players) return [];
     this.players = players; // store so we can compare
     const newPlayers = players.map(player => {
@@ -32,7 +32,7 @@ export class Movement {
     return newPlayers;
   }
 
-  doPlayerCalcs(player: Player, timePassed: number): Player {
+  protected doPlayerCalcs(player: Player, timePassed: number): Player {
     const startCoords = player.coords;
 
     this.setRedrawAroundPlayer(player);
@@ -58,22 +58,26 @@ export class Movement {
     return absolutelyNewestPlayer;
   }
 
-  checkTileAction(startCoords: Coords, player: Player): Player {
+  protected checkTileAction(startCoords: Coords, player: Player): Player {
     if (!startCoords.equals(player.coords)) {
       return this.checkPlayerTileAction(player);
     }
     return player;
   }
 
-  setRedrawAroundPlayer(player: Player): Player {
+  protected setRedrawAroundPlayer(player: Player): Player {
     const tiles = this.map.getTilesSurrounding(player.coords);
     tiles.map(tile => {
-      tile.needsDraw = true;
+      const newTile = tile.modify({
+        needsDraw: true
+      });
+      const coords = new Coords(tile.x, tile.y);
+      this.map.changeTile(coords, newTile);
     });
     return player;
   }
 
-  incrementPlayerFrame(player: Player): Player {
+  protected incrementPlayerFrame(player: Player): Player {
     if (
       player.direction === 0 &&
       player.oldDirection === 0 &&
@@ -113,7 +117,7 @@ export class Movement {
     });
   }
 
-  checkPlayerTileAction(player: Player): Player {
+  protected checkPlayerTileAction(player: Player): Player {
     const currentCoords = player.coords;
 
     if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) {
@@ -150,7 +154,7 @@ export class Movement {
 
   // find another teleport and go to it
   // if no others, do nothing
-  teleport(player: Player): Player {
+  protected teleport(player: Player): Player {
     // if (player.lastAction == "teleport") return false;
     const newTile = this.map.findTile(player.coords, 14);
     if (newTile) {
@@ -165,7 +169,7 @@ export class Movement {
     return player;
   }
 
-  incrementPlayerDirection(timePassed: number, player: Player): Player {
+  protected incrementPlayerDirection(timePassed: number, player: Player): Player {
     if (player.moveSpeed === 0) {
       return player;
     }
@@ -251,7 +255,7 @@ export class Movement {
     return player;
   }
 
-  calcMoveAmount(
+  protected calcMoveAmount(
     moveSpeed: number,
     tileSize: number,
     timePassed: number
@@ -262,7 +266,7 @@ export class Movement {
     return frameRateAdjusted;
   }
 
-  correctPlayerOverflow(player: Player): Player {
+  protected correctPlayerOverflow(player: Player): Player {
     const newCoords = this.correctTileOverflow(player.coords);
     const loopedCoords = this.map.correctForOverflow(
       newCoords.x,
@@ -313,7 +317,7 @@ export class Movement {
     return coords;
   }
 
-  checkFloorBelowPlayer(timePassed: number, player: Player) {
+  protected checkFloorBelowPlayer(timePassed: number, player: Player) {
     if (player.coords.offsetX !== 0) return player;
 
     const coords = player.coords;

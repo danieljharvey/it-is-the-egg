@@ -17,4 +17,9 @@ export class Tile {
       this[key] = value;
     });
   }
+
+  public modify(params: object): Tile {
+    const newParams = (Object as any).assign({}, this, params);
+    return new Tile(newParams);
+  }
 }
