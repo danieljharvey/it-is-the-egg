@@ -160,8 +160,7 @@ export class Renderer {
           const coords = new Coords(tile.x, tile.y);
           const newTile = tile.modify({
             drawnBefore: true,
-            needsDraw: false,
-            
+            needsDraw: false
           });
           this.map.changeTile(coords, newTile);
         }

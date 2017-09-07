@@ -3,10 +3,10 @@ import { Utils } from "./Utils";
 const SPRITE_SIZE: number = 64;
 
 export class Coords {
-  readonly x: number = 0;
-  readonly y: number = 0;
-  readonly offsetX: number = 0;
-  readonly offsetY: number = 0;
+  public readonly x: number = 0;
+  public readonly y: number = 0;
+  public readonly offsetX: number = 0;
+  public readonly offsetY: number = 0;
 
   constructor(x: number, y: number, offsetX: number = 0, offsetY: number = 0) {
     this.x = Math.floor(x) as number;

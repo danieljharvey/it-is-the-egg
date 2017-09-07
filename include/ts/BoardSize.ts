@@ -35,8 +35,8 @@ export class BoardSize {
 
   public getData() {
     return {
-      width: this.width,
-      height: this.height
+      height: this.height,
+      width: this.width
     };
   }
 }

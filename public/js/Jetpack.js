@@ -39,8 +39,8 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
         };
         BoardSize.prototype.getData = function () {
             return {
-                width: this.width,
-                height: this.height
+                height: this.height,
+                width: this.width
             };
         };
         return BoardSize;
@@ -612,7 +612,7 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
                         var coords = new Coords_1.Coords(tile.x, tile.y);
                         var newTile = tile.modify({
                             drawnBefore: true,
-                            needsDraw: false,
+                            needsDraw: false
                         });
                         _this.map.changeTile(coords, newTile);
                     }
@@ -1040,13 +1040,16 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             return;
         };
         Map.prototype.getTilesSurrounding = function (coords) {
-            var startX = (coords.offsetX < 0) ? coords.x - 1 : coords.x;
-            var endX = (coords.offsetX > 0) ? coords.x + 1 : coords.x;
-            var startY = (coords.offsetY < 0) ? coords.y - 1 : coords.y;
-            var endY = (coords.offsetY > 0) ? coords.y + 1 : coords.y;
+            var startX = coords.offsetX < 0 ? coords.x - 1 : coords.x;
+            var endX = coords.offsetX > 0 ? coords.x + 1 : coords.x;
+            var startY = coords.offsetY < 0 ? coords.y - 1 : coords.y;
+            var endY = coords.offsetY > 0 ? coords.y + 1 : coords.y;
             var allTiles = this.getAllTiles();
             return allTiles.filter(function (tile) {
-                if (tile.x >= startX && tile.x <= endX && tile.y >= startY && tile.y <= endY) {
+                if (tile.x >= startX &&
+                    tile.x <= endX &&
+                    tile.y >= startY &&
+                    tile.y <= endY) {
                     return true;
                 }
                 return false;
@@ -1695,9 +1698,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
         function Jetpack() {
+            this.moveSpeed = 5;
             this.paused = true;
             this.editMode = false;
-            this.moveSpeed = 5;
             this.levelID = 1;
             this.levelList = [];
             this.nextPlayerID = 1;
@@ -1710,7 +1713,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         }
         Jetpack.prototype.go = function (levelID) {
             var _this = this;
-            //this.bootstrap();
+            // this.bootstrap();
             this.bindSizeHandler();
             this.bindKeyboardHandler();
             this.pauseRender();
@@ -1726,7 +1729,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         // go function but for edit mode
         Jetpack.prototype.edit = function () {
             var _this = this;
-            //this.bootstrap();
+            // this.bootstrap();
             this.levels.populateLevelsList(this.levelList);
             this.editMode = true;
             this.bindSizeHandler();
@@ -1738,12 +1741,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var s = setTimeout(function () {
                 _this.startRender();
             }, 1000);
-        };
-        Jetpack.prototype.getTitleScreen = function (callback) {
-            var imageSize = { width: 1024, height: 1024 };
-            var imagePath = "large/the-egg.png";
-            var titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
-            titleScreen.render(callback);
         };
         // load static stuff - map/renderer etc will be worked out later
         Jetpack.prototype.bootstrap = function (callback) {
@@ -1763,6 +1760,94 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 callback(levelID);
             });
         };
+        Jetpack.prototype.addScore = function (amount) {
+            this.score += amount;
+            var scoreElement = document.getElementById("score");
+            if (scoreElement) {
+                scoreElement.innerHTML = this.score.toString();
+            }
+        };
+        // or at least try
+        Jetpack.prototype.completeLevel = function () {
+            this.collectable = this.getCollectable();
+            var playerCount = this.countPlayers(this.players);
+            if (this.collectable < 1 && playerCount < 2) {
+                this.nextLevel();
+            }
+        };
+        // create player and load their sprite
+        Jetpack.prototype.createNewPlayer = function (type, coords, direction) {
+            var playerType = this.playerTypes[type];
+            var params = JSON.parse(JSON.stringify(playerType));
+            params.id = this.nextPlayerID++;
+            params.coords = coords;
+            params.direction = direction;
+            params.oldDirection = 0;
+            params.falling = false; // can't move when falling
+            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
+                params.moveSpeed = this.moveSpeed;
+                params.fallSpeed = this.moveSpeed * 1.2;
+            }
+            var player = new Player_1.Player(params);
+            this.players[player.id] = player;
+            return player;
+        };
+        // make this actually fucking rotate, and choose direction, and do the visual effect thing
+        Jetpack.prototype.rotateBoard = function (clockwise) {
+            var _this = this;
+            if (this.paused || this.editMode) {
+                return false;
+            }
+            this.pauseRender();
+            this.rotationsUsed++;
+            this.map.rotateBoard(clockwise);
+            var rotatedPlayers = this.players.map(function (player) {
+                return _this.map.rotatePlayer(player, clockwise);
+            });
+            this.players = [];
+            rotatedPlayers.map(function (player) {
+                _this.players[player.id] = player;
+            });
+            this.renderer.drawRotatingBoard(clockwise, function () {
+                _this.startRender();
+            });
+            return true;
+        };
+        Jetpack.prototype.saveLevel = function () {
+            var _this = this;
+            this.levels.saveLevel(this.map.getBoard(), this.map.boardSize, this.levels.levelID, function (levelID) {
+                var text = "Level " + levelID + " saved";
+                _this.showEditMessage(text);
+            });
+        };
+        Jetpack.prototype.loadLevelFromList = function () {
+            var select = document.getElementById("levelList");
+            var index = select.selectedIndex;
+            var levelID = select.options[index].value;
+            this.loadLevel(levelID, function () {
+                // console.log("loaded!");
+            });
+        };
+        Jetpack.prototype.growBoard = function () {
+            if (!this.editMode) {
+                return false;
+            }
+            this.boardSize = this.map.growBoard();
+            this.checkResize = true;
+        };
+        Jetpack.prototype.shrinkBoard = function () {
+            if (!this.editMode) {
+                return false;
+            }
+            this.boardSize = this.map.shrinkBoard();
+            this.checkResize = true;
+        };
+        Jetpack.prototype.getTitleScreen = function (callback) {
+            var imageSize = { width: 1024, height: 1024 };
+            var imagePath = "large/the-egg.png";
+            var titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
+            titleScreen.render(callback);
+        };
         Jetpack.prototype.getLevelList = function (callback) {
             var _this = this;
             this.levels.getLevelList(function (levelList) {
@@ -1777,8 +1862,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 return level.completed === false;
             });
             var chosenKey = Utils_3.Utils.getRandomArrayKey(availableLevels);
-            if (!chosenKey)
+            if (!chosenKey) {
                 return false;
+            }
             var levelID = availableLevels[chosenKey].levelID;
             return levelID;
         };
@@ -1794,8 +1880,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         Jetpack.prototype.startRender = function () {
             var _this = this;
-            if (!this.paused)
+            if (!this.paused) {
                 return false;
+            }
             window.cancelAnimationFrame(this.animationHandle);
             this.paused = false;
             this.showControls();
@@ -1805,8 +1892,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         Jetpack.prototype.eventLoop = function (time, lastTime) {
             var _this = this;
-            if (this.paused)
+            if (this.paused) {
                 return false;
+            }
             var timePassed = this.calcTimePassed(time, lastTime);
             this.doPlayerCalcs(timePassed);
             this.sizeCanvas();
@@ -1821,8 +1909,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             return frameRate;
         };
         Jetpack.prototype.sizeCanvas = function () {
-            if (!this.checkResize)
+            if (!this.checkResize) {
                 return false;
+            }
             this.canvas.sizeCanvas(this.boardSize);
             this.renderer.resize();
             this.checkResize = false;
@@ -1830,21 +1919,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.resetScore = function (score) {
             this.score = 0;
             this.addScore(0);
-        };
-        Jetpack.prototype.addScore = function (amount) {
-            this.score += amount;
-            var scoreElement = document.getElementById("score");
-            if (scoreElement) {
-                scoreElement.innerHTML = this.score.toString();
-            }
-        };
-        // or at least try
-        Jetpack.prototype.completeLevel = function () {
-            this.collectable = this.getCollectable();
-            var playerCount = this.countPlayers(this.players);
-            if (this.collectable < 1 && playerCount < 2) {
-                this.nextLevel();
-            }
         };
         Jetpack.prototype.nextLevel = function () {
             var _this = this;
@@ -1921,43 +1995,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.deletePlayer = function (player) {
             delete this.players[player.id];
         };
-        // create player and load their sprite
-        Jetpack.prototype.createNewPlayer = function (type, coords, direction) {
-            var playerType = this.playerTypes[type];
-            var params = JSON.parse(JSON.stringify(playerType));
-            params.id = this.nextPlayerID++;
-            params.coords = coords;
-            params.direction = direction;
-            params.oldDirection = 0;
-            params.falling = false; // can't move when falling
-            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
-                params.moveSpeed = this.moveSpeed;
-                params.fallSpeed = this.moveSpeed * 1.2;
-            }
-            var player = new Player_1.Player(params);
-            this.players[player.id] = player;
-            return player;
-        };
-        // make this actually fucking rotate, and choose direction, and do the visual effect thing
-        Jetpack.prototype.rotateBoard = function (clockwise) {
-            var _this = this;
-            if (this.paused || this.editMode)
-                return false;
-            this.pauseRender();
-            this.rotationsUsed++;
-            this.map.rotateBoard(clockwise);
-            var rotatedPlayers = this.players.map(function (player) {
-                return _this.map.rotatePlayer(player, clockwise);
-            });
-            this.players = [];
-            rotatedPlayers.map(function (player) {
-                _this.players[player.id] = player;
-            });
-            this.renderer.drawRotatingBoard(clockwise, function () {
-                _this.startRender();
-            });
-            return true;
-        };
         Jetpack.prototype.revertEditMessage = function () {
             var s = setTimeout(function () {
                 var message = document.getElementById("message");
@@ -1965,26 +2002,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             }, 3000);
         };
         Jetpack.prototype.showEditMessage = function (text) {
-            if (!this.editMode)
+            if (!this.editMode) {
                 return false;
+            }
             var message = document.getElementById("message");
             message.innerHTML = text;
             this.revertEditMessage();
-        };
-        Jetpack.prototype.saveLevel = function () {
-            var _this = this;
-            this.levels.saveLevel(this.map.getBoard(), this.map.boardSize, this.levels.levelID, function (levelID) {
-                var text = "Level " + levelID + " saved";
-                _this.showEditMessage(text);
-            });
-        };
-        Jetpack.prototype.loadLevelFromList = function () {
-            var select = document.getElementById("levelList");
-            var index = select.selectedIndex;
-            var levelID = select.options[index].value;
-            this.loadLevel(levelID, function () {
-                console.log("loaded!");
-            });
         };
         Jetpack.prototype.loadLevel = function (levelID, callback) {
             var _this = this;
@@ -1998,18 +2021,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 _this.map.updateBoardWithRandom(_this.boardSize);
                 callback();
             });
-        };
-        Jetpack.prototype.growBoard = function () {
-            if (!this.editMode)
-                return false;
-            this.boardSize = this.map.growBoard();
-            this.checkResize = true;
-        };
-        Jetpack.prototype.shrinkBoard = function () {
-            if (!this.editMode)
-                return false;
-            this.boardSize = this.map.shrinkBoard();
-            this.checkResize = true;
         };
         Jetpack.prototype.bindSizeHandler = function () {
             var _this = this;
@@ -2052,8 +2063,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         // coords is always x,y,offsetX, offsetY
         Jetpack.prototype.drawCurrentTile = function (coords) {
             var tileID = this.tileChooser.chosenTileID;
-            if (tileID < 1)
+            if (tileID < 1) {
                 return false;
+            }
             var tile = this.map.cloneTile(tileID);
             this.map.changeTile(coords, tile);
         };
@@ -2086,17 +2098,21 @@ define("Collisions", ["require", "exports"], function (require, exports) {
         };
         // only deal with horizontal collisions for now
         Collisions.prototype.checkCollision = function (player1, player2) {
-            if (!player1 || !player2)
+            if (!player1 || !player2) {
                 return false;
-            if (player1.id == player2.id)
+            }
+            if (player1.id === player2.id) {
                 return false;
+            }
             var coords1 = player1.coords;
             var coords2 = player2.coords;
-            if (coords1.y != coords2.y)
+            if (coords1.y !== coords2.y) {
                 return false;
+            }
             var distance = coords1.getActualPosition().fullX - coords2.getActualPosition().fullX;
-            if (distance < 0)
+            if (distance < 0) {
                 distance = distance * -1;
+            }
             if (distance < 40) {
                 return this.combinePlayers(player1, player2);
             }
@@ -2113,31 +2129,41 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             this.players[player.id] = player;
         };
         Collisions.prototype.chooseHigherLevelPlayer = function (player1, player2) {
-            if (player1.value > player2.value)
+            if (player1.value > player2.value) {
                 return player1;
-            if (player2.value > player1.value)
+            }
+            if (player2.value > player1.value) {
                 return player2;
-            if (player1.value == player2.value)
+            }
+            if (player1.value === player2.value) {
                 return player1;
+            }
         };
         Collisions.prototype.combinePlayers = function (player1, player2) {
-            //console.log('combinePlayers', player1, player2);
+            // console.log('combinePlayers', player1, player2);
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            for (var type in this.playerTypes) {
-                if (this.playerTypes[type].value == newValue) {
-                    var newPlayer = this.jetpack.createNewPlayer(type, higherPlayer.coords, higherPlayer.direction);
-                    this.addPlayer(newPlayer);
-                    this.deletePlayer(player1);
-                    this.deletePlayer(player2);
+            var newPlayerTypes = Object
+                .values(this.playerTypes)
+                .filter(function (playerType) {
+                if (playerType.value === newValue) {
                     return true;
                 }
+                return false;
+            });
+            if (newPlayerTypes.length === 0) {
+                // no change
+                return {
+                    player1: player1,
+                    player2: player2
+                };
             }
-            // nothing changes
-            return {
-                player1: player1,
-                player2: player2
-            };
+            var newPlayerType = newPlayerTypes[0];
+            var newPlayer = this.jetpack.createNewPlayer(newPlayerType.type, higherPlayer.coords, higherPlayer.direction);
+            this.addPlayer(newPlayer);
+            this.deletePlayer(player1);
+            this.deletePlayer(player2);
+            return true;
         };
         return Collisions;
     }());

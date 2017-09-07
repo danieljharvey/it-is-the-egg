@@ -16,39 +16,37 @@ import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
 export class Jetpack {
-  paused: boolean = true;
-  editMode: boolean = false;
+  public animationHandle: number;
+  public moveSpeed: number = 5;
+  public players: Player[];
 
-  moveSpeed: number = 5;
+  protected paused: boolean = true;
+  protected editMode: boolean = false;
 
-  levelID: number = 1;
-  levelList: number[] = [];
+  protected levelID: number = 1;
+  protected levelList: number[] = [];
 
-  map: Map; // Map object
-  renderer: Renderer; // Renderer object
-  collisions: Collisions; // Collisions object
-  levels: Levels; // Levels object
-  tileSet: TileSet; // TileSet object
-  boardSize: BoardSize; // BoardSize object
-  canvas: Canvas; // Canvas object
-  tileChooser: TileChooser;
+  protected map: Map; // Map object
+  protected renderer: Renderer; // Renderer object
+  protected collisions: Collisions; // Collisions object
+  protected levels: Levels; // Levels object
+  protected tileSet: TileSet; // TileSet object
+  protected boardSize: BoardSize; // BoardSize object
+  protected canvas: Canvas; // Canvas object
+  protected tileChooser: TileChooser;
 
-  nextPlayerID: number = 1;
-  score: number = 0;
-  rotationsUsed: number = 0;
-  collectable: number = 0; // total points on screen
+  protected nextPlayerID: number = 1;
+  protected score: number = 0;
+  protected rotationsUsed: number = 0;
+  protected collectable: number = 0; // total points on screen
 
-  playerTypes: object = {};
+  protected playerTypes: object = {};
 
-  players: Player[];
+  protected defaultBoardSize: number = 20;
+  protected checkResize: boolean = false;
 
-  defaultBoardSize: number = 20;
-  checkResize: boolean = false;
-
-  animationHandle: number;
-
-  go(levelID) {
-    //this.bootstrap();
+  public go(levelID) {
+    // this.bootstrap();
     this.bindSizeHandler();
     this.bindKeyboardHandler();
 
@@ -64,8 +62,8 @@ export class Jetpack {
   }
 
   // go function but for edit mode
-  edit() {
-    //this.bootstrap();
+  public edit() {
+    // this.bootstrap();
     this.levels.populateLevelsList(this.levelList);
 
     this.editMode = true;
@@ -81,21 +79,8 @@ export class Jetpack {
     }, 1000);
   }
 
-  getTitleScreen(callback) {
-    const imageSize = { width: 1024, height: 1024 };
-    const imagePath = "large/the-egg.png";
-    const titleScreen = new TitleScreen(
-      this,
-      this.canvas,
-      imagePath,
-      imageSize.width,
-      imageSize.height
-    );
-    titleScreen.render(callback);
-  }
-
   // load static stuff - map/renderer etc will be worked out later
-  bootstrap(callback) {
+  public bootstrap(callback) {
     this.tileSet = new TileSet();
 
     const boardSize = new BoardSize(this.defaultBoardSize);
@@ -120,85 +105,7 @@ export class Jetpack {
     });
   }
 
-  getLevelList(callback) {
-    this.levels.getLevelList(levelList => {
-      this.levelList = levelList;
-      callback(levelList);
-    });
-  }
-
-  // select a random level that has not been completed yet
-  // a return of false means none available (generate a random one)
-  chooseLevelID(levelList) {
-    const availableLevels = levelList.filter(level => {
-      return level.completed === false;
-    });
-    const chosenKey = Utils.getRandomArrayKey(availableLevels);
-    if (!chosenKey) return false;
-    const levelID = availableLevels[chosenKey].levelID;
-    return levelID;
-  }
-
-  // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  createRenderer(board = [], size: number = 12) {
-    this.boardSize = new BoardSize(size);
-    this.map = new Map(this.tileSet, this.boardSize, board);
-    this.map.updateBoard(
-      this.map.correctBoardSizeChange(board, this.boardSize),
-      this.boardSize
-    );
-    const tiles = this.tileSet.getTiles();
-    this.renderer = new Renderer(
-      this,
-      this.map,
-      tiles,
-      this.playerTypes,
-      this.boardSize,
-      this.canvas
-    );
-  }
-
-  startRender() {
-    if (!this.paused) return false;
-    window.cancelAnimationFrame(this.animationHandle);
-    this.paused = false;
-    this.showControls();
-    this.animationHandle = window.requestAnimationFrame(time =>
-      this.eventLoop(time, 0)
-    );
-  }
-
-  eventLoop(time: number, lastTime: number) {
-    if (this.paused) return false;
-    const timePassed = this.calcTimePassed(time, lastTime);
-    this.doPlayerCalcs(timePassed);
-    this.sizeCanvas();
-    this.renderer.render();
-    this.animationHandle = window.requestAnimationFrame(newTime =>
-      this.eventLoop(newTime, time)
-    );
-  }
-
-  calcTimePassed(time: number, lastTime: number) {
-    const difference = Math.min(time - lastTime, 20);
-    const frameRate = 60 / difference;
-    return frameRate;
-  }
-
-  sizeCanvas() {
-    if (!this.checkResize) return false;
-
-    this.canvas.sizeCanvas(this.boardSize);
-    this.renderer.resize();
-    this.checkResize = false;
-  }
-
-  resetScore(score) {
-    this.score = 0;
-    this.addScore(0);
-  }
-
-  addScore(amount) {
+  public addScore(amount) {
     this.score += amount;
     const scoreElement = document.getElementById("score");
     if (scoreElement) {
@@ -207,7 +114,7 @@ export class Jetpack {
   }
 
   // or at least try
-  completeLevel() {
+  public completeLevel() {
     this.collectable = this.getCollectable();
     const playerCount: number = this.countPlayers(this.players);
     if (this.collectable < 1 && playerCount < 2) {
@@ -215,94 +122,12 @@ export class Jetpack {
     }
   }
 
-  nextLevel() {
-    this.pauseRender();
-    this.levels.saveData(this.levelID, this.rotationsUsed, this.score, data => {
-      this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
-      this.levelID = this.chooseLevelID(this.levelList);
-      this.go(this.levelID);
-    });
-  }
-
-  markLevelAsCompleted(levelList, levelID) {
-    levelList[levelID].completed = true;
-    return levelList;
-  }
-
-  pauseRender() {
-    this.paused = true;
-    this.hideControls();
-    window.cancelAnimationFrame(this.animationHandle);
-  }
-
-  showControls() {
-    const controlHeader = document.getElementById("controlHeader");
-    if (controlHeader && controlHeader.classList.contains("hidden")) {
-      controlHeader.classList.remove("hidden");
-    }
-  }
-
-  hideControls() {
-    const controlHeader = document.getElementById("controlHeader");
-    if (controlHeader && !controlHeader.classList.contains("hidden")) {
-      controlHeader.classList.add("hidden");
-    }
-  }
-
-  doPlayerCalcs(timePassed: number) {
-    const movement = new Movement(this.map, this.renderer, this);
-    const newPlayers = movement.doCalcs(this.players, timePassed);
-
-    const collisions = new Collisions(this, this.playerTypes);
-    const sortedPlayers = collisions.checkAllCollisions(newPlayers);
-
-    this.players = sortedPlayers; // replace with new objects
-  }
-
-  countPlayers(players: Player[]): number {
-    const validPlayers = players.filter(player => {
-      return player && player.value > 0;
-    });
-    return validPlayers.length;
-  }
-
-  // cycle through all map tiles, find egg cups etc and create players
-  createPlayers() {
-    this.destroyPlayers();
-    const tiles = this.map.getAllTiles();
-    const players = tiles.map(tile => {
-      const type = tile.createPlayer;
-      if (type) {
-        const coords = new Coords(tile.x, tile.y);
-        const player = this.createNewPlayer(type, coords, 1);
-        this.players[player.id] = player;
-      }
-    });
-  }
-
-  destroyPlayers() {
-    this.players = [];
-  }
-
-  // cycle through all map tiles, find egg cups etc and create players
-  getCollectable() {
-    let collectable = 0;
-    const tiles = this.map.getAllTiles();
-    tiles.map(tile => {
-      const score = tile.collectable;
-      if (score > 0) {
-        collectable += score;
-      }
-    });
-    return collectable;
-  }
-
-  deletePlayer(player: Player) {
-    delete this.players[player.id];
-  }
-
   // create player and load their sprite
-  createNewPlayer(type: string, coords: Coords, direction: number): Player {
+  public createNewPlayer(
+    type: string,
+    coords: Coords,
+    direction: number
+  ): Player {
     const playerType = this.playerTypes[type];
     const params = JSON.parse(JSON.stringify(playerType));
     params.id = this.nextPlayerID++;
@@ -320,8 +145,10 @@ export class Jetpack {
   }
 
   // make this actually fucking rotate, and choose direction, and do the visual effect thing
-  rotateBoard(clockwise) {
-    if (this.paused || this.editMode) return false;
+  public rotateBoard(clockwise) {
+    if (this.paused || this.editMode) {
+      return false;
+    }
     this.pauseRender();
 
     this.rotationsUsed++;
@@ -344,21 +171,7 @@ export class Jetpack {
     return true;
   }
 
-  revertEditMessage() {
-    const s = setTimeout(function() {
-      const message = document.getElementById("message");
-      message.innerHTML = "EDIT MODE";
-    }, 3000);
-  }
-
-  showEditMessage(text) {
-    if (!this.editMode) return false;
-    const message = document.getElementById("message");
-    message.innerHTML = text;
-    this.revertEditMessage();
-  }
-
-  saveLevel() {
+  public saveLevel() {
     this.levels.saveLevel(
       this.map.getBoard(),
       this.map.boardSize,
@@ -370,16 +183,233 @@ export class Jetpack {
     );
   }
 
-  loadLevelFromList() {
+  public loadLevelFromList() {
     const select = document.getElementById("levelList") as HTMLSelectElement;
     const index = select.selectedIndex;
     const levelID = select.options[index].value;
-    this.loadLevel(levelID, function() {
-      console.log("loaded!");
+    this.loadLevel(levelID, () => {
+      // console.log("loaded!");
     });
   }
 
-  loadLevel(levelID, callback) {
+  public growBoard() {
+    if (!this.editMode) {
+      return false;
+    }
+    this.boardSize = this.map.growBoard();
+    this.checkResize = true;
+  }
+
+  public shrinkBoard() {
+    if (!this.editMode) {
+      return false;
+    }
+    this.boardSize = this.map.shrinkBoard();
+    this.checkResize = true;
+  }
+
+  protected getTitleScreen(callback) {
+    const imageSize = { width: 1024, height: 1024 };
+    const imagePath = "large/the-egg.png";
+    const titleScreen = new TitleScreen(
+      this,
+      this.canvas,
+      imagePath,
+      imageSize.width,
+      imageSize.height
+    );
+    titleScreen.render(callback);
+  }
+
+  protected getLevelList(callback) {
+    this.levels.getLevelList(levelList => {
+      this.levelList = levelList;
+      callback(levelList);
+    });
+  }
+
+  // select a random level that has not been completed yet
+  // a return of false means none available (generate a random one)
+  protected chooseLevelID(levelList) {
+    const availableLevels = levelList.filter(level => {
+      return level.completed === false;
+    });
+    const chosenKey = Utils.getRandomArrayKey(availableLevels);
+    if (!chosenKey) {
+      return false;
+    }
+    const levelID = availableLevels[chosenKey].levelID;
+    return levelID;
+  }
+
+  // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+  protected createRenderer(board = [], size: number = 12) {
+    this.boardSize = new BoardSize(size);
+    this.map = new Map(this.tileSet, this.boardSize, board);
+    this.map.updateBoard(
+      this.map.correctBoardSizeChange(board, this.boardSize),
+      this.boardSize
+    );
+    const tiles = this.tileSet.getTiles();
+    this.renderer = new Renderer(
+      this,
+      this.map,
+      tiles,
+      this.playerTypes,
+      this.boardSize,
+      this.canvas
+    );
+  }
+
+  protected startRender() {
+    if (!this.paused) {
+      return false;
+    }
+    window.cancelAnimationFrame(this.animationHandle);
+    this.paused = false;
+    this.showControls();
+    this.animationHandle = window.requestAnimationFrame(time =>
+      this.eventLoop(time, 0)
+    );
+  }
+
+  protected eventLoop(time: number, lastTime: number) {
+    if (this.paused) {
+      return false;
+    }
+    const timePassed = this.calcTimePassed(time, lastTime);
+    this.doPlayerCalcs(timePassed);
+    this.sizeCanvas();
+    this.renderer.render();
+    this.animationHandle = window.requestAnimationFrame(newTime =>
+      this.eventLoop(newTime, time)
+    );
+  }
+
+  protected calcTimePassed(time: number, lastTime: number) {
+    const difference = Math.min(time - lastTime, 20);
+    const frameRate = 60 / difference;
+    return frameRate;
+  }
+
+  protected sizeCanvas() {
+    if (!this.checkResize) {
+      return false;
+    }
+
+    this.canvas.sizeCanvas(this.boardSize);
+    this.renderer.resize();
+    this.checkResize = false;
+  }
+
+  protected resetScore(score) {
+    this.score = 0;
+    this.addScore(0);
+  }
+
+  protected nextLevel() {
+    this.pauseRender();
+    this.levels.saveData(this.levelID, this.rotationsUsed, this.score, data => {
+      this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
+      this.levelID = this.chooseLevelID(this.levelList);
+      this.go(this.levelID);
+    });
+  }
+
+  protected markLevelAsCompleted(levelList, levelID) {
+    levelList[levelID].completed = true;
+    return levelList;
+  }
+
+  protected pauseRender() {
+    this.paused = true;
+    this.hideControls();
+    window.cancelAnimationFrame(this.animationHandle);
+  }
+
+  protected showControls() {
+    const controlHeader = document.getElementById("controlHeader");
+    if (controlHeader && controlHeader.classList.contains("hidden")) {
+      controlHeader.classList.remove("hidden");
+    }
+  }
+
+  protected hideControls() {
+    const controlHeader = document.getElementById("controlHeader");
+    if (controlHeader && !controlHeader.classList.contains("hidden")) {
+      controlHeader.classList.add("hidden");
+    }
+  }
+
+  protected doPlayerCalcs(timePassed: number) {
+    const movement = new Movement(this.map, this.renderer, this);
+    const newPlayers = movement.doCalcs(this.players, timePassed);
+
+    const collisions = new Collisions(this, this.playerTypes);
+    const sortedPlayers = collisions.checkAllCollisions(newPlayers);
+
+    this.players = sortedPlayers; // replace with new objects
+  }
+
+  protected countPlayers(players: Player[]): number {
+    const validPlayers = players.filter(player => {
+      return player && player.value > 0;
+    });
+    return validPlayers.length;
+  }
+
+  // cycle through all map tiles, find egg cups etc and create players
+  protected createPlayers() {
+    this.destroyPlayers();
+    const tiles = this.map.getAllTiles();
+    const players = tiles.map(tile => {
+      const type = tile.createPlayer;
+      if (type) {
+        const coords = new Coords(tile.x, tile.y);
+        const player = this.createNewPlayer(type, coords, 1);
+        this.players[player.id] = player;
+      }
+    });
+  }
+
+  protected destroyPlayers() {
+    this.players = [];
+  }
+
+  // cycle through all map tiles, find egg cups etc and create players
+  protected getCollectable() {
+    let collectable = 0;
+    const tiles = this.map.getAllTiles();
+    tiles.map(tile => {
+      const score = tile.collectable;
+      if (score > 0) {
+        collectable += score;
+      }
+    });
+    return collectable;
+  }
+
+  protected deletePlayer(player: Player) {
+    delete this.players[player.id];
+  }
+
+  protected revertEditMessage() {
+    const s = setTimeout(() => {
+      const message = document.getElementById("message");
+      message.innerHTML = "EDIT MODE";
+    }, 3000);
+  }
+
+  protected showEditMessage(text) {
+    if (!this.editMode) {
+      return false;
+    }
+    const message = document.getElementById("message");
+    message.innerHTML = text;
+    this.revertEditMessage();
+  }
+
+  protected loadLevel(levelID, callback) {
     this.levels.loadLevel(
       levelID,
       (savedLevel: SavedLevel) => {
@@ -396,25 +426,13 @@ export class Jetpack {
     );
   }
 
-  growBoard() {
-    if (!this.editMode) return false;
-    this.boardSize = this.map.growBoard();
-    this.checkResize = true;
-  }
-
-  shrinkBoard() {
-    if (!this.editMode) return false;
-    this.boardSize = this.map.shrinkBoard();
-    this.checkResize = true;
-  }
-
-  bindSizeHandler() {
+  protected bindSizeHandler() {
     window.addEventListener("resize", () => {
       this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
     });
   }
 
-  bindKeyboardHandler() {
+  protected bindKeyboardHandler() {
     window.addEventListener("keydown", event => {
       if (event.keyCode === 37) {
         this.rotateBoard(false);
@@ -425,14 +443,14 @@ export class Jetpack {
     });
   }
 
-  bindClickHandler() {
+  protected bindClickHandler() {
     const canvas = document.getElementById("canvas");
     canvas.addEventListener("click", event => {
       this.handleDrawEvent(event);
     });
   }
 
-  bindMouseMoveHandler() {
+  protected bindMouseMoveHandler() {
     const canvas = document.getElementById("canvas");
     canvas.addEventListener("mousemove", event => {
       if (event.button > 0 || event.buttons > 0) {
@@ -441,7 +459,7 @@ export class Jetpack {
     });
   }
 
-  handleDrawEvent(event) {
+  protected handleDrawEvent(event) {
     const tileSize = this.canvas.calcTileSize(this.boardSize);
     const coords = new Coords(
       (event.offsetX / tileSize) as number,
@@ -453,9 +471,11 @@ export class Jetpack {
   }
 
   // coords is always x,y,offsetX, offsetY
-  drawCurrentTile(coords: Coords) {
+  protected drawCurrentTile(coords: Coords) {
     const tileID = this.tileChooser.chosenTileID;
-    if (tileID < 1) return false;
+    if (tileID < 1) {
+      return false;
+    }
     const tile = this.map.cloneTile(tileID);
     this.map.changeTile(coords, tile);
   }

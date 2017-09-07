@@ -169,7 +169,10 @@ export class Movement {
     return player;
   }
 
-  protected incrementPlayerDirection(timePassed: number, player: Player): Player {
+  protected incrementPlayerDirection(
+    timePassed: number,
+    player: Player
+  ): Player {
     if (player.moveSpeed === 0) {
       return player;
     }
