@@ -73,7 +73,7 @@ export class Movement {
       const newTile = tile.modify({
         needsDraw: true
       });
-      const coords = new Coords(tile.x, tile.y);
+      const coords = new Coords({x:tile.x, y:tile.y});
       this.map.changeTile(coords, newTile);
     });
     return player;

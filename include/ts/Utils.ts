@@ -3,24 +3,24 @@ import * as _ from "ramda";
 // wee lad full of reusable functions
 
 export class Utils {
-  static getRandomObjectKey(object: object) {
+  public static getRandomObjectKey(object: object) {
     const keys = Object.keys(object);
     return this.returnRandomKey(keys);
   }
 
-  static getRandomArrayKey(array: object[]) {
+  public static getRandomArrayKey(array: object[]) {
     const keys = _.keys(array);
     return this.returnRandomKey(keys);
   }
 
-  static returnRandomKey(keys: any[]) {
+  public static returnRandomKey(keys: any[]) {
     if (keys.length === 0) {
       return false;
     }
     return keys[(keys.length * Math.random()) << 0];
   }
 
-  static getControlStyle(id: string, property: string) {
+  public static getControlStyle(id: string, property: string) {
     const controlHeader = document.getElementById(id);
     if (!controlHeader) {
       return 0;
@@ -33,7 +33,7 @@ export class Utils {
     return value;
   }
 
-  static getControlProperty(id: string, property: string) {
+  public static getControlProperty(id: string, property: string) {
     const controlHeader = document.getElementById(id);
     if (!controlHeader) {
       return 0;
@@ -45,7 +45,7 @@ export class Utils {
     return value;
   }
 
-  static removeParams(params: object, removeList: string[]) {
+  public static removeParams(params: object, removeList: string[]) {
     const goodParams = {};
     for (const i in params) {
       if (removeList.indexOf(i) === -1) {

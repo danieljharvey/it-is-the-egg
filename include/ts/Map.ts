@@ -114,7 +114,7 @@ export class Map {
     } else {
       newY = y;
     }
-    return new Coords(newX, newY, offsetX, offsetY);
+    return new Coords({x:newX, y:newY, offsetX:offsetX, offsetY:offsetY});
   }
 
   // is intended next tile empty / a wall?
@@ -126,7 +126,7 @@ export class Map {
   public markAllForRedraw() {
     const tiles = this.getAllTiles();
     tiles.map(tile => {
-      const coords = new Coords(tile.x, tile.y);
+      const coords = new Coords({x:tile.x, y:tile.y,offsetX:0,offsetY:0});
       const newTile = tile.modify({
         needsDraw: true
       });
@@ -176,7 +176,7 @@ export class Map {
 
     let direction = player.direction;
     // if player is still, nudge them in rotation direction
-    if (direction == 0) {
+    if (direction === 0) {
       if (clockwise) {
         direction = 1;
       } else {
@@ -220,11 +220,11 @@ export class Map {
     const tiles = this.getAllTiles();
     const count = tiles.map(tile => {
       if (tile.id === id1) {
-        const coords = new Coords(tile.x, tile.y);
+        const coords = new Coords({x:tile.x, y:tile.y});
         this.changeTile(coords, this.cloneTile(id2));
         return 1;
       } else if (tile.id === id2) {
-        const coords = new Coords(tile.x, tile.y);
+        const coords = new Coords({x:tile.x, y:tile.y});
         this.changeTile(coords, this.cloneTile(id1));
         return 1;
       }
@@ -242,7 +242,7 @@ export class Map {
       }
       return tile.id === id;
     });
-    if (teleporters.length == 0) {
+    if (teleporters.length === 0) {
       return false; // no options
     }
     const newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
@@ -258,7 +258,7 @@ export class Map {
     const tiles = this.getAllTiles();
 
     tiles.map(tile => {
-      const coords = new Coords(tile.x, tile.y);
+      const coords = new Coords({x:tile.x, y:tile.y});
       const newCoords = this.translateRotation(coords, clockwise);
       const newTile = tile.modify({
         needsDraw: true,
@@ -286,7 +286,7 @@ export class Map {
   }
 
   protected getTile(x: number, y: number) {
-    const coords = new Coords(x, y);
+    const coords = new Coords({x:x, y:y});
     return this.getTileWithCoords(coords);
   }
 

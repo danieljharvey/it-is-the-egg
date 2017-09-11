@@ -365,7 +365,7 @@ export class Jetpack {
     const players = tiles.map(tile => {
       const type = tile.createPlayer;
       if (type) {
-        const coords = new Coords(tile.x, tile.y);
+        const coords = new Coords({x:tile.x, y:tile.y,offsetX:0,offsetY:0});
         const player = this.createNewPlayer(type, coords, 1);
         this.players[player.id] = player;
       }
@@ -461,12 +461,12 @@ export class Jetpack {
 
   protected handleDrawEvent(event) {
     const tileSize = this.canvas.calcTileSize(this.boardSize);
-    const coords = new Coords(
-      (event.offsetX / tileSize) as number,
-      (event.offsetY / tileSize) as number,
-      event.offsetX % tileSize - tileSize / 2,
-      event.offsetY % tileSize - tileSize / 2
-    );
+    const coords = new Coords({
+      x: (event.offsetX / tileSize) as number,
+      y: (event.offsetY / tileSize) as number,
+      offsetX: event.offsetX % tileSize - tileSize / 2,
+      offsetY: event.offsetY % tileSize - tileSize / 2
+    });
     this.drawCurrentTile(coords);
   }
 

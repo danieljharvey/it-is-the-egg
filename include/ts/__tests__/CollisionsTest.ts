@@ -30,13 +30,13 @@ test("Ignores same player collision test", () => {
 
 test("Vertical collision works", () => {
     const player1 = new Player({
-        coords: new Coords(1,1,0,0),
+        coords: new Coords({x:1,y:1,offsetX:0,offsetY:0}),
         falling: true,
         id: 1,
         type: "Horse"
     });
     const player2 = new Player({
-        coords: new Coords(1, 1,0,0),
+        coords: new Coords({x:1, y:1,offsetX:0,offsetY:0}),
         falling: false,
         id: 2,
         type: "Horse",
@@ -53,14 +53,14 @@ test("Vertical collision works", () => {
 
 test("Too far for horizontal collision", () => {
     const player1 = new Player({
-        coords: new Coords(5,5,1,0),
+        coords: new Coords({x:5,y:5,offsetX:1,offsetY:0}),
         falling: false,
         id: 1,
         type: "Horse",
         
     });
     const player2 = new Player({
-        coords: new Coords(6,5,-1,0),
+        coords: new Coords({x:6,y:5,offsetX:-1,offsetY:0}),
         falling: false,
         id: 2,
         type: "Horse",
@@ -76,14 +76,14 @@ test("Too far for horizontal collision", () => {
 
 test("Close enough for RHS horizontal collision", () => {
     const player1 = new Player({
-        coords: new Coords(5, 5, 32, 0),
+        coords: new Coords({x:5, y:5, offsetX:32, offsetY:0}),
         falling: false,
         id: 1,
         type: "Horse",
        
     });
     const player2 = new Player({
-        coords: new Coords(6,5,-32,0),
+        coords: new Coords({x:6,y:5,offsetX:-32,offsetY:0}),
         falling: false,
         id: 2,
         type: "Horse",
@@ -100,14 +100,14 @@ test("Close enough for RHS horizontal collision", () => {
 
 test("Close enough for LHS horizontal collision", () => {
     const player1 = new Player({
-        coords: new Coords(6,5,-25,0),
+        coords: new Coords({x:6,y:5,offsetX:-25,offsetY:0}),
         falling: false,
         id: 1,
         type: "Horse",
         
     });
     const player2 = new Player({
-        coords: new Coords(5,5,0,0),
+        coords: new Coords({x:5,y:5,offsetX:0,offsetY:0}),
         falling: false,
         
         id: 2,

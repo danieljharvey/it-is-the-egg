@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "lint": "tslint include/ts/*.ts",
-	"prettier": "prettier --write include/ts/*.ts"
+    "prettier": "prettier --write include/ts/*.ts"
   },
   "repository": {
     "type": "git",
@@ -42,7 +42,9 @@
     ]
   },
   "dependencies": {
+    "@types/immutable": "^3.8.7",
     "fastclick": "^1.0.6",
+    "immutable": "^3.8.1",
     "lodash": "^4.17.4",
     "ramda": "^0.24.1",
     "ramda-ts": "^0.1.2"

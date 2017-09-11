@@ -21,9 +21,9 @@ test("Translate rotation", () => {
 	const map = new Map(undefined, boardSize);
 
 	rotateData.map(data => {
-		const expected = new Coords(data.outX, data.outY);
+		const expected = new Coords({x:data.outX, y:data.outY});
 
-		const coords = new Coords(data.inX, data.inY);
+		const coords = new Coords({x:data.inX, y:data.inY});
 		const result = map.translateRotation(coords, data.clockwise);
 		return expect(result).toEqual(expected);
 	});
