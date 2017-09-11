@@ -1,6 +1,7 @@
-import { Map } from '../Map.ts';
-import { TileSet } from '../TileSet.ts';
-import { BoardSize } from '../BoardSize.ts';
+import { Coords } from "../Coords";
+import { Map } from "../Map";
+import { TileSet } from "../TileSet";
+import { BoardSize } from "../BoardSize";
 
 test("Translate rotation", () => {
 	
@@ -20,14 +21,13 @@ test("Translate rotation", () => {
 	const map = new Map(undefined, boardSize);
 
 	rotateData.map(data => {
-		let expected: object = {
-			'x': data.outX,
-			'y': data.outY 
-		};
-		const result = map.translateRotation(data.inX, data.inY, data.clockwise);
-		expect(result).toEqual(expected);
+		const expected = new Coords(data.outX, data.outY);
+
+		const coords = new Coords(data.inX, data.inY);
+		const result = map.translateRotation(coords, data.clockwise);
+		return expect(result).toEqual(expected);
 	});
-}	
+});
 
 test("Correct board size with shrinking", () => {
 
@@ -55,7 +55,7 @@ test("Correct board size with shrinking", () => {
 
 	const result = map.correctBoardSizeChange(board,boardSize);
 	expect(result).toEqual(expected);
-})
+});
 
 test("Correct board size with shrinking", () => {
 

@@ -1,5 +1,6 @@
-import { Player } from "../Player.ts";
-import { Collisions } from "../Collisions.ts";
+import { Coords } from "../Coords";
+import { Player } from "../Player";
+import { Collisions } from "../Collisions";
 
 const playerTypes={
     horse:{
@@ -29,52 +30,40 @@ test("Ignores same player collision test", () => {
 
 test("Vertical collision works", () => {
     const player1 = new Player({
-        x: 1,
-        y: 1,
-        offsetX: 0,
-        offsetY: 0,
+        coords: new Coords(1,1,0,0),
         falling: true,
-        type: "Horse",
-        id: 1
+        id: 1,
+        type: "Horse"
     });
     const player2 = new Player({
-        x: 1,
-        y: 1,
-        offsetX: 0,
-        offsetY: 0,
+        coords: new Coords(1, 1,0,0),
         falling: false,
+        id: 2,
         type: "Horse",
-        id: 2
     });
+    
     const jetpack = configureJetpackMock();
 
     const collisions = new Collisions(jetpack, playerTypes);
 
     const result = collisions.checkCollision(player1,player2);
     expect(result).toEqual(true);
-
-    expect(jetpack.deletePlayer.mock.calls.length).toBe(2);
 });
 
 
 test("Too far for horizontal collision", () => {
     const player1 = new Player({
-        x: 5,
-        y: 5,
-        offsetX: 1,
-        offsetY: 0,
+        coords: new Coords(5,5,1,0),
         falling: false,
+        id: 1,
         type: "Horse",
-        id: 1
+        
     });
     const player2 = new Player({
-        x: 6,
-        y: 5,
-        offsetX: -1,
-        offsetY: 0,
+        coords: new Coords(6,5,-1,0),
         falling: false,
+        id: 2,
         type: "Horse",
-        id: 2
     });
     // 320 , 384
 
@@ -87,22 +76,18 @@ test("Too far for horizontal collision", () => {
 
 test("Close enough for RHS horizontal collision", () => {
     const player1 = new Player({
-        x: 5,
-        y: 5,
-        offsetX: 32,
-        offsetY: 0,
+        coords: new Coords(5, 5, 32, 0),
         falling: false,
+        id: 1,
         type: "Horse",
-        id: 1
+       
     });
     const player2 = new Player({
-        x: 6,
-        y: 5,
-        offsetX: -32,
-        offsetY: 0,
+        coords: new Coords(6,5,-32,0),
         falling: false,
+        id: 2,
         type: "Horse",
-        id: 2
+        
     });
     
     const jetpack = configureJetpackMock();
@@ -111,27 +96,23 @@ test("Close enough for RHS horizontal collision", () => {
 
     const result = collisions.checkCollision(player1,player2);
     expect(result).toEqual(true);
-    expect(jetpack.deletePlayer.mock.calls.length).toBe(2);
 });
 
 test("Close enough for LHS horizontal collision", () => {
     const player1 = new Player({
-        x: 6,
-        y: 5,
-        offsetX: -25,
-        offsetY: 0,
+        coords: new Coords(6,5,-25,0),
         falling: false,
+        id: 1,
         type: "Horse",
-        id: 1
+        
     });
     const player2 = new Player({
-        x: 5,
-        y: 5,
-        offsetX: 0,
-        offsetY: 0,
+        coords: new Coords(5,5,0,0),
         falling: false,
+        
+        id: 2,
         type: "Horse",
-        id: 2
+        
     });
     
     const jetpack = configureJetpackMock();
@@ -140,5 +121,4 @@ test("Close enough for LHS horizontal collision", () => {
 
     const result = collisions.checkCollision(player1,player2);
     expect(result).toEqual(true);
-    expect(jetpack.deletePlayer.mock.calls.length).toBe(2);
 });

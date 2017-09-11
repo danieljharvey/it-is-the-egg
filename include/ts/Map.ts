@@ -67,12 +67,10 @@ export class Map {
         if (x < currentWidth && y < currentHeight) {
           // using current board
           const tile = board[x][y];
-          tile.needsDraw = true;
           newBoard[x][y] = tile;
         } else {
           // adding blank tiles
           const tile = this.cloneTile(1);
-          tile.needsDraw = true;
           newBoard[x][y] = tile;
         }
       }

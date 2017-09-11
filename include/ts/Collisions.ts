@@ -26,8 +26,17 @@ export class Collisions {
   // cycles through all players and check
   protected checkPlayerCollisions(player: Player, otherPlayers: Player[]) {
     otherPlayers.map(otherPlayer => {
-      this.checkCollision(player, otherPlayer);
+      this.handleCollision(player, otherPlayer);
     });
+  }
+
+  // this does the action so checkCollision can remain pure at heart
+  protected handleCollision(player1: Player, player2: Player) {
+    if (this.checkCollision(player1, player2)) {
+      this.combinePlayers(player1, player2);
+      return true;
+    }
+    return false;
   }
 
   // only deal with horizontal collisions for now
@@ -54,14 +63,11 @@ export class Collisions {
     }
 
     if (distance < 40) {
-      return this.combinePlayers(player1, player2);
+      return true;
     }
 
     // nothing changes
-    return {
-      player1,
-      player2
-    };
+    return false;
   }
 
   protected deletePlayer(player: Player) {
