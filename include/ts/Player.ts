@@ -25,10 +25,11 @@ export class Player {
   public readonly lastAction: string = "string";
   public readonly value: number = 1;
   public readonly img: string;
+  public readonly stop: boolean = false;
 
   constructor(params: object) {
     for (const i in params) {
-      if (params[i]) {
+      if (params[i] !== undefined) {
         this[i] = params[i];
       }
     }

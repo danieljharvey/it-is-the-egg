@@ -44,7 +44,7 @@ export class PlayerTypes {
     }
   };
 
-  getPlayerTypes() {
+  public getPlayerTypes() {
     return this.playerTypes;
   }
 }

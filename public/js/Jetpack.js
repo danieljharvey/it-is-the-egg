@@ -732,8 +732,9 @@ define("Player", ["require", "exports"], function (require, exports) {
             this.fallSpeed = 1;
             this.lastAction = "string";
             this.value = 1;
+            this.stop = false;
             for (var i in params) {
-                if (params[i]) {
+                if (params[i] !== undefined) {
                     this[i] = params[i];
                 }
             }
@@ -974,13 +975,11 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
                     if (x < currentWidth && y < currentHeight) {
                         // using current board
                         var tile = board[x][y];
-                        tile.needsDraw = true;
                         newBoard[x][y] = tile;
                     }
                     else {
                         // adding blank tiles
                         var tile = this.cloneTile(1);
-                        tile.needsDraw = true;
                         newBoard[x][y] = tile;
                     }
                 }
@@ -1270,7 +1269,8 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             this.setRedrawAroundPlayer(player);
             var newPlayer = this.incrementPlayerFrame(player);
             var newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);
-            var evenNewerPlayer = this.incrementPlayerDirection(timePassed, newerPlayer);
+            var checkedPlayer = this.checkPlayerDirection(newerPlayer);
+            var evenNewerPlayer = this.incrementPlayerDirection(timePassed, checkedPlayer);
             var newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
             var absolutelyNewestPlayer = this.checkTileAction(startCoords, newestPlayer);
             this.setRedrawAroundPlayer(absolutelyNewestPlayer);
@@ -1371,16 +1371,15 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             }
             return player;
         };
-        Movement.prototype.incrementPlayerDirection = function (timePassed, player) {
-            if (player.moveSpeed === 0) {
-                return player;
-            }
-            var moveAmount = this.calcMoveAmount(player.moveSpeed, this.renderer.tileSize, timePassed);
+        // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
+        Movement.prototype.checkPlayerDirection = function (player) {
             var coords = player.coords;
             if (player.direction !== 0 && player.falling === false) {
                 if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y) &&
                     !this.map.checkTileIsEmpty(coords.x + 1, coords.y)) {
-                    return player; // no change
+                    return player.modify({
+                        stop: true // don't go on this turn
+                    });
                 }
             }
             if (player.direction < 0 && player.falling === false) {
@@ -1390,16 +1389,8 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
                         coords: coords.modify({
                             offsetX: 0
                         }),
-                        direction: 1
-                    });
-                }
-                else {
-                    // move left
-                    var newOffsetX = coords.offsetX - moveAmount;
-                    return player.modify({
-                        coords: coords.modify({
-                            offsetX: newOffsetX
-                        })
+                        direction: 1,
+                        stop: false
                     });
                 }
             }
@@ -1410,21 +1401,53 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
                         coords: coords.modify({
                             offsetX: 0
                         }),
-                        direction: -1
-                    });
-                }
-                else {
-                    // move right
-                    var newOffsetX = coords.offsetX + moveAmount;
-                    return player.modify({
-                        coords: coords.modify({
-                            offsetX: newOffsetX
-                        })
+                        direction: -1,
+                        stop: false
                     });
                 }
             }
+            return player.modify({
+                stop: false
+            });
+        };
+        // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
+        Movement.prototype.incrementPlayerDirection = function (timePassed, player) {
+            // falling is priority - do this if a thing
+            if (player.falling) {
+                var fallAmount = this.calcMoveAmount(player.fallSpeed, this.renderer.tileSize, timePassed);
+                var coords_1 = player.coords.modify({
+                    offsetY: player.coords.offsetY + fallAmount
+                });
+                return player.modify({
+                    coords: coords_1
+                });
+            }
+            if (player.moveSpeed === 0 || player.stop !== false) {
+                // we are still, no need for movement
+                return player;
+            }
+            var moveAmount = this.calcMoveAmount(player.moveSpeed, this.renderer.tileSize, timePassed);
+            var coords = player.coords;
+            if (player.direction < 0) {
+                // move left
+                var newOffsetX = coords.offsetX - moveAmount;
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: newOffsetX
+                    })
+                });
+            }
+            else if (player.direction > 0) {
+                // move right
+                var newOffsetX = coords.offsetX + moveAmount;
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: newOffsetX
+                    })
+                });
+            }
             // if we've stopped and ended up not quite squared up, correct this
-            if (player.direction === 0 && player.falling === false) {
+            if (player.direction === 0) {
                 if (coords.offsetX > 0) {
                     // shuffle left
                     var newOffsetX = coords.offsetX - moveAmount;
@@ -1493,30 +1516,27 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             return coords;
         };
         Movement.prototype.checkFloorBelowPlayer = function (timePassed, player) {
-            if (player.coords.offsetX !== 0)
+            if (player.coords.offsetX !== 0) {
                 return player;
+            }
             var coords = player.coords;
             var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1, coords.offsetX, coords.offsetY);
             var tile = this.map.getTileWithCoords(belowCoords);
             if (tile.background) {
-                var fallAmount = this.calcMoveAmount(player.fallSpeed, this.renderer.tileSize, timePassed);
-                var coords_1 = player.coords.modify({
-                    offsetY: player.coords.offsetY + fallAmount
-                });
+                // gap below, start falling down it
                 return player.modify({
-                    coords: coords_1,
                     falling: true
                 });
             }
             else if (player.falling && tile.breakable) {
+                // if tile below is breakable (and we are already falling and thus have momentum, smash it)
                 this.map.changeTile(belowCoords, this.map.cloneTile(1)); // smash block, replace with empty
+                return player; // already falling
             }
-            else {
-                return player.modify({
-                    falling: false
-                });
-            }
-            return player; // no change
+            // solid ground, stop falling
+            return player.modify({
+                falling: false
+            });
         };
         return Movement;
     }());
@@ -2093,8 +2113,16 @@ define("Collisions", ["require", "exports"], function (require, exports) {
         Collisions.prototype.checkPlayerCollisions = function (player, otherPlayers) {
             var _this = this;
             otherPlayers.map(function (otherPlayer) {
-                _this.checkCollision(player, otherPlayer);
+                _this.handleCollision(player, otherPlayer);
             });
+        };
+        // this does the action so checkCollision can remain pure at heart
+        Collisions.prototype.handleCollision = function (player1, player2) {
+            if (this.checkCollision(player1, player2)) {
+                this.combinePlayers(player1, player2);
+                return true;
+            }
+            return false;
         };
         // only deal with horizontal collisions for now
         Collisions.prototype.checkCollision = function (player1, player2) {
@@ -2114,13 +2142,10 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                 distance = distance * -1;
             }
             if (distance < 40) {
-                return this.combinePlayers(player1, player2);
+                return true;
             }
             // nothing changes
-            return {
-                player1: player1,
-                player2: player2
-            };
+            return false;
         };
         Collisions.prototype.deletePlayer = function (player) {
             delete this.players[player.id];

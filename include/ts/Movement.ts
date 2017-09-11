@@ -41,9 +41,11 @@ export class Movement {
 
     const newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);
 
+    const checkedPlayer = this.checkPlayerDirection(newerPlayer);
+
     const evenNewerPlayer = this.incrementPlayerDirection(
       timePassed,
-      newerPlayer
+      checkedPlayer
     );
 
     const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
@@ -169,20 +171,8 @@ export class Movement {
     return player;
   }
 
-  protected incrementPlayerDirection(
-    timePassed: number,
-    player: Player
-  ): Player {
-    if (player.moveSpeed === 0) {
-      return player;
-    }
-
-    const moveAmount = this.calcMoveAmount(
-      player.moveSpeed,
-      this.renderer.tileSize,
-      timePassed
-    );
-
+  // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
+  protected checkPlayerDirection(player: Player) : Player {
     const coords = player.coords;
 
     if (player.direction !== 0 && player.falling === false) {
@@ -190,7 +180,9 @@ export class Movement {
         !this.map.checkTileIsEmpty(coords.x - 1, coords.y) &&
         !this.map.checkTileIsEmpty(coords.x + 1, coords.y)
       ) {
-        return player; // no change
+        return player.modify({
+          stop: true // don't go on this turn
+        });
       }
     }
 
@@ -201,15 +193,8 @@ export class Movement {
           coords: coords.modify({
             offsetX: 0
           }),
-          direction: 1
-        });
-      } else {
-        // move left
-        const newOffsetX = coords.offsetX - moveAmount;
-        return player.modify({
-          coords: coords.modify({
-            offsetX: newOffsetX
-          })
+          direction: 1,
+          stop: false
         });
       }
     }
@@ -221,21 +206,71 @@ export class Movement {
           coords: coords.modify({
             offsetX: 0
           }),
-          direction: -1
-        });
-      } else {
-        // move right
-        const newOffsetX = coords.offsetX + moveAmount;
-        return player.modify({
-          coords: coords.modify({
-            offsetX: newOffsetX
-          })
+          direction: -1,
+          stop: false
         });
       }
     }
 
+    return player.modify({
+      stop: false
+    });
+  }
+
+  // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
+  protected incrementPlayerDirection(
+    timePassed: number,
+    player: Player
+  ): Player {
+
+    // falling is priority - do this if a thing
+    if (player.falling) {
+      const fallAmount: number = this.calcMoveAmount(
+        player.fallSpeed,
+        this.renderer.tileSize,
+        timePassed
+      );
+      const coords = player.coords.modify({
+        offsetY: player.coords.offsetY + fallAmount
+      });
+      return player.modify({
+        coords
+      });
+    }
+    
+    if (player.moveSpeed === 0 ||  player.stop !== false) {
+      // we are still, no need for movement
+      return player;
+    }
+
+    const moveAmount = this.calcMoveAmount(
+      player.moveSpeed,
+      this.renderer.tileSize,
+      timePassed
+    );
+
+    const coords = player.coords;
+
+    if (player.direction < 0) {
+      // move left
+      const newOffsetX = coords.offsetX - moveAmount;
+      return player.modify({
+        coords: coords.modify({
+          offsetX: newOffsetX
+        })
+      });
+    } else if (player.direction > 0) {
+      // move right
+      const newOffsetX = coords.offsetX + moveAmount;
+      return player.modify({
+        coords: coords.modify({
+          offsetX: newOffsetX
+        })
+      });
+    }
+
     // if we've stopped and ended up not quite squared up, correct this
-    if (player.direction === 0 && player.falling === false) {
+    if (player.direction === 0) {
       if (coords.offsetX > 0) {
         // shuffle left
         const newOffsetX = coords.offsetX - moveAmount;
@@ -254,6 +289,7 @@ export class Movement {
         });
       }
     }
+
     // do nothing, return same object
     return player;
   }
@@ -321,7 +357,9 @@ export class Movement {
   }
 
   protected checkFloorBelowPlayer(timePassed: number, player: Player) {
-    if (player.coords.offsetX !== 0) return player;
+    if (player.coords.offsetX !== 0) {
+      return player;
+    }
 
     const coords = player.coords;
 
@@ -335,25 +373,19 @@ export class Movement {
     const tile = this.map.getTileWithCoords(belowCoords);
 
     if (tile.background) {
-      const fallAmount: number = this.calcMoveAmount(
-        player.fallSpeed,
-        this.renderer.tileSize,
-        timePassed
-      );
-      const coords = player.coords.modify({
-        offsetY: player.coords.offsetY + fallAmount
-      });
+      // gap below, start falling down it
       return player.modify({
-        coords,
         falling: true
       });
     } else if (player.falling && tile.breakable) {
+      // if tile below is breakable (and we are already falling and thus have momentum, smash it)
       this.map.changeTile(belowCoords, this.map.cloneTile(1)); // smash block, replace with empty
-    } else {
-      return player.modify({
-        falling: false
-      });
-    }
-    return player; // no change
+      return player; // already falling
+    } 
+
+    // solid ground, stop falling
+    return player.modify({
+      falling: false
+    }); 
   }
 }
