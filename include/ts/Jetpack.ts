@@ -365,7 +365,12 @@ export class Jetpack {
     const players = tiles.map(tile => {
       const type = tile.createPlayer;
       if (type) {
-        const coords = new Coords({x:tile.x, y:tile.y,offsetX:0,offsetY:0});
+        const coords = new Coords({
+          x: tile.x,
+          y: tile.y,
+          offsetX: 0,
+          offsetY: 0
+        });
         const player = this.createNewPlayer(type, coords, 1);
         this.players[player.id] = player;
       }

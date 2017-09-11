@@ -129,7 +129,7 @@ export class Renderer {
       }
       if (!tile.frontLayer) {
         if (this.renderTile(tile.x, tile.y, tile)) {
-          const coords = new Coords({x:tile.x, y:tile.y});
+          const coords = new Coords({ x: tile.x, y: tile.y });
           const newTile = tile.modify({
             drawnBefore: true,
             needsDraw: false
@@ -157,7 +157,7 @@ export class Renderer {
       }
       if (tile.frontLayer) {
         if (this.renderTile(tile.x, tile.y, tile)) {
-          const coords = new Coords({x:tile.x, y:tile.y});
+          const coords = new Coords({ x: tile.x, y: tile.y });
           const newTile = tile.modify({
             drawnBefore: true,
             needsDraw: false

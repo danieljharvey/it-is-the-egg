@@ -93,28 +93,26 @@ export class Map {
   }
 
   public correctForOverflow(
-    x: number,
-    y: number,
-    offsetX: number = 0,
-    offsetY: number = 0
+    coords: Coords
   ): Coords {
-    let newX, newY;
-    if (x < 0) {
+    let newX;
+    let newY;
+    if (coords.x < 0) {
       newX = this.boardSize.width - 1;
-    } else if (x >= this.boardSize.width) {
+    } else if (coords.x >= this.boardSize.width) {
       newX = 0;
     } else {
-      newX = x;
+      newX = coords.x;
     }
 
-    if (y < 0) {
+    if (coords.y < 0) {
       newY = this.boardSize.height - 1;
-    } else if (y >= this.boardSize.height) {
+    } else if (coords.y >= this.boardSize.height) {
       newY = 0;
     } else {
-      newY = y;
+      newY = coords.y;
     }
-    return new Coords({x:newX, y:newY, offsetX:offsetX, offsetY:offsetY});
+    return coords.modify({ x: newX, y: newY});
   }
 
   // is intended next tile empty / a wall?
@@ -126,7 +124,10 @@ export class Map {
   public markAllForRedraw() {
     const tiles = this.getAllTiles();
     tiles.map(tile => {
-      const coords = new Coords({x:tile.x, y:tile.y,offsetX:0,offsetY:0});
+      const coords = new Coords({
+        x: tile.x,
+        y: tile.y
+      });
       const newTile = tile.modify({
         needsDraw: true
       });
@@ -158,7 +159,7 @@ export class Map {
   }
 
   public getTileWithCoords(coords: Coords) {
-    const fixedCoords = this.correctForOverflow(coords.x, coords.y);
+    const fixedCoords = this.correctForOverflow(coords);
     const { x, y } = fixedCoords;
     const tile = this.board[x][y];
     tile.x = x;
@@ -220,11 +221,11 @@ export class Map {
     const tiles = this.getAllTiles();
     const count = tiles.map(tile => {
       if (tile.id === id1) {
-        const coords = new Coords({x:tile.x, y:tile.y});
+        const coords = new Coords({ x: tile.x, y: tile.y });
         this.changeTile(coords, this.cloneTile(id2));
         return 1;
       } else if (tile.id === id2) {
-        const coords = new Coords({x:tile.x, y:tile.y});
+        const coords = new Coords({ x: tile.x, y: tile.y });
         this.changeTile(coords, this.cloneTile(id1));
         return 1;
       }
@@ -258,7 +259,7 @@ export class Map {
     const tiles = this.getAllTiles();
 
     tiles.map(tile => {
-      const coords = new Coords({x:tile.x, y:tile.y});
+      const coords = new Coords({ x: tile.x, y: tile.y });
       const newCoords = this.translateRotation(coords, clockwise);
       const newTile = tile.modify({
         needsDraw: true,
@@ -286,7 +287,7 @@ export class Map {
   }
 
   protected getTile(x: number, y: number) {
-    const coords = new Coords({x:x, y:y});
+    const coords = new Coords({ x, y });
     return this.getTileWithCoords(coords);
   }
 

@@ -73,7 +73,7 @@ export class Movement {
       const newTile = tile.modify({
         needsDraw: true
       });
-      const coords = new Coords({x:tile.x, y:tile.y});
+      const coords = new Coords({ x: tile.x, y: tile.y });
       this.map.changeTile(coords, newTile);
     });
     return player;
@@ -127,8 +127,7 @@ export class Movement {
     }
 
     const coords = this.map.correctForOverflow(
-      currentCoords.x,
-      currentCoords.y
+      currentCoords
     );
 
     const tile = this.map.getTileWithCoords(coords);
@@ -144,11 +143,11 @@ export class Movement {
 
     if (tile.action === "completeLevel") {
       this.jetpack.completeLevel();
-    } else if (tile.action == "teleport") {
+    } else if (tile.action === "teleport") {
       return this.teleport(player); // only action that changes player state
-    } else if (tile.action == "pink-switch") {
+    } else if (tile.action === "pink-switch") {
       this.map.switchTiles(15, 16);
-    } else if (tile.action == "green-switch") {
+    } else if (tile.action === "green-switch") {
       this.map.switchTiles(18, 19);
     }
     return player; // player returned unchanged
@@ -157,7 +156,7 @@ export class Movement {
   // find another teleport and go to it
   // if no others, do nothing
   protected teleport(player: Player): Player {
-    // if (player.lastAction == "teleport") return false;
+    // if (player.lastAction === "teleport") return false;
     const newTile = this.map.findTile(player.coords, 14);
     if (newTile) {
       return player.modify({
@@ -172,7 +171,7 @@ export class Movement {
   }
 
   // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-  protected checkPlayerDirection(player: Player) : Player {
+  protected checkPlayerDirection(player: Player): Player {
     const coords = player.coords;
 
     if (player.direction !== 0 && player.falling === false) {
@@ -222,7 +221,6 @@ export class Movement {
     timePassed: number,
     player: Player
   ): Player {
-
     // falling is priority - do this if a thing
     if (player.falling) {
       const fallAmount: number = this.calcMoveAmount(
@@ -230,15 +228,15 @@ export class Movement {
         this.renderer.tileSize,
         timePassed
       );
-      const coords = player.coords.modify({
+      const newCoords = player.coords.modify({
         offsetY: player.coords.offsetY + fallAmount
       });
       return player.modify({
-        coords
+        coords: newCoords
       });
     }
-    
-    if (player.moveSpeed === 0 ||  player.stop !== false) {
+
+    if (player.moveSpeed === 0 || player.stop !== false) {
       // we are still, no need for movement
       return player;
     }
@@ -307,12 +305,7 @@ export class Movement {
 
   protected correctPlayerOverflow(player: Player): Player {
     const newCoords = this.correctTileOverflow(player.coords);
-    const loopedCoords = this.map.correctForOverflow(
-      newCoords.x,
-      newCoords.y,
-      newCoords.offsetX,
-      newCoords.offsetY
-    );
+    const loopedCoords = this.map.correctForOverflow(newCoords);
 
     return player.modify({
       coords: loopedCoords,
@@ -324,32 +317,37 @@ export class Movement {
     if (coords.offsetX > SPRITE_SIZE) {
       // move one tile to right
       return coords.modify({
+        
+        offsetX: 0,
         x: coords.x + 1,
-        offsetX: 0
+        
       });
     }
 
     if (coords.offsetX < -1 * SPRITE_SIZE) {
       // move one tile to left
       return coords.modify({
+        
+        offsetX: 0,
         x: coords.x - 1,
-        offsetX: 0
+        
       });
     }
 
     if (coords.offsetY > SPRITE_SIZE) {
       // move one tile down
       return coords.modify({
-        y: coords.y + 1,
-        offsetY: 0
+        
+        offsetY: 0,y: coords.y + 1,
+        
       });
     }
 
     if (coords.offsetY < -1 * SPRITE_SIZE) {
       // move one tile up
       return coords.modify({
-        y: coords.y - 1,
-        offsetY: 0
+        offsetY: 0,y: coords.y - 1,
+        
       });
     }
 
@@ -364,10 +362,7 @@ export class Movement {
     const coords = player.coords;
 
     const belowCoords = this.map.correctForOverflow(
-      coords.x,
-      coords.y + 1,
-      coords.offsetX,
-      coords.offsetY
+      coords.modify({y: coords.y + 1})
     );
 
     const tile = this.map.getTileWithCoords(belowCoords);
@@ -381,11 +376,11 @@ export class Movement {
       // if tile below is breakable (and we are already falling and thus have momentum, smash it)
       this.map.changeTile(belowCoords, this.map.cloneTile(1)); // smash block, replace with empty
       return player; // already falling
-    } 
+    }
 
     // solid ground, stop falling
     return player.modify({
       falling: false
-    }); 
+    });
   }
 }

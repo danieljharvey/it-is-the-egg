@@ -216,56 +216,6 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
     }(immutable_1.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 })));
     exports.Coords = Coords;
 });
-/*
-export class Coords {
-  public readonly x: number = 0;
-  public readonly y: number = 0;
-  public readonly offsetX: number = 0;
-  public readonly offsetY: number = 0;
-
-  constructor(x: number, y: number, offsetX: number = 0, offsetY: number = 0) {
-    this.x = Math.floor(x) as number;
-    this.y = Math.floor(y) as number;
-    this.offsetX = offsetX as number;
-    this.offsetY = offsetY as number;
-  }
-
-  public getActualPosition() {
-    const fullX: number = this.x * SPRITE_SIZE + this.offsetX;
-    const fullY: number = this.y * SPRITE_SIZE + this.offsetY;
-    return {
-      fullX,
-      fullY
-    };
-  }
-
-  public equals(otherCoords: Coords) {
-    if (this.x !== otherCoords.x) {
-      return false;
-    }
-    if (this.y !== otherCoords.y) {
-      return false;
-    }
-    if (this.offsetX !== otherCoords.offsetX) {
-      return false;
-    }
-    if (this.offsetY !== otherCoords.offsetY) {
-      return false;
-    }
-    return true;
-  }
-
-  public modify(params: object): Coords {
-    const newParams = (Object as any).assign({}, this, params);
-    return new Coords(
-      newParams.x,
-      newParams.y,
-      newParams.offsetX,
-      newParams.offsetY
-    );
-  }
-}
-*/ 
 define("Loader", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1035,29 +985,28 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             this.boardSize = boardSize;
             this.board = this.generateRandomBoard(boardSize);
         };
-        Map.prototype.correctForOverflow = function (x, y, offsetX, offsetY) {
-            if (offsetX === void 0) { offsetX = 0; }
-            if (offsetY === void 0) { offsetY = 0; }
-            var newX, newY;
-            if (x < 0) {
+        Map.prototype.correctForOverflow = function (coords) {
+            var newX;
+            var newY;
+            if (coords.x < 0) {
                 newX = this.boardSize.width - 1;
             }
-            else if (x >= this.boardSize.width) {
+            else if (coords.x >= this.boardSize.width) {
                 newX = 0;
             }
             else {
-                newX = x;
+                newX = coords.x;
             }
-            if (y < 0) {
+            if (coords.y < 0) {
                 newY = this.boardSize.height - 1;
             }
-            else if (y >= this.boardSize.height) {
+            else if (coords.y >= this.boardSize.height) {
                 newY = 0;
             }
             else {
-                newY = y;
+                newY = coords.y;
             }
-            return new Coords_2.Coords({ x: newX, y: newY, offsetX: offsetX, offsetY: offsetY });
+            return coords.modify({ x: newX, y: newY });
         };
         // is intended next tile empty / a wall?
         Map.prototype.checkTileIsEmpty = function (x, y) {
@@ -1068,7 +1017,10 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             var _this = this;
             var tiles = this.getAllTiles();
             tiles.map(function (tile) {
-                var coords = new Coords_2.Coords({ x: tile.x, y: tile.y, offsetX: 0, offsetY: 0 });
+                var coords = new Coords_2.Coords({
+                    x: tile.x,
+                    y: tile.y
+                });
                 var newTile = tile.modify({
                     needsDraw: true
                 });
@@ -1093,7 +1045,7 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             });
         };
         Map.prototype.getTileWithCoords = function (coords) {
-            var fixedCoords = this.correctForOverflow(coords.x, coords.y);
+            var fixedCoords = this.correctForOverflow(coords);
             var x = fixedCoords.x, y = fixedCoords.y;
             var tile = this.board[x][y];
             tile.x = x;
@@ -1369,7 +1321,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) {
                 return player;
             }
-            var coords = this.map.correctForOverflow(currentCoords.x, currentCoords.y);
+            var coords = this.map.correctForOverflow(currentCoords);
             var tile = this.map.getTileWithCoords(coords);
             if (tile.collectable > 0) {
                 var score = tile.collectable * player.multiplier;
@@ -1382,13 +1334,13 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             if (tile.action === "completeLevel") {
                 this.jetpack.completeLevel();
             }
-            else if (tile.action == "teleport") {
+            else if (tile.action === "teleport") {
                 return this.teleport(player); // only action that changes player state
             }
-            else if (tile.action == "pink-switch") {
+            else if (tile.action === "pink-switch") {
                 this.map.switchTiles(15, 16);
             }
-            else if (tile.action == "green-switch") {
+            else if (tile.action === "green-switch") {
                 this.map.switchTiles(18, 19);
             }
             return player; // player returned unchanged
@@ -1396,7 +1348,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
         // find another teleport and go to it
         // if no others, do nothing
         Movement.prototype.teleport = function (player) {
-            // if (player.lastAction == "teleport") return false;
+            // if (player.lastAction === "teleport") return false;
             var newTile = this.map.findTile(player.coords, 14);
             if (newTile) {
                 return player.modify({
@@ -1453,11 +1405,11 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             // falling is priority - do this if a thing
             if (player.falling) {
                 var fallAmount = this.calcMoveAmount(player.fallSpeed, this.renderer.tileSize, timePassed);
-                var coords_1 = player.coords.modify({
+                var newCoords = player.coords.modify({
                     offsetY: player.coords.offsetY + fallAmount
                 });
                 return player.modify({
-                    coords: coords_1
+                    coords: newCoords
                 });
             }
             if (player.moveSpeed === 0 || player.stop !== false) {
@@ -1516,7 +1468,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
         };
         Movement.prototype.correctPlayerOverflow = function (player) {
             var newCoords = this.correctTileOverflow(player.coords);
-            var loopedCoords = this.map.correctForOverflow(newCoords.x, newCoords.y, newCoords.offsetX, newCoords.offsetY);
+            var loopedCoords = this.map.correctForOverflow(newCoords);
             return player.modify({
                 coords: loopedCoords,
                 lastAction: ""
@@ -1526,29 +1478,27 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             if (coords.offsetX > SPRITE_SIZE) {
                 // move one tile to right
                 return coords.modify({
+                    offsetX: 0,
                     x: coords.x + 1,
-                    offsetX: 0
                 });
             }
             if (coords.offsetX < -1 * SPRITE_SIZE) {
                 // move one tile to left
                 return coords.modify({
+                    offsetX: 0,
                     x: coords.x - 1,
-                    offsetX: 0
                 });
             }
             if (coords.offsetY > SPRITE_SIZE) {
                 // move one tile down
                 return coords.modify({
-                    y: coords.y + 1,
-                    offsetY: 0
+                    offsetY: 0, y: coords.y + 1,
                 });
             }
             if (coords.offsetY < -1 * SPRITE_SIZE) {
                 // move one tile up
                 return coords.modify({
-                    y: coords.y - 1,
-                    offsetY: 0
+                    offsetY: 0, y: coords.y - 1,
                 });
             }
             return coords;
@@ -1558,7 +1508,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
                 return player;
             }
             var coords = player.coords;
-            var belowCoords = this.map.correctForOverflow(coords.x, coords.y + 1, coords.offsetX, coords.offsetY);
+            var belowCoords = this.map.correctForOverflow(coords.modify({ y: coords.y + 1 }));
             var tile = this.map.getTileWithCoords(belowCoords);
             if (tile.background) {
                 // gap below, start falling down it
@@ -2029,7 +1979,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var players = tiles.map(function (tile) {
                 var type = tile.createPlayer;
                 if (type) {
-                    var coords = new Coords_4.Coords({ x: tile.x, y: tile.y, offsetX: 0, offsetY: 0 });
+                    var coords = new Coords_4.Coords({
+                        x: tile.x,
+                        y: tile.y,
+                        offsetX: 0,
+                        offsetY: 0
+                    });
                     var player = _this.createNewPlayer(type, coords, 1);
                     _this.players[player.id] = player;
                 }
