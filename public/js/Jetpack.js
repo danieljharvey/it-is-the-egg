@@ -182,6 +182,7 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
         };
         Canvas.prototype.loadCanvas = function (boardSize, tileSize) {
             this.canvas = document.getElementById("canvas");
+            console.log('loadCanvas', boardSize, tileSize);
             this.canvas.width = boardSize.width * tileSize;
             this.canvas.height = boardSize.height * tileSize;
             this.ctx = this.canvas.getContext("2d");
@@ -813,10 +814,10 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             return;
         };
         Map.prototype.getTilesSurrounding = function (coords) {
-            var startX = coords.offsetX < 0 ? coords.x - 1 : coords.x;
-            var endX = coords.offsetX > 0 ? coords.x + 1 : coords.x;
-            var startY = coords.offsetY < 0 ? coords.y - 1 : coords.y;
-            var endY = coords.offsetY > 0 ? coords.y + 1 : coords.y;
+            var startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
+            var endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
+            var startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+            var endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
             var allTiles = this.getAllTiles();
             return allTiles.filter(function (tile) {
                 if (tile.x >= startX &&
@@ -1939,6 +1940,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             if (board === void 0) { board = []; }
             if (size === void 0) { size = 12; }
             this.boardSize = new BoardSize_3.BoardSize(size);
+            this.canvas = new Canvas_1.Canvas(this.boardSize);
             this.map = new Map_1.Map(this.tileSet, this.boardSize, board);
             this.map.updateBoard(this.map.correctBoardSizeChange(board, this.boardSize), this.boardSize);
             var tiles = this.tileSet.getTiles();

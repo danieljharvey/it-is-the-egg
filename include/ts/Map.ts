@@ -135,11 +135,11 @@ export class Map {
   }
 
   public getTilesSurrounding(coords: Coords) {
-    const startX = coords.offsetX < 0 ? coords.x - 1 : coords.x;
-    const endX = coords.offsetX > 0 ? coords.x + 1 : coords.x;
+    const startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
+    const endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
 
-    const startY = coords.offsetY < 0 ? coords.y - 1 : coords.y;
-    const endY = coords.offsetY > 0 ? coords.y + 1 : coords.y;
+    const startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+    const endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
 
     const allTiles = this.getAllTiles();
 

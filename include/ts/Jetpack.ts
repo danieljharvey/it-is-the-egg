@@ -245,6 +245,8 @@ export class Jetpack {
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
   protected createRenderer(board = [], size: number = 12) {
     this.boardSize = new BoardSize(size);
+    this.canvas = new Canvas(this.boardSize);
+    
     this.map = new Map(this.tileSet, this.boardSize, board);
     this.map.updateBoard(
       this.map.correctBoardSizeChange(board, this.boardSize),
