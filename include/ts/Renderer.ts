@@ -74,41 +74,45 @@ export class Renderer {
 
   protected loadTilePalette() {
     for (const i in this.tiles) {
-      const thisTile = this.tiles[i];
-      const tileImage = document.createElement("img");
-      tileImage.setAttribute("src", this.getTileImagePath(thisTile));
-      tileImage.setAttribute("width", SPRITE_SIZE.toString());
-      tileImage.setAttribute("height", SPRITE_SIZE.toString());
-      tileImage.addEventListener(
-        "load",
-        () => {
-          this.markTileImageAsLoaded(thisTile.id);
-        },
-        false
-      );
-      this.tileImages[thisTile.id] = {
-        image: tileImage,
-        ready: false
-      };
+      if (this.tiles[i] !== undefined) {
+        const thisTile = this.tiles[i];
+        const tileImage = document.createElement("img");
+        tileImage.setAttribute("src", this.getTileImagePath(thisTile));
+        tileImage.setAttribute("width", SPRITE_SIZE.toString());
+        tileImage.setAttribute("height", SPRITE_SIZE.toString());
+        tileImage.addEventListener(
+          "load",
+          () => {
+            this.markTileImageAsLoaded(thisTile.id);
+          },
+          false
+        );
+        this.tileImages[thisTile.id] = {
+          image: tileImage,
+          ready: false
+        };  
+      }
     }
   }
 
   protected loadPlayerPalette() {
     for (const i in this.playerTypes) {
-      const playerType = this.playerTypes[i];
-      const playerImage = document.createElement("img");
-      playerImage.setAttribute("src", this.getTileImagePath(playerType));
-      playerImage.addEventListener(
-        "load",
-        () => {
-          this.markPlayerImageAsLoaded(playerType.img);
-        },
-        false
-      );
-      this.playerImages[playerType.img] = {
-        image: playerImage,
-        ready: false
-      };
+      if (this.playerTypes[i] !== undefined) {
+        const playerType = this.playerTypes[i];
+        const playerImage = document.createElement("img");
+        playerImage.setAttribute("src", this.getTileImagePath(playerType));
+        playerImage.addEventListener(
+          "load",
+          () => {
+            this.markPlayerImageAsLoaded(playerType.img);
+          },
+          false
+        );
+        this.playerImages[playerType.img] = {
+          image: playerImage,
+          ready: false
+        };
+      }
     }
   }
 
@@ -121,6 +125,8 @@ export class Renderer {
   }
 
   protected renderBoard(): void {
+    const ctx = this.canvas.getDrawingContext();
+    ctx.globalAlpha = 1;
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
       if (tile.needsDraw === false) {
@@ -205,24 +211,28 @@ export class Renderer {
       return false;
     }
 
-    let left = x * tileSize;
-    let top = y * tileSize;
+    let left = Math.floor(x * tileSize);
+    let top = Math.floor(y * tileSize);
     const opacity = 1;
 
-    ctx.globalAlpha = opacity;
+    //ctx.globalAlpha = opacity;
 
-    if (this.map.renderAngle == 0) {
+    // console.log('renderTile',left,top,tileSize);
+
+    if (this.map.renderAngle === 0) {
       ctx.drawImage(img, left, top, tileSize, tileSize);
     } else {
       const angleInRad = this.map.renderAngle * (Math.PI / 180);
 
-      const offset = tileSize / 2;
+      const offset = Math.floor(tileSize / 2);
 
-      left = left + offset;
-      top = top + offset;
+      left = Math.floor(left + offset);
+      top = Math.floor(top + offset);
 
       ctx.translate(left, top);
       ctx.rotate(angleInRad);
+
+      // console.log('renderTile (rotated)', offset, tileSize, left, top);
 
       ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
 
@@ -252,10 +262,11 @@ export class Renderer {
     const left = Math.floor(coords.x * tileSize + coords.offsetX * offsetRatio);
     const top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
 
-    const clipLeft = player.currentFrame * SPRITE_SIZE;
+    const clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
     const clipTop = 0;
 
-    ctx.globalAlpha = 1;
+    // slow setting this all the time, so is set once and left
+    //ctx.globalAlpha = 1;
 
     const image = this.getPlayerImage(player.img);
     if (!image) {
@@ -302,6 +313,22 @@ export class Renderer {
         SPRITE_SIZE,
         secondLeft,
         top,
+        tileSize,
+        tileSize
+      );
+    }
+
+    if (top + tileSize > tileSize * this.boardSize.height) {
+      // also draw on top
+      const secondTop = top - tileSize * this.boardSize.height;
+      ctx.drawImage(
+        image,
+        clipLeft,
+        0,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+        left,
+        secondTop,
         tileSize,
         tileSize
       );

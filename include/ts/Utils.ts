@@ -3,6 +3,7 @@ import * as _ from "ramda";
 // wee lad full of reusable functions
 
 export class Utils {
+
   public static getRandomObjectKey(object: object) {
     const keys = Object.keys(object);
     return this.returnRandomKey(keys);
@@ -54,4 +55,5 @@ export class Utils {
     }
     return goodParams;
   }
+
 }
