@@ -3,7 +3,7 @@ import { Utils } from "./Utils";
 
 const SPRITE_SIZE: number = 64;
 
-interface CoordsParams {
+interface ICoordsParams {
   x?: number;
   y?: number;
   offsetX?: number;
@@ -16,11 +16,11 @@ export class Coords extends Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 }) {
   public offsetX: number;
   public offsetY: number;
 
-  constructor(params?: CoordsParams) {
+  constructor(params?: ICoordsParams) {
     params ? super(params) : super();
   }
 
-  public modify(values: CoordsParams) {
+  public modify(values: ICoordsParams) {
     return this.merge(values) as this;
   }
 

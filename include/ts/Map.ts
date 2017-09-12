@@ -6,10 +6,10 @@ import { TileSet } from "./TileSet";
 import { Utils } from "./Utils";
 
 export class Map {
-  tileSet: TileSet;
-  renderAngle: number = 0;
+  public boardSize: BoardSize;
 
-  boardSize: BoardSize;
+  protected tileSet: TileSet;
+  protected renderAngle: number = 0;
 
   protected board = [];
 
@@ -92,9 +92,7 @@ export class Map {
     this.board = this.generateRandomBoard(boardSize);
   }
 
-  public correctForOverflow(
-    coords: Coords
-  ): Coords {
+  public correctForOverflow(coords: Coords): Coords {
     let newX;
     let newY;
     if (coords.x < 0) {
@@ -112,7 +110,7 @@ export class Map {
     } else {
       newY = coords.y;
     }
-    return coords.modify({ x: newX, y: newY});
+    return coords.modify({ x: newX, y: newY });
   }
 
   // is intended next tile empty / a wall?

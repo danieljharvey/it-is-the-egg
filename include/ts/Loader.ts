@@ -1,11 +1,11 @@
 export class Loader {
-  apiLocation: string;
+  protected apiLocation: string;
 
   constructor(apiLocation: string) {
     this.apiLocation = apiLocation;
   }
 
-  callServer(
+  public callServer(
     action: string,
     params: any,
     callback: (object) => any,
@@ -18,11 +18,11 @@ export class Loader {
     xhr.open("POST", this.apiLocation, true);
     xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = () => {
       const DONE: number = 4; // readyState 4 means the request is done.
       const OK: number = 200; // status 200 is a successful return.
-      if (xhr.readyState == DONE) {
-        if (xhr.status == OK) {
+      if (xhr.readyState === DONE) {
+        if (xhr.status === OK) {
           let object;
           try {
             object = JSON.parse(xhr.responseText);
@@ -43,20 +43,22 @@ export class Loader {
         }
       }
     };
-    //var formData = this.paramsToFormData(params);
+    // var formData = this.paramsToFormData(params);
     const queryString = this.param(params);
     xhr.send(queryString);
   }
 
-  paramsToFormData(params: object): FormData {
+  protected paramsToFormData(params: object): FormData {
     const formData = new FormData();
     for (const key in params) {
-      formData.append(key, params[key]);
+      if (params[key] !== undefined) {
+        formData.append(key, params[key]);  
+      }
     }
     return formData;
   }
 
-  param(object: object): string {
+  protected param(object: object): string {
     let encodedString = "";
     for (const prop in object) {
       if (object.hasOwnProperty(prop)) {

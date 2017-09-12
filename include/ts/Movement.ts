@@ -126,9 +126,7 @@ export class Movement {
       return player;
     }
 
-    const coords = this.map.correctForOverflow(
-      currentCoords
-    );
+    const coords = this.map.correctForOverflow(currentCoords);
 
     const tile = this.map.getTileWithCoords(coords);
 
@@ -317,37 +315,32 @@ export class Movement {
     if (coords.offsetX > SPRITE_SIZE) {
       // move one tile to right
       return coords.modify({
-        
         offsetX: 0,
-        x: coords.x + 1,
-        
+        x: coords.x + 1
       });
     }
 
     if (coords.offsetX < -1 * SPRITE_SIZE) {
       // move one tile to left
       return coords.modify({
-        
         offsetX: 0,
-        x: coords.x - 1,
-        
+        x: coords.x - 1
       });
     }
 
     if (coords.offsetY > SPRITE_SIZE) {
       // move one tile down
       return coords.modify({
-        
-        offsetY: 0,y: coords.y + 1,
-        
+        offsetY: 0,
+        y: coords.y + 1
       });
     }
 
     if (coords.offsetY < -1 * SPRITE_SIZE) {
       // move one tile up
       return coords.modify({
-        offsetY: 0,y: coords.y - 1,
-        
+        offsetY: 0,
+        y: coords.y - 1
       });
     }
 
@@ -362,7 +355,7 @@ export class Movement {
     const coords = player.coords;
 
     const belowCoords = this.map.correctForOverflow(
-      coords.modify({y: coords.y + 1})
+      coords.modify({ y: coords.y + 1 })
     );
 
     const tile = this.map.getTileWithCoords(belowCoords);

@@ -4,17 +4,17 @@ import { Loader } from "./Loader";
 import { SavedLevel } from "./SavedLevel";
 
 export class Levels {
-  levelID: number = 0;
-  levels: object = {};
-  jetpack: Jetpack;
-  loader: Loader;
+  public levelID: number = 0;
+  protected levels: object = {};
+  protected jetpack: Jetpack;
+  protected loader: Loader;
 
   constructor(jetpack: Jetpack, loader: Loader) {
     this.jetpack = jetpack;
     this.loader = loader;
   }
 
-  getLevelList(callback) {
+  public getLevelList(callback) {
     this.loader.callServer(
       "getLevelsList",
       {},
@@ -29,23 +29,13 @@ export class Levels {
     );
   }
 
-  // turn array of numbers into list key'd by levelID with object of won/lost
-  cleanLevelList(list) {
-    const levelList = [];
-    for (const i in list) {
-      const levelID = parseInt(list[i]);
-      levelList[levelID] = {
-        levelID,
-        completed: false
-      };
-    }
-    return levelList;
-  }
 
-  populateLevelsList(levelList): void {
+  public populateLevelsList(levelList): void {
     const select = document.getElementById("levelList");
 
-    if (!select) return;
+    if (!select) {
+      return;
+    }
 
     while (select.firstChild) {
       select.removeChild(select.firstChild);
@@ -53,22 +43,26 @@ export class Levels {
     const nullEl = document.createElement("option");
     nullEl.textContent = "New";
     nullEl.value = "";
-    if (!this.levelID) nullEl.selected = true;
+    if (!this.levelID) {
+      nullEl.selected = true;
+    }
     select.appendChild(nullEl);
 
     for (const i in levelList) {
-      const levelID: number = parseInt(i);
-      const el = document.createElement("option");
-      el.textContent = levelID.toString();
-      el.value = levelID.toString();
-      if (levelID == this.levelID) {
-        el.selected = true;
+      if (levelList[i] !== undefined) {
+        const levelID: number = parseInt(i);
+        const el = document.createElement("option");
+        el.textContent = levelID.toString();
+        el.value = levelID.toString();
+        if (levelID === this.levelID) {
+          el.selected = true;
+        }
+        select.appendChild(el);
       }
-      select.appendChild(el);
     }
   }
 
-  saveLevel(
+  public saveLevel(
     board: object,
     boardSize: BoardSize,
     levelID: number,
@@ -86,17 +80,17 @@ export class Levels {
     this.loader.callServer(
       "saveLevel",
       params,
-      levelID => {
-        this.levelID = levelID;
-        callback(levelID);
+      savedLevelID => {
+        this.levelID = savedLevelID;
+        callback(savedLevelID);
       },
-      function(errorMsg: string) {
-        console.log("ERROR: ", errorMsg);
+      (errorMsg: string) => {
+        // console.log("ERROR: ", errorMsg);
       }
     );
   }
 
-  loadLevel(
+  public loadLevel(
     levelID: number,
     callback: (SavedLevel) => any,
     failCallback: () => any
@@ -114,14 +108,14 @@ export class Levels {
         const savedLevel = new SavedLevel(boardSize, data.board, levelID);
         callback(savedLevel);
       },
-      function(errorMsg: string) {
-        console.log("ERROR: ", errorMsg);
+      (errorMsg: string) => {
+        // console.log("ERROR: ", errorMsg);
         failCallback();
       }
     );
   }
 
-  saveData(
+  public saveData(
     levelID: number,
     rotationsUsed: number,
     score: number,
@@ -142,5 +136,21 @@ export class Levels {
         callback({ msg: "call failed" });
       }
     );
+  }
+
+
+  // turn array of numbers into list key'd by levelID with object of won/lost
+  protected cleanLevelList(list) {
+    const levelList = [];
+    for (const i in list) {
+      if (list[i] !== undefined) {
+        const levelID = parseInt(list[i], 10);
+        levelList[levelID] = {
+          completed: false,
+          levelID
+        };
+      }
+    }
+    return levelList;
   }
 }

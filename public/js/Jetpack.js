@@ -231,8 +231,8 @@ define("Loader", ["require", "exports"], function (require, exports) {
             xhr.onreadystatechange = function () {
                 var DONE = 4; // readyState 4 means the request is done.
                 var OK = 200; // status 200 is a successful return.
-                if (xhr.readyState == DONE) {
-                    if (xhr.status == OK) {
+                if (xhr.readyState === DONE) {
+                    if (xhr.status === OK) {
                         var object = void 0;
                         try {
                             object = JSON.parse(xhr.responseText);
@@ -256,14 +256,16 @@ define("Loader", ["require", "exports"], function (require, exports) {
                     }
                 }
             };
-            //var formData = this.paramsToFormData(params);
+            // var formData = this.paramsToFormData(params);
             var queryString = this.param(params);
             xhr.send(queryString);
         };
         Loader.prototype.paramsToFormData = function (params) {
             var formData = new FormData();
             for (var key in params) {
-                formData.append(key, params[key]);
+                if (params[key] !== undefined) {
+                    formData.append(key, params[key]);
+                }
             }
             return formData;
         };
@@ -327,40 +329,32 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
                 callback(levelList);
             });
         };
-        // turn array of numbers into list key'd by levelID with object of won/lost
-        Levels.prototype.cleanLevelList = function (list) {
-            var levelList = [];
-            for (var i in list) {
-                var levelID = parseInt(list[i]);
-                levelList[levelID] = {
-                    levelID: levelID,
-                    completed: false
-                };
-            }
-            return levelList;
-        };
         Levels.prototype.populateLevelsList = function (levelList) {
             var select = document.getElementById("levelList");
-            if (!select)
+            if (!select) {
                 return;
+            }
             while (select.firstChild) {
                 select.removeChild(select.firstChild);
             }
             var nullEl = document.createElement("option");
             nullEl.textContent = "New";
             nullEl.value = "";
-            if (!this.levelID)
+            if (!this.levelID) {
                 nullEl.selected = true;
+            }
             select.appendChild(nullEl);
             for (var i in levelList) {
-                var levelID = parseInt(i);
-                var el = document.createElement("option");
-                el.textContent = levelID.toString();
-                el.value = levelID.toString();
-                if (levelID == this.levelID) {
-                    el.selected = true;
+                if (levelList[i] !== undefined) {
+                    var levelID = parseInt(i);
+                    var el = document.createElement("option");
+                    el.textContent = levelID.toString();
+                    el.value = levelID.toString();
+                    if (levelID === this.levelID) {
+                        el.selected = true;
+                    }
+                    select.appendChild(el);
                 }
-                select.appendChild(el);
             }
         };
         Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
@@ -374,11 +368,11 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
             if (levelID) {
                 params.levelID = levelID;
             }
-            this.loader.callServer("saveLevel", params, function (levelID) {
-                _this.levelID = levelID;
-                callback(levelID);
+            this.loader.callServer("saveLevel", params, function (savedLevelID) {
+                _this.levelID = savedLevelID;
+                callback(savedLevelID);
             }, function (errorMsg) {
-                console.log("ERROR: ", errorMsg);
+                // console.log("ERROR: ", errorMsg);
             });
         };
         Levels.prototype.loadLevel = function (levelID, callback, failCallback) {
@@ -393,7 +387,7 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
                 var savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
                 callback(savedLevel);
             }, function (errorMsg) {
-                console.log("ERROR: ", errorMsg);
+                // console.log("ERROR: ", errorMsg);
                 failCallback();
             });
         };
@@ -408,6 +402,20 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
             }, function () {
                 callback({ msg: "call failed" });
             });
+        };
+        // turn array of numbers into list key'd by levelID with object of won/lost
+        Levels.prototype.cleanLevelList = function (list) {
+            var levelList = [];
+            for (var i in list) {
+                if (list[i] !== undefined) {
+                    var levelID = parseInt(list[i], 10);
+                    levelList[levelID] = {
+                        completed: false,
+                        levelID: levelID
+                    };
+                }
+            }
+            return levelList;
         };
         return Levels;
     }());
@@ -428,7 +436,23 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
             return this.merge(values);
         };
         return Player;
-    }(immutable_2.Record({ coords: new Coords_1.Coords(), direction: 0, oldDirection: 0, currentFrame: 1, id: 0, frames: 1, multiplier: 1, falling: false, type: "egg", moveSpeed: 1, fallSpeed: 1, lastAction: "", value: 1, img: "", stop: false })));
+    }(immutable_2.Record({
+        coords: new Coords_1.Coords(),
+        direction: 0,
+        oldDirection: 0,
+        currentFrame: 1,
+        id: 0,
+        frames: 1,
+        multiplier: 1,
+        falling: false,
+        type: "egg",
+        moveSpeed: 1,
+        fallSpeed: 1,
+        lastAction: "",
+        value: 1,
+        img: "",
+        stop: false
+    })));
     exports.Player = Player;
 });
 /*
@@ -466,7 +490,7 @@ export class Player {
     return new Player(newParams);
   }
 }
-*/ 
+*/
 define("Tile", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1497,26 +1521,28 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
                 // move one tile to right
                 return coords.modify({
                     offsetX: 0,
-                    x: coords.x + 1,
+                    x: coords.x + 1
                 });
             }
             if (coords.offsetX < -1 * SPRITE_SIZE) {
                 // move one tile to left
                 return coords.modify({
                     offsetX: 0,
-                    x: coords.x - 1,
+                    x: coords.x - 1
                 });
             }
             if (coords.offsetY > SPRITE_SIZE) {
                 // move one tile down
                 return coords.modify({
-                    offsetY: 0, y: coords.y + 1,
+                    offsetY: 0,
+                    y: coords.y + 1
                 });
             }
             if (coords.offsetY < -1 * SPRITE_SIZE) {
                 // move one tile up
                 return coords.modify({
-                    offsetY: 0, y: coords.y - 1,
+                    offsetY: 0,
+                    y: coords.y - 1
                 });
             }
             return coords;

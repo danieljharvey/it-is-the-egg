@@ -4,7 +4,7 @@ import { Utils } from "./Utils";
 
 const SPRITE_SIZE: number = 64;
 
-interface PlayerParams {
+interface IPlayerParams {
   coords?: Coords;
   direction?: number;
   oldDirection?: number;
@@ -22,7 +22,23 @@ interface PlayerParams {
   stop?: boolean;
 }
 
-export class Player extends Record({ coords: new Coords(), direction: 0, oldDirection: 0, currentFrame: 1, id: 0, frames: 1, multiplier: 1, falling: false, type: "egg", moveSpeed: 1, fallSpeed : 1, lastAction: "", value: 1, img: "", stop: false }) {
+export class Player extends Record({
+  coords: new Coords(),
+  direction: 0,
+  oldDirection: 0,
+  currentFrame: 1,
+  id: 0,
+  frames: 1,
+  multiplier: 1,
+  falling: false,
+  type: "egg",
+  moveSpeed: 1,
+  fallSpeed: 1,
+  lastAction: "",
+  value: 1,
+  img: "",
+  stop: false
+}) {
   public coords: Coords;
   public direction: number;
   public oldDirection: number;
@@ -39,15 +55,13 @@ export class Player extends Record({ coords: new Coords(), direction: 0, oldDire
   public img: string;
   public stop: boolean;
 
-  constructor(params?: PlayerParams) {
+  constructor(params?: IPlayerParams) {
     params ? super(params) : super();
   }
 
-  public modify(values: PlayerParams) {
+  public modify(values: IPlayerParams) {
     return this.merge(values) as this;
   }
-
-  
 }
 
 /*
