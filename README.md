@@ -1,8 +1,23 @@
 # It Is The Egg
 Puzzle game thing with an egg
 
-Work in progress egg-based game.
+Can't bloody wait? Play in browser RIGHT NOW at http://itistheegg.com/
 
-Copy into webroot and run from localhost (if you open index.html as file Canvas refuses to export toDataUrl as it is 'insecure')
+The aim of the game is to combine all of the eggs into the One True Egg and also collect all of the things to make your dreams come true and also complete the level and go onto the next.
 
-Or alternatively, try it now on the internet: http://onwardolympians.com/it-is-the-egg
+Written in Typescript with a little bit of Immutable.js to make the egg transitions less slow.
+
+Typescript files:
+`/include/ts`
+
+Compile with 
+`tsc -w`
+
+Run tests with
+`npm test`
+
+Run prettier with
+`npm run prettier`
+
+Run tslint with
+`npm run lint`
