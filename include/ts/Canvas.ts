@@ -51,7 +51,7 @@ export class Canvas {
   public calcTileSize(boardSize: BoardSize) {
     const maxBoardSize = this.getMaxBoardSize(this.boardSize);
     const tileSize = maxBoardSize / boardSize.width;
-    return tileSize;
+    return Math.floor(tileSize);
   }
 
   protected sizeControls(boardSize: number) {

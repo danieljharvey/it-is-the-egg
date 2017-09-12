@@ -150,7 +150,7 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
         Canvas.prototype.calcTileSize = function (boardSize) {
             var maxBoardSize = this.getMaxBoardSize(this.boardSize);
             var tileSize = maxBoardSize / boardSize.width;
-            return tileSize;
+            return Math.floor(tileSize);
         };
         Canvas.prototype.sizeControls = function (boardSize) {
             var controlHeader = document.getElementById("controlHeader");
@@ -1031,20 +1031,22 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
                     // console.log("Could not find tile image for id " + tile.id);
                     return false;
                 }
-                var left = x * tileSize;
-                var top = y * tileSize;
+                var left = Math.floor(x * tileSize);
+                var top = Math.floor(y * tileSize);
                 var opacity = 1;
-                ctx.globalAlpha = opacity;
-                if (this.map.renderAngle == 0) {
+                //ctx.globalAlpha = opacity;
+                // console.log('renderTile',left,top,tileSize);
+                if (this.map.renderAngle === 0) {
                     ctx.drawImage(img, left, top, tileSize, tileSize);
                 }
                 else {
                     var angleInRad = this.map.renderAngle * (Math.PI / 180);
-                    var offset = tileSize / 2;
-                    left = left + offset;
-                    top = top + offset;
+                    var offset = Math.floor(tileSize / 2);
+                    left = Math.floor(left + offset);
+                    top = Math.floor(top + offset);
                     ctx.translate(left, top);
                     ctx.rotate(angleInRad);
+                    // console.log('renderTile (rotated)', offset, tileSize, left, top);
                     ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
                     ctx.rotate(-angleInRad);
                     ctx.translate(-left, -top);
@@ -1089,18 +1091,20 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
         Renderer.prototype.loadTilePalette = function () {
             var _this = this;
             var _loop_1 = function (i) {
-                var thisTile = this_1.tiles[i];
-                var tileImage = document.createElement("img");
-                tileImage.setAttribute("src", this_1.getTileImagePath(thisTile));
-                tileImage.setAttribute("width", SPRITE_SIZE.toString());
-                tileImage.setAttribute("height", SPRITE_SIZE.toString());
-                tileImage.addEventListener("load", function () {
-                    _this.markTileImageAsLoaded(thisTile.id);
-                }, false);
-                this_1.tileImages[thisTile.id] = {
-                    image: tileImage,
-                    ready: false
-                };
+                if (this_1.tiles[i] !== undefined) {
+                    var thisTile_1 = this_1.tiles[i];
+                    var tileImage = document.createElement("img");
+                    tileImage.setAttribute("src", this_1.getTileImagePath(thisTile_1));
+                    tileImage.setAttribute("width", SPRITE_SIZE.toString());
+                    tileImage.setAttribute("height", SPRITE_SIZE.toString());
+                    tileImage.addEventListener("load", function () {
+                        _this.markTileImageAsLoaded(thisTile_1.id);
+                    }, false);
+                    this_1.tileImages[thisTile_1.id] = {
+                        image: tileImage,
+                        ready: false
+                    };
+                }
             };
             var this_1 = this;
             for (var i in this.tiles) {
@@ -1110,16 +1114,18 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
         Renderer.prototype.loadPlayerPalette = function () {
             var _this = this;
             var _loop_2 = function (i) {
-                var playerType = this_2.playerTypes[i];
-                var playerImage = document.createElement("img");
-                playerImage.setAttribute("src", this_2.getTileImagePath(playerType));
-                playerImage.addEventListener("load", function () {
-                    _this.markPlayerImageAsLoaded(playerType.img);
-                }, false);
-                this_2.playerImages[playerType.img] = {
-                    image: playerImage,
-                    ready: false
-                };
+                if (this_2.playerTypes[i] !== undefined) {
+                    var playerType_1 = this_2.playerTypes[i];
+                    var playerImage = document.createElement("img");
+                    playerImage.setAttribute("src", this_2.getTileImagePath(playerType_1));
+                    playerImage.addEventListener("load", function () {
+                        _this.markPlayerImageAsLoaded(playerType_1.img);
+                    }, false);
+                    this_2.playerImages[playerType_1.img] = {
+                        image: playerImage,
+                        ready: false
+                    };
+                }
             };
             var this_2 = this;
             for (var i in this.playerTypes) {
@@ -1134,6 +1140,8 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
         };
         Renderer.prototype.renderBoard = function () {
             var _this = this;
+            var ctx = this.canvas.getDrawingContext();
+            ctx.globalAlpha = 1;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
                 if (tile.needsDraw === false) {
@@ -1217,9 +1225,10 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
             var coords = player.coords;
             var left = Math.floor(coords.x * tileSize + coords.offsetX * offsetRatio);
             var top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
-            var clipLeft = player.currentFrame * SPRITE_SIZE;
+            var clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
             var clipTop = 0;
-            ctx.globalAlpha = 1;
+            // slow setting this all the time, so is set once and left
+            //ctx.globalAlpha = 1;
             var image = this.getPlayerImage(player.img);
             if (!image) {
                 //console.log('player image not loaded', player.img);
@@ -1235,6 +1244,11 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
                 // also draw on left
                 var secondLeft = left - tileSize * this.boardSize.width;
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
+            }
+            if (top + tileSize > tileSize * this.boardSize.height) {
+                // also draw on top
+                var secondTop = top - tileSize * this.boardSize.height;
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
             }
         };
         Renderer.prototype.drawRotated = function (savedData, direction, angle, targetAngle, completed) {

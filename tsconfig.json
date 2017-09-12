@@ -10,5 +10,9 @@
     },
     "include": [
         "include/ts/*"
-    ]
+    ],
+	"lib":[
+		"es2017.object",
+		"dom"
+	]
 }
