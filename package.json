@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "lint": "tslint include/ts/*.ts --exclude include/ts/*.d.ts",
-    "prettier": "prettier --write include/ts/*.ts"
+    "prettier": "prettier --write 'include/**/*.ts'"
   },
   "repository": {
     "type": "git",

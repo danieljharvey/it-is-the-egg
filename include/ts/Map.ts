@@ -16,16 +16,15 @@ export class Map {
   constructor(tileSet: TileSet, boardSize: BoardSize, board = []) {
     this.tileSet = tileSet;
     this.boardSize = boardSize;
-    this.board = board;
+    this.board = this.fixBoard(board);
     this.markAllForRedraw();
   }
 
   // return array with all tiles in (with x and y added)
   public getAllTiles() {
     const allTiles = this.board.map((column, mapX) => {
-      return column.map((item, mapY) => {
-        return new Tile({
-          ...item,
+      return column.map((item: Tile, mapY) => {
+        return item.modify({
           x: mapX,
           y: mapY
         });
@@ -82,8 +81,10 @@ export class Map {
     return this.board;
   }
 
-  public updateBoard(board, boardSize: BoardSize) {
-    this.board = board;
+  // this needs to turn data into Tile objects too
+  public updateBoard(board: Tile[][], boardSize: BoardSize) {
+    console.log('updateBoard',board);
+    this.board = this.fixBoard(board);
     this.boardSize = boardSize;
   }
 
@@ -159,15 +160,11 @@ export class Map {
   public getTileWithCoords(coords: Coords) {
     const fixedCoords = this.correctForOverflow(coords);
     const { x, y } = fixedCoords;
-    const tile = this.board[x][y];
-    tile.x = x;
-    tile.y = y;
-    return tile;
+    return this.board[x][y];
   }
 
   public changeTile(coords: Coords, tile: Tile) {
-    const { x, y } = coords;
-    this.board[x][y] = tile;
+    this.board[coords.x][coords.y] = tile;
   }
 
   public rotatePlayer(player: Player, clockwise) {
@@ -194,8 +191,7 @@ export class Map {
 
   public cloneTile(id): Tile {
     const prototypeTile = this.getPrototypeTile(id);
-    const tile = new Tile(prototypeTile); // create new Tile object with these
-    return tile;
+    return new Tile(prototypeTile); // create new Tile object with these
   }
 
   public getRandomTile(tiles) {
@@ -284,10 +280,24 @@ export class Map {
     return true;
   }
 
+  public fixBoard(board: Tile[][]) {
+    const newBoard = board.map((column, mapY) => {
+      return column.map((item, mapX) => {
+        const newTile = this.cloneTile(item.id);
+        return newTile.modify({
+          x: mapX,
+          y: mapY
+        });
+      });
+    });
+    return newBoard;
+  }
   protected getTile(x: number, y: number) {
     const coords = new Coords({ x, y });
     return this.getTileWithCoords(coords);
   }
+
+  
 
   protected generateBlankBoard() {
     const board = [];

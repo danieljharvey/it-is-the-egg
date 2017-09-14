@@ -52,7 +52,7 @@ export class Loader {
     const formData = new FormData();
     for (const key in params) {
       if (params[key] !== undefined) {
-        formData.append(key, params[key]);  
+        formData.append(key, params[key]);
       }
     }
     return formData;

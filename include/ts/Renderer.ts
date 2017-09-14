@@ -90,7 +90,7 @@ export class Renderer {
         this.tileImages[thisTile.id] = {
           image: tileImage,
           ready: false
-        };  
+        };
       }
     }
   }
@@ -192,8 +192,13 @@ export class Renderer {
     }
   }
 
-  protected getTileImage(id: number) {
-    const tileImage = this.tileImages[id];
+  protected getTileImage(tile: Tile) {
+    if (tile.id < 1) {
+      console.log("invalid tile requested",tile.id, tile);
+      return false;
+    }
+    const tileImage = this.tileImages[tile.id];
+
     if (tileImage.ready) {
       return tileImage.image;
     }
@@ -204,7 +209,7 @@ export class Renderer {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
-    const img = this.getTileImage(tile.id);
+    const img = this.getTileImage(tile);
 
     if (!img) {
       // console.log("Could not find tile image for id " + tile.id);

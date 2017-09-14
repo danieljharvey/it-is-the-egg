@@ -8,14 +8,6 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
 define("BoardSize", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -182,7 +174,6 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
         };
         Canvas.prototype.loadCanvas = function (boardSize, tileSize) {
             this.canvas = document.getElementById("canvas");
-            console.log('loadCanvas', boardSize, tileSize);
             this.canvas.width = boardSize.width * tileSize;
             this.canvas.height = boardSize.height * tileSize;
             this.ctx = this.canvas.getContext("2d");
@@ -441,7 +432,7 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         coords: new Coords_1.Coords(),
         direction: 0,
         oldDirection: 0,
-        currentFrame: 1,
+        currentFrame: 0,
         id: 0,
         frames: 1,
         multiplier: 1,
@@ -492,32 +483,35 @@ export class Player {
   }
 }
 */
-define("Tile", ["require", "exports"], function (require, exports) {
+define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Tile = (function () {
+    var Tile = (function (_super) {
+        __extends(Tile, _super);
         function Tile(params) {
             var _this = this;
-            this.background = false;
-            this.needsDraw = true;
-            this.frontLayer = false;
-            this.collectable = 0;
-            this.breakable = false;
-            this.action = "";
-            this.dontAdd = false;
-            this.createPlayer = "";
-            // fill this object with entries from params
-            Object.entries(params).map(function (_a) {
-                var key = _a[0], value = _a[1];
-                _this[key] = value;
-            });
+            params ? _this = _super.call(this, params) || this : _this = _super.call(this) || this;
+            return _this;
         }
-        Tile.prototype.modify = function (params) {
-            var newParams = Object.assign({}, this, params);
-            return new Tile(newParams);
+        Tile.prototype.modify = function (values) {
+            return this.merge(values);
         };
         return Tile;
-    }());
+    }(immutable_3.Record({
+        id: 0,
+        title: "Title",
+        background: false,
+        needsDraw: true,
+        frontLayer: false,
+        collectable: 0,
+        breakable: false,
+        action: "",
+        dontAdd: false,
+        createPlayer: "",
+        x: 0,
+        y: 0,
+        drawnBefore: false
+    })));
     exports.Tile = Tile;
 });
 define("TileSet", ["require", "exports"], function (require, exports) {
@@ -707,14 +701,17 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             this.board = [];
             this.tileSet = tileSet;
             this.boardSize = boardSize;
-            this.board = board;
+            this.board = this.fixBoard(board);
             this.markAllForRedraw();
         }
         // return array with all tiles in (with x and y added)
         Map.prototype.getAllTiles = function () {
             var allTiles = this.board.map(function (column, mapX) {
                 return column.map(function (item, mapY) {
-                    return new Tile_1.Tile(__assign({}, item, { x: mapX, y: mapY }));
+                    return item.modify({
+                        x: mapX,
+                        y: mapY
+                    });
                 });
             });
             var reducedTiles = allTiles.reduce(function (total, item) {
@@ -762,8 +759,10 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         Map.prototype.getBoard = function () {
             return this.board;
         };
+        // this needs to turn data into Tile objects too
         Map.prototype.updateBoard = function (board, boardSize) {
-            this.board = board;
+            console.log('updateBoard', board);
+            this.board = this.fixBoard(board);
             this.boardSize = boardSize;
         };
         Map.prototype.updateBoardWithRandom = function (boardSize) {
@@ -832,14 +831,10 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         Map.prototype.getTileWithCoords = function (coords) {
             var fixedCoords = this.correctForOverflow(coords);
             var x = fixedCoords.x, y = fixedCoords.y;
-            var tile = this.board[x][y];
-            tile.x = x;
-            tile.y = y;
-            return tile;
+            return this.board[x][y];
         };
         Map.prototype.changeTile = function (coords, tile) {
-            var x = coords.x, y = coords.y;
-            this.board[x][y] = tile;
+            this.board[coords.x][coords.y] = tile;
         };
         Map.prototype.rotatePlayer = function (player, clockwise) {
             var newCoords = this.translateRotation(player.coords, clockwise);
@@ -863,8 +858,7 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         };
         Map.prototype.cloneTile = function (id) {
             var prototypeTile = this.getPrototypeTile(id);
-            var tile = new Tile_1.Tile(prototypeTile); // create new Tile object with these
-            return tile;
+            return new Tile_1.Tile(prototypeTile); // create new Tile object with these
         };
         Map.prototype.getRandomTile = function (tiles) {
             var _this = this;
@@ -947,6 +941,19 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             this.board = newBoard;
             return true;
         };
+        Map.prototype.fixBoard = function (board) {
+            var _this = this;
+            var newBoard = board.map(function (column, mapY) {
+                return column.map(function (item, mapX) {
+                    var newTile = _this.cloneTile(item.id);
+                    return newTile.modify({
+                        x: mapX,
+                        y: mapY
+                    });
+                });
+            });
+            return newBoard;
+        };
         Map.prototype.getTile = function (x, y) {
             var coords = new Coords_2.Coords({ x: x, y: y });
             return this.getTileWithCoords(coords);
@@ -1027,7 +1034,7 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
             this.renderTile = function (x, y, tile) {
                 var ctx = this.canvas.getDrawingContext();
                 var tileSize = this.tileSize;
-                var img = this.getTileImage(tile.id);
+                var img = this.getTileImage(tile);
                 if (!img) {
                     // console.log("Could not find tile image for id " + tile.id);
                     return false;
@@ -1205,8 +1212,12 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
                 }
             }
         };
-        Renderer.prototype.getTileImage = function (id) {
-            var tileImage = this.tileImages[id];
+        Renderer.prototype.getTileImage = function (tile) {
+            if (tile.id < 1) {
+                console.log("invalid tile requested", tile.id, tile);
+                return false;
+            }
+            var tileImage = this.tileImages[tile.id];
             if (tileImage.ready) {
                 return tileImage.image;
             }
@@ -1383,7 +1394,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             if (tile.collectable > 0) {
                 var score = tile.collectable * player.multiplier;
                 var blankTile = this.map.cloneTile(1);
-                blankTile.needsDraw = true;
+                //blankTile.needsDraw = true;
                 this.map.changeTile(coords, blankTile);
                 this.jetpack.addScore(score);
                 return player;

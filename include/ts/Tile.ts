@@ -1,25 +1,57 @@
-export class Tile {
+import { Record } from "immutable";
+
+interface ITileParams {
+  id?: number;
+  title?: string;
+  img?: string;
+  background?: boolean;
+  needsDraw?: boolean;
+  frontLayer?: boolean;
+  collectable?: number;
+  breakable?: boolean;
+  action?: string;
+  dontAdd?: boolean;
+  createPlayer?: string;
+  x?: number;
+  y?: number;
+  drawnBefore?: boolean;
+}
+
+export class Tile extends Record({
+  id: 0,
+  title: "Title",
+  background: false,
+  needsDraw: true,
+  frontLayer: false,
+  collectable: 0,
+  breakable: false,
+  action: "",
+  dontAdd: false,
+  createPlayer: "",
+  x: 0,
+  y: 0,
+  drawnBefore: false
+}) {
   public id: number;
   public title: string;
   public img: string;
-  public background: boolean = false;
-  public needsDraw: boolean = true;
-  public frontLayer: boolean = false;
-  public collectable: number = 0;
-  public breakable: boolean = false;
-  public action: string = "";
-  public dontAdd: boolean = false;
-  public createPlayer: string = "";
+  public background: boolean;
+  public needsDraw: boolean;
+  public frontLayer: boolean;
+  public collectable: number;
+  public breakable: boolean;
+  public action: string;
+  public dontAdd: boolean;
+  public createPlayer: string;
+  public x: number;
+  public y: number;
+  public drawnBefore: boolean;
 
-  constructor(params: object) {
-    // fill this object with entries from params
-    (Object as any).entries(params).map(([key, value]) => {
-      this[key] = value;
-    });
+  constructor(params?: ITileParams) {
+    params ? super(params) : super();
   }
 
-  public modify(params: object): Tile {
-    const newParams = (Object as any).assign({}, this, params);
-    return new Tile(newParams);
+  public modify(values: ITileParams) {
+    return this.merge(values) as this;
   }
 }

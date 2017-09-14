@@ -29,7 +29,6 @@ export class Levels {
     );
   }
 
-
   public populateLevelsList(levelList): void {
     const select = document.getElementById("levelList");
 
@@ -137,7 +136,6 @@ export class Levels {
       }
     );
   }
-
 
   // turn array of numbers into list key'd by levelID with object of won/lost
   protected cleanLevelList(list) {

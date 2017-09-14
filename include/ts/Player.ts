@@ -26,7 +26,7 @@ export class Player extends Record({
   coords: new Coords(),
   direction: 0,
   oldDirection: 0,
-  currentFrame: 1,
+  currentFrame: 0,
   id: 0,
   frames: 1,
   multiplier: 1,

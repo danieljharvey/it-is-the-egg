@@ -133,7 +133,7 @@ export class Movement {
     if (tile.collectable > 0) {
       const score = tile.collectable * player.multiplier;
       const blankTile = this.map.cloneTile(1);
-      blankTile.needsDraw = true;
+      //blankTile.needsDraw = true;
       this.map.changeTile(coords, blankTile);
       this.jetpack.addScore(score);
       return player;
