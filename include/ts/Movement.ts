@@ -10,11 +10,11 @@ const SPRITE_SIZE: number = 64;
 // movement takes the current map, the current players, and returns new player objects
 // it is then trashed and a new one made for next move to reduce any real held state
 export class Movement {
-  map: Map;
-  renderer: Renderer;
-  jetpack: Jetpack;
+  protected map: Map;
+  protected renderer: Renderer;
+  protected jetpack: Jetpack;
 
-  players: Player[] = [];
+  protected players: Player[] = [];
 
   constructor(map: Map, renderer: Renderer, jetpack: Jetpack) {
     this.map = map;
@@ -24,7 +24,9 @@ export class Movement {
 
   // loop through passed players[] array, do changes, return new one
   public doCalcs(players: Player[], timePassed: number) {
-    if (!players) return [];
+    if (!players) {
+      return [];
+    }
     this.players = players; // store so we can compare
     const newPlayers = players.map(player => {
       return this.doPlayerCalcs(player, timePassed);
@@ -122,7 +124,7 @@ export class Movement {
   protected checkPlayerTileAction(player: Player): Player {
     const currentCoords = player.coords;
 
-    if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) {
+    if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
       return player;
     }
 
@@ -133,7 +135,7 @@ export class Movement {
     if (tile.collectable > 0) {
       const score = tile.collectable * player.multiplier;
       const blankTile = this.map.cloneTile(1);
-      //blankTile.needsDraw = true;
+      
       this.map.changeTile(coords, blankTile);
       this.jetpack.addScore(score);
       return player;

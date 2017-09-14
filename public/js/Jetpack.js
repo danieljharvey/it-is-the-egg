@@ -761,7 +761,6 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         };
         // this needs to turn data into Tile objects too
         Map.prototype.updateBoard = function (board, boardSize) {
-            console.log('updateBoard', board);
             this.board = this.fixBoard(board);
             this.boardSize = boardSize;
         };
@@ -1314,8 +1313,9 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
         // loop through passed players[] array, do changes, return new one
         Movement.prototype.doCalcs = function (players, timePassed) {
             var _this = this;
-            if (!players)
+            if (!players) {
                 return [];
+            }
             this.players = players; // store so we can compare
             var newPlayers = players.map(function (player) {
                 return _this.doPlayerCalcs(player, timePassed);
@@ -1386,7 +1386,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
         };
         Movement.prototype.checkPlayerTileAction = function (player) {
             var currentCoords = player.coords;
-            if (currentCoords.offsetX != 0 || currentCoords.offsetY != 0) {
+            if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
                 return player;
             }
             var coords = this.map.correctForOverflow(currentCoords);
@@ -1394,7 +1394,6 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             if (tile.collectable > 0) {
                 var score = tile.collectable * player.multiplier;
                 var blankTile = this.map.cloneTile(1);
-                //blankTile.needsDraw = true;
                 this.map.changeTile(coords, blankTile);
                 this.jetpack.addScore(score);
                 return player;

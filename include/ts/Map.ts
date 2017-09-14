@@ -83,7 +83,6 @@ export class Map {
 
   // this needs to turn data into Tile objects too
   public updateBoard(board: Tile[][], boardSize: BoardSize) {
-    console.log('updateBoard',board);
     this.board = this.fixBoard(board);
     this.boardSize = boardSize;
   }
