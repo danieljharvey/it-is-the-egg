@@ -69,15 +69,8 @@ export class Movement {
     return player;
   }
 
-  protected setRedrawAroundPlayer(player: Player): Player {
-    const tiles = this.map.getTilesSurrounding(player.coords);
-    tiles.map(tile => {
-      const newTile = tile.modify({
-        needsDraw: true
-      });
-      const coords = new Coords({ x: tile.x, y: tile.y });
-      this.map.changeTile(coords, newTile);
-    });
+  protected setRedrawAroundPlayer(player: Player) : Player {
+    this.renderer.markPlayerRedraw(player.coords);
     return player;
   }
 

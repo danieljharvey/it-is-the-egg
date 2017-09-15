@@ -49,6 +49,32 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
     }());
     exports.BoardSize = BoardSize;
 });
+define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var SPRITE_SIZE = 64;
+    var Coords = (function (_super) {
+        __extends(Coords, _super);
+        function Coords(params) {
+            var _this = this;
+            params ? _this = _super.call(this, params) || this : _this = _super.call(this) || this;
+            return _this;
+        }
+        Coords.prototype.modify = function (values) {
+            return this.merge(values);
+        };
+        Coords.prototype.getActualPosition = function () {
+            var fullX = this.x * SPRITE_SIZE + this.offsetX;
+            var fullY = this.y * SPRITE_SIZE + this.offsetY;
+            return {
+                fullX: fullX,
+                fullY: fullY
+            };
+        };
+        return Coords;
+    }(immutable_1.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 })));
+    exports.Coords = Coords;
+});
 define("Utils", ["require", "exports", "ramda"], function (require, exports, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -101,6 +127,29 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
                 }
             }
             return goodParams;
+        };
+        Utils.correctForOverflow = function (coords, boardSize) {
+            var newX;
+            var newY;
+            if (coords.x < 0) {
+                newX = boardSize.width - 1;
+            }
+            else if (coords.x >= boardSize.width) {
+                newX = 0;
+            }
+            else {
+                newX = coords.x;
+            }
+            if (coords.y < 0) {
+                newY = boardSize.height - 1;
+            }
+            else if (coords.y >= boardSize.height) {
+                newY = 0;
+            }
+            else {
+                newY = coords.y;
+            }
+            return coords.modify({ x: newX, y: newY });
         };
         return Utils;
     }());
@@ -181,32 +230,6 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
         return Canvas;
     }());
     exports.Canvas = Canvas;
-});
-define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var SPRITE_SIZE = 64;
-    var Coords = (function (_super) {
-        __extends(Coords, _super);
-        function Coords(params) {
-            var _this = this;
-            params ? _this = _super.call(this, params) || this : _this = _super.call(this) || this;
-            return _this;
-        }
-        Coords.prototype.modify = function (values) {
-            return this.merge(values);
-        };
-        Coords.prototype.getActualPosition = function () {
-            var fullX = this.x * SPRITE_SIZE + this.offsetX;
-            var fullY = this.y * SPRITE_SIZE + this.offsetY;
-            return {
-                fullX: fullX,
-                fullY: fullY
-            };
-        };
-        return Coords;
-    }(immutable_1.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 })));
-    exports.Coords = Coords;
 });
 define("Loader", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -447,42 +470,6 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
     })));
     exports.Player = Player;
 });
-/*
-// much more burnable player object
-// properties are protected so they can't be changed
-// only change is via constructor - destroy and make new if change required
-
-export class Player {
-  public readonly coords: Coords;
-  public readonly direction: number = 0;
-  public readonly oldDirection: number = 0;
-  public readonly currentFrame: number = 0;
-  public readonly id: number = 0;
-  public readonly frames: number = 1;
-  public readonly multiplier: number = 1;
-  public readonly falling: boolean = false;
-  public readonly type: string = "egg";
-  public readonly moveSpeed: number = 1;
-  public readonly fallSpeed: number = 1;
-  public readonly lastAction: string = "string";
-  public readonly value: number = 1;
-  public readonly img: string;
-  public readonly stop: boolean = false;
-
-  constructor(params: object) {
-    for (const i in params) {
-      if (params[i] !== undefined) {
-        this[i] = params[i];
-      }
-    }
-  }
-
-  public modify(params: object): Player {
-    const newParams = (Object as any).assign({}, this, params);
-    return new Player(newParams);
-  }
-}
-*/
 define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -501,7 +488,6 @@ define("Tile", ["require", "exports", "immutable"], function (require, exports, 
         id: 0,
         title: "Title",
         background: false,
-        needsDraw: true,
         frontLayer: false,
         collectable: 0,
         breakable: false,
@@ -510,7 +496,6 @@ define("Tile", ["require", "exports", "immutable"], function (require, exports, 
         createPlayer: "",
         x: 0,
         y: 0,
-        drawnBefore: false
     })));
     exports.Tile = Tile;
 });
@@ -702,7 +687,6 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             this.tileSet = tileSet;
             this.boardSize = boardSize;
             this.board = this.fixBoard(board);
-            this.markAllForRedraw();
         }
         // return array with all tiles in (with x and y added)
         Map.prototype.getAllTiles = function () {
@@ -769,63 +753,12 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
             this.board = this.generateRandomBoard(boardSize);
         };
         Map.prototype.correctForOverflow = function (coords) {
-            var newX;
-            var newY;
-            if (coords.x < 0) {
-                newX = this.boardSize.width - 1;
-            }
-            else if (coords.x >= this.boardSize.width) {
-                newX = 0;
-            }
-            else {
-                newX = coords.x;
-            }
-            if (coords.y < 0) {
-                newY = this.boardSize.height - 1;
-            }
-            else if (coords.y >= this.boardSize.height) {
-                newY = 0;
-            }
-            else {
-                newY = coords.y;
-            }
-            return coords.modify({ x: newX, y: newY });
+            return Utils_2.Utils.correctForOverflow(coords, this.boardSize);
         };
         // is intended next tile empty / a wall?
         Map.prototype.checkTileIsEmpty = function (x, y) {
             var tile = this.getTile(x, y);
             return tile.background;
-        };
-        Map.prototype.markAllForRedraw = function () {
-            var _this = this;
-            var tiles = this.getAllTiles();
-            tiles.map(function (tile) {
-                var coords = new Coords_2.Coords({
-                    x: tile.x,
-                    y: tile.y
-                });
-                var newTile = tile.modify({
-                    needsDraw: true
-                });
-                _this.changeTile(coords, newTile);
-            });
-            return;
-        };
-        Map.prototype.getTilesSurrounding = function (coords) {
-            var startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-            var endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-            var startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-            var endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
-            var allTiles = this.getAllTiles();
-            return allTiles.filter(function (tile) {
-                if (tile.x >= startX &&
-                    tile.x <= endX &&
-                    tile.y >= startY &&
-                    tile.y <= endY) {
-                    return true;
-                }
-                return false;
-            });
         };
         Map.prototype.getTileWithCoords = function (coords) {
             var fixedCoords = this.correctForOverflow(coords);
@@ -919,7 +852,6 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
                 var coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
                 var newCoords = _this.translateRotation(coords, clockwise);
                 var newTile = tile.modify({
-                    needsDraw: true,
                     x: newCoords.x,
                     y: newCoords.y
                 });
@@ -1021,12 +953,13 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
     }());
     exports.Map = Map;
 });
-define("Renderer", ["require", "exports", "Coords"], function (require, exports, Coords_3) {
+define("Renderer", ["require", "exports", "Coords", "Utils"], function (require, exports, Coords_3, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
     var Renderer = (function () {
         function Renderer(jetpack, map, tiles, playerTypes, boardSize, canvas) {
+            this.lampMode = false; // lamp mode only draws around the eggs
             this.checkResize = true;
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
@@ -1068,18 +1001,20 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
             this.canvas = canvas;
             this.loadTilePalette();
             this.loadPlayerPalette();
-            this.tileSize = this.canvas.calcTileSize(boardSize);
+            this.renderMap = this.createRenderMap(boardSize);
         }
         Renderer.prototype.render = function () {
+            this.tileSize = this.canvas.calcTileSize(this.boardSize);
             this.renderBoard();
             this.renderPlayers();
             this.renderFrontLayerBoard();
         };
         Renderer.prototype.resize = function () {
             this.tileSize = this.canvas.sizeCanvas(this.boardSize);
-            this.map.markAllForRedraw();
+            this.renderMap = this.createRenderMap(this.boardSize); // re-create render map
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
+            this.renderMap = this.createRenderMap(this.boardSize); // set redraw on everything to GREAT
             var canvas = this.canvas.getCanvas();
             var cw = canvas.width;
             var ch = canvas.height;
@@ -1094,6 +1029,46 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
         };
         Renderer.prototype.getTileImagePath = function (tile) {
             return this.canvas.imagesFolder + tile.img;
+        };
+        Renderer.prototype.setRenderMap = function (value, x, y) {
+            var coords = new Coords_3.Coords({ x: x, y: y });
+            var fixedCoords = Utils_3.Utils.correctForOverflow(coords, this.boardSize);
+            this.renderMap[fixedCoords.x][fixedCoords.y] = value;
+        };
+        Renderer.prototype.getRenderMapValue = function (x, y) {
+            return this.renderMap[x][y];
+        };
+        // create new render map where every tile needs redrawing
+        Renderer.prototype.createRenderMap = function (boardSize) {
+            var renderMap = [];
+            for (var x = 0; x < boardSize.width; x++) {
+                renderMap[x] = [];
+                for (var y = 0; y < boardSize.height; y++) {
+                    renderMap[x][y] = !this.lampMode;
+                }
+            }
+            return renderMap;
+        };
+        Renderer.prototype.markPlayerRedraw = function (coords) {
+            var startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
+            var endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
+            var startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+            var endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
+            for (var x = startX; x <= endX; x++) {
+                for (var y = startY; y <= endY; y++) {
+                    this.setRenderMap(true, x, y);
+                }
+            }
+            this.addExtraRedraws(coords);
+        };
+        // if in night time mode randomly glow a few tiles around the players too because that'll be nice
+        Renderer.prototype.addExtraRedraws = function (coords) {
+            if (!this.lampMode) {
+                return false;
+            }
+            var randX = Math.floor((Math.random() * 2) - 1);
+            var randY = Math.floor((Math.random() * 2) - 1);
+            this.setRenderMap(true, coords.x + randX, coords.y + randY);
         };
         Renderer.prototype.loadTilePalette = function () {
             var _this = this;
@@ -1151,18 +1126,14 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
             ctx.globalAlpha = 1;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                if (tile.needsDraw === false) {
+                var needsDraw = _this.getRenderMapValue(tile.x, tile.y);
+                if (needsDraw === false) {
                     _this.showUnrenderedTile(tile.x, tile.y);
                     return;
                 }
                 if (!tile.frontLayer) {
                     if (_this.renderTile(tile.x, tile.y, tile)) {
-                        var coords = new Coords_3.Coords({ x: tile.x, y: tile.y });
-                        var newTile = tile.modify({
-                            drawnBefore: true,
-                            needsDraw: false
-                        });
-                        _this.map.changeTile(coords, newTile);
+                        _this.setRenderMap(false, tile.x, tile.y);
                     }
                 }
                 else {
@@ -1180,28 +1151,26 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
             var _this = this;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                if (tile.needsDraw === false) {
+                var needsDraw = _this.getRenderMapValue(tile.x, tile.y);
+                if (needsDraw === false) {
                     return;
                 }
                 if (tile.frontLayer) {
                     if (_this.renderTile(tile.x, tile.y, tile)) {
-                        var coords = new Coords_3.Coords({ x: tile.x, y: tile.y });
-                        var newTile = tile.modify({
-                            drawnBefore: true,
-                            needsDraw: false
-                        });
-                        _this.map.changeTile(coords, newTile);
+                        _this.setRenderMap(false, tile.x, tile.y);
                     }
                 }
             });
         };
         // debugging tools
         Renderer.prototype.showUnrenderedTile = function (x, y) {
-            return false;
-            var tileSize = this.tileSize;
+            if (!this.lampMode) {
+                return false;
+            }
+            var tileSize = Math.floor(this.tileSize);
             var ctx = this.canvas.getDrawingContext();
-            ctx.fillStyle = "rgba(0,0,0,0.01)";
-            ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            ctx.fillStyle = "rgba(0,0,0,0.1)";
+            ctx.fillRect(Math.floor(x * tileSize), Math.floor(y * tileSize), tileSize, tileSize);
         };
         Renderer.prototype.renderPlayers = function () {
             for (var i in this.jetpack.players) {
@@ -1297,7 +1266,7 @@ define("Renderer", ["require", "exports", "Coords"], function (require, exports,
     }());
     exports.Renderer = Renderer;
 });
-define("Movement", ["require", "exports", "Coords"], function (require, exports, Coords_4) {
+define("Movement", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
@@ -1341,15 +1310,7 @@ define("Movement", ["require", "exports", "Coords"], function (require, exports,
             return player;
         };
         Movement.prototype.setRedrawAroundPlayer = function (player) {
-            var _this = this;
-            var tiles = this.map.getTilesSurrounding(player.coords);
-            tiles.map(function (tile) {
-                var newTile = tile.modify({
-                    needsDraw: true
-                });
-                var coords = new Coords_4.Coords({ x: tile.x, y: tile.y });
-                _this.map.changeTile(coords, newTile);
-            });
+            this.renderer.markPlayerRedraw(player.coords);
             return player;
         };
         Movement.prototype.incrementPlayerFrame = function (player) {
@@ -1770,7 +1731,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Movement", "Player", "PlayerTypes", "Renderer", "TileChooser", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_3, Canvas_1, Collisions_1, Coords_5, Levels_1, Loader_1, Map_1, Movement_1, Player_1, PlayerTypes_1, Renderer_1, TileChooser_1, TileSet_1, TitleScreen_1, Utils_3) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Movement", "Player", "PlayerTypes", "Renderer", "TileChooser", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_3, Canvas_1, Collisions_1, Coords_4, Levels_1, Loader_1, Map_1, Movement_1, Player_1, PlayerTypes_1, Renderer_1, TileChooser_1, TileSet_1, TitleScreen_1, Utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1938,7 +1899,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_3.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_4.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -2049,7 +2010,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var players = tiles.map(function (tile) {
                 var type = tile.createPlayer;
                 if (type) {
-                    var coords = new Coords_5.Coords({
+                    var coords = new Coords_4.Coords({
                         x: tile.x,
                         y: tile.y,
                         offsetX: 0,
@@ -2140,7 +2101,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         Jetpack.prototype.handleDrawEvent = function (event) {
             var tileSize = this.canvas.calcTileSize(this.boardSize);
-            var coords = new Coords_5.Coords({
+            var coords = new Coords_4.Coords({
                 x: (event.offsetX / tileSize),
                 y: (event.offsetY / tileSize),
                 offsetX: event.offsetX % tileSize - tileSize / 2,

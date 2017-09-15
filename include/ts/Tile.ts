@@ -5,7 +5,6 @@ interface ITileParams {
   title?: string;
   img?: string;
   background?: boolean;
-  needsDraw?: boolean;
   frontLayer?: boolean;
   collectable?: number;
   breakable?: boolean;
@@ -14,14 +13,12 @@ interface ITileParams {
   createPlayer?: string;
   x?: number;
   y?: number;
-  drawnBefore?: boolean;
 }
 
 export class Tile extends Record({
   id: 0,
   title: "Title",
   background: false,
-  needsDraw: true,
   frontLayer: false,
   collectable: 0,
   breakable: false,
@@ -30,13 +27,11 @@ export class Tile extends Record({
   createPlayer: "",
   x: 0,
   y: 0,
-  drawnBefore: false
 }) {
   public id: number;
   public title: string;
   public img: string;
   public background: boolean;
-  public needsDraw: boolean;
   public frontLayer: boolean;
   public collectable: number;
   public breakable: boolean;
@@ -45,7 +40,6 @@ export class Tile extends Record({
   public createPlayer: string;
   public x: number;
   public y: number;
-  public drawnBefore: boolean;
 
   constructor(params?: ITileParams) {
     params ? super(params) : super();

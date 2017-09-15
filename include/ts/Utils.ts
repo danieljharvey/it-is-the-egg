@@ -1,4 +1,6 @@
 import * as _ from "ramda";
+import { BoardSize } from "./BoardSize";
+import { Coords } from "./Coords";
 
 // wee lad full of reusable functions
 
@@ -53,5 +55,26 @@ export class Utils {
       }
     }
     return goodParams;
+  }
+
+  public static correctForOverflow(coords: Coords, boardSize: BoardSize): Coords {
+    let newX;
+    let newY;
+    if (coords.x < 0) {
+      newX = boardSize.width - 1;
+    } else if (coords.x >= boardSize.width) {
+      newX = 0;
+    } else {
+      newX = coords.x;
+    }
+
+    if (coords.y < 0) {
+      newY = boardSize.height - 1;
+    } else if (coords.y >= boardSize.height) {
+      newY = 0;
+    } else {
+      newY = coords.y;
+    }
+    return coords.modify({ x: newX, y: newY });
   }
 }

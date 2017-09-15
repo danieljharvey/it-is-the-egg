@@ -17,7 +17,6 @@ export class Map {
     this.tileSet = tileSet;
     this.boardSize = boardSize;
     this.board = this.fixBoard(board);
-    this.markAllForRedraw();
   }
 
   // return array with all tiles in (with x and y added)
@@ -93,67 +92,13 @@ export class Map {
   }
 
   public correctForOverflow(coords: Coords): Coords {
-    let newX;
-    let newY;
-    if (coords.x < 0) {
-      newX = this.boardSize.width - 1;
-    } else if (coords.x >= this.boardSize.width) {
-      newX = 0;
-    } else {
-      newX = coords.x;
-    }
-
-    if (coords.y < 0) {
-      newY = this.boardSize.height - 1;
-    } else if (coords.y >= this.boardSize.height) {
-      newY = 0;
-    } else {
-      newY = coords.y;
-    }
-    return coords.modify({ x: newX, y: newY });
+    return Utils.correctForOverflow(coords, this.boardSize);
   }
 
   // is intended next tile empty / a wall?
   public checkTileIsEmpty(x, y) {
     const tile = this.getTile(x, y);
     return tile.background;
-  }
-
-  public markAllForRedraw() {
-    const tiles = this.getAllTiles();
-    tiles.map(tile => {
-      const coords = new Coords({
-        x: tile.x,
-        y: tile.y
-      });
-      const newTile = tile.modify({
-        needsDraw: true
-      });
-      this.changeTile(coords, newTile);
-    });
-    return;
-  }
-
-  public getTilesSurrounding(coords: Coords) {
-    const startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-    const endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-
-    const startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-    const endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
-
-    const allTiles = this.getAllTiles();
-
-    return allTiles.filter(tile => {
-      if (
-        tile.x >= startX &&
-        tile.x <= endX &&
-        tile.y >= startY &&
-        tile.y <= endY
-      ) {
-        return true;
-      }
-      return false;
-    });
   }
 
   public getTileWithCoords(coords: Coords) {
@@ -255,7 +200,6 @@ export class Map {
       const coords = new Coords({ x: tile.x, y: tile.y });
       const newCoords = this.translateRotation(coords, clockwise);
       const newTile = tile.modify({
-        needsDraw: true,
         x: newCoords.x,
         y: newCoords.y
       });

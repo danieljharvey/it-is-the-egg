@@ -5,6 +5,7 @@ import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
 import { Tile } from "./Tile";
+import { Utils } from "./Utils";
 
 const SPRITE_SIZE: number = 64;
 
@@ -15,6 +16,10 @@ export class Renderer {
   protected playerTypes: object;
   protected boardSize: BoardSize;
   protected canvas: Canvas;
+
+  protected lampMode: boolean = false; // lamp mode only draws around the eggs
+
+  protected renderMap: boolean[][]; // map of screen with whether it needs rendering
 
   protected checkResize: boolean = true;
 
@@ -38,10 +43,11 @@ export class Renderer {
     this.canvas = canvas;
     this.loadTilePalette();
     this.loadPlayerPalette();
-    this.tileSize = this.canvas.calcTileSize(boardSize);
+    this.renderMap = this.createRenderMap(boardSize);
   }
 
   public render() {
+    this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard();
     this.renderPlayers();
     this.renderFrontLayerBoard();
@@ -49,10 +55,13 @@ export class Renderer {
 
   public resize() {
     this.tileSize = this.canvas.sizeCanvas(this.boardSize);
-    this.map.markAllForRedraw();
+    this.renderMap = this.createRenderMap(this.boardSize); // re-create render map
   }
 
   public drawRotatingBoard(clockwise: boolean, completed: () => void) {
+    
+    this.renderMap = this.createRenderMap(this.boardSize); // set redraw on everything to GREAT
+
     const canvas = this.canvas.getCanvas();
 
     const cw = canvas.width;
@@ -71,6 +80,56 @@ export class Renderer {
   public getTileImagePath(tile: Tile): string {
     return this.canvas.imagesFolder + tile.img;
   }
+
+  public setRenderMap(value: boolean, x: number, y: number) {
+    const coords = new Coords({x:x,y:y});
+    
+    const fixedCoords = Utils.correctForOverflow(coords, this.boardSize);
+    this.renderMap[fixedCoords.x][fixedCoords.y] = value;
+  }
+
+  public getRenderMapValue(x: number, y: number) : boolean {
+    return this.renderMap[x][y];
+  }
+
+  // create new render map where every tile needs redrawing
+  public createRenderMap(boardSize: BoardSize) {
+    const renderMap = [];
+    for (let x = 0; x < boardSize.width; x++) {
+      renderMap[x] = [];
+      for (let y = 0; y < boardSize.height; y++) {
+        renderMap[x][y] = !this.lampMode;
+      }
+    } 
+    return renderMap;
+  }
+
+  public markPlayerRedraw(coords: Coords) {
+    const startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
+      const endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
+  
+      const startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+      const endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
+    
+      for (let x = startX; x <= endX; x++) {
+        for (let y = startY; y <= endY; y++) {
+          this.setRenderMap(true,x,y);
+        }
+      }
+      this.addExtraRedraws(coords);
+  }
+  
+  // if in night time mode randomly glow a few tiles around the players too because that'll be nice
+  protected addExtraRedraws(coords: Coords) {
+    if (!this.lampMode) {
+      return false;
+    }
+    const randX = Math.floor((Math.random() * 2) - 1);
+    const randY = Math.floor((Math.random() * 2) - 1);
+    this.setRenderMap(true,coords.x + randX, coords.y + randY);
+  }
+
+
 
   protected loadTilePalette() {
     for (const i in this.tiles) {
@@ -116,6 +175,7 @@ export class Renderer {
     }
   }
 
+
   protected markPlayerImageAsLoaded(img: string) {
     this.playerImages[img].ready = true;
   }
@@ -129,18 +189,14 @@ export class Renderer {
     ctx.globalAlpha = 1;
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
-      if (tile.needsDraw === false) {
+      const needsDraw = this.getRenderMapValue(tile.x, tile.y);
+      if (needsDraw === false) {
         this.showUnrenderedTile(tile.x, tile.y);
         return;
       }
       if (!tile.frontLayer) {
         if (this.renderTile(tile.x, tile.y, tile)) {
-          const coords = new Coords({ x: tile.x, y: tile.y });
-          const newTile = tile.modify({
-            drawnBefore: true,
-            needsDraw: false
-          });
-          this.map.changeTile(coords, newTile);
+          this.setRenderMap(false, tile.x, tile.y);
         }
       } else {
         // render sky behind see through tiles
@@ -158,17 +214,13 @@ export class Renderer {
   protected renderFrontLayerBoard() {
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
-      if (tile.needsDraw === false) {
+      const needsDraw = this.getRenderMapValue(tile.x, tile.y);
+      if (needsDraw === false) {
         return;
       }
       if (tile.frontLayer) {
         if (this.renderTile(tile.x, tile.y, tile)) {
-          const coords = new Coords({ x: tile.x, y: tile.y });
-          const newTile = tile.modify({
-            drawnBefore: true,
-            needsDraw: false
-          });
-          this.map.changeTile(coords, newTile);
+          this.setRenderMap(false, tile.x, tile.y);
         }
       }
     });
@@ -176,11 +228,13 @@ export class Renderer {
 
   // debugging tools
   protected showUnrenderedTile(x: number, y: number) {
-    return false;
-    const tileSize = this.tileSize;
+    if (!this.lampMode) {
+      return false;
+    }
+    const tileSize = Math.floor(this.tileSize);
     const ctx = this.canvas.getDrawingContext();
-    ctx.fillStyle = "rgba(0,0,0,0.01)";
-    ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+    ctx.fillStyle = "rgba(0,0,0,0.1)";
+    ctx.fillRect(Math.floor(x * tileSize), Math.floor(y * tileSize), tileSize, tileSize);
   }
 
   protected renderPlayers() {

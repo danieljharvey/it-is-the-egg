@@ -3,6 +3,17 @@ import { Map } from "../Map";
 import { TileSet } from "../TileSet";
 import { BoardSize } from "../BoardSize";
 
+function configureTileSetMock() {
+  const tileSet = jest.fn(); // create mock that does nothing
+  tileSet.getTile = (id) => {
+    return {
+      id: id,
+      title: "made up tile"
+    }
+  }
+  return tileSet;
+}
+
 test("Translate rotation", () => {
   const rotateData = [
     { inX: 0, inY: 0, clockwise: true, outX: 9, outY: 0 },
@@ -550,7 +561,10 @@ test("Get all tiles test", () => {
       }
     ]
   ];
-  const map = new Map(null, null, board);
+
+  const tileSet = configureTileSetMock();
+  
+  const map = new Map(tileSet, null, board);
 
   expect(map.getAllTiles()).toMatchSnapshot();
 });
