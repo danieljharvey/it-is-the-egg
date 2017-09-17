@@ -2204,26 +2204,25 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                 return player1;
             }
         };
+        Collisions.prototype.getPlayerByValue = function (playerTypes, value) {
+            for (var i in this.playerTypes) {
+                if (playerTypes[i].value === value) {
+                    return playerTypes[i];
+                }
+            }
+            return false;
+        };
         Collisions.prototype.combinePlayers = function (player1, player2) {
             // console.log('combinePlayers', player1, player2);
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            var newPlayerTypes = Object
-                .values(this.playerTypes)
-                .filter(function (playerType) {
-                if (playerType.value === newValue) {
-                    return true;
-                }
-                return false;
-            });
-            if (newPlayerTypes.length === 0) {
-                // no change
+            var newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
+            if (!newPlayerType) {
                 return {
                     player1: player1,
                     player2: player2
                 };
             }
-            var newPlayerType = newPlayerTypes[0];
             var newPlayer = this.jetpack.createNewPlayer(newPlayerType.type, higherPlayer.coords, higherPlayer.direction);
             this.addPlayer(newPlayer);
             this.deletePlayer(player1);

@@ -94,30 +94,29 @@ export class Collisions {
     }
   }
 
+  protected getPlayerByValue(playerTypes, value:number) {
+    for (let i in this.playerTypes) {
+      if (playerTypes[i].value === value) {
+        return playerTypes[i];
+      }
+    }
+    return false;
+  }
+
   protected combinePlayers(player1: Player, player2: Player) {
     // console.log('combinePlayers', player1, player2);
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    const newPlayerTypes = (Object as any)
-      .values(this.playerTypes)
-      .filter(playerType => {
-        if (playerType.value === newValue) {
-          return true;
-        }
-        return false;
-      });
+    const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
 
-    if (newPlayerTypes.length === 0) {
-      // no change
+    if (!newPlayerType) {
       return {
         player1,
         player2
       };
     }
-
-    const newPlayerType = newPlayerTypes[0];
-
+    
     const newPlayer = this.jetpack.createNewPlayer(
       newPlayerType.type,
       higherPlayer.coords,

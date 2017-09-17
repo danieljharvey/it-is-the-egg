@@ -15,6 +15,7 @@ import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
+
 export class Jetpack {
   public animationHandle: number;
   public moveSpeed: number = 5;
