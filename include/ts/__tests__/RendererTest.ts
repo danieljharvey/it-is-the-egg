@@ -15,5 +15,5 @@ test("Create small render map", () => {
   ];
 
   const result = renderer.createRenderMap(boardSize);
-  expect(result).toEqual(false);
+  expect(result).toEqual(expected);
 });

@@ -116,3 +116,18 @@ test("Close enough for LHS horizontal collision", () => {
   const result = collisions.checkCollision(player1, player2);
   expect(result).toEqual(true);
 });
+
+test("Ignores collision with zero-value player", () => {
+  const player1 = new Player({
+    coords: new Coords({x:1,y:1})
+  });
+
+  const zeroValuePlayer = player1.modify({value:0, id: 100});
+
+  const jetpack = configureJetpackMock();
+
+  const collisions = new Collisions(jetpack, playerTypes);
+
+  const result = collisions.checkCollision(player1, zeroValuePlayer);
+  expect(result).toEqual(false);
+});

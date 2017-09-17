@@ -49,6 +49,10 @@ export class Collisions {
       return false;
     }
 
+    if (player1.value === 0 || player2.value === 0) {
+      return false;
+    }
+
     const coords1 = player1.coords;
     const coords2 = player2.coords;
 
