@@ -157,19 +157,19 @@ export class Map {
   // swap two tiles on map
   public switchTiles(id1, id2) {
     const tiles = this.getAllTiles();
-    const count = tiles.map(tile => {
+    const changeCoords = tiles.map(tile => {
       if (tile.id === id1) {
         const coords = new Coords({ x: tile.x, y: tile.y });
         this.changeTile(coords, this.cloneTile(id2));
-        return 1;
+        return coords;
       } else if (tile.id === id2) {
         const coords = new Coords({ x: tile.x, y: tile.y });
         this.changeTile(coords, this.cloneTile(id1));
-        return 1;
+        return coords;
       }
-      return 0;
+      return;
     });
-    return count.reduce((a, b) => a + b, 0);
+    return changeCoords;
   }
 
   // find random tile of type that is NOT at currentCoords
@@ -239,8 +239,6 @@ export class Map {
     const coords = new Coords({ x, y });
     return this.getTileWithCoords(coords);
   }
-
-  
 
   protected generateBlankBoard() {
     const board = [];

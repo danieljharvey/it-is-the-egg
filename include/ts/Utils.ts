@@ -57,7 +57,10 @@ export class Utils {
     return goodParams;
   }
 
-  public static correctForOverflow(coords: Coords, boardSize: BoardSize): Coords {
+  public static correctForOverflow(
+    coords: Coords,
+    boardSize: BoardSize
+  ): Coords {
     let newX;
     let newY;
     if (coords.x < 0) {

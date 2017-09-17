@@ -5,12 +5,12 @@ import { BoardSize } from "../BoardSize";
 
 function configureTileSetMock() {
   const tileSet = jest.fn(); // create mock that does nothing
-  tileSet.getTile = (id) => {
+  tileSet.getTile = id => {
     return {
       id: id,
       title: "made up tile"
-    }
-  }
+    };
+  };
   return tileSet;
 }
 
@@ -563,31 +563,25 @@ test("Get all tiles test", () => {
   ];
 
   const tileSet = configureTileSetMock();
-  
+
   const map = new Map(tileSet, null, board);
 
   expect(map.getAllTiles()).toMatchSnapshot();
 });
 
 test("Fix board", () => {
-  const board = [
-    [{id:1},{id:2}],
-    [{id:2},{id:1}]
-  ];
+  const board = [[{ id: 1 }, { id: 2 }], [{ id: 2 }, { id: 1 }]];
 
   const tileSet = new TileSet();
   const map = new Map(tileSet);
 
-  const tile1 = map.cloneTile(1).modify({x:0,y:0});
-  const tile2 = map.cloneTile(2).modify({x:1,y:0});
+  const tile1 = map.cloneTile(1).modify({ x: 0, y: 0 });
+  const tile2 = map.cloneTile(2).modify({ x: 1, y: 0 });
 
-  const tile3 = map.cloneTile(2).modify({x:0,y:1});
-  const tile4 = map.cloneTile(1).modify({x:1,y:1});
+  const tile3 = map.cloneTile(2).modify({ x: 0, y: 1 });
+  const tile4 = map.cloneTile(1).modify({ x: 1, y: 1 });
 
-  const expected = [
-    [tile1, tile2],
-    [tile3, tile4]
-  ];
+  const expected = [[tile1, tile2], [tile3, tile4]];
 
   const result = map.fixBoard(board);
   expect(result).toEqual(expected);

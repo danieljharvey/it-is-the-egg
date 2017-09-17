@@ -35,6 +35,7 @@ export class Movement {
   }
 
   protected doPlayerCalcs(player: Player, timePassed: number): Player {
+    
     const startCoords = player.coords;
 
     this.setRedrawAroundPlayer(player);
@@ -69,7 +70,7 @@ export class Movement {
     return player;
   }
 
-  protected setRedrawAroundPlayer(player: Player) : Player {
+  protected setRedrawAroundPlayer(player: Player): Player {
     this.renderer.markPlayerRedraw(player.coords);
     return player;
   }
@@ -128,7 +129,7 @@ export class Movement {
     if (tile.collectable > 0) {
       const score = tile.collectable * player.multiplier;
       const blankTile = this.map.cloneTile(1);
-      
+
       this.map.changeTile(coords, blankTile);
       this.jetpack.addScore(score);
       return player;
@@ -139,11 +140,21 @@ export class Movement {
     } else if (tile.action === "teleport") {
       return this.teleport(player); // only action that changes player state
     } else if (tile.action === "pink-switch") {
-      this.map.switchTiles(15, 16);
+      const changedCoords = this.map.switchTiles(15, 16);
+      this.markCoordsToRender(changedCoords);
     } else if (tile.action === "green-switch") {
-      this.map.switchTiles(18, 19);
+      const changedCoords = this.map.switchTiles(18, 19);
+      this.markCoordsToRender(changedCoords);
     }
     return player; // player returned unchanged
+  }
+
+  protected markCoordsToRender(changedCoords: Coords[]) {
+    changedCoords.map(coords => {
+      if (coords) {
+        return this.renderer.setRenderMap(true,coords.x,coords.y);
+      }
+    });
   }
 
   // find another teleport and go to it
@@ -221,6 +232,7 @@ export class Movement {
         this.renderer.tileSize,
         timePassed
       );
+      const newOffsetY = player.coords.offsetX + fallAmount;
       const newCoords = player.coords.modify({
         offsetY: player.coords.offsetY + fallAmount
       });
@@ -239,7 +251,7 @@ export class Movement {
       this.renderer.tileSize,
       timePassed
     );
-
+    
     const coords = player.coords;
 
     if (player.direction < 0) {
@@ -253,6 +265,7 @@ export class Movement {
     } else if (player.direction > 0) {
       // move right
       const newOffsetX = coords.offsetX + moveAmount;
+      
       return player.modify({
         coords: coords.modify({
           offsetX: newOffsetX
@@ -265,6 +278,7 @@ export class Movement {
       if (coords.offsetX > 0) {
         // shuffle left
         const newOffsetX = coords.offsetX - moveAmount;
+        
         return player.modify({
           coords: coords.modify({
             offsetX: newOffsetX
@@ -273,6 +287,7 @@ export class Movement {
       } else if (coords.offsetX < 0) {
         // shuffle right
         const newOffsetX = coords.offsetX + moveAmount;
+        
         return player.modify({
           coords: coords.modify({
             offsetX: newOffsetX
@@ -293,6 +308,9 @@ export class Movement {
     const fullSize = SPRITE_SIZE; // size of image tiles
     const moveAmount: number = tileSize / fullSize * moveSpeed;
     const frameRateAdjusted: number = moveAmount * (timePassed / 2);
+    if (isNaN(frameRateAdjusted)) {
+      return 0;
+    }
     return frameRateAdjusted;
   }
 

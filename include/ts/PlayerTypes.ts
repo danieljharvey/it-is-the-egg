@@ -1,46 +1,46 @@
 export class PlayerTypes {
-  playerTypes: object = {
+  protected playerTypes: object = {
     egg: {
-      type: "egg",
-      title: "It is of course the egg",
-      img: "egg-sprite.png",
       frames: 18,
+      img: "egg-sprite.png",
       multiplier: 1,
+      title: "It is of course the egg",
+      type: "egg",
       value: 1
     },
     "red-egg": {
-      type: "red-egg",
-      title: "It is of course the red egg",
-      img: "egg-sprite-red.png",
       frames: 18,
+      img: "egg-sprite-red.png",
       multiplier: 2,
+      title: "It is of course the red egg",
+      type: "red-egg",
       value: 2
     },
     "blue-egg": {
-      type: "blue-egg",
-      title: "It is of course the blue egg",
-      img: "egg-sprite-blue.png",
       frames: 18,
+      img: "egg-sprite-blue.png",
       multiplier: 5,
+      title: "It is of course the blue egg",
+      type: "blue-egg",
       value: 3
     },
     "yellow-egg": {
-      type: "yellow-egg",
-      title: "It is of course the yellow egg",
-      img: "egg-sprite-yellow.png",
       frames: 18,
+      img: "egg-sprite-yellow.png",
       multiplier: 10,
+      title: "It is of course the yellow egg",
+      type: "yellow-egg",
       value: 4
     },
     "silver-egg": {
-      type: "silver-egg",
-      title: "It is of course the silver egg",
-      img: "silver-egg.png",
+      fallSpeed: 10,
       frames: 1,
-      multiplier: 10,
-      value: 0,
+      img: "silver-egg.png",
       moveSpeed: 0,
-      fallSpeed: 10
+      multiplier: 10,
+      title: "It is of course the silver egg",
+      type: "silver-egg",
+      value: 0
     }
   };
 

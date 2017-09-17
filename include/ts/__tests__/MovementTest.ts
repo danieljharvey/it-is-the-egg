@@ -54,3 +54,7 @@ test("Egg with no speed stays still", () => {
 
   expect(oldCoords.equals(newCoords)).toEqual(true);
 });
+
+test("Stop broken tilesize ruining everything", () => {
+  expect(movement.calcMoveAmount(5,undefined,3)).toEqual(0);
+})

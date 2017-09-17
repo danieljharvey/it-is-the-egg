@@ -495,7 +495,7 @@ define("Tile", ["require", "exports", "immutable"], function (require, exports, 
         dontAdd: false,
         createPlayer: "",
         x: 0,
-        y: 0,
+        y: 0
     })));
     exports.Tile = Tile;
 });
@@ -812,20 +812,20 @@ define("Map", ["require", "exports", "Coords", "Tile", "Utils"], function (requi
         Map.prototype.switchTiles = function (id1, id2) {
             var _this = this;
             var tiles = this.getAllTiles();
-            var count = tiles.map(function (tile) {
+            var changeCoords = tiles.map(function (tile) {
                 if (tile.id === id1) {
                     var coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
                     _this.changeTile(coords, _this.cloneTile(id2));
-                    return 1;
+                    return coords;
                 }
                 else if (tile.id === id2) {
                     var coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
                     _this.changeTile(coords, _this.cloneTile(id1));
-                    return 1;
+                    return coords;
                 }
-                return 0;
+                return;
             });
-            return count.reduce(function (a, b) { return a + b; }, 0);
+            return changeCoords;
         };
         // find random tile of type that is NOT at currentCoords
         Map.prototype.findTile = function (currentCoords, id) {
@@ -973,9 +973,6 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
                 }
                 var left = Math.floor(x * tileSize);
                 var top = Math.floor(y * tileSize);
-                var opacity = 1;
-                //ctx.globalAlpha = opacity;
-                // console.log('renderTile',left,top,tileSize);
                 if (this.map.renderAngle === 0) {
                     ctx.drawImage(img, left, top, tileSize, tileSize);
                 }
@@ -986,7 +983,6 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
                     top = Math.floor(top + offset);
                     ctx.translate(left, top);
                     ctx.rotate(angleInRad);
-                    // console.log('renderTile (rotated)', offset, tileSize, left, top);
                     ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
                     ctx.rotate(-angleInRad);
                     ctx.translate(-left, -top);
@@ -1066,8 +1062,8 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             if (!this.lampMode) {
                 return false;
             }
-            var randX = Math.floor((Math.random() * 2) - 1);
-            var randY = Math.floor((Math.random() * 2) - 1);
+            var randX = Math.floor(Math.random() * 2 - 1);
+            var randY = Math.floor(Math.random() * 2 - 1);
             this.setRenderMap(true, coords.x + randX, coords.y + randY);
         };
         Renderer.prototype.loadTilePalette = function () {
@@ -1207,8 +1203,6 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             var top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
             var clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
             var clipTop = 0;
-            // slow setting this all the time, so is set once and left
-            //ctx.globalAlpha = 1;
             var image = this.getPlayerImage(player.img);
             if (!image) {
                 //console.log('player image not loaded', player.img);
@@ -1366,12 +1360,22 @@ define("Movement", ["require", "exports"], function (require, exports) {
                 return this.teleport(player); // only action that changes player state
             }
             else if (tile.action === "pink-switch") {
-                this.map.switchTiles(15, 16);
+                var changedCoords = this.map.switchTiles(15, 16);
+                this.markCoordsToRender(changedCoords);
             }
             else if (tile.action === "green-switch") {
-                this.map.switchTiles(18, 19);
+                var changedCoords = this.map.switchTiles(18, 19);
+                this.markCoordsToRender(changedCoords);
             }
             return player; // player returned unchanged
+        };
+        Movement.prototype.markCoordsToRender = function (changedCoords) {
+            var _this = this;
+            changedCoords.map(function (coords) {
+                if (coords) {
+                    return _this.renderer.setRenderMap(true, coords.x, coords.y);
+                }
+            });
         };
         // find another teleport and go to it
         // if no others, do nothing
@@ -1433,6 +1437,7 @@ define("Movement", ["require", "exports"], function (require, exports) {
             // falling is priority - do this if a thing
             if (player.falling) {
                 var fallAmount = this.calcMoveAmount(player.fallSpeed, this.renderer.tileSize, timePassed);
+                var newOffsetY = player.coords.offsetX + fallAmount;
                 var newCoords = player.coords.modify({
                     offsetY: player.coords.offsetY + fallAmount
                 });
@@ -1492,6 +1497,9 @@ define("Movement", ["require", "exports"], function (require, exports) {
             var fullSize = SPRITE_SIZE; // size of image tiles
             var moveAmount = tileSize / fullSize * moveSpeed;
             var frameRateAdjusted = moveAmount * (timePassed / 2);
+            if (isNaN(frameRateAdjusted)) {
+                return 0;
+            }
             return frameRateAdjusted;
         };
         Movement.prototype.correctPlayerOverflow = function (player) {
@@ -1567,46 +1575,46 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
         function PlayerTypes() {
             this.playerTypes = {
                 egg: {
-                    type: "egg",
-                    title: "It is of course the egg",
-                    img: "egg-sprite.png",
                     frames: 18,
+                    img: "egg-sprite.png",
                     multiplier: 1,
+                    title: "It is of course the egg",
+                    type: "egg",
                     value: 1
                 },
                 "red-egg": {
-                    type: "red-egg",
-                    title: "It is of course the red egg",
-                    img: "egg-sprite-red.png",
                     frames: 18,
+                    img: "egg-sprite-red.png",
                     multiplier: 2,
+                    title: "It is of course the red egg",
+                    type: "red-egg",
                     value: 2
                 },
                 "blue-egg": {
-                    type: "blue-egg",
-                    title: "It is of course the blue egg",
-                    img: "egg-sprite-blue.png",
                     frames: 18,
+                    img: "egg-sprite-blue.png",
                     multiplier: 5,
+                    title: "It is of course the blue egg",
+                    type: "blue-egg",
                     value: 3
                 },
                 "yellow-egg": {
-                    type: "yellow-egg",
-                    title: "It is of course the yellow egg",
-                    img: "egg-sprite-yellow.png",
                     frames: 18,
+                    img: "egg-sprite-yellow.png",
                     multiplier: 10,
+                    title: "It is of course the yellow egg",
+                    type: "yellow-egg",
                     value: 4
                 },
                 "silver-egg": {
-                    type: "silver-egg",
-                    title: "It is of course the silver egg",
-                    img: "silver-egg.png",
+                    fallSpeed: 10,
                     frames: 1,
-                    multiplier: 10,
-                    value: 0,
+                    img: "silver-egg.png",
                     moveSpeed: 0,
-                    fallSpeed: 10
+                    multiplier: 10,
+                    title: "It is of course the silver egg",
+                    type: "silver-egg",
+                    value: 0
                 }
             };
         }
@@ -2159,6 +2167,9 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                 return false;
             }
             if (player1.id === player2.id) {
+                return false;
+            }
+            if (player1.value === 0 || player2.value === 0) {
                 return false;
             }
             var coords1 = player1.coords;

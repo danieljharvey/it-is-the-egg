@@ -10,6 +10,8 @@ import { Utils } from "./Utils";
 const SPRITE_SIZE: number = 64;
 
 export class Renderer {
+  public tileSize: number;
+
   protected jetpack: Jetpack;
   protected map: Map;
   protected tiles: object;
@@ -25,7 +27,6 @@ export class Renderer {
 
   protected tileImages: object = {}; // image elements of tiles
   protected playerImages: object = {}; // image element of players
-  public tileSize: number;
 
   constructor(
     jetpack: Jetpack,
@@ -59,7 +60,6 @@ export class Renderer {
   }
 
   public drawRotatingBoard(clockwise: boolean, completed: () => void) {
-    
     this.renderMap = this.createRenderMap(this.boardSize); // set redraw on everything to GREAT
 
     const canvas = this.canvas.getCanvas();
@@ -82,13 +82,13 @@ export class Renderer {
   }
 
   public setRenderMap(value: boolean, x: number, y: number) {
-    const coords = new Coords({x:x,y:y});
-    
+    const coords = new Coords({ x: x, y: y });
+
     const fixedCoords = Utils.correctForOverflow(coords, this.boardSize);
     this.renderMap[fixedCoords.x][fixedCoords.y] = value;
   }
 
-  public getRenderMapValue(x: number, y: number) : boolean {
+  public getRenderMapValue(x: number, y: number): boolean {
     return this.renderMap[x][y];
   }
 
@@ -100,36 +100,34 @@ export class Renderer {
       for (let y = 0; y < boardSize.height; y++) {
         renderMap[x][y] = !this.lampMode;
       }
-    } 
+    }
     return renderMap;
   }
 
   public markPlayerRedraw(coords: Coords) {
     const startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-      const endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-  
-      const startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-      const endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
-    
-      for (let x = startX; x <= endX; x++) {
-        for (let y = startY; y <= endY; y++) {
-          this.setRenderMap(true,x,y);
-        }
+    const endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
+
+    const startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+    const endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
+
+    for (let x = startX; x <= endX; x++) {
+      for (let y = startY; y <= endY; y++) {
+        this.setRenderMap(true, x, y);
       }
-      this.addExtraRedraws(coords);
+    }
+    this.addExtraRedraws(coords);
   }
-  
+
   // if in night time mode randomly glow a few tiles around the players too because that'll be nice
   protected addExtraRedraws(coords: Coords) {
     if (!this.lampMode) {
       return false;
     }
-    const randX = Math.floor((Math.random() * 2) - 1);
-    const randY = Math.floor((Math.random() * 2) - 1);
-    this.setRenderMap(true,coords.x + randX, coords.y + randY);
+    const randX = Math.floor(Math.random() * 2 - 1);
+    const randY = Math.floor(Math.random() * 2 - 1);
+    this.setRenderMap(true, coords.x + randX, coords.y + randY);
   }
-
-
 
   protected loadTilePalette() {
     for (const i in this.tiles) {
@@ -174,7 +172,6 @@ export class Renderer {
       }
     }
   }
-
 
   protected markPlayerImageAsLoaded(img: string) {
     this.playerImages[img].ready = true;
@@ -234,7 +231,12 @@ export class Renderer {
     const tileSize = Math.floor(this.tileSize);
     const ctx = this.canvas.getDrawingContext();
     ctx.fillStyle = "rgba(0,0,0,0.1)";
-    ctx.fillRect(Math.floor(x * tileSize), Math.floor(y * tileSize), tileSize, tileSize);
+    ctx.fillRect(
+      Math.floor(x * tileSize),
+      Math.floor(y * tileSize),
+      tileSize,
+      tileSize
+    );
   }
 
   protected renderPlayers() {
@@ -248,7 +250,7 @@ export class Renderer {
 
   protected getTileImage(tile: Tile) {
     if (tile.id < 1) {
-      console.log("invalid tile requested",tile.id, tile);
+      console.log("invalid tile requested", tile.id, tile);
       return false;
     }
     const tileImage = this.tileImages[tile.id];
@@ -272,11 +274,6 @@ export class Renderer {
 
     let left = Math.floor(x * tileSize);
     let top = Math.floor(y * tileSize);
-    const opacity = 1;
-
-    //ctx.globalAlpha = opacity;
-
-    // console.log('renderTile',left,top,tileSize);
 
     if (this.map.renderAngle === 0) {
       ctx.drawImage(img, left, top, tileSize, tileSize);
@@ -290,8 +287,6 @@ export class Renderer {
 
       ctx.translate(left, top);
       ctx.rotate(angleInRad);
-
-      // console.log('renderTile (rotated)', offset, tileSize, left, top);
 
       ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
 
@@ -323,9 +318,6 @@ export class Renderer {
 
     const clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
     const clipTop = 0;
-
-    // slow setting this all the time, so is set once and left
-    //ctx.globalAlpha = 1;
 
     const image = this.getPlayerImage(player.img);
     if (!image) {

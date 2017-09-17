@@ -26,7 +26,7 @@ export class Tile extends Record({
   dontAdd: false,
   createPlayer: "",
   x: 0,
-  y: 0,
+  y: 0
 }) {
   public id: number;
   public title: string;
