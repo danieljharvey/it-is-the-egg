@@ -452,19 +452,29 @@ export class Jetpack {
 
   protected bindKeyboardHandler() {
     window.addEventListener("keydown", event => {
-      if (event.keyCode === 37) {
+      if (event.keyCode === 37) { // left arrow
         this.rotateBoard(false);
       }
-      if (event.keyCode === 39) {
+      if (event.keyCode === 39) { // right arrow
         this.rotateBoard(true);
       }
-      if (event.keyCode === 80) {
+      if (event.keyCode === 80) { // 'p'
         this.togglePaused();
       }
-      if (event.keyCode === 83) {
+      if (event.keyCode === 83) { // 's'
         this.doStep();
       }  
+      if (event.keyCode === 70) { // 'f'
+        this.showFPS();
+      }
     });
+  }
+
+  protected showFPS() {
+    const fps = document.getElementById('fps');
+    if (fps) {
+      fps.style.display = 'block';
+    }
   }
 
   protected togglePaused() {

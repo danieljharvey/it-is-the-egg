@@ -106,11 +106,11 @@ export class Renderer {
   }
 
   public markPlayerRedraw(coords: Coords) {
-    const startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-    const endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
+    const startX = coords.x - 1; // coords.offsetX !== 0 ? coords.x - 1 : coords.x;
+    const endX = coords.x + 1; // coords.offsetX !== 0 ? coords.x + 1 : coords.x;
 
-    const startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-    const endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
+    const startY = coords.y - 1; // coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+    const endY = coords.y + 1; // coords.offsetY !== 0 ? coords.y + 1 : coords.y;
 
     for (let x = startX; x <= endX; x++) {
       for (let y = startY; y <= endY; y++) {

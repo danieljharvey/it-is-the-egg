@@ -58,12 +58,13 @@ test("Too far for horizontal collision", () => {
     type: "Horse"
   });
   const player2 = new Player({
-    coords: new Coords({ x: 6, y: 5, offsetX: -1, offsetY: 0 }),
+    coords: new Coords({ x: 6, y: 5, offsetX: -69, offsetY: 0 }),
     falling: false,
     id: 2,
     type: "Horse"
   });
-  // 320 , 384
+  
+  // difference of 30
 
   const jetpack = configureJetpackMock();
   const collisions = new Collisions(jetpack, playerTypes);
@@ -74,18 +75,20 @@ test("Too far for horizontal collision", () => {
 
 test("Close enough for RHS horizontal collision", () => {
   const player1 = new Player({
-    coords: new Coords({ x: 5, y: 5, offsetX: 32, offsetY: 0 }),
+    coords: new Coords({ x: 5, y: 5, offsetX: 41, offsetY: 0 }),
     falling: false,
     id: 1,
     type: "Horse"
   });
   const player2 = new Player({
-    coords: new Coords({ x: 6, y: 5, offsetX: -32, offsetY: 0 }),
+    coords: new Coords({ x: 6, y: 5, offsetX: -41, offsetY: 0 }),
     falling: false,
     id: 2,
     type: "Horse"
   });
 
+  // difference of 18
+  
   const jetpack = configureJetpackMock();
 
   const collisions = new Collisions(jetpack, playerTypes);
@@ -96,7 +99,7 @@ test("Close enough for RHS horizontal collision", () => {
 
 test("Close enough for LHS horizontal collision", () => {
   const player1 = new Player({
-    coords: new Coords({ x: 6, y: 5, offsetX: -25, offsetY: 0 }),
+    coords: new Coords({ x: 6, y: 5, offsetX: -80, offsetY: 0 }),
     falling: false,
     id: 1,
     type: "Horse"
@@ -108,6 +111,8 @@ test("Close enough for LHS horizontal collision", () => {
     id: 2,
     type: "Horse"
   });
+
+  // difference of 19
 
   const jetpack = configureJetpackMock();
 

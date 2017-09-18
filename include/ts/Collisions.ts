@@ -66,7 +66,7 @@ export class Collisions {
       distance = distance * -1;
     }
 
-    if (distance < 40) {
+    if (distance <= 20) {
       return true;
     }
 

@@ -1047,10 +1047,10 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             return renderMap;
         };
         Renderer.prototype.markPlayerRedraw = function (coords) {
-            var startX = coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-            var endX = coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-            var startY = coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-            var endY = coords.offsetY !== 0 ? coords.y + 1 : coords.y;
+            var startX = coords.x - 1; // coords.offsetX !== 0 ? coords.x - 1 : coords.x;
+            var endX = coords.x + 1; // coords.offsetX !== 0 ? coords.x + 1 : coords.x;
+            var startY = coords.y - 1; // coords.offsetY !== 0 ? coords.y - 1 : coords.y;
+            var endY = coords.y + 1; // coords.offsetY !== 0 ? coords.y + 1 : coords.y;
             for (var x = startX; x <= endX; x++) {
                 for (var y = startY; y <= endY; y++) {
                     this.setRenderMap(true, x, y);
@@ -2102,7 +2102,16 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 if (event.keyCode === 83) {
                     _this.doStep();
                 }
+                if (event.keyCode === 70) {
+                    _this.showFPS();
+                }
             });
+        };
+        Jetpack.prototype.showFPS = function () {
+            var fps = document.getElementById('fps');
+            if (fps) {
+                fps.style.display = 'block';
+            }
         };
         Jetpack.prototype.togglePaused = function () {
             console.log('togglePaused');
@@ -2209,7 +2218,7 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             if (distance < 0) {
                 distance = distance * -1;
             }
-            if (distance < 40) {
+            if (distance <= 20) {
                 return true;
             }
             // nothing changes
