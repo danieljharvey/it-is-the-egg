@@ -35,6 +35,7 @@ test("Vertical collision works", () => {
     id: 1,
     type: "Horse"
   });
+
   const player2 = new Player({
     coords: new Coords({ x: 1, y: 1, offsetX: 0, offsetY: 0 }),
     falling: false,
@@ -58,12 +59,12 @@ test("Too far for horizontal collision", () => {
     type: "Horse"
   });
   const player2 = new Player({
-    coords: new Coords({ x: 6, y: 5, offsetX: -69, offsetY: 0 }),
+    coords: new Coords({ x: 6, y: 5, offsetX: -70, offsetY: 0 }),
     falling: false,
     id: 2,
     type: "Horse"
   });
-  
+
   // difference of 30
 
   const jetpack = configureJetpackMock();
@@ -88,7 +89,7 @@ test("Close enough for RHS horizontal collision", () => {
   });
 
   // difference of 18
-  
+
   const jetpack = configureJetpackMock();
 
   const collisions = new Collisions(jetpack, playerTypes);

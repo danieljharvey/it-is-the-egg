@@ -15,7 +15,6 @@ import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
-
 export class Jetpack {
   public animationHandle: number;
   public moveSpeed: number = 10;
@@ -292,16 +291,16 @@ export class Jetpack {
     this.doPlayerCalcs(timePassed);
     this.sizeCanvas();
     this.renderer.render();
-  } 
+  }
 
-  protected calcTimePassed(time: number, lastTime: number) : number {
+  protected calcTimePassed(time: number, lastTime: number): number {
     const difference = Math.min(time - lastTime, 20);
     return difference;
   }
 
   protected displayFrameRate(timePassed: number) {
     const frameRate = Math.floor(1000 / timePassed);
-    const fps = document.getElementById('fps');
+    const fps = document.getElementById("fps");
     fps.innerHTML = frameRate.toFixed(3) + "fps";
   }
 
@@ -452,38 +451,43 @@ export class Jetpack {
 
   protected bindKeyboardHandler() {
     window.addEventListener("keydown", event => {
-      if (event.keyCode === 37) { // left arrow
+      if (event.keyCode === 37) {
+        // left arrow
         this.rotateBoard(false);
       }
-      if (event.keyCode === 39) { // right arrow
+      if (event.keyCode === 39) {
+        // right arrow
         this.rotateBoard(true);
       }
-      if (event.keyCode === 80) { // 'p'
+      if (event.keyCode === 80) {
+        // 'p'
         this.togglePaused();
       }
-      if (event.keyCode === 83) { // 's'
+      if (event.keyCode === 83) {
+        // 's'
         this.doStep();
-      }  
-      if (event.keyCode === 70) { // 'f'
+      }
+      if (event.keyCode === 70) {
+        // 'f'
         this.showFPS();
       }
     });
   }
 
   protected showFPS() {
-    const fps = document.getElementById('fps');
+    const fps = document.getElementById("fps");
     if (fps) {
-      fps.style.display = 'block';
+      fps.style.display = "block";
     }
   }
 
   protected togglePaused() {
-    console.log('togglePaused');
-     if (this.paused) {
-          this.startRender();
-        } else {
-          this.pauseRender();  
-        }
+    console.log("togglePaused");
+    if (this.paused) {
+      this.startRender();
+    } else {
+      this.pauseRender();
+    }
   }
 
   protected doStep() {

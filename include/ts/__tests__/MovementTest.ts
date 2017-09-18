@@ -1,3 +1,4 @@
+import { Coords } from "../Coords";
 import { Movement } from "../Movement";
 import { Player } from "../Player";
 
@@ -55,5 +56,50 @@ test("Egg with no speed stays still", () => {
 });
 
 test("Stop broken tilesize ruining everything", () => {
-  expect(movement.calcMoveAmount(5,undefined,3)).toEqual(0);
-})
+  expect(movement.calcMoveAmount(5, undefined, 3)).toEqual(0);
+});
+
+test("Overflow remains the same", () => {
+  const coords = new Coords({ x: 1, y: 0, offsetX: 75, offsetY: 0 });
+
+  const fixedCoords = movement.correctTileOverflow(coords);
+
+  expect(fixedCoords.x).toEqual(1);
+  expect(fixedCoords.offsetX).toEqual(75);
+});
+
+test("No overflow to right", () => {
+  const coords = new Coords({ x: 0, y: 0, offsetX: 100, offsetY: 0 });
+
+  const fixedCoords = movement.correctTileOverflow(coords);
+
+  expect(fixedCoords.x).toEqual(1);
+  expect(fixedCoords.offsetX).toEqual(0);
+});
+
+test("No overflow to left", () => {
+  const coords = new Coords({ x: 3, y: 0, offsetX: -100, offsetY: 0 });
+
+  const fixedCoords = movement.correctTileOverflow(coords);
+
+  expect(fixedCoords.x).toEqual(2);
+  expect(fixedCoords.offsetX).toEqual(0);
+});
+
+test("No overflow above", () => {
+  const coords = new Coords({ x: 0, y: 4, offsetX: 0, offsetY: -100 });
+
+  const fixedCoords = movement.correctTileOverflow(coords);
+
+  expect(fixedCoords.y).toEqual(3);
+  expect(fixedCoords.offsetY).toEqual(0);
+});
+
+test("No overflow below", () => {
+  const coords = new Coords({ x: 0, y: 4, offsetX: 0, offsetY: 100 });
+
+  const fixedCoords = movement.correctTileOverflow(coords);
+
+  expect(fixedCoords.y).toEqual(5);
+  expect(fixedCoords.offsetY).toEqual(0);
+});

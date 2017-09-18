@@ -94,8 +94,8 @@ export class Collisions {
     }
   }
 
-  protected getPlayerByValue(playerTypes, value:number) {
-    for (let i in this.playerTypes) {
+  protected getPlayerByValue(playerTypes, value: number) {
+    for (const i in this.playerTypes) {
       if (playerTypes[i].value === value) {
         return playerTypes[i];
       }
@@ -116,7 +116,7 @@ export class Collisions {
         player2
       };
     }
-    
+
     const newPlayer = this.jetpack.createNewPlayer(
       newPlayerType.type,
       higherPlayer.coords,

@@ -33,7 +33,7 @@ export class PlayerTypes {
       value: 4
     },
     "silver-egg": {
-      fallSpeed: 10,
+      fallSpeed: 20,
       frames: 1,
       img: "silver-egg.png",
       moveSpeed: 0,

@@ -1,7 +1,7 @@
 import { Record } from "immutable";
 import { Utils } from "./Utils";
 
-const SPRITE_SIZE: number = 64;
+const OFFSET_DIVIDE: number = 100;
 
 interface ICoordsParams {
   x?: number;
@@ -25,8 +25,8 @@ export class Coords extends Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 }) {
   }
 
   public getActualPosition() {
-    const fullX: number = this.x * SPRITE_SIZE + this.offsetX;
-    const fullY: number = this.y * SPRITE_SIZE + this.offsetY;
+    const fullX: number = this.x * OFFSET_DIVIDE + this.offsetX;
+    const fullY: number = this.y * OFFSET_DIVIDE + this.offsetY;
     return {
       fullX,
       fullY

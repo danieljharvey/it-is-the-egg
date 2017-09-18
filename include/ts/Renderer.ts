@@ -83,7 +83,7 @@ export class Renderer {
   }
 
   public setRenderMap(value: boolean, x: number, y: number) {
-    const coords = new Coords({ x: x, y: y });
+    const coords = new Coords({ x, y });
 
     const fixedCoords = Utils.correctForOverflow(coords, this.boardSize);
     this.renderMap[fixedCoords.x][fixedCoords.y] = value;
@@ -340,7 +340,7 @@ export class Renderer {
 
     if (left < 0) {
       // also draw on right
-      const secondLeft = tileSize * this.boardSize.width + coords.offsetX;
+      const secondLeft = left + tileSize * this.boardSize.width;
       ctx.drawImage(
         image,
         clipLeft,
@@ -427,7 +427,7 @@ export class Renderer {
     ctx.rotate(-angleInRad);
     ctx.translate(-left, -top);
 
-    angle += direction * this.jetpack.moveSpeed;
+    angle += direction * (this.jetpack.moveSpeed / 2);
 
     this.jetpack.animationHandle = window.requestAnimationFrame(() => {
       this.drawRotated(savedData, direction, angle, targetAngle, completed);

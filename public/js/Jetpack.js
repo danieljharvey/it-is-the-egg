@@ -52,7 +52,7 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
 define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SPRITE_SIZE = 64;
+    var OFFSET_DIVIDE = 100;
     var Coords = (function (_super) {
         __extends(Coords, _super);
         function Coords(params) {
@@ -64,8 +64,8 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
             return this.merge(values);
         };
         Coords.prototype.getActualPosition = function () {
-            var fullX = this.x * SPRITE_SIZE + this.offsetX;
-            var fullY = this.y * SPRITE_SIZE + this.offsetY;
+            var fullX = this.x * OFFSET_DIVIDE + this.offsetX;
+            var fullY = this.y * OFFSET_DIVIDE + this.offsetY;
             return {
                 fullX: fullX,
                 fullY: fullY
@@ -1212,17 +1212,17 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
             if (left < 0) {
                 // also draw on right
-                var secondLeft = tileSize * this.boardSize.width + coords.offsetX;
+                var secondLeft = left + (tileSize * this.boardSize.width);
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
             }
             if (left + tileSize > tileSize * this.boardSize.width) {
                 // also draw on left
-                var secondLeft = left - tileSize * this.boardSize.width;
+                var secondLeft = left - (tileSize * this.boardSize.width);
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
             }
             if (top + tileSize > tileSize * this.boardSize.height) {
                 // also draw on top
-                var secondTop = top - tileSize * this.boardSize.height;
+                var secondTop = top - (tileSize * this.boardSize.height);
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
             }
         };
@@ -1252,7 +1252,7 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             ctx.drawImage(savedData, -offset, -offset);
             ctx.rotate(-angleInRad);
             ctx.translate(-left, -top);
-            angle += direction * this.jetpack.moveSpeed;
+            angle += direction * (this.jetpack.moveSpeed / 2);
             this.jetpack.animationHandle = window.requestAnimationFrame(function () {
                 _this.drawRotated(savedData, direction, angle, targetAngle, completed);
             });
@@ -1285,6 +1285,37 @@ define("Movement", ["require", "exports"], function (require, exports) {
                 return _this.doPlayerCalcs(player, timePassed);
             });
             return newPlayers;
+        };
+        Movement.prototype.correctTileOverflow = function (coords) {
+            if (coords.offsetX >= OFFSET_DIVIDE) {
+                // move one tile to right
+                return coords.modify({
+                    offsetX: 0,
+                    x: coords.x + 1
+                });
+            }
+            if (coords.offsetX <= (-1 * OFFSET_DIVIDE)) {
+                // move one tile to left
+                return coords.modify({
+                    offsetX: 0,
+                    x: coords.x - 1
+                });
+            }
+            if (coords.offsetY >= OFFSET_DIVIDE) {
+                // move one tile down
+                return coords.modify({
+                    offsetY: 0,
+                    y: coords.y + 1
+                });
+            }
+            if (coords.offsetY <= (-1 * OFFSET_DIVIDE)) {
+                // move one tile up
+                return coords.modify({
+                    offsetY: 0,
+                    y: coords.y - 1
+                });
+            }
+            return coords;
         };
         Movement.prototype.doPlayerCalcs = function (player, timePassed) {
             var startCoords = player.coords;
@@ -1510,37 +1541,6 @@ define("Movement", ["require", "exports"], function (require, exports) {
                 lastAction: ""
             });
         };
-        Movement.prototype.correctTileOverflow = function (coords) {
-            if (coords.offsetX > OFFSET_DIVIDE) {
-                // move one tile to right
-                return coords.modify({
-                    offsetX: 0,
-                    x: coords.x + 1
-                });
-            }
-            if (coords.offsetX < -1 * OFFSET_DIVIDE) {
-                // move one tile to left
-                return coords.modify({
-                    offsetX: 0,
-                    x: coords.x - 1
-                });
-            }
-            if (coords.offsetY > OFFSET_DIVIDE) {
-                // move one tile down
-                return coords.modify({
-                    offsetY: 0,
-                    y: coords.y + 1
-                });
-            }
-            if (coords.offsetY < -1 * OFFSET_DIVIDE) {
-                // move one tile up
-                return coords.modify({
-                    offsetY: 0,
-                    y: coords.y - 1
-                });
-            }
-            return coords;
-        };
         Movement.prototype.checkFloorBelowPlayer = function (timePassed, player) {
             if (player.coords.offsetX !== 0) {
                 return player;
@@ -1607,7 +1607,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     value: 4
                 },
                 "silver-egg": {
-                    fallSpeed: 10,
+                    fallSpeed: 20,
                     frames: 1,
                     img: "silver-egg.png",
                     moveSpeed: 0,

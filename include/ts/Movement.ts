@@ -34,8 +34,43 @@ export class Movement {
     return newPlayers;
   }
 
+  public correctTileOverflow(coords: Coords): Coords {
+    if (coords.offsetX >= OFFSET_DIVIDE) {
+      // move one tile to right
+      return coords.modify({
+        offsetX: 0,
+        x: coords.x + 1
+      });
+    }
+
+    if (coords.offsetX <= -1 * OFFSET_DIVIDE) {
+      // move one tile to left
+      return coords.modify({
+        offsetX: 0,
+        x: coords.x - 1
+      });
+    }
+
+    if (coords.offsetY >= OFFSET_DIVIDE) {
+      // move one tile down
+      return coords.modify({
+        offsetY: 0,
+        y: coords.y + 1
+      });
+    }
+
+    if (coords.offsetY <= -1 * OFFSET_DIVIDE) {
+      // move one tile up
+      return coords.modify({
+        offsetY: 0,
+        y: coords.y - 1
+      });
+    }
+
+    return coords;
+  }
+
   protected doPlayerCalcs(player: Player, timePassed: number): Player {
-    
     const startCoords = player.coords;
 
     this.setRedrawAroundPlayer(player);
@@ -152,7 +187,7 @@ export class Movement {
   protected markCoordsToRender(changedCoords: Coords[]) {
     changedCoords.map(coords => {
       if (coords) {
-        return this.renderer.setRenderMap(true,coords.x,coords.y);
+        return this.renderer.setRenderMap(true, coords.x, coords.y);
       }
     });
   }
@@ -245,11 +280,8 @@ export class Movement {
       return player;
     }
 
-    const moveAmount = this.calcMoveAmount(
-      player.moveSpeed,
-      timePassed
-    );
-    
+    const moveAmount = this.calcMoveAmount(player.moveSpeed, timePassed);
+
     const coords = player.coords;
 
     if (player.direction < 0) {
@@ -263,7 +295,7 @@ export class Movement {
     } else if (player.direction > 0) {
       // move right
       const newOffsetX = coords.offsetX + moveAmount;
-      
+
       return player.modify({
         coords: coords.modify({
           offsetX: newOffsetX
@@ -276,7 +308,7 @@ export class Movement {
       if (coords.offsetX > 0) {
         // shuffle left
         const newOffsetX = coords.offsetX - moveAmount;
-        
+
         return player.modify({
           coords: coords.modify({
             offsetX: newOffsetX
@@ -285,7 +317,7 @@ export class Movement {
       } else if (coords.offsetX < 0) {
         // shuffle right
         const newOffsetX = coords.offsetX + moveAmount;
-        
+
         return player.modify({
           coords: coords.modify({
             offsetX: newOffsetX
@@ -298,11 +330,8 @@ export class Movement {
     return player;
   }
 
-  protected calcMoveAmount(
-    moveSpeed: number,
-    timePassed: number
-  ): number {
-    const moveAmount: number = (1 / OFFSET_DIVIDE) * moveSpeed * 5;
+  protected calcMoveAmount(moveSpeed: number, timePassed: number): number {
+    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
     const frameRateAdjusted: number = moveAmount * timePassed;
     if (isNaN(frameRateAdjusted)) {
       return 0;
@@ -318,42 +347,6 @@ export class Movement {
       coords: loopedCoords,
       lastAction: ""
     });
-  }
-
-  protected correctTileOverflow(coords: Coords): Coords {
-    if (coords.offsetX > OFFSET_DIVIDE) {
-      // move one tile to right
-      return coords.modify({
-        offsetX: 0,
-        x: coords.x + 1
-      });
-    }
-
-    if (coords.offsetX < -1 * OFFSET_DIVIDE) {
-      // move one tile to left
-      return coords.modify({
-        offsetX: 0,
-        x: coords.x - 1
-      });
-    }
-
-    if (coords.offsetY > OFFSET_DIVIDE) {
-      // move one tile down
-      return coords.modify({
-        offsetY: 0,
-        y: coords.y + 1
-      });
-    }
-
-    if (coords.offsetY < -1 * OFFSET_DIVIDE) {
-      // move one tile up
-      return coords.modify({
-        offsetY: 0,
-        y: coords.y - 1
-      });
-    }
-
-    return coords;
   }
 
   protected checkFloorBelowPlayer(timePassed: number, player: Player) {

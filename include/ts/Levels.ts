@@ -65,7 +65,7 @@ export class Levels {
     board: object,
     boardSize: BoardSize,
     levelID: number,
-    callback: (number) => any
+    callback: (num: number) => any
   ): void {
     const saveData = new SavedLevel(boardSize, board, levelID);
     const saveString: string = saveData.toString();
@@ -94,7 +94,9 @@ export class Levels {
     callback: (SavedLevel) => any,
     failCallback: () => any
   ): void {
-    this.getLevelList(() => {});
+    this.getLevelList(() => {
+      console.log("gotLevelList");
+    });
     const params = {
       levelID
     };
