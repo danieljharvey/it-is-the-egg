@@ -8,6 +8,7 @@ import { Tile } from "./Tile";
 import { Utils } from "./Utils";
 
 const SPRITE_SIZE: number = 64;
+const OFFSET_DIVIDE: number = 100;
 
 export class Renderer {
   public tileSize: number;
@@ -309,7 +310,7 @@ export class Renderer {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
-    const offsetRatio = tileSize / SPRITE_SIZE;
+    const offsetRatio = tileSize / OFFSET_DIVIDE;
 
     const coords = player.coords;
 

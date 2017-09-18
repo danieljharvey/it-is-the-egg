@@ -957,6 +957,7 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
+    var OFFSET_DIVIDE = 100;
     var Renderer = (function () {
         function Renderer(jetpack, map, tiles, playerTypes, boardSize, canvas) {
             this.lampMode = false; // lamp mode only draws around the eggs
@@ -1197,7 +1198,7 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
         Renderer.prototype.renderPlayer = function (player) {
             var ctx = this.canvas.getDrawingContext();
             var tileSize = this.tileSize;
-            var offsetRatio = tileSize / SPRITE_SIZE;
+            var offsetRatio = tileSize / OFFSET_DIVIDE;
             var coords = player.coords;
             var left = Math.floor(coords.x * tileSize + coords.offsetX * offsetRatio);
             var top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
@@ -1263,7 +1264,7 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
 define("Movement", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SPRITE_SIZE = 64;
+    var OFFSET_DIVIDE = 100;
     // movement takes the current map, the current players, and returns new player objects
     // it is then trashed and a new one made for next move to reduce any real held state
     var Movement = (function () {
@@ -1436,7 +1437,7 @@ define("Movement", ["require", "exports"], function (require, exports) {
         Movement.prototype.incrementPlayerDirection = function (timePassed, player) {
             // falling is priority - do this if a thing
             if (player.falling) {
-                var fallAmount = this.calcMoveAmount(player.fallSpeed, this.renderer.tileSize, timePassed);
+                var fallAmount = this.calcMoveAmount(player.fallSpeed, timePassed);
                 var newOffsetY = player.coords.offsetX + fallAmount;
                 var newCoords = player.coords.modify({
                     offsetY: player.coords.offsetY + fallAmount
@@ -1449,7 +1450,7 @@ define("Movement", ["require", "exports"], function (require, exports) {
                 // we are still, no need for movement
                 return player;
             }
-            var moveAmount = this.calcMoveAmount(player.moveSpeed, this.renderer.tileSize, timePassed);
+            var moveAmount = this.calcMoveAmount(player.moveSpeed, timePassed);
             var coords = player.coords;
             if (player.direction < 0) {
                 // move left
@@ -1493,10 +1494,9 @@ define("Movement", ["require", "exports"], function (require, exports) {
             // do nothing, return same object
             return player;
         };
-        Movement.prototype.calcMoveAmount = function (moveSpeed, tileSize, timePassed) {
-            var fullSize = SPRITE_SIZE; // size of image tiles
-            var moveAmount = tileSize / fullSize * moveSpeed;
-            var frameRateAdjusted = moveAmount * (timePassed / 2);
+        Movement.prototype.calcMoveAmount = function (moveSpeed, timePassed) {
+            var moveAmount = (1 / OFFSET_DIVIDE) * moveSpeed * 5;
+            var frameRateAdjusted = moveAmount * timePassed;
             if (isNaN(frameRateAdjusted)) {
                 return 0;
             }
@@ -1511,28 +1511,28 @@ define("Movement", ["require", "exports"], function (require, exports) {
             });
         };
         Movement.prototype.correctTileOverflow = function (coords) {
-            if (coords.offsetX > SPRITE_SIZE) {
+            if (coords.offsetX > OFFSET_DIVIDE) {
                 // move one tile to right
                 return coords.modify({
                     offsetX: 0,
                     x: coords.x + 1
                 });
             }
-            if (coords.offsetX < -1 * SPRITE_SIZE) {
+            if (coords.offsetX < -1 * OFFSET_DIVIDE) {
                 // move one tile to left
                 return coords.modify({
                     offsetX: 0,
                     x: coords.x - 1
                 });
             }
-            if (coords.offsetY > SPRITE_SIZE) {
+            if (coords.offsetY > OFFSET_DIVIDE) {
                 // move one tile down
                 return coords.modify({
                     offsetY: 0,
                     y: coords.y + 1
                 });
             }
-            if (coords.offsetY < -1 * SPRITE_SIZE) {
+            if (coords.offsetY < -1 * OFFSET_DIVIDE) {
                 // move one tile up
                 return coords.modify({
                     offsetY: 0,
@@ -1744,7 +1744,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
         function Jetpack() {
-            this.moveSpeed = 5;
+            this.moveSpeed = 10;
             this.paused = true;
             this.editMode = false;
             this.levelID = 1;
@@ -1821,15 +1821,13 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 this.nextLevel();
             }
         };
-        // create player and load their sprite
+        // create player
         Jetpack.prototype.createNewPlayer = function (type, coords, direction) {
             var playerType = this.playerTypes[type];
             var params = JSON.parse(JSON.stringify(playerType));
             params.id = this.nextPlayerID++;
             params.coords = coords;
             params.direction = direction;
-            params.oldDirection = 0;
-            params.falling = false; // can't move when falling
             if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
                 params.moveSpeed = this.moveSpeed;
                 params.fallSpeed = this.moveSpeed * 1.2;
@@ -1942,18 +1940,27 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             if (this.paused) {
                 return false;
             }
-            var timePassed = this.calcTimePassed(time, lastTime);
-            this.doPlayerCalcs(timePassed);
-            this.sizeCanvas();
-            this.renderer.render();
             this.animationHandle = window.requestAnimationFrame(function (newTime) {
                 return _this.eventLoop(newTime, time);
             });
+            var timePassed = this.calcTimePassed(time, lastTime);
+            this.displayFrameRate(timePassed);
+            this.gameCycle(timePassed);
+        };
+        // this does one step of the game
+        Jetpack.prototype.gameCycle = function (timePassed) {
+            this.doPlayerCalcs(timePassed);
+            this.sizeCanvas();
+            this.renderer.render();
         };
         Jetpack.prototype.calcTimePassed = function (time, lastTime) {
             var difference = Math.min(time - lastTime, 20);
-            var frameRate = 60 / difference;
-            return frameRate;
+            return difference;
+        };
+        Jetpack.prototype.displayFrameRate = function (timePassed) {
+            var frameRate = Math.floor(1000 / timePassed);
+            var fps = document.getElementById('fps');
+            fps.innerHTML = frameRate.toFixed(3) + "fps";
         };
         Jetpack.prototype.sizeCanvas = function () {
             if (!this.checkResize) {
@@ -2089,7 +2096,28 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 if (event.keyCode === 39) {
                     _this.rotateBoard(true);
                 }
+                if (event.keyCode === 80) {
+                    _this.togglePaused();
+                }
+                if (event.keyCode === 83) {
+                    _this.doStep();
+                }
             });
+        };
+        Jetpack.prototype.togglePaused = function () {
+            console.log('togglePaused');
+            if (this.paused) {
+                this.startRender();
+            }
+            else {
+                this.pauseRender();
+            }
+        };
+        Jetpack.prototype.doStep = function () {
+            if (!this.paused) {
+                return false;
+            }
+            this.gameCycle(16); // movement based on 60 fps
         };
         Jetpack.prototype.bindClickHandler = function () {
             var _this = this;
@@ -2110,10 +2138,10 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.handleDrawEvent = function (event) {
             var tileSize = this.canvas.calcTileSize(this.boardSize);
             var coords = new Coords_4.Coords({
-                x: (event.offsetX / tileSize),
-                y: (event.offsetY / tileSize),
                 offsetX: event.offsetX % tileSize - tileSize / 2,
-                offsetY: event.offsetY % tileSize - tileSize / 2
+                offsetY: event.offsetY % tileSize - tileSize / 2,
+                x: (event.offsetX / tileSize),
+                y: (event.offsetY / tileSize)
             });
             this.drawCurrentTile(coords);
         };

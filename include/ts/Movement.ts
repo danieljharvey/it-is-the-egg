@@ -5,7 +5,7 @@ import { Map } from "./Map";
 import { Player } from "./Player";
 import { Renderer } from "./Renderer";
 
-const SPRITE_SIZE: number = 64;
+const OFFSET_DIVIDE: number = 100;
 
 // movement takes the current map, the current players, and returns new player objects
 // it is then trashed and a new one made for next move to reduce any real held state
@@ -229,7 +229,6 @@ export class Movement {
     if (player.falling) {
       const fallAmount: number = this.calcMoveAmount(
         player.fallSpeed,
-        this.renderer.tileSize,
         timePassed
       );
       const newOffsetY = player.coords.offsetX + fallAmount;
@@ -248,7 +247,6 @@ export class Movement {
 
     const moveAmount = this.calcMoveAmount(
       player.moveSpeed,
-      this.renderer.tileSize,
       timePassed
     );
     
@@ -302,12 +300,10 @@ export class Movement {
 
   protected calcMoveAmount(
     moveSpeed: number,
-    tileSize: number,
     timePassed: number
   ): number {
-    const fullSize = SPRITE_SIZE; // size of image tiles
-    const moveAmount: number = tileSize / fullSize * moveSpeed;
-    const frameRateAdjusted: number = moveAmount * (timePassed / 2);
+    const moveAmount: number = (1 / OFFSET_DIVIDE) * moveSpeed * 5;
+    const frameRateAdjusted: number = moveAmount * timePassed;
     if (isNaN(frameRateAdjusted)) {
       return 0;
     }
@@ -325,7 +321,7 @@ export class Movement {
   }
 
   protected correctTileOverflow(coords: Coords): Coords {
-    if (coords.offsetX > SPRITE_SIZE) {
+    if (coords.offsetX > OFFSET_DIVIDE) {
       // move one tile to right
       return coords.modify({
         offsetX: 0,
@@ -333,7 +329,7 @@ export class Movement {
       });
     }
 
-    if (coords.offsetX < -1 * SPRITE_SIZE) {
+    if (coords.offsetX < -1 * OFFSET_DIVIDE) {
       // move one tile to left
       return coords.modify({
         offsetX: 0,
@@ -341,7 +337,7 @@ export class Movement {
       });
     }
 
-    if (coords.offsetY > SPRITE_SIZE) {
+    if (coords.offsetY > OFFSET_DIVIDE) {
       // move one tile down
       return coords.modify({
         offsetY: 0,
@@ -349,7 +345,7 @@ export class Movement {
       });
     }
 
-    if (coords.offsetY < -1 * SPRITE_SIZE) {
+    if (coords.offsetY < -1 * OFFSET_DIVIDE) {
       // move one tile up
       return coords.modify({
         offsetY: 0,

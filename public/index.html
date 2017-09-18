@@ -97,15 +97,23 @@
 			background-color: white;
 			color: black;
 		}
+		#fps {
+			position: fixed;
+			top: 0px;
+			left: 0px;
+			color: white;
+		}
 	</style>
 	<body>	
 		<div id='wrapper'>
+			<span id='fps'>0</span>
 			<canvas id='canvas'></canvas>	
 			<div id='controlHeader' class='hidden'>
 				<div id='leftButton' class='bigButton side' onClick='jetpack.rotateBoard(false);'>
 					&larr;
 				</div>
 				<span id='score'>0</span>
+				
 				<div id='rightButton' class='bigButton side' onClick='jetpack.rotateBoard(true);'>
 					&rarr;
 				</div>

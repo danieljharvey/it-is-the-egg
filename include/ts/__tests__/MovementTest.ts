@@ -38,9 +38,8 @@ test("change frame right", () => {
 
 test("Calculate move amount", () => {
   const player = new Player();
-  expect(movement.calcMoveAmount(10, 64, 2)).toEqual(10);
-  expect(movement.calcMoveAmount(10, 32, 2)).toEqual(5);
-  expect(movement.calcMoveAmount(10, 32, 4)).toEqual(10);
+  expect(movement.calcMoveAmount(10, 10)).toEqual(5);
+  expect(movement.calcMoveAmount(10, 20)).toEqual(10);
 });
 
 test("Egg with no speed stays still", () => {

@@ -18,7 +18,7 @@ import { Utils } from "./Utils";
 
 export class Jetpack {
   public animationHandle: number;
-  public moveSpeed: number = 5;
+  public moveSpeed: number = 10;
   public players: Player[];
 
   protected paused: boolean = true;
@@ -123,7 +123,7 @@ export class Jetpack {
     }
   }
 
-  // create player and load their sprite
+  // create player
   public createNewPlayer(
     type: string,
     coords: Coords,
@@ -134,8 +134,6 @@ export class Jetpack {
     params.id = this.nextPlayerID++;
     params.coords = coords;
     params.direction = direction;
-    params.oldDirection = 0;
-    params.falling = false; // can't move when falling
     if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
       params.moveSpeed = this.moveSpeed;
       params.fallSpeed = this.moveSpeed * 1.2;
@@ -280,19 +278,31 @@ export class Jetpack {
     if (this.paused) {
       return false;
     }
-    const timePassed = this.calcTimePassed(time, lastTime);
-    this.doPlayerCalcs(timePassed);
-    this.sizeCanvas();
-    this.renderer.render();
     this.animationHandle = window.requestAnimationFrame(newTime =>
       this.eventLoop(newTime, time)
     );
+    const timePassed = this.calcTimePassed(time, lastTime);
+    this.displayFrameRate(timePassed);
+
+    this.gameCycle(timePassed);
   }
 
-  protected calcTimePassed(time: number, lastTime: number) {
+  // this does one step of the game
+  protected gameCycle(timePassed: number) {
+    this.doPlayerCalcs(timePassed);
+    this.sizeCanvas();
+    this.renderer.render();
+  } 
+
+  protected calcTimePassed(time: number, lastTime: number) : number {
     const difference = Math.min(time - lastTime, 20);
-    const frameRate = 60 / difference;
-    return frameRate;
+    return difference;
+  }
+
+  protected displayFrameRate(timePassed: number) {
+    const frameRate = Math.floor(1000 / timePassed);
+    const fps = document.getElementById('fps');
+    fps.innerHTML = frameRate.toFixed(3) + "fps";
   }
 
   protected sizeCanvas() {
@@ -448,7 +458,29 @@ export class Jetpack {
       if (event.keyCode === 39) {
         this.rotateBoard(true);
       }
+      if (event.keyCode === 80) {
+        this.togglePaused();
+      }
+      if (event.keyCode === 83) {
+        this.doStep();
+      }  
     });
+  }
+
+  protected togglePaused() {
+    console.log('togglePaused');
+     if (this.paused) {
+          this.startRender();
+        } else {
+          this.pauseRender();  
+        }
+  }
+
+  protected doStep() {
+    if (!this.paused) {
+      return false;
+    }
+    this.gameCycle(16); // movement based on 60 fps
   }
 
   protected bindClickHandler() {
@@ -470,10 +502,10 @@ export class Jetpack {
   protected handleDrawEvent(event) {
     const tileSize = this.canvas.calcTileSize(this.boardSize);
     const coords = new Coords({
-      x: (event.offsetX / tileSize) as number,
-      y: (event.offsetY / tileSize) as number,
       offsetX: event.offsetX % tileSize - tileSize / 2,
-      offsetY: event.offsetY % tileSize - tileSize / 2
+      offsetY: event.offsetY % tileSize - tileSize / 2,
+      x: (event.offsetX / tileSize) as number,
+      y: (event.offsetY / tileSize) as number
     });
     this.drawCurrentTile(coords);
   }
