@@ -718,7 +718,12 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
             this.renderAngle = 0;
             this.tileSet = tileSet;
             this.boardSize = boardSize;
-            this.board = this.fixBoard(boardArray);
+            if (boardArray) {
+                this.board = this.fixBoard(boardArray);
+            }
+            else {
+                this.board = this.generateBlankBoard();
+            }
         }
         // return array with all tiles in (with x and y added)
         Map.prototype.getAllTiles = function () {
@@ -763,7 +768,7 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
         };
         // this needs to turn data into Tile objects too
         Map.prototype.updateBoard = function (board, boardSize) {
-            this.board = this.fixBoard(board);
+            this.board = board;
             this.boardSize = boardSize;
         };
         Map.prototype.updateBoardWithRandom = function (boardSize) {
@@ -893,6 +898,7 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
         };
         Map.prototype.fixBoard = function (boardArray) {
             var _this = this;
+            if (boardArray === void 0) { boardArray = []; }
             var newBoard = boardArray.map(function (column, mapY) {
                 return column.map(function (item, mapX) {
                     var newTile = _this.cloneTile(item.id);
@@ -917,7 +923,6 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
                     board[x][y] = blankTile;
                 }
             }
-            f;
             return new Board_1.Board(board);
         };
         Map.prototype.generateRandomBoard = function (boardSize) {
@@ -1939,7 +1944,8 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             this.boardSize = new BoardSize_3.BoardSize(size);
             this.canvas = new Canvas_1.Canvas(this.boardSize);
             this.map = new Map_1.Map(this.tileSet, this.boardSize, boardArray);
-            this.map.updateBoard(this.map.correctBoardSizeChange(boardArray, this.boardSize), this.boardSize);
+            var board = this.map.getBoard();
+            this.map.updateBoard(this.map.correctBoardSizeChange(board, this.boardSize), this.boardSize);
             var tiles = this.tileSet.getTiles();
             this.renderer = new Renderer_1.Renderer(this, this.map, tiles, this.playerTypes, this.boardSize, this.canvas);
         };
@@ -1980,7 +1986,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.displayFrameRate = function (timePassed) {
             var frameRate = Math.floor(1000 / timePassed);
             var fps = document.getElementById("fps");
-            fps.innerHTML = frameRate.toFixed(3) + "fps";
+            if (fps) {
+                fps.innerHTML = frameRate.toFixed(3) + "fps";
+            }
         };
         Jetpack.prototype.sizeCanvas = function () {
             if (!this.checkResize) {

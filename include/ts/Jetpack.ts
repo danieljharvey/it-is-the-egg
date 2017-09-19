@@ -247,8 +247,9 @@ export class Jetpack {
     this.canvas = new Canvas(this.boardSize);
 
     this.map = new Map(this.tileSet, this.boardSize, boardArray);
+    const board = this.map.getBoard();
     this.map.updateBoard(
-      this.map.correctBoardSizeChange(boardArray, this.boardSize),
+      this.map.correctBoardSizeChange(board, this.boardSize),
       this.boardSize
     );
     const tiles = this.tileSet.getTiles();
@@ -302,7 +303,9 @@ export class Jetpack {
   protected displayFrameRate(timePassed: number) {
     const frameRate = Math.floor(1000 / timePassed);
     const fps = document.getElementById("fps");
-    fps.innerHTML = frameRate.toFixed(3) + "fps";
+    if (fps) {
+      fps.innerHTML = frameRate.toFixed(3) + "fps";
+    }
   }
 
   protected sizeCanvas() {

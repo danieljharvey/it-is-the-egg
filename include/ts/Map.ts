@@ -17,7 +17,12 @@ export class Map {
   constructor(tileSet: TileSet, boardSize: BoardSize, boardArray: Tile[][]) {
     this.tileSet = tileSet;
     this.boardSize = boardSize;
-    this.board = this.fixBoard(boardArray);
+    if (boardArray) {
+      this.board = this.fixBoard(boardArray);  
+    } else {
+      this.board = this.generateBlankBoard();
+    }
+    
   }
 
   // return array with all tiles in (with x and y added)
@@ -69,8 +74,8 @@ export class Map {
   }
 
   // this needs to turn data into Tile objects too
-  public updateBoard(board: Tile[][], boardSize: BoardSize) {
-    this.board = this.fixBoard(board);
+  public updateBoard(board: Board, boardSize: BoardSize) {
+    this.board = board;
     this.boardSize = boardSize;
   }
 
@@ -212,7 +217,7 @@ export class Map {
     return true;
   }
 
-  public fixBoard(boardArray: Tile[][]) : Board {
+  public fixBoard(boardArray: Tile[][] = []) : Board {
     const newBoard = boardArray.map((column, mapY) => {
       return column.map((item, mapX) => {
         const newTile = this.cloneTile(item.id);
@@ -239,7 +244,7 @@ export class Map {
         const blankTile = this.cloneTile(1);
         board[x][y] = blankTile;
       }
-    }f
+    }
     return new Board(board);
   }
 
