@@ -14,12 +14,20 @@ export class Board {
     }
   }
 
-  getTile(x: number, y: number) {
+  public getTile(x: number, y: number) {
     return this.list.getIn([x, y]);
   }
 
-  modify(x: number, y: number, tile: any) {
+  public modify(x: number, y: number, tile: any) {
     const updatedList = this.list.setIn([x, y], tile);
     return new Board(undefined, updatedList);
+  }
+
+  public getLength() : number {
+    return this.list.count();
+  }
+
+  public getAllTiles() {
+    return this.list.flatten(1);
   }
 }
