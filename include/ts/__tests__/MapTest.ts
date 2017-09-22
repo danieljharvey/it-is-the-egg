@@ -29,7 +29,7 @@ test("Translate rotation", () => {
 
   const boardSize = new BoardSize(10);
 
-  const map = new Map(undefined, boardSize);
+  const map = new Map(undefined, boardSize, []);
 
   rotateData.map(data => {
     const expected = new Coords({ x: data.outX, y: data.outY });
@@ -42,27 +42,25 @@ test("Translate rotation", () => {
 
 test("Correct board size with shrinking", () => {
   const board = new Board([
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 0, 0]
+    [0, 1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0 ,0],
+    [0, 1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0]
   ]);
 
-  const boardSize = {
-    width: 4,
-    height: 4
-  };
+  const boardSize = new BoardSize(5); // 5 is minimal actually
 
-  const expected = new Board([[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]);
+  const expected = new Board([[0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0],[0, 1, 0, 0, 0]]);
 
-  const map = new Map();
+  const map = new Map(undefined, boardSize, []);
 
   const result = map.correctBoardSizeChange(board, boardSize);
   expect(result).toEqual(expected);
 });
 
-test("Correct board size with shrinking", () => {
+test("Correct board size with growing", () => {
   const board = new Board([
     [0, 1, 0, 0, 0],
     [0, 1, 0, 0, 0],
@@ -71,13 +69,10 @@ test("Correct board size with shrinking", () => {
     [0, 1, 0, 0, 0]
   ]);
 
-  const boardSize = {
-    width: 6,
-    height: 6
-  };
+  const boardSize = new BoardSize(6;
 
   const tileSet = new TileSet();
-  const map = new Map(tileSet);
+  const map = new Map(tileSet, boardSize, []);
 
   const tile = map.cloneTile(1);
 
@@ -97,13 +92,10 @@ test("Correct board size with shrinking", () => {
 test("Correct non-existant empty board to reasonably full one", () => {
   const board = new Board([]);
 
-  const boardSize = {
-    width: 5,
-    height: 5
-  };
+  const boardSize = new BoardSize(5);
 
   const tileSet = new TileSet();
-  const map = new Map(tileSet);
+  const map = new Map(tileSet, boardSize, []);
 
   const tile = map.cloneTile(1);
 
@@ -573,8 +565,10 @@ test("Get all tiles test", () => {
 test("Fix board", () => {
   const boardArray = [[{ id: 1 }, { id: 2 }], [{ id: 2 }, { id: 1 }]];
 
+  const boardSize = new BoardSize(5);
+
   const tileSet = new TileSet();
-  const map = new Map(tileSet);
+  const map = new Map(tileSet, boardSize, []);
 
   const tile1 = map.cloneTile(1).modify({ x: 0, y: 0 });
   const tile2 = map.cloneTile(2).modify({ x: 1, y: 0 });
@@ -582,7 +576,7 @@ test("Fix board", () => {
   const tile3 = map.cloneTile(2).modify({ x: 0, y: 1 });
   const tile4 = map.cloneTile(1).modify({ x: 1, y: 1 });
 
-  const expected = new Board([[tile1, tile2], [tile3, tile4]]);
+  const expected = new Board([[tile1, tile3], [tile2, tile4]]);
 
   const result = map.fixBoard(boardArray);
   expect(result).toEqual(expected);

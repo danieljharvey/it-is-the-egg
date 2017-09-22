@@ -11,14 +11,12 @@ const OFFSET_DIVIDE: number = 100;
 // it is then trashed and a new one made for next move to reduce any real held state
 export class Movement {
   protected map: Map;
-  protected renderer: Renderer;
   protected jetpack: Jetpack;
 
   protected players: Player[] = [];
 
-  constructor(map: Map, renderer: Renderer, jetpack: Jetpack) {
+  constructor(map: Map, jetpack: Jetpack) {
     this.map = map;
-    this.renderer = renderer;
     this.jetpack = jetpack;
   }
 
@@ -73,8 +71,6 @@ export class Movement {
   protected doPlayerCalcs(player: Player, timePassed: number): Player {
     const startCoords = player.coords;
 
-    this.setRedrawAroundPlayer(player);
-
     const newPlayer = this.incrementPlayerFrame(player);
 
     const newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);
@@ -93,8 +89,6 @@ export class Movement {
       newestPlayer
     );
 
-    this.setRedrawAroundPlayer(absolutelyNewestPlayer);
-
     return absolutelyNewestPlayer;
   }
 
@@ -102,11 +96,6 @@ export class Movement {
     if (!startCoords.equals(player.coords)) {
       return this.checkPlayerTileAction(player);
     }
-    return player;
-  }
-
-  protected setRedrawAroundPlayer(player: Player): Player {
-    this.renderer.markPlayerRedraw(player.coords);
     return player;
   }
 
@@ -176,21 +165,13 @@ export class Movement {
       return this.teleport(player); // only action that changes player state
     } else if (tile.action === "pink-switch") {
       const changedCoords = this.map.switchTiles(15, 16);
-      this.markCoordsToRender(changedCoords);
     } else if (tile.action === "green-switch") {
       const changedCoords = this.map.switchTiles(18, 19);
-      this.markCoordsToRender(changedCoords);
     }
     return player; // player returned unchanged
   }
 
-  protected markCoordsToRender(changedCoords: Coords[]) {
-    changedCoords.map(coords => {
-      if (coords) {
-        return this.renderer.setRenderMap(true, coords.x, coords.y);
-      }
-    });
-  }
+
 
   // find another teleport and go to it
   // if no others, do nothing

@@ -45,23 +45,20 @@ export class Renderer {
     this.canvas = canvas;
     this.loadTilePalette();
     this.loadPlayerPalette();
-    this.renderMap = this.createRenderMap(boardSize);
   }
 
-  public render() {
+  public render(renderMap: boolean[][]) {
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
-    this.renderBoard();
+    this.renderBoard(renderMap);
     this.renderPlayers();
-    this.renderFrontLayerBoard();
+    this.renderFrontLayerBoard(renderMap);
   }
 
   public resize() {
     this.tileSize = this.canvas.sizeCanvas(this.boardSize);
-    this.renderMap = this.createRenderMap(this.boardSize); // re-create render map
   }
 
   public drawRotatingBoard(clockwise: boolean, completed: () => void) {
-    this.renderMap = this.createRenderMap(this.boardSize); // set redraw on everything to GREAT
 
     const canvas = this.canvas.getCanvas();
 
@@ -80,54 +77,6 @@ export class Renderer {
 
   public getTileImagePath(tile: Tile): string {
     return this.canvas.imagesFolder + tile.img;
-  }
-
-  public setRenderMap(value: boolean, x: number, y: number) {
-    const coords = new Coords({ x, y });
-
-    const fixedCoords = Utils.correctForOverflow(coords, this.boardSize);
-    this.renderMap[fixedCoords.x][fixedCoords.y] = value;
-  }
-
-  public getRenderMapValue(x: number, y: number): boolean {
-    return this.renderMap[x][y];
-  }
-
-  // create new render map where every tile needs redrawing
-  public createRenderMap(boardSize: BoardSize) {
-    const renderMap = [];
-    for (let x = 0; x < boardSize.width; x++) {
-      renderMap[x] = [];
-      for (let y = 0; y < boardSize.height; y++) {
-        renderMap[x][y] = !this.lampMode;
-      }
-    }
-    return renderMap;
-  }
-
-  public markPlayerRedraw(coords: Coords) {
-    const startX = coords.x - 1; // coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-    const endX = coords.x + 1; // coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-
-    const startY = coords.y - 1; // coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-    const endY = coords.y + 1; // coords.offsetY !== 0 ? coords.y + 1 : coords.y;
-
-    for (let x = startX; x <= endX; x++) {
-      for (let y = startY; y <= endY; y++) {
-        this.setRenderMap(true, x, y);
-      }
-    }
-    this.addExtraRedraws(coords);
-  }
-
-  // if in night time mode randomly glow a few tiles around the players too because that'll be nice
-  protected addExtraRedraws(coords: Coords) {
-    if (!this.lampMode) {
-      return false;
-    }
-    const randX = Math.floor(Math.random() * 2 - 1);
-    const randY = Math.floor(Math.random() * 2 - 1);
-    this.setRenderMap(true, coords.x + randX, coords.y + randY);
   }
 
   protected loadTilePalette() {
@@ -182,20 +131,18 @@ export class Renderer {
     this.tileImages[id].ready = true;
   }
 
-  protected renderBoard(): void {
+  protected renderBoard(renderMap: boolean[][]): void {
     const ctx = this.canvas.getDrawingContext();
     ctx.globalAlpha = 1;
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
-      const needsDraw = this.getRenderMapValue(tile.x, tile.y);
+      const needsDraw = renderMap[tile.x][tile.y];
       if (needsDraw === false) {
         this.showUnrenderedTile(tile.x, tile.y);
         return;
       }
       if (!tile.frontLayer) {
-        if (this.renderTile(tile.x, tile.y, tile)) {
-          this.setRenderMap(false, tile.x, tile.y);
-        }
+        this.renderTile(tile.x, tile.y, tile);
       } else {
         // render sky behind see through tiles
         this.drawSkyTile(tile, tile.x, tile.y);
@@ -209,17 +156,15 @@ export class Renderer {
   }
 
   // just go over and draw the over-the-top stuff
-  protected renderFrontLayerBoard() {
+  protected renderFrontLayerBoard(renderMap: boolean[][]) {
     const tiles = this.map.getAllTiles();
     tiles.map(tile => {
-      const needsDraw = this.getRenderMapValue(tile.x, tile.y);
+      const needsDraw = renderMap[tile.x][tile.y];
       if (needsDraw === false) {
         return;
       }
       if (tile.frontLayer) {
-        if (this.renderTile(tile.x, tile.y, tile)) {
-          this.setRenderMap(false, tile.x, tile.y);
-        }
+        this.renderTile(tile.x, tile.y, tile);
       }
     });
   }

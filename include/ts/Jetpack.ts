@@ -10,6 +10,7 @@ import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
+import { RenderMap } from "./RenderMap";
 import { SavedLevel } from "./SavedLevel";
 import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
@@ -45,6 +46,9 @@ export class Jetpack {
 
   protected defaultBoardSize: number = 20;
   protected checkResize: boolean = false;
+
+  protected isCalculating = false;
+  protected nextAction: string = "";
 
   public go(levelID) {
     // this.bootstrap();
@@ -145,29 +149,11 @@ export class Jetpack {
 
   // make this actually fucking rotate, and choose direction, and do the visual effect thing
   public rotateBoard(clockwise) {
-    if (this.paused || this.editMode) {
-      return false;
+    if (clockwise) {
+      this.setNextAction('rotateRight');
+    } else {
+      this.setNextAction('rotateLeft');
     }
-    this.pauseRender();
-
-    this.rotationsUsed++;
-
-    this.map.rotateBoard(clockwise);
-
-    const rotatedPlayers = this.players.map(player => {
-      return this.map.rotatePlayer(player, clockwise);
-    });
-
-    this.players = [];
-    rotatedPlayers.map(player => {
-      this.players[player.id] = player;
-    });
-
-    this.renderer.drawRotatingBoard(clockwise, () => {
-      this.startRender();
-    });
-
-    return true;
   }
 
   public saveLevel() {
@@ -241,6 +227,10 @@ export class Jetpack {
     return levelID;
   }
 
+  protected setNextAction(action: string) {
+    this.nextAction = action;
+  }
+
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
   protected createRenderer(boardArray = [], size: number = 12) {
     this.boardSize = new BoardSize(size);
@@ -275,10 +265,36 @@ export class Jetpack {
     );
   }
 
+  protected getNextAction() {
+    if (this.nextAction.length === 0) {
+      return false;
+    }
+    const nextAction = this.nextAction;
+    this.nextAction = "";
+    return nextAction;
+  }
+
+  protected doNextAction(action: string) {
+    if (action === 'rotateLeft') {
+      this.doBoardRotation(false);
+    } else if (action === 'rotateRight') {
+      this.doBoardRotation(true);
+    } else {
+      return false;
+    }
+  }
+
   protected eventLoop(time: number, lastTime: number) {
     if (this.paused) {
       return false;
     }
+    const nextAction = this.getNextAction();
+    if (nextAction) {
+      // nextActions take control of event loop
+      // so don't requestAnimationFrame etc
+      return this.doNextAction(nextAction);
+    }
+
     this.animationHandle = window.requestAnimationFrame(newTime =>
       this.eventLoop(newTime, time)
     );
@@ -290,9 +306,36 @@ export class Jetpack {
 
   // this does one step of the game
   protected gameCycle(timePassed: number) {
+    if (this.isCalculating) { // stop slow frames tripping over one another
+      return false;
+    }
+    this.isCalculating = true;
+    const playerRenderMap = this.createRenderMapFromPlayers(this.players, this.boardSize);
+    const oldBoard = this.map.getBoard();
     this.doPlayerCalcs(timePassed);
     this.sizeCanvas();
-    this.renderer.render();
+    const newBoard = this.map.getBoard();
+    const boardRenderMap = this.createRenderMapFromBoards(oldBoard, newBoard);
+    const finalRenderMap = RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+    this.renderer.render(finalRenderMap);
+    this.isCalculating = false;
+  }
+
+  protected renderEverything(boardSize: BoardSize) {
+    const blankMap = RenderMap.createRenderMap(boardSize.width, true);
+    this.renderer.render(blankMap);
+  }
+
+  protected createRenderMapFromBoards(oldBoard: Board, newBoard: Board) : boolean[][] {
+    return RenderMap.createRenderMapFromBoards(oldBoard,newBoard);
+  }
+
+  // create empty renderMap based on boardSize, and then apply each player's position to it
+  protected createRenderMapFromPlayers(players: Player[], boardSize: BoardSize) : boolean[][] {
+    const blankMap = RenderMap.createRenderMap(boardSize.width, false);
+    return players.reduce((map, player) => {
+      return RenderMap.addPlayerToRenderMap(player, map);
+    },blankMap);
   }
 
   protected calcTimePassed(time: number, lastTime: number): number {
@@ -358,7 +401,7 @@ export class Jetpack {
   }
 
   protected doPlayerCalcs(timePassed: number) {
-    const movement = new Movement(this.map, this.renderer, this);
+    const movement = new Movement(this.map, this);
     const newPlayers = movement.doCalcs(this.players, timePassed);
 
     const collisions = new Collisions(this, this.playerTypes);
@@ -413,6 +456,34 @@ export class Jetpack {
   protected deletePlayer(player: Player) {
     delete this.players[player.id];
   }
+
+  protected doBoardRotation(clockwise) {
+    if (this.paused || this.editMode) {
+      return false;
+    }
+    this.pauseRender();
+
+    this.rotationsUsed++;
+
+    this.map.rotateCurrentBoard(clockwise);
+
+    const rotatedPlayers = this.players.map(player => {
+      return this.map.rotatePlayer(player, clockwise);
+    });
+
+    this.players = [];
+    rotatedPlayers.map(player => {
+      this.players[player.id] = player;
+    });
+
+    this.renderer.drawRotatingBoard(clockwise, () => {
+      this.renderEverything(this.boardSize);
+      this.startRender();
+    });
+
+    return true;
+  }
+
 
   protected revertEditMessage() {
     const s = setTimeout(() => {

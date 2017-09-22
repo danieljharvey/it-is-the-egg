@@ -866,21 +866,23 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
             var newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
             return newTile;
         };
-        Map.prototype.rotateBoard = function (clockwise) {
+        Map.prototype.rotateCurrentBoard = function (clockwise) {
+            this.board = this.rotateBoard(this.board, clockwise);
+        };
+        Map.prototype.rotateBoard = function (board, clockwise) {
             var _this = this;
-            var newBoard = this.getBlankBoardArray();
-            var width = this.boardSize.width - 1;
-            var height = this.boardSize.height - 1;
-            var tiles = this.getAllTiles();
-            tiles.map(function (tile) {
+            var tiles = board.getAllTiles();
+            var width = board.getLength() - 1;
+            var height = board.getLength() - 1;
+            var rotatedBoard = tiles.reduce(function (currentBoard, tile) {
                 var coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
                 var newCoords = _this.translateRotation(coords, clockwise);
                 var newTile = tile.modify({
                     x: newCoords.x,
                     y: newCoords.y
                 });
-                newBoard[newCoords.x][newCoords.y] = newTile;
-            });
+                return currentBoard.modify(newCoords.x, newCoords.y, newTile);
+            }, board);
             if (clockwise) {
                 this.renderAngle = this.renderAngle + 90;
                 if (this.renderAngle > 360) {
@@ -893,14 +895,13 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
                     this.renderAngle = 360 + this.renderAngle;
                 }
             }
-            this.board = newBoard;
-            return true;
+            return rotatedBoard;
         };
         Map.prototype.fixBoard = function (boardArray) {
             var _this = this;
             if (boardArray === void 0) { boardArray = []; }
-            var newBoard = boardArray.map(function (column, mapY) {
-                return column.map(function (item, mapX) {
+            var newBoard = boardArray.map(function (column, mapX) {
+                return column.map(function (item, mapY) {
                     var newTile = _this.cloneTile(item.id);
                     return newTile.modify({
                         x: mapX,
@@ -963,22 +964,11 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
                 });
             }
         };
-        // get empty grid without tiles in
-        Map.prototype.getBlankBoardArray = function () {
-            var newBoard = [];
-            for (var x = 0; x < this.boardSize.width; x++) {
-                newBoard[x] = [];
-                for (var y = 0; y < this.boardSize.height; y++) {
-                    newBoard[x][y] = [];
-                }
-            }
-            return newBoard;
-        };
         return Map;
     }());
     exports.Map = Map;
 });
-define("Renderer", ["require", "exports", "Coords", "Utils"], function (require, exports, Coords_3, Utils_3) {
+define("Renderer", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
@@ -1023,20 +1013,17 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             this.canvas = canvas;
             this.loadTilePalette();
             this.loadPlayerPalette();
-            this.renderMap = this.createRenderMap(boardSize);
         }
-        Renderer.prototype.render = function () {
+        Renderer.prototype.render = function (renderMap) {
             this.tileSize = this.canvas.calcTileSize(this.boardSize);
-            this.renderBoard();
+            this.renderBoard(renderMap);
             this.renderPlayers();
-            this.renderFrontLayerBoard();
+            this.renderFrontLayerBoard(renderMap);
         };
         Renderer.prototype.resize = function () {
             this.tileSize = this.canvas.sizeCanvas(this.boardSize);
-            this.renderMap = this.createRenderMap(this.boardSize); // re-create render map
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
-            this.renderMap = this.createRenderMap(this.boardSize); // set redraw on everything to GREAT
             var canvas = this.canvas.getCanvas();
             var cw = canvas.width;
             var ch = canvas.height;
@@ -1051,46 +1038,6 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
         };
         Renderer.prototype.getTileImagePath = function (tile) {
             return this.canvas.imagesFolder + tile.img;
-        };
-        Renderer.prototype.setRenderMap = function (value, x, y) {
-            var coords = new Coords_3.Coords({ x: x, y: y });
-            var fixedCoords = Utils_3.Utils.correctForOverflow(coords, this.boardSize);
-            this.renderMap[fixedCoords.x][fixedCoords.y] = value;
-        };
-        Renderer.prototype.getRenderMapValue = function (x, y) {
-            return this.renderMap[x][y];
-        };
-        // create new render map where every tile needs redrawing
-        Renderer.prototype.createRenderMap = function (boardSize) {
-            var renderMap = [];
-            for (var x = 0; x < boardSize.width; x++) {
-                renderMap[x] = [];
-                for (var y = 0; y < boardSize.height; y++) {
-                    renderMap[x][y] = !this.lampMode;
-                }
-            }
-            return renderMap;
-        };
-        Renderer.prototype.markPlayerRedraw = function (coords) {
-            var startX = coords.x - 1; // coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-            var endX = coords.x + 1; // coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-            var startY = coords.y - 1; // coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-            var endY = coords.y + 1; // coords.offsetY !== 0 ? coords.y + 1 : coords.y;
-            for (var x = startX; x <= endX; x++) {
-                for (var y = startY; y <= endY; y++) {
-                    this.setRenderMap(true, x, y);
-                }
-            }
-            this.addExtraRedraws(coords);
-        };
-        // if in night time mode randomly glow a few tiles around the players too because that'll be nice
-        Renderer.prototype.addExtraRedraws = function (coords) {
-            if (!this.lampMode) {
-                return false;
-            }
-            var randX = Math.floor(Math.random() * 2 - 1);
-            var randY = Math.floor(Math.random() * 2 - 1);
-            this.setRenderMap(true, coords.x + randX, coords.y + randY);
         };
         Renderer.prototype.loadTilePalette = function () {
             var _this = this;
@@ -1142,21 +1089,19 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
         Renderer.prototype.markTileImageAsLoaded = function (id) {
             this.tileImages[id].ready = true;
         };
-        Renderer.prototype.renderBoard = function () {
+        Renderer.prototype.renderBoard = function (renderMap) {
             var _this = this;
             var ctx = this.canvas.getDrawingContext();
             ctx.globalAlpha = 1;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                var needsDraw = _this.getRenderMapValue(tile.x, tile.y);
+                var needsDraw = renderMap[tile.x][tile.y];
                 if (needsDraw === false) {
                     _this.showUnrenderedTile(tile.x, tile.y);
                     return;
                 }
                 if (!tile.frontLayer) {
-                    if (_this.renderTile(tile.x, tile.y, tile)) {
-                        _this.setRenderMap(false, tile.x, tile.y);
-                    }
+                    _this.renderTile(tile.x, tile.y, tile);
                 }
                 else {
                     // render sky behind see through tiles
@@ -1169,18 +1114,16 @@ define("Renderer", ["require", "exports", "Coords", "Utils"], function (require,
             this.renderTile(x, y, skyTile);
         };
         // just go over and draw the over-the-top stuff
-        Renderer.prototype.renderFrontLayerBoard = function () {
+        Renderer.prototype.renderFrontLayerBoard = function (renderMap) {
             var _this = this;
             var tiles = this.map.getAllTiles();
             tiles.map(function (tile) {
-                var needsDraw = _this.getRenderMapValue(tile.x, tile.y);
+                var needsDraw = renderMap[tile.x][tile.y];
                 if (needsDraw === false) {
                     return;
                 }
                 if (tile.frontLayer) {
-                    if (_this.renderTile(tile.x, tile.y, tile)) {
-                        _this.setRenderMap(false, tile.x, tile.y);
-                    }
+                    _this.renderTile(tile.x, tile.y, tile);
                 }
             });
         };
@@ -1293,10 +1236,9 @@ define("Movement", ["require", "exports"], function (require, exports) {
     // movement takes the current map, the current players, and returns new player objects
     // it is then trashed and a new one made for next move to reduce any real held state
     var Movement = (function () {
-        function Movement(map, renderer, jetpack) {
+        function Movement(map, jetpack) {
             this.players = [];
             this.map = map;
-            this.renderer = renderer;
             this.jetpack = jetpack;
         }
         // loop through passed players[] array, do changes, return new one
@@ -1344,24 +1286,18 @@ define("Movement", ["require", "exports"], function (require, exports) {
         };
         Movement.prototype.doPlayerCalcs = function (player, timePassed) {
             var startCoords = player.coords;
-            this.setRedrawAroundPlayer(player);
             var newPlayer = this.incrementPlayerFrame(player);
             var newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);
             var checkedPlayer = this.checkPlayerDirection(newerPlayer);
             var evenNewerPlayer = this.incrementPlayerDirection(timePassed, checkedPlayer);
             var newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
             var absolutelyNewestPlayer = this.checkTileAction(startCoords, newestPlayer);
-            this.setRedrawAroundPlayer(absolutelyNewestPlayer);
             return absolutelyNewestPlayer;
         };
         Movement.prototype.checkTileAction = function (startCoords, player) {
             if (!startCoords.equals(player.coords)) {
                 return this.checkPlayerTileAction(player);
             }
-            return player;
-        };
-        Movement.prototype.setRedrawAroundPlayer = function (player) {
-            this.renderer.markPlayerRedraw(player.coords);
             return player;
         };
         Movement.prototype.incrementPlayerFrame = function (player) {
@@ -1418,21 +1354,11 @@ define("Movement", ["require", "exports"], function (require, exports) {
             }
             else if (tile.action === "pink-switch") {
                 var changedCoords = this.map.switchTiles(15, 16);
-                this.markCoordsToRender(changedCoords);
             }
             else if (tile.action === "green-switch") {
                 var changedCoords = this.map.switchTiles(18, 19);
-                this.markCoordsToRender(changedCoords);
             }
             return player; // player returned unchanged
-        };
-        Movement.prototype.markCoordsToRender = function (changedCoords) {
-            var _this = this;
-            changedCoords.map(function (coords) {
-                if (coords) {
-                    return _this.renderer.setRenderMap(true, coords.x, coords.y);
-                }
-            });
         };
         // find another teleport and go to it
         // if no others, do nothing
@@ -1650,6 +1576,75 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_2, Coords_3, Utils_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // this is not a render map object, but a class for making them
+    var RenderMap = (function () {
+        function RenderMap() {
+        }
+        // render map
+        RenderMap.copyRenderMap = function (renderMap) {
+            return renderMap.slice(0);
+        };
+        // add player to renderMap, returning new renderMap
+        RenderMap.addPlayerToRenderMap = function (player, renderMap) {
+            var coords = player.coords;
+            var startX = coords.x - 1;
+            var endX = coords.x + 1;
+            var startY = coords.y - 1;
+            var endY = coords.y + 1;
+            var newRenderMap = this.copyRenderMap(renderMap);
+            var boardSize = new BoardSize_2.BoardSize(renderMap.length);
+            for (var x = startX; x <= endX; x++) {
+                for (var y = startY; y <= endY; y++) {
+                    var newCoords = new Coords_3.Coords({ x: x, y: y });
+                    var fixedCoords = Utils_3.Utils.correctForOverflow(newCoords, boardSize);
+                    newRenderMap[fixedCoords.x][fixedCoords.y] = true;
+                }
+            }
+            return newRenderMap;
+        };
+        // takes oldBoard and newBoard and creates a map of changes between them
+        RenderMap.createRenderMapFromBoards = function (oldBoard, newBoard) {
+            var boardArray = this.createRenderMap(oldBoard.getLength(), false);
+            return boardArray.map(function (column, x) {
+                return column.map(function (tile, y) {
+                    var oldTile = oldBoard.getTile(x, y);
+                    var newTile = newBoard.getTile(x, y);
+                    if (oldTile.equals(newTile)) {
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            });
+        };
+        // combines any two renderMaps (using OR)
+        // assumes they are same size
+        RenderMap.combineRenderMaps = function (renderMap, newRenderMap) {
+            return renderMap.map(function (column, x) {
+                return column.map(function (entry, y) {
+                    return (entry || newRenderMap[x][y]);
+                });
+            });
+        };
+        // create an empty render map
+        RenderMap.createRenderMap = function (size, value) {
+            var boardArray = [];
+            for (var x = 0; x < size; x++) {
+                boardArray[x] = [];
+                for (var y = 0; y < size; y++) {
+                    boardArray[x][y] = value;
+                }
+            }
+            return boardArray;
+        };
+        return RenderMap;
+    }());
+    exports.RenderMap = RenderMap;
+});
 define("TileChooser", ["require", "exports", "ramda"], function (require, exports, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1706,7 +1701,7 @@ define("TileChooser", ["require", "exports", "ramda"], function (require, export
     }());
     exports.TileChooser = TileChooser;
 });
-define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_2) {
+define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TitleScreen = (function () {
@@ -1719,7 +1714,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
         }
         TitleScreen.prototype.render = function (callback) {
             var _this = this;
-            var boardSize = new BoardSize_2.BoardSize(10);
+            var boardSize = new BoardSize_3.BoardSize(10);
             this.canvas.sizeCanvas(boardSize);
             var titleImage = document.createElement("img");
             titleImage.addEventListener("load", function () {
@@ -1764,7 +1759,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Movement", "Player", "PlayerTypes", "Renderer", "TileChooser", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_3, Canvas_1, Collisions_1, Coords_4, Levels_1, Loader_1, Map_1, Movement_1, Player_1, PlayerTypes_1, Renderer_1, TileChooser_1, TileSet_1, TitleScreen_1, Utils_4) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Levels", "Loader", "Map", "Movement", "Player", "PlayerTypes", "Renderer", "RenderMap", "TileChooser", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_4, Canvas_1, Collisions_1, Coords_4, Levels_1, Loader_1, Map_1, Movement_1, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TileChooser_1, TileSet_1, TitleScreen_1, Utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1781,6 +1776,8 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             this.playerTypes = {};
             this.defaultBoardSize = 20;
             this.checkResize = false;
+            this.isCalculating = false;
+            this.nextAction = "";
         }
         Jetpack.prototype.go = function (levelID) {
             var _this = this;
@@ -1817,7 +1814,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.bootstrap = function (callback) {
             var _this = this;
             this.tileSet = new TileSet_1.TileSet();
-            var boardSize = new BoardSize_3.BoardSize(this.defaultBoardSize);
+            var boardSize = new BoardSize_4.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
@@ -1863,24 +1860,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // make this actually fucking rotate, and choose direction, and do the visual effect thing
         Jetpack.prototype.rotateBoard = function (clockwise) {
-            var _this = this;
-            if (this.paused || this.editMode) {
-                return false;
+            if (clockwise) {
+                this.setNextAction('rotateRight');
             }
-            this.pauseRender();
-            this.rotationsUsed++;
-            this.map.rotateBoard(clockwise);
-            var rotatedPlayers = this.players.map(function (player) {
-                return _this.map.rotatePlayer(player, clockwise);
-            });
-            this.players = [];
-            rotatedPlayers.map(function (player) {
-                _this.players[player.id] = player;
-            });
-            this.renderer.drawRotatingBoard(clockwise, function () {
-                _this.startRender();
-            });
-            return true;
+            else {
+                this.setNextAction('rotateLeft');
+            }
         };
         Jetpack.prototype.saveLevel = function () {
             var _this = this;
@@ -1937,11 +1922,14 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var levelID = availableLevels[chosenKey].levelID;
             return levelID;
         };
+        Jetpack.prototype.setNextAction = function (action) {
+            this.nextAction = action;
+        };
         // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
         Jetpack.prototype.createRenderer = function (boardArray, size) {
             if (boardArray === void 0) { boardArray = []; }
             if (size === void 0) { size = 12; }
-            this.boardSize = new BoardSize_3.BoardSize(size);
+            this.boardSize = new BoardSize_4.BoardSize(size);
             this.canvas = new Canvas_1.Canvas(this.boardSize);
             this.map = new Map_1.Map(this.tileSet, this.boardSize, boardArray);
             var board = this.map.getBoard();
@@ -1961,10 +1949,35 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 return _this.eventLoop(time, 0);
             });
         };
+        Jetpack.prototype.getNextAction = function () {
+            if (this.nextAction.length === 0) {
+                return false;
+            }
+            var nextAction = this.nextAction;
+            this.nextAction = "";
+            return nextAction;
+        };
+        Jetpack.prototype.doNextAction = function (action) {
+            if (action === 'rotateLeft') {
+                this.doBoardRotation(false);
+            }
+            else if (action === 'rotateRight') {
+                this.doBoardRotation(true);
+            }
+            else {
+                return false;
+            }
+        };
         Jetpack.prototype.eventLoop = function (time, lastTime) {
             var _this = this;
             if (this.paused) {
                 return false;
+            }
+            var nextAction = this.getNextAction();
+            if (nextAction) {
+                // nextActions take control of event loop
+                // so don't requestAnimationFrame etc
+                return this.doNextAction(nextAction);
             }
             this.animationHandle = window.requestAnimationFrame(function (newTime) {
                 return _this.eventLoop(newTime, time);
@@ -1975,9 +1988,33 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // this does one step of the game
         Jetpack.prototype.gameCycle = function (timePassed) {
+            if (this.isCalculating) {
+                return false;
+            }
+            this.isCalculating = true;
+            var playerRenderMap = this.createRenderMapFromPlayers(this.players, this.boardSize);
+            var oldBoard = this.map.getBoard();
             this.doPlayerCalcs(timePassed);
             this.sizeCanvas();
-            this.renderer.render();
+            var newBoard = this.map.getBoard();
+            var boardRenderMap = this.createRenderMapFromBoards(oldBoard, newBoard);
+            var finalRenderMap = RenderMap_1.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+            this.renderer.render(finalRenderMap);
+            this.isCalculating = false;
+        };
+        Jetpack.prototype.renderEverything = function (boardSize) {
+            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
+            this.renderer.render(blankMap);
+        };
+        Jetpack.prototype.createRenderMapFromBoards = function (oldBoard, newBoard) {
+            return RenderMap_1.RenderMap.createRenderMapFromBoards(oldBoard, newBoard);
+        };
+        // create empty renderMap based on boardSize, and then apply each player's position to it
+        Jetpack.prototype.createRenderMapFromPlayers = function (players, boardSize) {
+            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, false);
+            return players.reduce(function (map, player) {
+                return RenderMap_1.RenderMap.addPlayerToRenderMap(player, map);
+            }, blankMap);
         };
         Jetpack.prototype.calcTimePassed = function (time, lastTime) {
             var difference = Math.min(time - lastTime, 20);
@@ -2033,7 +2070,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             }
         };
         Jetpack.prototype.doPlayerCalcs = function (timePassed) {
-            var movement = new Movement_1.Movement(this.map, this.renderer, this);
+            var movement = new Movement_1.Movement(this.map, this);
             var newPlayers = movement.doCalcs(this.players, timePassed);
             var collisions = new Collisions_1.Collisions(this, this.playerTypes);
             var sortedPlayers = collisions.checkAllCollisions(newPlayers);
@@ -2081,6 +2118,27 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         Jetpack.prototype.deletePlayer = function (player) {
             delete this.players[player.id];
+        };
+        Jetpack.prototype.doBoardRotation = function (clockwise) {
+            var _this = this;
+            if (this.paused || this.editMode) {
+                return false;
+            }
+            this.pauseRender();
+            this.rotationsUsed++;
+            this.map.rotateCurrentBoard(clockwise);
+            var rotatedPlayers = this.players.map(function (player) {
+                return _this.map.rotatePlayer(player, clockwise);
+            });
+            this.players = [];
+            rotatedPlayers.map(function (player) {
+                _this.players[player.id] = player;
+            });
+            this.renderer.drawRotatingBoard(clockwise, function () {
+                _this.renderEverything(_this.boardSize);
+                _this.startRender();
+            });
+            return true;
         };
         Jetpack.prototype.revertEditMessage = function () {
             var s = setTimeout(function () {

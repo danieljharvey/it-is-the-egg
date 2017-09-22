@@ -182,23 +182,25 @@ export class Map {
     return newTile;
   }
 
-  public rotateBoard(clockwise) {
-    const newBoard = this.getBlankBoardArray();
+  public rotateCurrentBoard(clockwise: boolean) {
+    this.board = this.rotateBoard(this.board, clockwise);
+  }
 
-    const width = this.boardSize.width - 1;
-    const height = this.boardSize.height - 1;
+  public rotateBoard(board: Board, clockwise: boolean) : Board {
+    const tiles = board.getAllTiles();
 
-    const tiles = this.getAllTiles();
+    const width = board.getLength() - 1;
+    const height = board.getLength() - 1;
 
-    tiles.map(tile => {
+    const rotatedBoard = tiles.reduce((currentBoard, tile) => {
       const coords = new Coords({ x: tile.x, y: tile.y });
       const newCoords = this.translateRotation(coords, clockwise);
       const newTile = tile.modify({
         x: newCoords.x,
         y: newCoords.y
       });
-      newBoard[newCoords.x][newCoords.y] = newTile;
-    });
+      return currentBoard.modify(newCoords.x, newCoords.y, newTile);
+    }, board);
 
     if (clockwise) {
       this.renderAngle = this.renderAngle + 90;
@@ -212,14 +214,12 @@ export class Map {
       }
     }
 
-    this.board = newBoard;
-
-    return true;
+    return rotatedBoard;
   }
 
   public fixBoard(boardArray: Tile[][] = []) : Board {
-    const newBoard = boardArray.map((column, mapY) => {
-      return column.map((item, mapX) => {
+    const newBoard = boardArray.map((column, mapX) => {
+      return column.map((item, mapY) => {
         const newTile = this.cloneTile(item.id);
         return newTile.modify({
           x: mapX,
@@ -288,17 +288,5 @@ export class Map {
         y: height - coords.x
       });
     }
-  }
-
-  // get empty grid without tiles in
-  protected getBlankBoardArray() {
-    const newBoard = [];
-    for (let x = 0; x < this.boardSize.width; x++) {
-      newBoard[x] = [];
-      for (let y = 0; y < this.boardSize.height; y++) {
-        newBoard[x][y] = [];
-      }
-    }
-    return newBoard;
   }
 }
