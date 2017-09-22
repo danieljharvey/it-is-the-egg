@@ -557,7 +557,6 @@ export class Jetpack {
   }
 
   protected togglePaused() {
-    console.log("togglePaused");
     if (this.paused) {
       this.startRender();
     } else {

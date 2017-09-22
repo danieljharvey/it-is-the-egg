@@ -18,8 +18,6 @@ function configureTileSetMock() {
   return tileSet;
 }
 
-const renderMap = new RenderMap;
-
 test("Create render map from board changes", () => {
 
   const tileSet = configureTileSetMock();
@@ -45,7 +43,7 @@ test("Create render map from board changes", () => {
     [false,false,true],
   ];
 
-  const result = renderMap.createRenderMapFromBoards(board, newBoard);
+  const result = RenderMap.createRenderMapFromBoards(board, newBoard);
   expect(result).toEqual(expected);
 });
 
@@ -70,7 +68,7 @@ test("Combine render maps", () => {
 
   const map = new Map(undefined, new BoardSize(1), []);
 
-  const result = renderMap.combineRenderMaps(renderMap1, renderMap2);
+  const result = RenderMap.combineRenderMaps(renderMap1, renderMap2);
   expect(result).toEqual(expected);
 });
 
@@ -110,7 +108,7 @@ test("Mark render map with player in center", () => {
     [false,false,false,false,false]
   ];
 
-  const result = renderMap.addPlayerToRenderMap(player, originalMap);
+  const result = RenderMap.addPlayerToRenderMap(player, originalMap);
   expect(result).toEqual(expected);
 })
 
@@ -136,7 +134,7 @@ test("Mark render map with player at side of grid", () => {
     [true,false,false,true,true]
   ];
 
-  const result = renderMap.addPlayerToRenderMap(player, originalMap);
+  const result = RenderMap.addPlayerToRenderMap(player, originalMap);
   expect(result).toEqual(expected);
 })
 

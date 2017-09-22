@@ -2205,7 +2205,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             }
         };
         Jetpack.prototype.togglePaused = function () {
-            console.log("togglePaused");
             if (this.paused) {
                 this.startRender();
             }
