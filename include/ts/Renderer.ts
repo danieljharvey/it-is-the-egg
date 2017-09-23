@@ -47,14 +47,17 @@ export class Renderer {
   }
 
   public render(board: Board, renderMap: boolean[][], renderAngle: number) {
+    //console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard(board, renderMap, renderAngle);
     this.renderPlayers();
     this.renderFrontLayerBoard(board, renderMap, renderAngle);
   }
 
-  public resize() {
-    this.tileSize = this.canvas.sizeCanvas(this.boardSize);
+  public resize(boardSize: BoardSize) {
+    console.log("Renderer->resize", boardSize);
+    this.boardSize = boardSize;
+    this.tileSize = this.canvas.sizeCanvas(boardSize);
   }
 
   public drawRotatingBoard(clockwise: boolean, completed: () => void) {
@@ -127,7 +130,7 @@ export class Renderer {
   }
 
   protected markTileImageAsLoaded(id: number) {
-    console.log('renderer->markTileImageAsLoaded->', id);
+    // console.log('renderer->markTileImageAsLoaded->', id);
     this.tileImages[id].ready = true;
   }
 

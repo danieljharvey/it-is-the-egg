@@ -44,7 +44,7 @@ export class Editor {
     this.board = this.getBlankBoard(this.tileSet, this.boardSize);
     this.renderer = this.createRenderer(this.tileSet, this.boardSize);
     window.setTimeout(() => {
-      this.renderEverything(this.board, this.boardSize);  
+      this.renderEverything(this.board);  
     }, 1000);
     
     this.tileChooser = new TileChooser(this.tileSet, this.renderer);
@@ -75,8 +75,8 @@ export class Editor {
 
   public saveLevel() {
     this.levels.saveLevel(
-      this.map.getBoard(),
-      this.map.boardSize,
+      this.board.toJS(),
+      this.boardSize,
       this.levels.levelID,
       levelID => {
         const text = "Level " + levelID + " saved";
@@ -90,7 +90,9 @@ export class Editor {
     const index = select.selectedIndex;
     const levelID = select.options[index].value;
     this.loadLevel(levelID, () => {
-      this.renderEverything(this.board, this.boardSize);
+      window.setTimeout(() => {
+        this.renderEverything(this.board);  
+      }, 1000);
     });
   }
 
@@ -103,7 +105,7 @@ export class Editor {
     this.sizeCanvas(this.boardSize);
     this.board = newBoard;
 
-    this.renderEverything(newBoard, this.boardSize);
+    this.renderEverything(newBoard);
   }
 
   public shrinkBoard() {
@@ -115,7 +117,7 @@ export class Editor {
     this.sizeCanvas(this.boardSize);
     this.board = newBoard;
     
-    this.renderEverything(newBoard, this.boardSize);
+    this.renderEverything(newBoard);
   }
 
   protected getBlankBoard(tileSet: TileSet, boardSize: BoardSize) : Board {
@@ -169,7 +171,8 @@ export class Editor {
     );
   }
 
-  protected renderEverything(board: Board, boardSize: BoardSize) {
+  protected renderEverything(board: Board) {
+    const boardSize = new BoardSize(board.getLength());
     const blankMap = RenderMap.createRenderMap(boardSize.width, true);
     this.renderer.render(board, blankMap, 0);
   }
@@ -184,8 +187,8 @@ export class Editor {
   }
 
   protected sizeCanvas(boardSize: BoardSize) {
-    this.canvas.sizeCanvas(boardSize);
-    this.renderer.resize();
+    this.renderer.resize(boardSize);
+    this.renderEverything(this.board);
   }
 
   protected revertEditMessage() {
@@ -274,11 +277,12 @@ export class Editor {
     this.board = newBoard;
   }
 
+  /*
   protected outputBoard(board: Board) {
     const tiles = board.getAllTiles();
     const idArray: array = tiles.map(tile => {
       return tile.id;
     });
     console.log('board IDs', idArray);
-  }
+  }*/
 }

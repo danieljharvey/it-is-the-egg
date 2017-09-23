@@ -23,6 +23,9 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
                 this.list = list; // re-use old
             }
         }
+        Board.prototype.toJS = function () {
+            return this.list.toJS();
+        };
         Board.prototype.getTile = function (x, y) {
             return this.list.getIn([x, y]);
         };
@@ -998,13 +1001,16 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.loadPlayerPalette();
         }
         Renderer.prototype.render = function (board, renderMap, renderAngle) {
+            //console.log("Renderer->render",board, renderMap, renderAngle);
             this.tileSize = this.canvas.calcTileSize(this.boardSize);
             this.renderBoard(board, renderMap, renderAngle);
             this.renderPlayers();
             this.renderFrontLayerBoard(board, renderMap, renderAngle);
         };
-        Renderer.prototype.resize = function () {
-            this.tileSize = this.canvas.sizeCanvas(this.boardSize);
+        Renderer.prototype.resize = function (boardSize) {
+            console.log("Renderer->resize", boardSize);
+            this.boardSize = boardSize;
+            this.tileSize = this.canvas.sizeCanvas(boardSize);
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, completed) {
             var canvas = this.canvas.getCanvas();
@@ -1070,7 +1076,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.playerImages[img].ready = true;
         };
         Renderer.prototype.markTileImageAsLoaded = function (id) {
-            console.log('renderer->markTileImageAsLoaded->', id);
+            // console.log('renderer->markTileImageAsLoaded->', id);
             this.tileImages[id].ready = true;
         };
         Renderer.prototype.renderBoard = function (board, renderMap, renderAngle) {
@@ -1751,6 +1757,14 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.levelID = 1;
             this.levelList = [];
             this.defaultBoardSize = 20;
+            /*
+            protected outputBoard(board: Board) {
+              const tiles = board.getAllTiles();
+              const idArray: array = tiles.map(tile => {
+                return tile.id;
+              });
+              console.log('board IDs', idArray);
+            }*/
         }
         // go function but for edit mode
         Editor.prototype.edit = function () {
@@ -1762,7 +1776,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.board = this.getBlankBoard(this.tileSet, this.boardSize);
             this.renderer = this.createRenderer(this.tileSet, this.boardSize);
             window.setTimeout(function () {
-                _this.renderEverything(_this.board, _this.boardSize);
+                _this.renderEverything(_this.board);
             }, 1000);
             this.tileChooser = new TileChooser_1.TileChooser(this.tileSet, this.renderer);
             this.tileChooser.render();
@@ -1784,7 +1798,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         Editor.prototype.saveLevel = function () {
             var _this = this;
-            this.levels.saveLevel(this.map.getBoard(), this.map.boardSize, this.levels.levelID, function (levelID) {
+            this.levels.saveLevel(this.board.toJS(), this.boardSize, this.levels.levelID, function (levelID) {
                 var text = "Level " + levelID + " saved";
                 _this.showEditMessage(text);
             });
@@ -1795,7 +1809,9 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var index = select.selectedIndex;
             var levelID = select.options[index].value;
             this.loadLevel(levelID, function () {
-                _this.renderEverything(_this.board, _this.boardSize);
+                window.setTimeout(function () {
+                    _this.renderEverything(_this.board);
+                }, 1000);
             });
         };
         Editor.prototype.growBoard = function () {
@@ -1804,7 +1820,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.boardSize = new BoardSize_4.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.board = newBoard;
-            this.renderEverything(newBoard, this.boardSize);
+            this.renderEverything(newBoard);
         };
         Editor.prototype.shrinkBoard = function () {
             var map = new Map_1.Map(this.tileSet, this.boardSize);
@@ -1812,7 +1828,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.boardSize = new BoardSize_4.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.board = newBoard;
-            this.renderEverything(newBoard, this.boardSize);
+            this.renderEverything(newBoard);
         };
         Editor.prototype.getBlankBoard = function (tileSet, boardSize) {
             var map = new Map_1.Map(tileSet, boardSize);
@@ -1852,7 +1868,8 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             return new Renderer_1.Renderer(this, tiles, [], // no players in edit mode
             this.boardSize, this.canvas);
         };
-        Editor.prototype.renderEverything = function (board, boardSize) {
+        Editor.prototype.renderEverything = function (board) {
+            var boardSize = new BoardSize_4.BoardSize(board.getLength());
             var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(board, blankMap, 0);
         };
@@ -1864,8 +1881,8 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.renderSelected(newBoard, renderMap);
         };
         Editor.prototype.sizeCanvas = function (boardSize) {
-            this.canvas.sizeCanvas(boardSize);
-            this.renderer.resize();
+            this.renderer.resize(boardSize);
+            this.renderEverything(this.board);
         };
         Editor.prototype.revertEditMessage = function () {
             var s = setTimeout(function () {
@@ -1940,13 +1957,6 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var newBoard = oldBoard.modify(coords.x, coords.y, placedTile);
             this.renderFromBoards(oldBoard, newBoard);
             this.board = newBoard;
-        };
-        Editor.prototype.outputBoard = function (board) {
-            var tiles = board.getAllTiles();
-            var idArray = tiles.map(function (tile) {
-                return tile.id;
-            });
-            console.log('board IDs', idArray);
         };
         return Editor;
     }());

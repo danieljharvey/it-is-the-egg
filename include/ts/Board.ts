@@ -14,6 +14,10 @@ export class Board {
     }
   }
 
+  public toJS() {
+    return this.list.toJS();
+  }
+
   public getTile(x: number, y: number) {
     return this.list.getIn([x, y]);
   }
