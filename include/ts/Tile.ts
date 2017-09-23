@@ -48,5 +48,4 @@ export class Tile extends Record({
   public modify(values: ITileParams) {
     return this.merge(values) as this;
   }
-
 }

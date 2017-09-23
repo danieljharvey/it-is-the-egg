@@ -171,8 +171,6 @@ export class Movement {
     return player; // player returned unchanged
   }
 
-
-
   // find another teleport and go to it
   // if no others, do nothing
   protected teleport(player: Player): Player {

@@ -18,7 +18,6 @@ import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
 export class Editor {
-
   protected levelID: number = 1;
   protected levelList: number[] = [];
 
@@ -44,18 +43,17 @@ export class Editor {
     this.bindMouseMoveHandler();
 
     this.board = this.getBlankBoard(this.tileSet, this.boardSize);
-    
+
     // reset undo
     this.clearBoardHistory(this.board);
 
     this.renderer = this.createRenderer(this.tileSet, this.boardSize);
     window.setTimeout(() => {
-      this.renderEverything(this.board);  
+      this.renderEverything(this.board);
     }, 1000);
-    
+
     this.tileChooser = new TileChooser(this.tileSet, this.renderer);
     this.tileChooser.render();
-
   }
 
   // load static stuff - map/renderer etc will be worked out later
@@ -100,7 +98,7 @@ export class Editor {
       this.clearBoardHistory(this.board);
       // render everything (give sprites a second to load)
       window.setTimeout(() => {
-        this.renderEverything(this.board);  
+        this.renderEverything(this.board);
       }, 1000);
     });
   }
@@ -125,14 +123,14 @@ export class Editor {
 
     this.sizeCanvas(this.boardSize);
     this.updateBoard(newBoard);
-    
+
     this.renderEverything(newBoard);
   }
 
   public undo() {
-    console.log("Undo! current steps...",this.boardHistory.length);
+    console.log("Undo! current steps...", this.boardHistory.length);
     if (this.boardHistory.length === 1) {
-      console.log("No steps to undo!")
+      console.log("No steps to undo!");
       return false;
     }
     this.boardHistory.pop(); // get rid of most recent
@@ -149,12 +147,16 @@ export class Editor {
     this.board = board;
   }
 
-  protected getBlankBoard(tileSet: TileSet, boardSize: BoardSize) : Board {
+  protected getBlankBoard(tileSet: TileSet, boardSize: BoardSize): Board {
     const map = new Map(tileSet, boardSize);
     return map.generateBlankBoard();
   }
 
-  protected getLevelBoard(boardArray, tileSet: TileSet, boardSize: BoardSize) : Board {
+  protected getLevelBoard(
+    boardArray,
+    tileSet: TileSet,
+    boardSize: BoardSize
+  ): Board {
     const map = new Map(tileSet, boardSize);
     return map.makeBoardFromArray(boardArray);
   }
@@ -186,7 +188,6 @@ export class Editor {
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
   protected createRenderer(tileSet: TileSet, boardSize: BoardSize) {
-    
     console.log("createRenderer->", tileSet, boardSize);
 
     this.canvas = new Canvas(boardSize);
@@ -243,7 +244,11 @@ export class Editor {
       (savedLevel: SavedLevel) => {
         const text = "Level " + savedLevel.levelID.toString() + " loaded!";
         this.showEditMessage(text);
-        this.board = this.getLevelBoard(savedLevel.board, this.tileSet, savedLevel.boardSize);
+        this.board = this.getLevelBoard(
+          savedLevel.board,
+          this.tileSet,
+          savedLevel.boardSize
+        );
         this.renderer = this.createRenderer(this.tileSet, savedLevel.boardSize);
         callback();
       },
@@ -282,8 +287,8 @@ export class Editor {
     const coords = new Coords({
       offsetX: event.offsetX % tileSize - tileSize / 2,
       offsetY: event.offsetY % tileSize - tileSize / 2,
-      x: Math.floor((event.offsetX / tileSize)),
-      y: Math.floor((event.offsetY / tileSize))
+      x: Math.floor(event.offsetX / tileSize),
+      y: Math.floor(event.offsetY / tileSize)
     });
     this.drawCurrentTile(coords);
   }
@@ -294,7 +299,7 @@ export class Editor {
     if (tileID < 1) {
       return false;
     }
-    
+
     const currentTile = this.board.getTile(coords.x, coords.y);
 
     const map = new Map(this.tileSet, this.boardSize);
@@ -306,7 +311,7 @@ export class Editor {
     });
 
     // if no change, don't bother
-    
+
     if (currentTile.equals(placedTile)) {
       // don't fill the undo with crap
       return false;
@@ -316,7 +321,7 @@ export class Editor {
     const newBoard = oldBoard.modify(coords.x, coords.y, placedTile);
 
     this.renderFromBoards(oldBoard, newBoard);
-    
+
     this.updateBoard(newBoard);
   }
 

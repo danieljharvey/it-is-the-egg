@@ -22,12 +22,9 @@ test("Change an item on the board", () => {
 });
 
 test("Get the length of the list", () => {
-	const array=[
-		[1,2,3],
-		[4,5,6]
-	];
+  const array = [[1, 2, 3], [4, 5, 6]];
 
-	const board = new Board(array);
+  const board = new Board(array);
 
-	expect(board.getLength()).toEqual(2);
-})
+  expect(board.getLength()).toEqual(2);
+});

@@ -61,7 +61,6 @@ export class Renderer {
   }
 
   public drawRotatingBoard(clockwise: boolean, completed: () => void) {
-
     const canvas = this.canvas.getCanvas();
 
     const cw = canvas.width;
@@ -134,7 +133,11 @@ export class Renderer {
     this.tileImages[id].ready = true;
   }
 
-  protected renderBoard(board: Board, renderMap: boolean[][], renderAngle: number): void {
+  protected renderBoard(
+    board: Board,
+    renderMap: boolean[][],
+    renderAngle: number
+  ): void {
     const ctx = this.canvas.getDrawingContext();
     ctx.globalAlpha = 1;
     const tiles = board.getAllTiles();
@@ -159,7 +162,11 @@ export class Renderer {
   }
 
   // just go over and draw the over-the-top stuff
-  protected renderFrontLayerBoard(board: Board, renderMap: boolean[][], renderAngle: number) {
+  protected renderFrontLayerBoard(
+    board: Board,
+    renderMap: boolean[][],
+    renderAngle: number
+  ) {
     const tiles = board.getAllTiles();
     tiles.map(tile => {
       const needsDraw = renderMap[tile.x][tile.y];
@@ -210,7 +217,12 @@ export class Renderer {
     return false;
   }
 
-  protected renderTile = function(x: number, y: number, tile: Tile, renderAngle: number): boolean {
+  protected renderTile = function(
+    x: number,
+    y: number,
+    tile: Tile,
+    renderAngle: number
+  ): boolean {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 

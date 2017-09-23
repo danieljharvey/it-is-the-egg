@@ -27,7 +27,7 @@ export class Board {
     return new Board(undefined, updatedList);
   }
 
-  public getLength() : number {
+  public getLength(): number {
     return this.list.count();
   }
 

@@ -19,7 +19,6 @@ function configureTileSetMock() {
 }
 
 test("Create render map from board changes", () => {
-
   const tileSet = configureTileSetMock();
 
   const map = new Map(tileSet, new BoardSize(1), []);
@@ -28,19 +27,19 @@ test("Create render map from board changes", () => {
   const tile2 = map.cloneTile(2);
 
   const boardArray = [
-    [tile1,tile1,tile1],
-    [tile1,tile1,tile1],
-    [tile1,tile1,tile1]
+    [tile1, tile1, tile1],
+    [tile1, tile1, tile1],
+    [tile1, tile1, tile1]
   ];
 
   const board = new Board(boardArray);
 
-  const newBoard = board.modify(2,2,tile2);
+  const newBoard = board.modify(2, 2, tile2);
 
   const expected = [
-    [false,false,false],
-    [false,false,false],
-    [false,false,true],
+    [false, false, false],
+    [false, false, false],
+    [false, false, true]
   ];
 
   const result = RenderMap.createRenderMapFromBoards(board, newBoard);
@@ -49,21 +48,21 @@ test("Create render map from board changes", () => {
 
 test("Combine render maps", () => {
   const renderMap1 = [
-    [false,false,false],
-    [false,false,false],
-    [false,false,true],
+    [false, false, false],
+    [false, false, false],
+    [false, false, true]
   ];
 
   const renderMap2 = [
-    [true,false,false],
-    [false,true,false],
-    [false,false,false],
+    [true, false, false],
+    [false, true, false],
+    [false, false, false]
   ];
 
   const expected = [
-    [true,false,false],
-    [false,true,false],
-    [false,false,true],
+    [true, false, false],
+    [false, true, false],
+    [false, false, true]
   ];
 
   const map = new Map(undefined, new BoardSize(1), []);
@@ -73,7 +72,6 @@ test("Combine render maps", () => {
 });
 
 test("Create small render map", () => {
-
   const expected = [
     [true, true, true, true, true],
     [true, true, true, true, true],
@@ -87,54 +85,51 @@ test("Create small render map", () => {
 });
 
 test("Mark render map with player in center", () => {
-
   const originalMap = [
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [false,false,false,false,false]
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [false, false, false, false, false]
   ];
 
   const player = new Player({
-    coords: new Coords({x: 2,y: 2})
+    coords: new Coords({ x: 2, y: 2 })
   });
 
   const expected = [
-    [false,false,false,false,false],
-    [false,true,true,true,false],
-    [false,true,true,true,false],
-    [false,true,true,true,false],
-    [false,false,false,false,false]
+    [false, false, false, false, false],
+    [false, true, true, true, false],
+    [false, true, true, true, false],
+    [false, true, true, true, false],
+    [false, false, false, false, false]
   ];
 
   const result = RenderMap.addPlayerToRenderMap(player, originalMap);
   expect(result).toEqual(expected);
-})
+});
 
 test("Mark render map with player at side of grid", () => {
-  
   const originalMap = [
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [false,false,false,false,false]
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [false, false, false, false, false]
   ];
 
   const player = new Player({
-    coords: new Coords({x: 4,y: 4})
+    coords: new Coords({ x: 4, y: 4 })
   });
 
   const expected = [
-    [true,false,false,true,true],
-    [false,false,false,false,false],
-    [false,false,false,false,false],
-    [true,false,false,true,true],
-    [true,false,false,true,true]
+    [true, false, false, true, true],
+    [false, false, false, false, false],
+    [false, false, false, false, false],
+    [true, false, false, true, true],
+    [true, false, false, true, true]
   ];
 
   const result = RenderMap.addPlayerToRenderMap(player, originalMap);
   expect(result).toEqual(expected);
-})
-
+});
