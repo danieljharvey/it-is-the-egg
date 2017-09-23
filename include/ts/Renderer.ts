@@ -1,3 +1,4 @@
+import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Coords } from "./Coords";
@@ -31,27 +32,25 @@ export class Renderer {
 
   constructor(
     jetpack: Jetpack,
-    map: Map,
     tiles: object,
     playerTypes: object,
     boardSize: BoardSize,
     canvas: Canvas
   ) {
     this.jetpack = jetpack;
-    this.map = map;
     this.tiles = tiles;
     this.playerTypes = playerTypes;
     this.boardSize = boardSize;
     this.canvas = canvas;
-    this.loadTilePalette();
+    this.loadTilePalette(tiles);
     this.loadPlayerPalette();
   }
 
-  public render(renderMap: boolean[][]) {
+  public render(board: Board, renderMap: boolean[][], renderAngle: number) {
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
-    this.renderBoard(renderMap);
+    this.renderBoard(board, renderMap, renderAngle);
     this.renderPlayers();
-    this.renderFrontLayerBoard(renderMap);
+    this.renderFrontLayerBoard(board, renderMap, renderAngle);
   }
 
   public resize() {
@@ -79,10 +78,10 @@ export class Renderer {
     return this.canvas.imagesFolder + tile.img;
   }
 
-  protected loadTilePalette() {
-    for (const i in this.tiles) {
-      if (this.tiles[i] !== undefined) {
-        const thisTile = this.tiles[i];
+  protected loadTilePalette(tiles) {
+    for (const i in tiles) {
+      if (tiles[i] !== undefined) {
+        const thisTile = tiles[i];
         const tileImage = document.createElement("img");
         tileImage.setAttribute("src", this.getTileImagePath(thisTile));
         tileImage.setAttribute("width", SPRITE_SIZE.toString());
@@ -128,13 +127,14 @@ export class Renderer {
   }
 
   protected markTileImageAsLoaded(id: number) {
+    console.log('renderer->markTileImageAsLoaded->', id);
     this.tileImages[id].ready = true;
   }
 
-  protected renderBoard(renderMap: boolean[][]): void {
+  protected renderBoard(board: Board, renderMap: boolean[][], renderAngle: number): void {
     const ctx = this.canvas.getDrawingContext();
     ctx.globalAlpha = 1;
-    const tiles = this.map.getAllTiles();
+    const tiles = board.getAllTiles();
     tiles.map(tile => {
       const needsDraw = renderMap[tile.x][tile.y];
       if (needsDraw === false) {
@@ -142,29 +142,29 @@ export class Renderer {
         return;
       }
       if (!tile.frontLayer) {
-        this.renderTile(tile.x, tile.y, tile);
+        this.renderTile(tile.x, tile.y, tile, renderAngle);
       } else {
         // render sky behind see through tiles
-        this.drawSkyTile(tile, tile.x, tile.y);
+        this.drawSkyTile(tile, tile.x, tile.y, renderAngle);
       }
     });
   }
 
-  protected drawSkyTile(tile: Tile, x: number, y: number) {
-    const skyTile = this.map.cloneTile(1);
-    this.renderTile(x, y, skyTile);
+  protected drawSkyTile(tile: Tile, x: number, y: number, renderAngle: number) {
+    const skyTile = this.tiles[1];
+    this.renderTile(x, y, skyTile, renderAngle);
   }
 
   // just go over and draw the over-the-top stuff
-  protected renderFrontLayerBoard(renderMap: boolean[][]) {
-    const tiles = this.map.getAllTiles();
+  protected renderFrontLayerBoard(board: Board, renderMap: boolean[][], renderAngle: number) {
+    const tiles = board.getAllTiles();
     tiles.map(tile => {
       const needsDraw = renderMap[tile.x][tile.y];
       if (needsDraw === false) {
         return;
       }
       if (tile.frontLayer) {
-        this.renderTile(tile.x, tile.y, tile);
+        this.renderTile(tile.x, tile.y, tile, renderAngle);
       }
     });
   }
@@ -196,7 +196,7 @@ export class Renderer {
 
   protected getTileImage(tile: Tile) {
     if (tile.id < 1) {
-      console.log("invalid tile requested", tile.id, tile);
+      // console.log("invalid tile requested", tile.id, tile);
       return false;
     }
     const tileImage = this.tileImages[tile.id];
@@ -207,24 +207,24 @@ export class Renderer {
     return false;
   }
 
-  protected renderTile = function(x: number, y: number, tile: Tile): boolean {
+  protected renderTile = function(x: number, y: number, tile: Tile, renderAngle: number): boolean {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
     const img = this.getTileImage(tile);
 
     if (!img) {
-      // console.log("Could not find tile image for id " + tile.id);
+      console.log("Could not find tile image for id " + tile.id);
       return false;
     }
 
     let left = Math.floor(x * tileSize);
     let top = Math.floor(y * tileSize);
 
-    if (this.map.renderAngle === 0) {
+    if (renderAngle === 0) {
       ctx.drawImage(img, left, top, tileSize, tileSize);
     } else {
-      const angleInRad = this.map.renderAngle * (Math.PI / 180);
+      const angleInRad = renderAngle * (Math.PI / 180);
 
       const offset = Math.floor(tileSize / 2);
 

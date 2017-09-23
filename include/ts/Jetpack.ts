@@ -3,6 +3,7 @@ import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Collisions } from "./Collisions";
 import { Coords } from "./Coords";
+import { Editor } from "./Editor";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
 import { Map } from "./Map";
@@ -66,6 +67,10 @@ export class Jetpack {
     });
   }
 
+  public getEditor() {
+    return new Editor();
+  }
+  
   // go function but for edit mode
   public edit() {
     // this.bootstrap();

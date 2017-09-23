@@ -6,40 +6,29 @@ import { Tile } from "./Tile";
 import { TileSet } from "./TileSet";
 import { Utils } from "./Utils";
 
+// map is just a class full of functions that is created for manipulating the board
+// does not contain any state of it's own
+
 export class Map {
   public boardSize: BoardSize;
 
   protected tileSet: TileSet;
-  protected renderAngle: number = 0;
 
   protected board: Board;
 
-  constructor(tileSet: TileSet, boardSize: BoardSize, boardArray: Tile[][]) {
+  constructor(tileSet: TileSet, boardSize: BoardSize) {
     this.tileSet = tileSet;
     this.boardSize = boardSize;
-    if (boardArray) {
-      this.board = this.fixBoard(boardArray);  
-    } else {
-      this.board = this.generateBlankBoard();
-    }
-    
   }
 
-  // return array with all tiles in (with x and y added)
-  public getAllTiles() {
-    return this.board.getAllTiles();
+  public shrinkBoard(board: Board) : Board {
+    this.boardSize = this.boardSize.shrink();
+    return this.correctBoardSizeChange(board, this.boardSize);
   }
 
-  public shrinkBoard() {
-    this.boardSize.shrink();
-    this.board = this.correctBoardSizeChange(this.board, this.boardSize);
-    return this.boardSize;
-  }
-
-  public growBoard() {
-    this.boardSize.grow();
-    this.board = this.correctBoardSizeChange(this.board, this.boardSize);
-    return this.boardSize;
+  public growBoard(board: Board) : Board {
+    this.boardSize = this.boardSize.grow();
+    return this.correctBoardSizeChange(board, this.boardSize);
   }
 
   // board is current board
@@ -69,19 +58,21 @@ export class Map {
     return new Board(newBoard);
   }
 
-  public getBoard() {
-    return this.board;
-  }
+  public generateBlankBoard() : Board {
+    const board = [];
 
-  // this needs to turn data into Tile objects too
-  public updateBoard(board: Board, boardSize: BoardSize) {
-    this.board = board;
-    this.boardSize = boardSize;
-  }
-
-  public updateBoardWithRandom(boardSize: BoardSize) {
-    this.boardSize = boardSize;
-    this.board = this.generateRandomBoard(boardSize);
+    for (let x = 0; x < this.boardSize.width; x++) {
+      board[x] = [];
+      for (let y = 0; y < this.boardSize.height; y++) {
+        const blankTile = this.cloneTile(1);
+        const positionedTile = blankTile.modify({
+          x,
+          y
+        });
+        board[x][y] = positionedTile;
+      }
+    }
+    return new Board(board);
   }
 
   public correctForOverflow(coords: Coords): Coords {
@@ -89,20 +80,19 @@ export class Map {
   }
 
   // is intended next tile empty / a wall?
-  public checkTileIsEmpty(x, y) : boolean {
-    const tile = this.getTile(x, y);
+  public checkTileIsEmpty(board: Board, x, y) : boolean {
+    const tile = this.getTile(board, x, y);
     return tile.background;
   }
 
-  public getTileWithCoords(coords: Coords): Tile {
+  public getTileWithCoords(board: Board, coords: Coords): Tile {
     const fixedCoords = this.correctForOverflow(coords);
     const { x, y } = fixedCoords;
-    return this.board.getTile(x,y);
+    return board.getTile(x,y);
   }
 
-  public changeTile(coords: Coords, tile: Tile) : Board {
-    this.board = this.board.modify(coords.x, coords.y, tile);
-    return this.board;
+  public changeTile(board: Board, coords: Coords, tile: Tile) : Board {
+    return board.modify(coords.x, coords.y, tile);
   }
 
   public rotatePlayer(player: Player, clockwise) : Player {
@@ -148,27 +138,24 @@ export class Map {
     return randomProperty(theseTiles);
   }
 
-  // swap two tiles on map
-  public switchTiles(id1, id2) : Coords[] {
-    const tiles = this.getAllTiles();
-    const changeCoords = tiles.map(tile => {
+  // swap two types of tiles on map (used by pink/green switching door things)
+  public switchTiles(board: Board, id1, id2) : Board {
+    const tiles = board.getAllTiles();
+    return tiles.reduce((currentBoard, tile) => {
       if (tile.id === id1) {
-        const coords = new Coords({ x: tile.x, y: tile.y });
-        this.changeTile(coords, this.cloneTile(id2));
-        return coords;
+        const newTile = this.cloneTile(id2); 
+        return currentBoard.modify(tile.x, tile.y, newTile);
       } else if (tile.id === id2) {
-        const coords = new Coords({ x: tile.x, y: tile.y });
-        this.changeTile(coords, this.cloneTile(id1));
-        return coords;
+        const newTile = this.cloneTile(id1); 
+        return currentBoard.modify(tile.x, tile.y, newTile);
       }
-      return;
-    });
-    return changeCoords;
+      return currentBoard;
+    }, board);
   }
 
   // find random tile of type that is NOT at currentCoords
-  public findTile(currentCoords: Coords, id) {
-    const tiles = this.getAllTiles();
+  public findTile(board: Board, currentCoords: Coords, id) : Tile | boolean {
+    const tiles = board.getAllTiles();
     const teleporters = tiles.filter(tile => {
       if (tile.x === currentCoords.x && tile.y === currentCoords.y) {
         return false;
@@ -182,11 +169,9 @@ export class Map {
     return newTile;
   }
 
-  public rotateCurrentBoard(clockwise: boolean) {
-    this.board = this.rotateBoard(this.board, clockwise);
-  }
-
-  public rotateBoard(board: Board, clockwise: boolean) : Board {
+  // rotates board, returns new board and new renderAngle
+  // really should be two functions
+  public rotateBoard(board: Board, clockwise: boolean) {
     const tiles = board.getAllTiles();
 
     const width = board.getLength() - 1;
@@ -202,22 +187,28 @@ export class Map {
       return currentBoard.modify(newCoords.x, newCoords.y, newTile);
     }, board);
 
-    if (clockwise) {
-      this.renderAngle = this.renderAngle + 90;
-      if (this.renderAngle > 360) {
-        this.renderAngle = this.renderAngle - 360;
-      }
-    } else {
-      this.renderAngle = this.renderAngle - 90;
-      if (this.renderAngle < 0) {
-        this.renderAngle = 360 + this.renderAngle;
-      }
-    }
-
     return rotatedBoard;
   }
 
-  public fixBoard(boardArray: Tile[][] = []) : Board {
+  public changeRenderAngle(renderAngle: number, clockwise: boolean) {
+    let newRenderAngle;
+    if (clockwise) {
+      newRenderAngle = renderAngle + 90;
+      if (newRenderAngle > 360) {
+        newRenderAngle = newRenderAngle - 360;
+      }
+      return newRenderAngle
+    }
+
+    newRenderAngle = renderAngle - 90;
+    if (newRenderAngle < 0) {
+      newRenderAngle = 360 + newRenderAngle;
+    }
+    return newRenderAngle;
+  }
+
+
+  public makeBoardFromArray(boardArray: Tile[][] = []) : Board {
     const newBoard = boardArray.map((column, mapX) => {
       return column.map((item, mapY) => {
         const newTile = this.cloneTile(item.id);
@@ -230,22 +221,9 @@ export class Map {
     return new Board(newBoard);
   }
 
-  protected getTile(x: number, y: number) {
+  protected getTile(board: Board, x: number, y: number) {
     const coords = new Coords({ x, y });
-    return this.getTileWithCoords(coords);
-  }
-
-  protected generateBlankBoard() : Board {
-    const board = [];
-
-    for (let x = 0; x < this.boardSize.width; x++) {
-      board[x] = [];
-      for (let y = 0; y < this.boardSize.height; y++) {
-        const blankTile = this.cloneTile(1);
-        board[x][y] = blankTile;
-      }
-    }
-    return new Board(board);
+    return this.getTileWithCoords(board, coords);
   }
 
   protected generateRandomBoard(boardSize: BoardSize) : Board {
@@ -255,6 +233,10 @@ export class Map {
       boardArray[x] = [];
       for (let y = 0; y < boardSize.height; y++) {
         const blankTile = this.getRandomTile(this.tileSet.getTiles());
+        const positionedTile = blankTile.modify({
+          x,
+          y
+        });
         boardArray[x][y] = blankTile;
       }
     }
