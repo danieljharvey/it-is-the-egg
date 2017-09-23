@@ -1756,6 +1756,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         function Editor() {
             this.levelID = 1;
             this.levelList = [];
+            this.boardHistory = [];
             this.defaultBoardSize = 20;
             /*
             protected outputBoard(board: Board) {
@@ -1774,6 +1775,8 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.bindClickHandler();
             this.bindMouseMoveHandler();
             this.board = this.getBlankBoard(this.tileSet, this.boardSize);
+            // reset undo
+            this.clearBoardHistory(this.board);
             this.renderer = this.createRenderer(this.tileSet, this.boardSize);
             window.setTimeout(function () {
                 _this.renderEverything(_this.board);
@@ -1809,6 +1812,9 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var index = select.selectedIndex;
             var levelID = select.options[index].value;
             this.loadLevel(levelID, function () {
+                // reset undo
+                _this.clearBoardHistory(_this.board);
+                // render everything (give sprites a second to load)
                 window.setTimeout(function () {
                     _this.renderEverything(_this.board);
                 }, 1000);
@@ -1819,7 +1825,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var newBoard = map.growBoard(this.board);
             this.boardSize = new BoardSize_4.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
-            this.board = newBoard;
+            this.updateBoard(newBoard);
             this.renderEverything(newBoard);
         };
         Editor.prototype.shrinkBoard = function () {
@@ -1827,8 +1833,26 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var newBoard = map.shrinkBoard(this.board);
             this.boardSize = new BoardSize_4.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
-            this.board = newBoard;
+            this.updateBoard(newBoard);
             this.renderEverything(newBoard);
+        };
+        Editor.prototype.undo = function () {
+            console.log("Undo! current steps...", this.boardHistory.length);
+            if (this.boardHistory.length === 1) {
+                console.log("No steps to undo!");
+                return false;
+            }
+            this.boardHistory.pop(); // get rid of most recent
+            this.board = this.boardHistory.slice(-1)[0]; // set to new last item
+            this.boardSize = new BoardSize_4.BoardSize(this.board.getLength());
+            this.renderEverything(this.board);
+            console.log("Undo! Steps left", this.boardHistory.length);
+        };
+        // replaces this.board with board
+        // places old this.board in history
+        Editor.prototype.updateBoard = function (board) {
+            this.boardHistory.push(board); // current state is always at top
+            this.board = board;
         };
         Editor.prototype.getBlankBoard = function (tileSet, boardSize) {
             var map = new Map_1.Map(tileSet, boardSize);
@@ -1837,6 +1861,9 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         Editor.prototype.getLevelBoard = function (boardArray, tileSet, boardSize) {
             var map = new Map_1.Map(tileSet, boardSize);
             return map.makeBoardFromArray(boardArray);
+        };
+        Editor.prototype.clearBoardHistory = function (board) {
+            this.boardHistory = [board]; // reset to single state
         };
         Editor.prototype.getLevelList = function (callback) {
             var _this = this;
@@ -1947,16 +1974,22 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             if (tileID < 1) {
                 return false;
             }
+            var currentTile = this.board.getTile(coords.x, coords.y);
             var map = new Map_1.Map(this.tileSet, this.boardSize);
             var tile = map.cloneTile(tileID);
             var placedTile = tile.modify({
                 x: coords.x,
                 y: coords.y
             });
+            // if no change, don't bother
+            if (currentTile.equals(placedTile)) {
+                // don't fill the undo with crap
+                return false;
+            }
             var oldBoard = this.board;
             var newBoard = oldBoard.modify(coords.x, coords.y, placedTile);
             this.renderFromBoards(oldBoard, newBoard);
-            this.board = newBoard;
+            this.updateBoard(newBoard);
         };
         return Editor;
     }());

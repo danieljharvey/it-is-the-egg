@@ -31,6 +31,8 @@ export class Editor {
   protected tileChooser: TileChooser;
   protected board: Board;
 
+  protected boardHistory: Board[] = [];
+
   protected defaultBoardSize: number = 20;
 
   // go function but for edit mode
@@ -42,6 +44,10 @@ export class Editor {
     this.bindMouseMoveHandler();
 
     this.board = this.getBlankBoard(this.tileSet, this.boardSize);
+    
+    // reset undo
+    this.clearBoardHistory(this.board);
+
     this.renderer = this.createRenderer(this.tileSet, this.boardSize);
     window.setTimeout(() => {
       this.renderEverything(this.board);  
@@ -90,6 +96,9 @@ export class Editor {
     const index = select.selectedIndex;
     const levelID = select.options[index].value;
     this.loadLevel(levelID, () => {
+      // reset undo
+      this.clearBoardHistory(this.board);
+      // render everything (give sprites a second to load)
       window.setTimeout(() => {
         this.renderEverything(this.board);  
       }, 1000);
@@ -103,7 +112,7 @@ export class Editor {
     this.boardSize = new BoardSize(newBoard.getLength());
 
     this.sizeCanvas(this.boardSize);
-    this.board = newBoard;
+    this.updateBoard(newBoard);
 
     this.renderEverything(newBoard);
   }
@@ -115,9 +124,29 @@ export class Editor {
     this.boardSize = new BoardSize(newBoard.getLength());
 
     this.sizeCanvas(this.boardSize);
-    this.board = newBoard;
+    this.updateBoard(newBoard);
     
     this.renderEverything(newBoard);
+  }
+
+  public undo() {
+    console.log("Undo! current steps...",this.boardHistory.length);
+    if (this.boardHistory.length === 1) {
+      console.log("No steps to undo!")
+      return false;
+    }
+    this.boardHistory.pop(); // get rid of most recent
+    this.board = this.boardHistory.slice(-1)[0]; // set to new last item
+    this.boardSize = new BoardSize(this.board.getLength());
+    this.renderEverything(this.board);
+    console.log("Undo! Steps left", this.boardHistory.length);
+  }
+
+  // replaces this.board with board
+  // places old this.board in history
+  protected updateBoard(board: Board) {
+    this.boardHistory.push(board); // current state is always at top
+    this.board = board;
   }
 
   protected getBlankBoard(tileSet: TileSet, boardSize: BoardSize) : Board {
@@ -128,6 +157,10 @@ export class Editor {
   protected getLevelBoard(boardArray, tileSet: TileSet, boardSize: BoardSize) : Board {
     const map = new Map(tileSet, boardSize);
     return map.makeBoardFromArray(boardArray);
+  }
+
+  protected clearBoardHistory(board: Board) {
+    this.boardHistory = [board]; // reset to single state
   }
 
   protected getLevelList(callback) {
@@ -262,6 +295,8 @@ export class Editor {
       return false;
     }
     
+    const currentTile = this.board.getTile(coords.x, coords.y);
+
     const map = new Map(this.tileSet, this.boardSize);
     const tile = map.cloneTile(tileID);
 
@@ -269,12 +304,20 @@ export class Editor {
       x: coords.x,
       y: coords.y
     });
+
+    // if no change, don't bother
+    
+    if (currentTile.equals(placedTile)) {
+      // don't fill the undo with crap
+      return false;
+    }
+
     const oldBoard = this.board;
     const newBoard = oldBoard.modify(coords.x, coords.y, placedTile);
 
     this.renderFromBoards(oldBoard, newBoard);
     
-    this.board = newBoard;
+    this.updateBoard(newBoard);
   }
 
   /*
