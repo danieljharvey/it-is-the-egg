@@ -82,7 +82,7 @@ test("Create small render map", () => {
     [true, true, true, true, true]
   ];
 
-  const result = renderMap.createRenderMap(5, true);
+  const result = RenderMap.createRenderMap(5, true);
   expect(result).toEqual(expected);
 });
 

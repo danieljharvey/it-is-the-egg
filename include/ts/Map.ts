@@ -99,6 +99,7 @@ export class Map {
     const newCoords = this.translateRotation(player.coords, clockwise);
 
     let direction = player.direction;
+    
     // if player is still, nudge them in rotation direction
     if (direction === 0) {
       if (clockwise) {
@@ -143,11 +144,19 @@ export class Map {
     const tiles = board.getAllTiles();
     return tiles.reduce((currentBoard, tile) => {
       if (tile.id === id1) {
-        const newTile = this.cloneTile(id2); 
-        return currentBoard.modify(tile.x, tile.y, newTile);
+        const newTile = this.cloneTile(id2);
+        const positionTile = newTile.modify({
+          x: tile.x,
+          y: tile.y
+        })
+        return currentBoard.modify(tile.x, tile.y, positionTile);
       } else if (tile.id === id2) {
         const newTile = this.cloneTile(id1); 
-        return currentBoard.modify(tile.x, tile.y, newTile);
+        const positionTile = newTile.modify({
+          x: tile.x,
+          y: tile.y
+        })
+        return currentBoard.modify(tile.x, tile.y, positionTile);
       }
       return currentBoard;
     }, board);
