@@ -171,7 +171,9 @@ export class Map {
     if (teleporters.length === 0) {
       return false; // no options
     }
-    const newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
+    const chosenID = Math.floor(Math.random() * teleporters.size);
+
+    const newTile = teleporters.get(chosenID); // this is an Immutable list so needs to use their functions
     return newTile;
   }
 

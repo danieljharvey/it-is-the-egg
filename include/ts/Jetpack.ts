@@ -174,7 +174,7 @@ export class Jetpack {
   }
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  protected createRenderer(tileSet: TileSet, boardSize: BoardSize, loadCallback: () => {}) {
+  protected createRenderer(tileSet: TileSet, boardSize: BoardSize, completedCallback: () => any) {
 
     this.canvas = new Canvas(boardSize);
     this.tileSet = tileSet;
@@ -188,7 +188,7 @@ export class Jetpack {
       this.playerTypes,
       this.boardSize,
       this.canvas,
-      loadCallback
+      () => completedCallback()
     );
   }
 
@@ -226,8 +226,6 @@ export class Jetpack {
 
   // this does one step of the game
   protected gameCycle(timePassed: number, action: string) {
-    
-    console.log("gameCycle->action",action);
 
     const oldGameState = this.getCurrentGameState();
 
@@ -300,7 +298,6 @@ export class Jetpack {
 
   // current game state from array
   protected getCurrentGameState() {
-    console.log('getCurrentGameState', this.gameStates);
     return this.gameStates.slice(-1)[0]; // set to new last item
   }
 
@@ -469,7 +466,6 @@ export class Jetpack {
   }
 
   protected doBoardRotation(clockwise: boolean, gameState: GameState) {
-    console.log('jetpack->doBoardRotation',clockwise);
     this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
       this.renderEverything(gameState);
       this.setNextAction(""); // continue playing the game

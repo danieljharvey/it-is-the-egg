@@ -606,7 +606,8 @@ define("Map", ["require", "exports", "Board", "Coords", "Tile", "Utils"], functi
             if (teleporters.length === 0) {
                 return false; // no options
             }
-            var newTile = teleporters[Math.floor(Math.random() * teleporters.length)];
+            var chosenID = Math.floor(Math.random() * teleporters.size);
+            var newTile = teleporters.get(chosenID); // this is an Immutable list so needs to use their functions
             return newTile;
         };
         // rotates board, returns new board and new renderAngle
@@ -1138,12 +1139,10 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.renderFrontLayerBoard(board, renderMap, renderAngle);
         };
         Renderer.prototype.resize = function (boardSize) {
-            console.log("Renderer->resize", boardSize);
             this.boardSize = boardSize;
             this.tileSize = this.canvas.sizeCanvas(boardSize);
         };
         Renderer.prototype.drawRotatingBoard = function (clockwise, moveSpeed, completed) {
-            console.log('renderer->drawRotatingBoard', clockwise, moveSpeed);
             if (this.rotating === true) {
                 // already
                 return false;
@@ -1329,7 +1328,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         };
         Renderer.prototype.drawRotated = function (savedData, direction, angle, targetAngle, moveSpeed, completed) {
             var _this = this;
-            console.log('drawRotated', direction, angle, targetAngle);
             var canvas = this.canvas.getCanvas();
             if (direction > 0) {
                 if (angle >= targetAngle) {
@@ -1418,14 +1416,14 @@ define("Movement", ["require", "exports"], function (require, exports) {
             return coords;
         };
         Movement.prototype.doPlayerCalcs = function (player, board, timePassed) {
-            console.log('doPlayerCalcs', player);
             var newPlayer = this.incrementPlayerFrame(player);
             var newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
             var checkedPlayer = this.checkPlayerDirection(newerPlayer, board);
             var evenNewerPlayer = this.incrementPlayerDirection(timePassed, checkedPlayer);
-            var maybeTeleportedPlayer = this.checkForMovementTiles(evenNewerPlayer, board);
-            var newestPlayer = this.correctPlayerOverflow(maybeTeleportedPlayer);
-            return newestPlayer;
+            var newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
+            // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
+            var maybeTeleportedPlayer = this.checkForMovementTiles(newestPlayer, board);
+            return maybeTeleportedPlayer;
         };
         Movement.prototype.checkForMovementTiles = function (player, board) {
             var currentCoords = player.coords;
@@ -1445,6 +1443,7 @@ define("Movement", ["require", "exports"], function (require, exports) {
         Movement.prototype.teleport = function (player, board) {
             var newTile = this.map.findTile(board, player.coords, 14);
             if (newTile) {
+                // console.log('newTile',newTile.x,newTile.y);
                 return player.modify({
                     coords: player.coords.modify({
                         x: newTile.x,
@@ -1874,14 +1873,6 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.levelList = [];
             this.boardHistory = [];
             this.defaultBoardSize = 20;
-            /*
-            protected outputBoard(board: Board) {
-              const tiles = board.getAllTiles();
-              const idArray: array = tiles.map(tile => {
-                return tile.id;
-              });
-              console.log('board IDs', idArray);
-            }*/
         }
         // go function but for edit mode
         Editor.prototype.edit = function () {
@@ -2003,7 +1994,6 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
         Editor.prototype.createRenderer = function (tileSet, boardSize) {
-            console.log("createRenderer->", tileSet, boardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
             this.tileSet = tileSet;
             this.boardSize = boardSize;
@@ -2305,12 +2295,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             this.action = action;
         };
         // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-        Jetpack.prototype.createRenderer = function (tileSet, boardSize, loadCallback) {
+        Jetpack.prototype.createRenderer = function (tileSet, boardSize, completedCallback) {
             this.canvas = new Canvas_2.Canvas(boardSize);
             this.tileSet = tileSet;
             this.boardSize = boardSize;
             var tiles = this.tileSet.getTiles();
-            return new Renderer_2.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, loadCallback);
+            return new Renderer_2.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, function () { return completedCallback(); });
         };
         Jetpack.prototype.startRender = function () {
             var _this = this;
@@ -2342,7 +2332,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // this does one step of the game
         Jetpack.prototype.gameCycle = function (timePassed, action) {
-            console.log("gameCycle->action", action);
             var oldGameState = this.getCurrentGameState();
             if (action === "rotateLeft") {
                 var rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
@@ -2404,7 +2393,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // current game state from array
         Jetpack.prototype.getCurrentGameState = function () {
-            console.log('getCurrentGameState', this.gameStates);
             return this.gameStates.slice(-1)[0]; // set to new last item
         };
         Jetpack.prototype.resetGameState = function (board) {
@@ -2533,7 +2521,6 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         Jetpack.prototype.doBoardRotation = function (clockwise, gameState) {
             var _this = this;
-            console.log('jetpack->doBoardRotation', clockwise);
             this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, function () {
                 _this.renderEverything(gameState);
                 _this.setNextAction(""); // continue playing the game

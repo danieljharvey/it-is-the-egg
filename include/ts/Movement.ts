@@ -69,8 +69,6 @@ export class Movement {
 
   protected doPlayerCalcs(player: Player, board: Board, timePassed: number): Player {
 
-    console.log('doPlayerCalcs', player);
-    
     const newPlayer = this.incrementPlayerFrame(player);
 
     const newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
@@ -82,16 +80,18 @@ export class Movement {
       checkedPlayer
     );
 
-    const maybeTeleportedPlayer = this.checkForMovementTiles(evenNewerPlayer, board);
+    const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
 
-    const newestPlayer = this.correctPlayerOverflow(maybeTeleportedPlayer);
+    // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
 
-    return newestPlayer;
+    const maybeTeleportedPlayer = this.checkForMovementTiles(newestPlayer, board);
+
+    return maybeTeleportedPlayer;
   }
 
   protected checkForMovementTiles(player: Player, board: Board) : Player{
     const currentCoords = player.coords;
-
+    
     if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
       return player;
     }
@@ -112,6 +112,7 @@ export class Movement {
   protected teleport(player: Player, board: Board): Player {
     const newTile = this.map.findTile(board, player.coords, 14);
     if (newTile) {
+      // console.log('newTile',newTile.x,newTile.y);
       return player.modify({
         coords: player.coords.modify({
           x: newTile.x,

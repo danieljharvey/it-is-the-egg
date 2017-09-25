@@ -65,13 +65,11 @@ export class Renderer {
   }
 
   public resize(boardSize: BoardSize) {
-    console.log("Renderer->resize", boardSize);
     this.boardSize = boardSize;
     this.tileSize = this.canvas.sizeCanvas(boardSize);
   }
 
   public drawRotatingBoard(clockwise: boolean, moveSpeed: number, completed: () => void) {
-    console.log('renderer->drawRotatingBoard', clockwise, moveSpeed);
     
     if (this.rotating === true) {
       // already
@@ -381,10 +379,8 @@ export class Renderer {
     angle: number,
     targetAngle: number,
     moveSpeed: number,
-    completed: () => void
+    completed: () => any
   ) {
-
-    console.log('drawRotated', direction, angle, targetAngle);
 
     const canvas = this.canvas.getCanvas();
 
