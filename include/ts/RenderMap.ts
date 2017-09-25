@@ -18,7 +18,6 @@ export class RenderMap {
     player: Player,
     renderMap: boolean[][]
   ): boolean[][] {
-    console.log("RenderMap->addPlayerToRenderMap", player);
 
     const coords = player.coords;
 

@@ -1,5 +1,7 @@
 import * as _ from "ramda";
+import { Board } from "./Board";
 import { Coords } from "./Coords";
+import { GameState } from "./GameState";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
@@ -11,25 +13,22 @@ const OFFSET_DIVIDE: number = 100;
 // it is then trashed and a new one made for next move to reduce any real held state
 export class Movement {
   protected map: Map;
-  protected jetpack: Jetpack;
 
-  protected players: Player[] = [];
-
-  constructor(map: Map, jetpack: Jetpack) {
-    this.map = map;
-    this.jetpack = jetpack;
+  constructor(map: Map) {
+    this.map = map; // object that has been loaded with tiles for us to use - does not hold data
   }
 
   // loop through passed players[] array, do changes, return new one
-  public doCalcs(players: Player[], timePassed: number) {
-    if (!players) {
-      return [];
-    }
-    this.players = players; // store so we can compare
-    const newPlayers = players.map(player => {
-      return this.doPlayerCalcs(player, timePassed);
+  public doCalcs(gameState: GameState, timePassed: number) : GameState {
+
+    const newPlayers = gameState.players.map(player => {
+      return this.doPlayerCalcs(player, gameState.board, timePassed);
     });
-    return newPlayers;
+    const newGameState = gameState.modify({
+      players: newPlayers
+    });
+
+    return newGameState;
   }
 
   public correctTileOverflow(coords: Coords): Coords {
@@ -68,33 +67,58 @@ export class Movement {
     return coords;
   }
 
-  protected doPlayerCalcs(player: Player, timePassed: number): Player {
-    const startCoords = player.coords;
+  protected doPlayerCalcs(player: Player, board: Board, timePassed: number): Player {
 
+    console.log('doPlayerCalcs', player);
+    
     const newPlayer = this.incrementPlayerFrame(player);
 
-    const newerPlayer = this.checkFloorBelowPlayer(timePassed, newPlayer);
+    const newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
 
-    const checkedPlayer = this.checkPlayerDirection(newerPlayer);
+    const checkedPlayer = this.checkPlayerDirection(newerPlayer, board);
 
     const evenNewerPlayer = this.incrementPlayerDirection(
       timePassed,
       checkedPlayer
     );
 
-    const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
+    const maybeTeleportedPlayer = this.checkForMovementTiles(evenNewerPlayer, board);
 
-    const absolutelyNewestPlayer = this.checkTileAction(
-      startCoords,
-      newestPlayer
-    );
+    const newestPlayer = this.correctPlayerOverflow(maybeTeleportedPlayer);
 
-    return absolutelyNewestPlayer;
+    return newestPlayer;
   }
 
-  protected checkTileAction(startCoords: Coords, player: Player): Player {
-    if (!startCoords.equals(player.coords)) {
-      return this.checkPlayerTileAction(player);
+  protected checkForMovementTiles(player: Player, board: Board) : Player{
+    const currentCoords = player.coords;
+
+    if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
+      return player;
+    }
+
+    const coords = this.map.correctForOverflow(currentCoords);
+
+    const tile = board.getTile(coords.x, coords.y);
+
+    if (tile.action === "teleport") {
+      return this.teleport(player, board);
+    };
+
+    return player;
+  }
+
+  // find another teleport and go to it
+  // if no others, do nothing
+  protected teleport(player: Player, board: Board): Player {
+    const newTile = this.map.findTile(board, player.coords, 14);
+    if (newTile) {
+      return player.modify({
+        coords: player.coords.modify({
+          x: newTile.x,
+          y: newTile.y
+        }),
+        lastAction: "teleport"
+      });
     }
     return player;
   }
@@ -139,63 +163,14 @@ export class Movement {
     });
   }
 
-  protected checkPlayerTileAction(player: Player): Player {
-    const currentCoords = player.coords;
-
-    if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
-      return player;
-    }
-
-    const coords = this.map.correctForOverflow(currentCoords);
-
-    const tile = this.map.getTileWithCoords(coords);
-
-    if (tile.collectable > 0) {
-      const score = tile.collectable * player.multiplier;
-      const blankTile = this.map.cloneTile(1);
-
-      this.map.changeTile(coords, blankTile);
-      this.jetpack.addScore(score);
-      return player;
-    }
-
-    if (tile.action === "completeLevel") {
-      this.jetpack.completeLevel();
-    } else if (tile.action === "teleport") {
-      return this.teleport(player); // only action that changes player state
-    } else if (tile.action === "pink-switch") {
-      const changedCoords = this.map.switchTiles(15, 16);
-    } else if (tile.action === "green-switch") {
-      const changedCoords = this.map.switchTiles(18, 19);
-    }
-    return player; // player returned unchanged
-  }
-
-  // find another teleport and go to it
-  // if no others, do nothing
-  protected teleport(player: Player): Player {
-    // if (player.lastAction === "teleport") return false;
-    const newTile = this.map.findTile(player.coords, 14);
-    if (newTile) {
-      return player.modify({
-        coords: player.coords.modify({
-          x: newTile.x,
-          y: newTile.y
-        }),
-        lastAction: "teleport"
-      });
-    }
-    return player;
-  }
-
   // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-  protected checkPlayerDirection(player: Player): Player {
+  protected checkPlayerDirection(player: Player, board: Board): Player {
     const coords = player.coords;
 
     if (player.direction !== 0 && player.falling === false) {
       if (
-        !this.map.checkTileIsEmpty(coords.x - 1, coords.y) &&
-        !this.map.checkTileIsEmpty(coords.x + 1, coords.y)
+        !this.map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
+        !this.map.checkTileIsEmpty(board, coords.x + 1, coords.y)
       ) {
         return player.modify({
           stop: true // don't go on this turn
@@ -204,7 +179,7 @@ export class Movement {
     }
 
     if (player.direction < 0 && player.falling === false) {
-      if (!this.map.checkTileIsEmpty(coords.x - 1, coords.y)) {
+      if (!this.map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
         // turn around
         return player.modify({
           coords: coords.modify({
@@ -217,7 +192,7 @@ export class Movement {
     }
 
     if (player.direction > 0 && player.falling === false) {
-      if (!this.map.checkTileIsEmpty(coords.x + 1, coords.y)) {
+      if (!this.map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
         // turn around
         return player.modify({
           coords: coords.modify({
@@ -328,7 +303,7 @@ export class Movement {
     });
   }
 
-  protected checkFloorBelowPlayer(timePassed: number, player: Player) {
+  protected checkFloorBelowPlayer(player: Player, board: Board, timePassed: number) : Player {
     if (player.coords.offsetX !== 0) {
       return player;
     }
@@ -339,17 +314,13 @@ export class Movement {
       coords.modify({ y: coords.y + 1 })
     );
 
-    const tile = this.map.getTileWithCoords(belowCoords);
+    const tile = board.getTile(belowCoords.x, belowCoords.y);
 
     if (tile.background) {
       // gap below, start falling down it
       return player.modify({
         falling: true
       });
-    } else if (player.falling && tile.breakable) {
-      // if tile below is breakable (and we are already falling and thus have momentum, smash it)
-      this.map.changeTile(belowCoords, this.map.cloneTile(1)); // smash block, replace with empty
-      return player; // already falling
     }
 
     // solid ground, stop falling

@@ -21,6 +21,8 @@ export class Renderer {
   protected boardSize: BoardSize;
   protected canvas: Canvas;
 
+  protected animationHandle: number; // used only in rotations
+
   protected lampMode: boolean = false; // lamp mode only draws around the eggs
 
   protected renderMap: boolean[][]; // map of screen with whether it needs rendering
@@ -30,27 +32,35 @@ export class Renderer {
   protected tileImages: object = {}; // image elements of tiles
   protected playerImages: object = {}; // image element of players
 
+  protected rotating: boolean;
+
+  protected loadCallback: () => void // call this when all the tiles are loaded
+  protected totalTiles: number = 0;
+  protected tilesLoaded: number = 0;
+
   constructor(
     jetpack: Jetpack,
     tiles: object,
     playerTypes: object,
     boardSize: BoardSize,
-    canvas: Canvas
+    canvas: Canvas,
+    loadCallback: () => void
   ) {
     this.jetpack = jetpack;
     this.tiles = tiles;
     this.playerTypes = playerTypes;
     this.boardSize = boardSize;
     this.canvas = canvas;
+    this.loadCallback = loadCallback;
     this.loadTilePalette(tiles);
     this.loadPlayerPalette();
   }
 
-  public render(board: Board, renderMap: boolean[][], renderAngle: number) {
+  public render(board: Board, renderMap: boolean[][], players: Player[], renderAngle: number) {
     //console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard(board, renderMap, renderAngle);
-    this.renderPlayers();
+    this.renderPlayers(players);
     this.renderFrontLayerBoard(board, renderMap, renderAngle);
   }
 
@@ -60,8 +70,27 @@ export class Renderer {
     this.tileSize = this.canvas.sizeCanvas(boardSize);
   }
 
-  public drawRotatingBoard(clockwise: boolean, completed: () => void) {
-    const canvas = this.canvas.getCanvas();
+  public drawRotatingBoard(clockwise: boolean, moveSpeed: number, completed: () => void) {
+    console.log('renderer->drawRotatingBoard', clockwise, moveSpeed);
+    
+    if (this.rotating === true) {
+      // already
+      return false;
+    }
+
+   const canvas = this.canvas.getCanvas();
+   const savedData = this.getImageData(canvas);
+   this.rotating = true;
+
+    if (clockwise) {
+      this.drawRotated(savedData, 1, 0, 90, moveSpeed, completed);
+    } else {
+      this.drawRotated(savedData, -1, 0, -90, moveSpeed, completed);
+    }
+  }
+
+  protected getImageData(canvas: HTMLCanvasElement) : HTMLImageElement {
+      
 
     const cw = canvas.width;
     const ch = canvas.height;
@@ -69,11 +98,7 @@ export class Renderer {
     const savedData = new Image();
     savedData.src = canvas.toDataURL("image/png");
 
-    if (clockwise) {
-      this.drawRotated(savedData, 1, 0, 90, completed);
-    } else {
-      this.drawRotated(savedData, -1, 0, -90, completed);
-    }
+    return savedData;
   }
 
   public getTileImagePath(tile: Tile): string {
@@ -81,8 +106,10 @@ export class Renderer {
   }
 
   protected loadTilePalette(tiles) {
+    this.totalTiles = this.tilesLoaded = 0;
     for (const i in tiles) {
       if (tiles[i] !== undefined) {
+        this.totalTiles ++;
         const thisTile = tiles[i];
         const tileImage = document.createElement("img");
         tileImage.setAttribute("src", this.getTileImagePath(thisTile));
@@ -129,8 +156,11 @@ export class Renderer {
   }
 
   protected markTileImageAsLoaded(id: number) {
-    // console.log('renderer->markTileImageAsLoaded->', id);
+    this.tilesLoaded++;
     this.tileImages[id].ready = true;
+    if (this.tilesLoaded === this.totalTiles) {    
+      this.loadCallback(); // we are ready to fucking party
+    }
   }
 
   protected renderBoard(
@@ -195,13 +225,10 @@ export class Renderer {
     );
   }
 
-  protected renderPlayers() {
-    for (const i in this.jetpack.players) {
-      if (this.jetpack.players[i]) {
-        const player = this.jetpack.players[i];
-        this.renderPlayer(player);
-      }
-    }
+  protected renderPlayers(players: Player[]) {
+    players.map(player => {
+      return this.renderPlayer(player);
+    });
   }
 
   protected getTileImage(tile: Tile) {
@@ -267,6 +294,7 @@ export class Renderer {
   }
 
   protected renderPlayer(player: Player) {
+
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
@@ -352,18 +380,24 @@ export class Renderer {
     direction: number,
     angle: number,
     targetAngle: number,
+    moveSpeed: number,
     completed: () => void
   ) {
+
+    console.log('drawRotated', direction, angle, targetAngle);
+
     const canvas = this.canvas.getCanvas();
 
     if (direction > 0) {
       if (angle >= targetAngle) {
         completed();
+        this.rotating = false;
         return false;
       }
     } else {
       if (angle <= targetAngle) {
         completed();
+        this.rotating = false;
         return false;
       }
     }
@@ -387,10 +421,10 @@ export class Renderer {
     ctx.rotate(-angleInRad);
     ctx.translate(-left, -top);
 
-    angle += direction * (this.jetpack.moveSpeed / 2);
+    angle += direction * (moveSpeed / 2);
 
-    this.jetpack.animationHandle = window.requestAnimationFrame(() => {
-      this.drawRotated(savedData, direction, angle, targetAngle, completed);
+    this.animationHandle = window.requestAnimationFrame(() => {
+      this.drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed);
     });
   }
 }

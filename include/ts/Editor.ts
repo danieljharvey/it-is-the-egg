@@ -208,11 +208,11 @@ export class Editor {
   protected renderEverything(board: Board) {
     const boardSize = new BoardSize(board.getLength());
     const blankMap = RenderMap.createRenderMap(boardSize.width, true);
-    this.renderer.render(board, blankMap, 0);
+    this.renderer.render(board, blankMap, [], 0);
   }
 
   protected renderSelected(board: Board, renderMap: boolean[][]) {
-    this.renderer.render(board, renderMap, 0);
+    this.renderer.render(board, renderMap, [], 0);
   }
 
   protected renderFromBoards(oldBoard: Board, newBoard: Board) {

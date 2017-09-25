@@ -3,14 +3,23 @@
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
 
+import { Action } from "./Action";
 import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
+import { Collisions } from "./Collisions";
 import { GameState } from "./GameState";
 import { Map } from "./Map";
 import { Movement } from "./Movement";
 import { Player } from "./Player";
 
 export class TheEgg {
+
+  protected map: Map; // used to hold tile info mostly
+
+  constructor(map: Map) {
+    this.map = map;
+  }
+
   public doAction(
     gameState: GameState,
     action: string,
@@ -20,23 +29,27 @@ export class TheEgg {
       return this.doRotate(gameState, false);
     } else if (action === "rotateRight") {
       return this.doRotate(gameState, true);
-    } else if (action === "play") {
-      return this.doGameMove(gameState);
+    } else if (action === "") {
+      return this.doGameMove(gameState, timePassed);
     }
     return gameState;
   }
 
   // this is where we have to do a shitload of things
   protected doGameMove(gameState: GameState, timePassed: number): GameState {
-    const movement = new Movement(this.map, this);
-    const newPlayers = movement.doCalcs(gameState.players, timePassed);
 
-    const collisions = new Collisions(this, this.playerTypes);
-    const sortedPlayers = collisions.checkAllCollisions(newPlayers);
+    const movement = new Movement(this.map);
+    const newGameState = movement.doCalcs(gameState, timePassed);
 
-    this.players = sortedPlayers; // replace with new objects
+    const action = new Action(this.map);
+    const newerGameState = action.checkAllPlayerTileActions(newGameState);
 
-    return gameState;
+    // const collisions = new Collisions(this, this.playerTypes);
+    // const sortedPlayers = collisions.checkAllCollisions(newPlayers);
+
+    // this.players = sortedPlayers; // replace with new objects
+
+    return newerGameState;
   }
 
   // this rotates board and players
