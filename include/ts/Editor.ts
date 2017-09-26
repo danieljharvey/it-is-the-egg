@@ -188,7 +188,6 @@ export class Editor {
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
   protected createRenderer(tileSet: TileSet, boardSize: BoardSize) {
-
     this.canvas = new Canvas(boardSize);
     this.tileSet = tileSet;
     this.boardSize = boardSize;
@@ -323,5 +322,4 @@ export class Editor {
 
     this.updateBoard(newBoard);
   }
-
 }

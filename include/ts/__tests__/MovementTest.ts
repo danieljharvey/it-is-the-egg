@@ -1,3 +1,4 @@
+import { Board } from "../Board";
 import { Coords } from "../Coords";
 import { Movement } from "../Movement";
 import { Player } from "../Player";
@@ -103,3 +104,57 @@ test("No overflow below", () => {
   expect(fixedCoords.y).toEqual(5);
   expect(fixedCoords.offsetY).toEqual(0);
 });
+
+test("Fall through breakable block", () => {
+  const boardArray = [
+    [
+      {background: true, breakable: false},
+      {background: false, breakable: true},
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x:0,
+      y: 0
+    }),
+    falling: true
+  });
+
+  const result = movement.checkFloorBelowPlayer(player, board, 10);
+
+  expect(result.equals(player)).toEqual(true);
+  expect(result.falling).toEqual(true);
+});
+
+test("Don't fall through floor", () => {
+  const boardArray = [
+    [
+      {background: true, breakable: false},
+      {background: false, breakable: false},
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x:0,
+      y: 0
+    }),
+    falling: true
+  });
+
+  const expected = player.modify({
+    falling: false
+  });
+
+  const result = movement.checkFloorBelowPlayer(player, board, 10);
+
+  expect(result.equals(expected)).toEqual(true);
+  expect(result.falling).toEqual(false);
+});
+
+

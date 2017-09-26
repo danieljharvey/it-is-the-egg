@@ -1,5 +1,6 @@
 import * as _ from "ramda";
 import { Board } from "./Board";
+import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
 import { GameState } from "./GameState";
 import { Jetpack } from "./Jetpack";
@@ -19,8 +20,7 @@ export class Movement {
   }
 
   // loop through passed players[] array, do changes, return new one
-  public doCalcs(gameState: GameState, timePassed: number) : GameState {
-
+  public doCalcs(gameState: GameState, timePassed: number): GameState {
     const newPlayers = gameState.players.map(player => {
       return this.doPlayerCalcs(player, gameState.board, timePassed);
     });
@@ -67,11 +67,55 @@ export class Movement {
     return coords;
   }
 
-  protected doPlayerCalcs(player: Player, board: Board, timePassed: number): Player {
+  // only public so it can be tested, please don't use outside of here
+  public checkFloorBelowPlayer(
+    player: Player,
+    board: Board,
+    timePassed: number
+  ): Player {
+    if (player.coords.offsetX !== 0) {
+      return player;
+    }
 
+    const coords = player.coords;
+
+    const map = new Map([], new BoardSize(board.getLength()));
+
+    const belowCoords = map.correctForOverflow(
+      coords.modify({ y: coords.y + 1 })
+    );
+
+    const tile = board.getTile(belowCoords.x, belowCoords.y);
+
+    if (tile.background) {
+      // gap below, start falling down it
+      return player.modify({
+        falling: true
+      });
+    }
+
+    if (tile.get('breakable') === true && player.falling) {
+      return player; // allow player to keep falling through breakable tile
+    }
+
+    // solid ground, stop falling
+    return player.modify({
+      falling: false
+    });
+  }
+
+  protected doPlayerCalcs(
+    player: Player,
+    board: Board,
+    timePassed: number
+  ): Player {
     const newPlayer = this.incrementPlayerFrame(player);
 
-    const newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
+    const newerPlayer = this.checkFloorBelowPlayer(
+      newPlayer,
+      board,
+      timePassed
+    );
 
     const checkedPlayer = this.checkPlayerDirection(newerPlayer, board);
 
@@ -84,14 +128,17 @@ export class Movement {
 
     // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
 
-    const maybeTeleportedPlayer = this.checkForMovementTiles(newestPlayer, board);
+    const maybeTeleportedPlayer = this.checkForMovementTiles(
+      newestPlayer,
+      board
+    );
 
     return maybeTeleportedPlayer;
   }
 
-  protected checkForMovementTiles(player: Player, board: Board) : Player{
+  protected checkForMovementTiles(player: Player, board: Board): Player {
     const currentCoords = player.coords;
-    
+
     if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
       return player;
     }
@@ -102,7 +149,7 @@ export class Movement {
 
     if (tile.action === "teleport") {
       return this.teleport(player, board);
-    };
+    }
 
     return player;
   }
@@ -304,29 +351,5 @@ export class Movement {
     });
   }
 
-  protected checkFloorBelowPlayer(player: Player, board: Board, timePassed: number) : Player {
-    if (player.coords.offsetX !== 0) {
-      return player;
-    }
-
-    const coords = player.coords;
-
-    const belowCoords = this.map.correctForOverflow(
-      coords.modify({ y: coords.y + 1 })
-    );
-
-    const tile = board.getTile(belowCoords.x, belowCoords.y);
-
-    if (tile.background) {
-      // gap below, start falling down it
-      return player.modify({
-        falling: true
-      });
-    }
-
-    // solid ground, stop falling
-    return player.modify({
-      falling: false
-    });
-  }
+  
 }

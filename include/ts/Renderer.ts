@@ -34,7 +34,7 @@ export class Renderer {
 
   protected rotating: boolean;
 
-  protected loadCallback: () => void // call this when all the tiles are loaded
+  protected loadCallback: () => void; // call this when all the tiles are loaded
   protected totalTiles: number = 0;
   protected tilesLoaded: number = 0;
 
@@ -56,7 +56,12 @@ export class Renderer {
     this.loadPlayerPalette();
   }
 
-  public render(board: Board, renderMap: boolean[][], players: Player[], renderAngle: number) {
+  public render(
+    board: Board,
+    renderMap: boolean[][],
+    players: Player[],
+    renderAngle: number
+  ) {
     //console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard(board, renderMap, renderAngle);
@@ -69,16 +74,19 @@ export class Renderer {
     this.tileSize = this.canvas.sizeCanvas(boardSize);
   }
 
-  public drawRotatingBoard(clockwise: boolean, moveSpeed: number, completed: () => void) {
-    
+  public drawRotatingBoard(
+    clockwise: boolean,
+    moveSpeed: number,
+    completed: () => void
+  ) {
     if (this.rotating === true) {
       // already
       return false;
     }
 
-   const canvas = this.canvas.getCanvas();
-   const savedData = this.getImageData(canvas);
-   this.rotating = true;
+    const canvas = this.canvas.getCanvas();
+    const savedData = this.getImageData(canvas);
+    this.rotating = true;
 
     if (clockwise) {
       this.drawRotated(savedData, 1, 0, 90, moveSpeed, completed);
@@ -87,9 +95,7 @@ export class Renderer {
     }
   }
 
-  protected getImageData(canvas: HTMLCanvasElement) : HTMLImageElement {
-      
-
+  protected getImageData(canvas: HTMLCanvasElement): HTMLImageElement {
     const cw = canvas.width;
     const ch = canvas.height;
 
@@ -107,7 +113,7 @@ export class Renderer {
     this.totalTiles = this.tilesLoaded = 0;
     for (const i in tiles) {
       if (tiles[i] !== undefined) {
-        this.totalTiles ++;
+        this.totalTiles++;
         const thisTile = tiles[i];
         const tileImage = document.createElement("img");
         tileImage.setAttribute("src", this.getTileImagePath(thisTile));
@@ -156,7 +162,7 @@ export class Renderer {
   protected markTileImageAsLoaded(id: number) {
     this.tilesLoaded++;
     this.tileImages[id].ready = true;
-    if (this.tilesLoaded === this.totalTiles) {    
+    if (this.tilesLoaded === this.totalTiles) {
       this.loadCallback(); // we are ready to fucking party
     }
   }
@@ -292,7 +298,6 @@ export class Renderer {
   }
 
   protected renderPlayer(player: Player) {
-
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
@@ -381,7 +386,6 @@ export class Renderer {
     moveSpeed: number,
     completed: () => any
   ) {
-
     const canvas = this.canvas.getCanvas();
 
     if (direction > 0) {
@@ -420,7 +424,14 @@ export class Renderer {
     angle += direction * (moveSpeed / 2);
 
     this.animationHandle = window.requestAnimationFrame(() => {
-      this.drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed);
+      this.drawRotated(
+        savedData,
+        direction,
+        angle,
+        targetAngle,
+        moveSpeed,
+        completed
+      );
     });
   }
 }

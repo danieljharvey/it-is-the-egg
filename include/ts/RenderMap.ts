@@ -18,7 +18,6 @@ export class RenderMap {
     player: Player,
     renderMap: boolean[][]
   ): boolean[][] {
-
     const coords = player.coords;
 
     const startX = coords.x - 1;

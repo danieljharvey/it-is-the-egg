@@ -45,14 +45,20 @@ test("Correct board size with shrinking", () => {
     [0, 1, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0 ,0],
+    [0, 1, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0]
   ]);
 
   const boardSize = new BoardSize(5); // 5 is minimal actually
 
-  const expected = new Board([[0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0],[0, 1, 0, 0, 0]]);
+  const expected = new Board([
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0]
+  ]);
 
   const map = new Map(undefined, boardSize, []);
 
@@ -69,7 +75,7 @@ test("Correct board size with growing", () => {
     [0, 1, 0, 0, 0]
   ]);
 
-  const boardSize = new BoardSize(6;
+  const boardSize = new BoardSize(6);
 
   const tileSet = new TileSet();
   const map = new Map(tileSet, boardSize, []);

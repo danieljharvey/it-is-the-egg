@@ -720,10 +720,11 @@ define("Action", ["require", "exports"], function (require, exports) {
             var _this = this;
             return gameState.players.reduce(function (currentGameState, player) {
                 var updated = _this.checkPlayerTileAction(player, currentGameState.board, currentGameState.score, currentGameState.outcome);
+                var postCrateBoard = _this.checkTileBelowPlayer(player, updated.board);
                 return gameState.modify({
-                    board: updated.board,
+                    board: postCrateBoard,
                     outcome: updated.outcome,
-                    score: updated.score,
+                    score: updated.score
                 });
             }, gameState);
         };
@@ -786,7 +787,7 @@ define("Action", ["require", "exports"], function (require, exports) {
             var coords = player.coords;
             var belowCoords = this.map.correctForOverflow(coords.modify({ y: coords.y + 1 }));
             var tile = board.getTile(belowCoords.x, belowCoords.y);
-            if (tile.breakable) {
+            if (tile.get('breakable') === true) {
                 // if tile below is breakable (and we are already falling and thus have momentum, smash it)
                 var newTile = this.map.cloneTile(1);
                 var newTileWithCoords = newTile.modify({
@@ -1363,7 +1364,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Movement", ["require", "exports"], function (require, exports) {
+define("Movement", ["require", "exports", "BoardSize", "Map"], function (require, exports, BoardSize_2, Map_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var OFFSET_DIVIDE = 100;
@@ -1415,6 +1416,29 @@ define("Movement", ["require", "exports"], function (require, exports) {
             }
             return coords;
         };
+        // only public so it can be tested, please don't use outside of here
+        Movement.prototype.checkFloorBelowPlayer = function (player, board, timePassed) {
+            if (player.coords.offsetX !== 0) {
+                return player;
+            }
+            var coords = player.coords;
+            var map = new Map_1.Map([], new BoardSize_2.BoardSize(board.getLength()));
+            var belowCoords = map.correctForOverflow(coords.modify({ y: coords.y + 1 }));
+            var tile = board.getTile(belowCoords.x, belowCoords.y);
+            if (tile.background) {
+                // gap below, start falling down it
+                return player.modify({
+                    falling: true
+                });
+            }
+            if (tile.get('breakable') === true && player.falling) {
+                return player; // allow player to keep falling through breakable tile
+            }
+            // solid ground, stop falling
+            return player.modify({
+                falling: false
+            });
+        };
         Movement.prototype.doPlayerCalcs = function (player, board, timePassed) {
             var newPlayer = this.incrementPlayerFrame(player);
             var newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
@@ -1435,7 +1459,6 @@ define("Movement", ["require", "exports"], function (require, exports) {
             if (tile.action === "teleport") {
                 return this.teleport(player, board);
             }
-            ;
             return player;
         };
         // find another teleport and go to it
@@ -1602,24 +1625,6 @@ define("Movement", ["require", "exports"], function (require, exports) {
                 lastAction: ""
             });
         };
-        Movement.prototype.checkFloorBelowPlayer = function (player, board, timePassed) {
-            if (player.coords.offsetX !== 0) {
-                return player;
-            }
-            var coords = player.coords;
-            var belowCoords = this.map.correctForOverflow(coords.modify({ y: coords.y + 1 }));
-            var tile = board.getTile(belowCoords.x, belowCoords.y);
-            if (tile.background) {
-                // gap below, start falling down it
-                return player.modify({
-                    falling: true
-                });
-            }
-            // solid ground, stop falling
-            return player.modify({
-                falling: false
-            });
-        };
         return Movement;
     }());
     exports.Movement = Movement;
@@ -1681,7 +1686,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_2, Coords_3, Utils_3) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_3, Coords_3, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1700,7 +1705,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], func
             var startY = coords.y - 1;
             var endY = coords.y + 1;
             var newRenderMap = this.copyRenderMap(renderMap);
-            var boardSize = new BoardSize_2.BoardSize(renderMap.length);
+            var boardSize = new BoardSize_3.BoardSize(renderMap.length);
             for (var x = startX; x <= endX; x++) {
                 for (var y = startY; y <= endY; y++) {
                     var newCoords = new Coords_3.Coords({ x: x, y: y });
@@ -1806,7 +1811,7 @@ define("TileChooser", ["require", "exports", "ramda"], function (require, export
     }());
     exports.TileChooser = TileChooser;
 });
-define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_3) {
+define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TitleScreen = (function () {
@@ -1819,7 +1824,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
         }
         TitleScreen.prototype.render = function (callback) {
             var _this = this;
-            var boardSize = new BoardSize_3.BoardSize(10);
+            var boardSize = new BoardSize_4.BoardSize(10);
             this.canvas.sizeCanvas(boardSize);
             var titleImage = document.createElement("img");
             titleImage.addEventListener("load", function () {
@@ -1864,7 +1869,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_4, Canvas_1, Coords_4, Levels_1, Loader_1, Map_1, Renderer_1, RenderMap_1, TileChooser_1, TileSet_1, Utils_4) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_5, Canvas_1, Coords_4, Levels_1, Loader_1, Map_2, Renderer_1, RenderMap_1, TileChooser_1, TileSet_1, Utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Editor = (function () {
@@ -1895,7 +1900,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         Editor.prototype.bootstrap = function (callback) {
             var _this = this;
             this.tileSet = new TileSet_1.TileSet();
-            this.boardSize = new BoardSize_4.BoardSize(this.defaultBoardSize);
+            this.boardSize = new BoardSize_5.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(this.boardSize);
             var apiLocation = "http://" + window.location.hostname + "/levels/";
             var loader = new Loader_1.Loader(apiLocation);
@@ -1928,17 +1933,17 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             });
         };
         Editor.prototype.growBoard = function () {
-            var map = new Map_1.Map(this.tileSet, this.boardSize);
+            var map = new Map_2.Map(this.tileSet, this.boardSize);
             var newBoard = map.growBoard(this.board);
-            this.boardSize = new BoardSize_4.BoardSize(newBoard.getLength());
+            this.boardSize = new BoardSize_5.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.updateBoard(newBoard);
             this.renderEverything(newBoard);
         };
         Editor.prototype.shrinkBoard = function () {
-            var map = new Map_1.Map(this.tileSet, this.boardSize);
+            var map = new Map_2.Map(this.tileSet, this.boardSize);
             var newBoard = map.shrinkBoard(this.board);
-            this.boardSize = new BoardSize_4.BoardSize(newBoard.getLength());
+            this.boardSize = new BoardSize_5.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.updateBoard(newBoard);
             this.renderEverything(newBoard);
@@ -1951,7 +1956,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             }
             this.boardHistory.pop(); // get rid of most recent
             this.board = this.boardHistory.slice(-1)[0]; // set to new last item
-            this.boardSize = new BoardSize_4.BoardSize(this.board.getLength());
+            this.boardSize = new BoardSize_5.BoardSize(this.board.getLength());
             this.renderEverything(this.board);
             console.log("Undo! Steps left", this.boardHistory.length);
         };
@@ -1962,11 +1967,11 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.board = board;
         };
         Editor.prototype.getBlankBoard = function (tileSet, boardSize) {
-            var map = new Map_1.Map(tileSet, boardSize);
+            var map = new Map_2.Map(tileSet, boardSize);
             return map.generateBlankBoard();
         };
         Editor.prototype.getLevelBoard = function (boardArray, tileSet, boardSize) {
-            var map = new Map_1.Map(tileSet, boardSize);
+            var map = new Map_2.Map(tileSet, boardSize);
             return map.makeBoardFromArray(boardArray);
         };
         Editor.prototype.clearBoardHistory = function (board) {
@@ -2002,7 +2007,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.boardSize, this.canvas);
         };
         Editor.prototype.renderEverything = function (board) {
-            var boardSize = new BoardSize_4.BoardSize(board.getLength());
+            var boardSize = new BoardSize_5.BoardSize(board.getLength());
             var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(board, blankMap, [], 0);
         };
@@ -2081,7 +2086,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
                 return false;
             }
             var currentTile = this.board.getTile(coords.x, coords.y);
-            var map = new Map_1.Map(this.tileSet, this.boardSize);
+            var map = new Map_2.Map(this.tileSet, this.boardSize);
             var tile = map.cloneTile(tileID);
             var placedTile = tile.modify({
                 x: coords.x,
@@ -2105,7 +2110,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardSize", "Map", "Movement"], function (require, exports, Action_1, BoardSize_5, Map_2, Movement_1) {
+define("TheEgg", ["require", "exports", "Action", "BoardSize", "Map", "Movement"], function (require, exports, Action_1, BoardSize_6, Map_3, Movement_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TheEgg = (function () {
@@ -2139,8 +2144,8 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Map", "Movement"
         // it DOES NOT do animation - not our problem
         TheEgg.prototype.doRotate = function (gameState, clockwise) {
             var rotations = gameState.rotations + 1;
-            var boardSize = new BoardSize_5.BoardSize(gameState.board.getLength());
-            var map = new Map_2.Map(null, boardSize);
+            var boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
+            var map = new Map_3.Map(null, boardSize);
             var newBoard = map.rotateBoard(gameState.board, clockwise);
             var rotatedPlayers = gameState.players.map(function (player) {
                 return map.rotatePlayer(player, clockwise);
@@ -2182,7 +2187,7 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Map", "Movement"
     }());
     exports.TheEgg = TheEgg;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_2, Collisions_1, Coords_5, Editor_1, GameState_1, Levels_2, Loader_2, Map_3, Player_1, PlayerTypes_1, Renderer_2, RenderMap_2, TheEgg_1, TileSet_2, TitleScreen_1, Utils_5) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Collisions_1, Coords_5, Editor_1, GameState_1, Levels_2, Loader_2, Map_4, Player_1, PlayerTypes_1, Renderer_2, RenderMap_2, TheEgg_1, TileSet_2, TitleScreen_1, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -2222,7 +2227,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.bootstrap = function (callback) {
             var _this = this;
             this.tileSet = new TileSet_2.TileSet();
-            var boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
+            var boardSize = new BoardSize_7.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_2.Canvas(boardSize);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
@@ -2351,7 +2356,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             if (oldGameState.outcome.length > 0) {
                 var continueGame = this.checkOutcome(oldGameState);
                 if (continueGame == false) {
-                    this.setNextAction('stop');
+                    this.setNextAction("stop");
                 }
             }
             var newGameState = this.getNewGameState(oldGameState, action, timePassed);
@@ -2359,7 +2364,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // return true for continue play, false for stop
         Jetpack.prototype.checkOutcome = function (gameState) {
-            if (gameState.outcome === 'completeLevel') {
+            if (gameState.outcome === "completeLevel") {
                 // egg is over cup - check whether we've completed
                 var completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
@@ -2379,7 +2384,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             return false;
         };
         Jetpack.prototype.getBoardFromArray = function (boardArray) {
-            var map = new Map_3.Map(this.tileSet, this.boardSize);
+            var map = new Map_4.Map(this.tileSet, this.boardSize);
             return map.makeBoardFromArray(boardArray);
         };
         // create first "frame" of gameState from board
@@ -2401,19 +2406,19 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // do next move, plop new state on pile, return new state
         Jetpack.prototype.getNewGameState = function (gameState, action, timePassed) {
-            var map = new Map_3.Map(this.tileSet, this.boardSize);
+            var map = new Map_4.Map(this.tileSet, this.boardSize);
             var theEgg = new TheEgg_1.TheEgg(map);
             var newGameState = theEgg.doAction(gameState, action, timePassed);
             this.gameStates.push(newGameState); // add to history
             return newGameState;
         };
         Jetpack.prototype.renderEverything = function (gameState) {
-            var boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
+            var boardSize = new BoardSize_7.BoardSize(gameState.board.getLength());
             var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
         };
         Jetpack.prototype.renderChanges = function (oldGameState, newGameState) {
-            var boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
+            var boardSize = new BoardSize_7.BoardSize(newGameState.board.getLength());
             // if rotated everything changes anyway
             if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
                 return this.renderEverything(newGameState);
@@ -2538,7 +2543,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 });
             }, function () {
                 _this.renderer = _this.createRenderer(_this.tileSet, _this.boardSize, function () {
-                    var map = new Map_3.Map(_this.tileSet, _this.boardSize);
+                    var map = new Map_4.Map(_this.tileSet, _this.boardSize);
                     var board = map.generateRandomBoard(_this.boardSize);
                     _this.resetGameState(board);
                     var gameState = _this.getCurrentGameState();

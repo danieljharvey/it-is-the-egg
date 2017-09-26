@@ -13,7 +13,6 @@ import { Movement } from "./Movement";
 import { Player } from "./Player";
 
 export class TheEgg {
-
   protected map: Map; // used to hold tile info mostly
 
   constructor(map: Map) {
@@ -37,7 +36,6 @@ export class TheEgg {
 
   // this is where we have to do a shitload of things
   protected doGameMove(gameState: GameState, timePassed: number): GameState {
-
     const movement = new Movement(this.map);
     const newGameState = movement.doCalcs(gameState, timePassed);
 

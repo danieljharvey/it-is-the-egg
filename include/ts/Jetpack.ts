@@ -106,7 +106,6 @@ export class Jetpack {
     }
   }
 
-
   // create player
   public createNewPlayer(
     type: string,
@@ -174,8 +173,11 @@ export class Jetpack {
   }
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  protected createRenderer(tileSet: TileSet, boardSize: BoardSize, completedCallback: () => any) {
-
+  protected createRenderer(
+    tileSet: TileSet,
+    boardSize: BoardSize,
+    completedCallback: () => any
+  ) {
     this.canvas = new Canvas(boardSize);
     this.tileSet = tileSet;
     this.boardSize = boardSize;
@@ -220,22 +222,29 @@ export class Jetpack {
     this.displayFrameRate(timePassed);
 
     const action = this.getNextAction();
-    
-    this.gameCycle(timePassed, action);  
+
+    this.gameCycle(timePassed, action);
   }
 
   // this does one step of the game
   protected gameCycle(timePassed: number, action: string) {
-
     const oldGameState = this.getCurrentGameState();
 
     if (action === "rotateLeft") {
-      const rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
+      const rotatedLeftState = this.getNewGameState(
+        oldGameState,
+        "rotateLeft",
+        timePassed
+      );
       this.doBoardRotation(false, rotatedLeftState);
       this.setNextAction("rotatingLeft");
       return false;
     } else if (action === "rotateRight") {
-      const rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
+      const rotatedRightState = this.getNewGameState(
+        oldGameState,
+        "rotateRight",
+        timePassed
+      );
       this.doBoardRotation(true, rotatedRightState);
       this.setNextAction("rotatingRight");
       return false;
@@ -246,33 +255,31 @@ export class Jetpack {
     if (oldGameState.outcome.length > 0) {
       const continueGame = this.checkOutcome(oldGameState);
       if (continueGame == false) {
-        this.setNextAction('stop');
+        this.setNextAction("stop");
       }
     }
 
     const newGameState = this.getNewGameState(oldGameState, action, timePassed);
 
     this.renderChanges(oldGameState, newGameState);
-
   }
 
   // return true for continue play, false for stop
-  protected checkOutcome(gameState: GameState) : boolean {
-    if (gameState.outcome === 'completeLevel') {
+  protected checkOutcome(gameState: GameState): boolean {
+    if (gameState.outcome === "completeLevel") {
       // egg is over cup - check whether we've completed
       const completed = this.completeLevel(gameState.board, gameState.players);
       if (completed) {
         this.nextLevel();
-        return false
+        return false;
       }
     }
 
     return true;
   }
 
-
   // or at least try
-  protected completeLevel(board: Board, players: Player[]) : boolean {
+  protected completeLevel(board: Board, players: Player[]): boolean {
     this.collectable = this.getCollectable(board);
     const playerCount: number = this.countPlayers(players);
     if (this.collectable < 1 && playerCount < 2) {
@@ -322,7 +329,12 @@ export class Jetpack {
   protected renderEverything(gameState: GameState) {
     const boardSize = new BoardSize(gameState.board.getLength());
     const blankMap = RenderMap.createRenderMap(boardSize.width, true);
-    this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
+    this.renderer.render(
+      gameState.board,
+      blankMap,
+      gameState.players,
+      gameState.rotateAngle
+    );
   }
 
   protected renderChanges(oldGameState: GameState, newGameState: GameState) {
@@ -344,7 +356,6 @@ export class Jetpack {
       oldGameState.board,
       newGameState.board
     );
-
 
     const finalRenderMap = RenderMap.combineRenderMaps(
       playerRenderMap,
@@ -476,24 +487,31 @@ export class Jetpack {
     this.levels.loadLevel(
       levelID,
       (savedLevel: SavedLevel) => {
-        this.renderer = this.createRenderer(this.tileSet, savedLevel.boardSize, () => {
-          const board = this.getBoardFromArray(savedLevel.board);
-          this.resetGameState(board);
-          const gameState = this.getCurrentGameState();
-          this.renderEverything(gameState);
-          callback();
-        });
+        this.renderer = this.createRenderer(
+          this.tileSet,
+          savedLevel.boardSize,
+          () => {
+            const board = this.getBoardFromArray(savedLevel.board);
+            this.resetGameState(board);
+            const gameState = this.getCurrentGameState();
+            this.renderEverything(gameState);
+            callback();
+          }
+        );
       },
       () => {
-        this.renderer = this.createRenderer(this.tileSet, this.boardSize, () => {
-          const map = new Map(this.tileSet, this.boardSize);
-          const board = map.generateRandomBoard(this.boardSize);
-          this.resetGameState(board);
-          const gameState = this.getCurrentGameState();
-          this.renderEverything(gameState);
-          callback();
-        });
-        
+        this.renderer = this.createRenderer(
+          this.tileSet,
+          this.boardSize,
+          () => {
+            const map = new Map(this.tileSet, this.boardSize);
+            const board = map.generateRandomBoard(this.boardSize);
+            this.resetGameState(board);
+            const gameState = this.getCurrentGameState();
+            this.renderEverything(gameState);
+            callback();
+          }
+        );
       }
     );
   }
