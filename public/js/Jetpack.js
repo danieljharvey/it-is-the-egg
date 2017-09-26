@@ -220,10 +220,10 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         type: "egg",
         moveSpeed: 1,
         fallSpeed: 1,
-        lastAction: "",
         value: 1,
         img: "",
-        stop: false
+        stop: false,
+        hasMoved: false
     })));
     exports.Player = Player;
 });
@@ -1440,6 +1440,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
             });
         };
         Movement.prototype.doPlayerCalcs = function (player, board, timePassed) {
+            // TODO - compose the fucking shit out of this
             var newPlayer = this.incrementPlayerFrame(player);
             var newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
             var checkedPlayer = this.checkPlayerDirection(newerPlayer, board);
@@ -1447,7 +1448,9 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
             var newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
             // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
             var maybeTeleportedPlayer = this.checkForMovementTiles(newestPlayer, board);
-            return maybeTeleportedPlayer;
+            // mark whether player actually moved this turn
+            var hasMovedPlayer = this.checkHasMoved(player, newestPlayer, maybeTeleportedPlayer);
+            return hasMovedPlayer;
         };
         Movement.prototype.checkForMovementTiles = function (player, board) {
             var currentCoords = player.coords;
@@ -1471,8 +1474,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
                     coords: player.coords.modify({
                         x: newTile.x,
                         y: newTile.y
-                    }),
-                    lastAction: "teleport"
+                    })
                 });
             }
             return player;
@@ -1548,6 +1550,19 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
                 stop: false
             });
         };
+        // compare oldPlayer to newPlayer, but actually return player (or variation of)
+        Movement.prototype.checkHasMoved = function (oldPlayer, newPlayer, player) {
+            if (oldPlayer.coords.equals(newPlayer.coords)) {
+                return player.modify({
+                    hasMoved: false
+                });
+            }
+            else {
+                return player.modify({
+                    hasMoved: true
+                });
+            }
+        };
         // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
         Movement.prototype.incrementPlayerDirection = function (timePassed, player) {
             // falling is priority - do this if a thing
@@ -1621,8 +1636,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
             var newCoords = this.correctTileOverflow(player.coords);
             var loopedCoords = this.map.correctForOverflow(newCoords);
             return player.modify({
-                coords: loopedCoords,
-                lastAction: ""
+                coords: loopedCoords
             });
         };
         return Movement;

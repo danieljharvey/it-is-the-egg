@@ -16,6 +16,7 @@ export class Action {
   public checkAllPlayerTileActions(gameState: GameState): GameState {
     return gameState.players.reduce(
       (currentGameState: GameState, player: Player) => {
+
         const updated = this.checkPlayerTileAction(
           player,
           currentGameState.board,

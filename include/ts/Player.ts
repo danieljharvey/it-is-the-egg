@@ -16,10 +16,10 @@ interface IPlayerParams {
   type?: string;
   moveSpeed?: number;
   fallSpeed?: number;
-  lastAction?: string;
   value?: number;
   img?: string;
   stop?: boolean;
+  hasMoved?: boolean;
 }
 
 export class Player extends Record({
@@ -34,10 +34,10 @@ export class Player extends Record({
   type: "egg",
   moveSpeed: 1,
   fallSpeed: 1,
-  lastAction: "",
   value: 1,
   img: "",
-  stop: false
+  stop: false,
+  hasMoved: false
 }) {
   public coords: Coords;
   public direction: number;
@@ -50,10 +50,10 @@ export class Player extends Record({
   public type: string;
   public moveSpeed: number;
   public fallSpeed: number;
-  public lastAction: string;
   public value: number;
   public img: string;
   public stop: boolean;
+  public hasMoved: boolean;
 
   constructor(params?: IPlayerParams) {
     params ? super(params) : super();

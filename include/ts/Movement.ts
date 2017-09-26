@@ -109,6 +109,9 @@ export class Movement {
     board: Board,
     timePassed: number
   ): Player {
+
+    // TODO - compose the fucking shit out of this
+
     const newPlayer = this.incrementPlayerFrame(player);
 
     const newerPlayer = this.checkFloorBelowPlayer(
@@ -133,7 +136,10 @@ export class Movement {
       board
     );
 
-    return maybeTeleportedPlayer;
+    // mark whether player actually moved this turn
+    const hasMovedPlayer = this.checkHasMoved(player, newestPlayer, maybeTeleportedPlayer);
+
+    return hasMovedPlayer;
   }
 
   protected checkForMovementTiles(player: Player, board: Board): Player {
@@ -164,8 +170,7 @@ export class Movement {
         coords: player.coords.modify({
           x: newTile.x,
           y: newTile.y
-        }),
-        lastAction: "teleport"
+        })
       });
     }
     return player;
@@ -257,6 +262,19 @@ export class Movement {
     });
   }
 
+  // compare oldPlayer to newPlayer, but actually return player (or variation of)
+  protected checkHasMoved(oldPlayer: Player, newPlayer: Player, player: Player) : Player {
+    if (oldPlayer.coords.equals(newPlayer.coords)) {
+      return player.modify({
+        hasMoved: false
+      });
+    } else {
+      return player.modify({
+        hasMoved: true
+      });
+    }
+  }
+
   // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
   protected incrementPlayerDirection(
     timePassed: number,
@@ -346,8 +364,7 @@ export class Movement {
     const loopedCoords = this.map.correctForOverflow(newCoords);
 
     return player.modify({
-      coords: loopedCoords,
-      lastAction: ""
+      coords: loopedCoords
     });
   }
 
