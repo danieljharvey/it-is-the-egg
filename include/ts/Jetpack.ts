@@ -261,6 +261,10 @@ export class Jetpack {
 
     const newGameState = this.getNewGameState(oldGameState, action, timePassed);
 
+    if (oldGameState.score !== newGameState.score) {
+      this.displayScore(newGameState.score);  
+    }
+    
     this.renderChanges(oldGameState, newGameState);
   }
 
@@ -322,7 +326,7 @@ export class Jetpack {
     timePassed: number
   ): GameState {
     const map = new Map(this.tileSet, this.boardSize);
-    const theEgg = new TheEgg(map);
+    const theEgg = new TheEgg(map, this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.gameStates.push(newGameState); // add to history
     return newGameState;

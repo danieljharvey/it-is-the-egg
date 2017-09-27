@@ -1,46 +1,85 @@
 import { Coords } from "./Coords";
-import { Jetpack } from "./Jetpack";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 
 export class Collisions {
-  protected jetpack: Jetpack;
   protected playerTypes: object;
 
   protected players: Player[];
 
-  constructor(jetpack: Jetpack, playerTypes: object) {
-    this.jetpack = jetpack;
+  constructor(playerTypes: object) {
     this.playerTypes = playerTypes;
   }
 
   public checkAllCollisions(players: Player[]) {
-    this.players = players;
+    
+    const combinations = this.getAllPlayerCombinations(players);
 
-    players.map(player => {
-      this.checkPlayerCollisions(player, players);
-    });
+    // only one egg, do nothing
+    if (combinations.length === 0 ) {
+      return players;
+    }
+
+    const newPlayers = [];
+
+    combinations.reduce((currentPlayers, comb) => {
+      console.log(comb);
+      const player1 = this.fetchPlayerByID(players, comb[0]);
+      const player2 = this.fetchPlayerByID(players, comb[1]);
+      const checkedPlayers = this.handleCollision(player1, player2);
+      //const newPlayer1 = checkedPlayers[0];
+      //const newPlayer2 = checkedPlayers[1];
+    }, players);
+
     return players;
   }
 
-  // cycles through all players and check
-  protected checkPlayerCollisions(player: Player, otherPlayers: Player[]) {
-    otherPlayers.map(otherPlayer => {
-      this.handleCollision(player, otherPlayer);
+  protected fetchPlayerByID(players: Player[], id: number) {
+    const matching = players.filter(player => {
+      return (player.id === id);
+    });
+
+    if (matching.length === 0 ) {
+      return false;
+    }
+    
+    // found one!
+    return matching.first();
+  }
+
+  protected getAllPlayerCombinations(players: Player[]) {
+    const keys = this.getAllPlayerIDs(players);
+    
+    console.log(keys);
+
+    const combinations = [];
+
+    for (const i = 0; i<keys.length; i++) {
+      for (const j = i+1; j<keys.length; j++) {
+        combinations.push([i,j]);
+      }
+    }
+    return combinations;
+  }
+
+  protected getAllPlayerIDs(players: Player[]) {
+    return players.map(player => {
+      return player.id;
     });
   }
 
   // this does the action so checkCollision can remain pure at heart
   protected handleCollision(player1: Player, player2: Player) {
     if (this.checkCollision(player1, player2)) {
-      this.combinePlayers(player1, player2);
-      return true;
+      return this.combinePlayers(player1, player2);
     }
-    return false;
+    return [player1, player2];
   }
 
   // only deal with horizontal collisions for now
   protected checkCollision(player1: Player, player2: Player) {
+    console.log('checkCollision', player1, player2);
+    
     if (!player1 || !player2) {
       return false;
     }
@@ -74,14 +113,6 @@ export class Collisions {
     return false;
   }
 
-  protected deletePlayer(player: Player) {
-    delete this.players[player.id];
-  }
-
-  protected addPlayer(player: Player) {
-    this.players[player.id] = player;
-  }
-
   protected chooseHigherLevelPlayer(player1: Player, player2: Player) {
     if (player1.value > player2.value) {
       return player1;
@@ -104,27 +135,33 @@ export class Collisions {
   }
 
   protected combinePlayers(player1: Player, player2: Player) {
-    // console.log('combinePlayers', player1, player2);
+    console.log("COMBINE!");
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
     const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
 
     if (!newPlayerType) {
-      return {
+      return [
         player1,
         player2
-      };
+      ];
     }
 
+    /*
     const newPlayer = this.jetpack.createNewPlayer(
       newPlayerType.type,
       higherPlayer.coords,
       higherPlayer.direction
     );
-    this.addPlayer(newPlayer);
-    this.deletePlayer(player1);
-    this.deletePlayer(player2);
-    return true;
+*/
+    const newPlayerParams = Object.assign({}, newPlayerType, {coords: higherPlayer.coords, direction: higherPlayer.direction});
+    
+    return [
+      player1.modify(newPlayerParams),
+      player2.modify({
+        type: ""
+      })
+    ];
   }
 }

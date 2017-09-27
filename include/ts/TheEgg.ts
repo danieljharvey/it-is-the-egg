@@ -11,9 +11,11 @@ import { GameState } from "./GameState";
 import { Map } from "./Map";
 import { Movement } from "./Movement";
 import { Player } from "./Player";
+import { PlayerTypes } from "./PlayerTypes";
 
 export class TheEgg {
   protected map: Map; // used to hold tile info mostly
+  protected playerTypes: object; // used by Collisions
 
   constructor(map: Map) {
     this.map = map;
@@ -48,8 +50,8 @@ export class TheEgg {
     const action = new Action(this.map);
     const newerGameState = action.checkAllPlayerTileActions(newGameState);
 
-    // const collisions = new Collisions(this, this.playerTypes);
-    // const sortedPlayers = collisions.checkAllCollisions(newPlayers);
+    const collisions = new Collisions(this.playerTypes);
+    const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
 
     // this.players = sortedPlayers; // replace with new objects
 
