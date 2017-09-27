@@ -19,7 +19,7 @@ interface IPlayerParams {
   value?: number;
   img?: string;
   stop?: boolean;
-  hasMoved?: boolean;
+  lastAction?: string;
 }
 
 export class Player extends Record({
@@ -37,7 +37,7 @@ export class Player extends Record({
   value: 1,
   img: "",
   stop: false,
-  hasMoved: false
+  lastAction: ""
 }) {
   public coords: Coords;
   public direction: number;
@@ -53,7 +53,7 @@ export class Player extends Record({
   public value: number;
   public img: string;
   public stop: boolean;
-  public hasMoved: boolean;
+  public lastAction: string;
 
   constructor(params?: IPlayerParams) {
     params ? super(params) : super();

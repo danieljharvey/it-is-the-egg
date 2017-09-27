@@ -136,10 +136,7 @@ export class Movement {
       board
     );
 
-    // mark whether player actually moved this turn
-    const hasMovedPlayer = this.checkHasMoved(player, newestPlayer, maybeTeleportedPlayer);
-
-    return hasMovedPlayer;
+    return maybeTeleportedPlayer;
   }
 
   protected checkForMovementTiles(player: Player, board: Board): Player {
@@ -163,6 +160,9 @@ export class Movement {
   // find another teleport and go to it
   // if no others, do nothing
   protected teleport(player: Player, board: Board): Player {
+    if (player.lastAction === 'teleport') {
+      return player;
+    }
     const newTile = this.map.findTile(board, player.coords, 14);
     if (newTile) {
       // console.log('newTile',newTile.x,newTile.y);
@@ -170,7 +170,8 @@ export class Movement {
         coords: player.coords.modify({
           x: newTile.x,
           y: newTile.y
-        })
+        }),
+        lastAction: "teleport"
       });
     }
     return player;
@@ -262,19 +263,6 @@ export class Movement {
     });
   }
 
-  // compare oldPlayer to newPlayer, but actually return player (or variation of)
-  protected checkHasMoved(oldPlayer: Player, newPlayer: Player, player: Player) : Player {
-    if (oldPlayer.coords.equals(newPlayer.coords)) {
-      return player.modify({
-        hasMoved: false
-      });
-    } else {
-      return player.modify({
-        hasMoved: true
-      });
-    }
-  }
-
   // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
   protected incrementPlayerDirection(
     timePassed: number,
@@ -363,6 +351,15 @@ export class Movement {
     const newCoords = this.correctTileOverflow(player.coords);
     const loopedCoords = this.map.correctForOverflow(newCoords);
 
+    if (loopedCoords.x !== player.coords.x || loopedCoords.y !== player.coords.y) {
+      // if we've actually moved, then
+      return player.modify({
+        coords: loopedCoords,
+        lastAction: ""
+      });
+    }
+
+    // else
     return player.modify({
       coords: loopedCoords
     });
