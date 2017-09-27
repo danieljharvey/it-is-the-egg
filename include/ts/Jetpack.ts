@@ -254,7 +254,7 @@ export class Jetpack {
 
     if (oldGameState.outcome.length > 0) {
       const continueGame = this.checkOutcome(oldGameState);
-      if (continueGame == false) {
+      if (continueGame === false) {
         this.setNextAction("stop");
       }
     }
@@ -280,9 +280,11 @@ export class Jetpack {
 
   // or at least try
   protected completeLevel(board: Board, players: Player[]): boolean {
-    this.collectable = this.getCollectable(board);
+
+    const collectable = this.getCollectable(board);
     const playerCount: number = this.countPlayers(players);
-    if (this.collectable < 1 && playerCount < 2) {
+
+    if (collectable < 1 && playerCount < 2) {
       return true;
     }
     return false;
@@ -437,10 +439,13 @@ export class Jetpack {
   }
 
   protected countPlayers(players: Player[]): number {
-    const validPlayers = players.filter(player => {
-      return player && player.value > 0;
-    });
-    return validPlayers.length;
+    return players.reduce((total, player) => {
+      if (player && player.value > 0) {
+        return total + 1;
+      } else {
+        return total;
+      }
+    }, 0);
   }
 
   // cycle through all map tiles, find egg cups etc and create players
@@ -469,9 +474,11 @@ export class Jetpack {
   protected getCollectable(board: Board): number {
     const tiles = board.getAllTiles();
     return tiles.reduce((collectable, tile) => {
-      const score = tile.collectable;
+      const score = tile.get('collectable');
       if (score > 0) {
         return collectable + score;
+      } else {
+        return collectable;
       }
     }, 0);
   }

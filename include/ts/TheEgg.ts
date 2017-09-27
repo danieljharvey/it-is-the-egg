@@ -36,8 +36,14 @@ export class TheEgg {
 
   // this is where we have to do a shitload of things
   protected doGameMove(gameState: GameState, timePassed: number): GameState {
+    
+    // first get rid of old outcome
+    const startGameState = gameState.modify({
+      outcome: ""
+    });
+
     const movement = new Movement(this.map);
-    const newGameState = movement.doCalcs(gameState, timePassed);
+    const newGameState = movement.doCalcs(startGameState, timePassed);
 
     const action = new Action(this.map);
     const newerGameState = action.checkAllPlayerTileActions(newGameState);

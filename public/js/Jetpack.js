@@ -2142,8 +2142,12 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Map", "Movement"
         };
         // this is where we have to do a shitload of things
         TheEgg.prototype.doGameMove = function (gameState, timePassed) {
+            // first get rid of old outcome
+            var startGameState = gameState.modify({
+                outcome: ""
+            });
             var movement = new Movement_1.Movement(this.map);
-            var newGameState = movement.doCalcs(gameState, timePassed);
+            var newGameState = movement.doCalcs(startGameState, timePassed);
             var action = new Action_1.Action(this.map);
             var newerGameState = action.checkAllPlayerTileActions(newGameState);
             // const collisions = new Collisions(this, this.playerTypes);
@@ -2366,7 +2370,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             }
             if (oldGameState.outcome.length > 0) {
                 var continueGame = this.checkOutcome(oldGameState);
-                if (continueGame == false) {
+                if (continueGame === false) {
                     this.setNextAction("stop");
                 }
             }
@@ -2387,9 +2391,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         };
         // or at least try
         Jetpack.prototype.completeLevel = function (board, players) {
-            this.collectable = this.getCollectable(board);
+            var collectable = this.getCollectable(board);
             var playerCount = this.countPlayers(players);
-            if (this.collectable < 1 && playerCount < 2) {
+            if (collectable < 1 && playerCount < 2) {
                 return true;
             }
             return false;
@@ -2497,10 +2501,14 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             }
         };
         Jetpack.prototype.countPlayers = function (players) {
-            var validPlayers = players.filter(function (player) {
-                return player && player.value > 0;
-            });
-            return validPlayers.length;
+            return players.reduce(function (total, player) {
+                if (player && player.value > 0) {
+                    return total + 1;
+                }
+                else {
+                    return total;
+                }
+            }, 0);
         };
         // cycle through all map tiles, find egg cups etc and create players
         Jetpack.prototype.createPlayers = function (board) {
@@ -2529,9 +2537,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.getCollectable = function (board) {
             var tiles = board.getAllTiles();
             return tiles.reduce(function (collectable, tile) {
-                var score = tile.collectable;
+                var score = tile.get('collectable');
                 if (score > 0) {
                     return collectable + score;
+                }
+                else {
+                    return collectable;
                 }
             }, 0);
         };
