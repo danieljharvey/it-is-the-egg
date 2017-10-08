@@ -87,7 +87,7 @@ export class Utils {
 
   public static removeDuplicates(arr: any[]) {
     return arr.filter((value, index, self) => {
-      return (self.indexOf(value) === index);
+      return self.indexOf(value) === index;
     });
   }
 }

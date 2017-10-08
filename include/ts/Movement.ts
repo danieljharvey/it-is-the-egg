@@ -94,7 +94,7 @@ export class Movement {
       });
     }
 
-    if (tile.get('breakable') === true && player.falling) {
+    if (tile.get("breakable") === true && player.falling) {
       return player; // allow player to keep falling through breakable tile
     }
 
@@ -109,7 +109,6 @@ export class Movement {
     board: Board,
     timePassed: number
   ): Player {
-
     // TODO - compose the fucking shit out of this
 
     const newPlayer = this.incrementPlayerFrame(player);
@@ -160,7 +159,7 @@ export class Movement {
   // find another teleport and go to it
   // if no others, do nothing
   protected teleport(player: Player, board: Board): Player {
-    if (player.lastAction === 'teleport') {
+    if (player.lastAction === "teleport") {
       return player;
     }
     const newTile = this.map.findTile(board, player.coords, 14);
@@ -351,7 +350,10 @@ export class Movement {
     const newCoords = this.correctTileOverflow(player.coords);
     const loopedCoords = this.map.correctForOverflow(newCoords);
 
-    if (loopedCoords.x !== player.coords.x || loopedCoords.y !== player.coords.y) {
+    if (
+      loopedCoords.x !== player.coords.x ||
+      loopedCoords.y !== player.coords.y
+    ) {
       // if we've actually moved, then
       return player.modify({
         coords: loopedCoords,
@@ -364,6 +366,4 @@ export class Movement {
       coords: loopedCoords
     });
   }
-
-  
 }

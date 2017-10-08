@@ -262,9 +262,9 @@ export class Jetpack {
     const newGameState = this.getNewGameState(oldGameState, action, timePassed);
 
     if (oldGameState.score !== newGameState.score) {
-      this.displayScore(newGameState.score);  
+      this.displayScore(newGameState.score);
     }
-    
+
     this.renderChanges(oldGameState, newGameState);
   }
 
@@ -284,7 +284,6 @@ export class Jetpack {
 
   // or at least try
   protected completeLevel(board: Board, players: Player[]): boolean {
-
     const collectable = this.getCollectable(board);
     const playerCount: number = this.countPlayers(players);
 
@@ -478,7 +477,7 @@ export class Jetpack {
   protected getCollectable(board: Board): number {
     const tiles = board.getAllTiles();
     return tiles.reduce((collectable, tile) => {
-      const score = tile.get('collectable');
+      const score = tile.get("collectable");
       if (score > 0) {
         return collectable + score;
       } else {

@@ -39,7 +39,6 @@ export class TheEgg {
 
   // this is where we have to do a shitload of things
   protected doGameMove(gameState: GameState, timePassed: number): GameState {
-    
     // first get rid of old outcome
     const startGameState = gameState.modify({
       outcome: ""

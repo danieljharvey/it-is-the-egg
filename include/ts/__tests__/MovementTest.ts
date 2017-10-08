@@ -108,8 +108,8 @@ test("No overflow below", () => {
 test("Fall through breakable block", () => {
   const boardArray = [
     [
-      {background: true, breakable: false},
-      {background: false, breakable: true},
+      { background: true, breakable: false },
+      { background: false, breakable: true }
     ]
   ];
 
@@ -117,7 +117,7 @@ test("Fall through breakable block", () => {
 
   const player = new Player({
     coords: new Coords({
-      x:0,
+      x: 0,
       y: 0
     }),
     falling: true
@@ -132,8 +132,8 @@ test("Fall through breakable block", () => {
 test("Don't fall through floor", () => {
   const boardArray = [
     [
-      {background: true, breakable: false},
-      {background: false, breakable: false},
+      { background: true, breakable: false },
+      { background: false, breakable: false }
     ]
   ];
 
@@ -141,7 +141,7 @@ test("Don't fall through floor", () => {
 
   const player = new Player({
     coords: new Coords({
-      x:0,
+      x: 0,
       y: 0
     }),
     falling: true
@@ -156,5 +156,3 @@ test("Don't fall through floor", () => {
   expect(result.equals(expected)).toEqual(true);
   expect(result.falling).toEqual(false);
 });
-
-

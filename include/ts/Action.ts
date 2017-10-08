@@ -16,7 +16,6 @@ export class Action {
   public checkAllPlayerTileActions(gameState: GameState): GameState {
     return gameState.players.reduce(
       (currentGameState: GameState, player: Player) => {
-
         const updated = this.checkPlayerTileAction(
           player,
           currentGameState.board,
@@ -99,7 +98,6 @@ export class Action {
 
   // basically, do we need to smash the block below?
   protected checkTileBelowPlayer(player: Player, board: Board): Board {
-    
     if (player.falling === false) {
       return board;
     }
@@ -112,7 +110,7 @@ export class Action {
 
     const tile = board.getTile(belowCoords.x, belowCoords.y);
 
-    if (tile.get('breakable') === true) {
+    if (tile.get("breakable") === true) {
       // if tile below is breakable (and we are already falling and thus have momentum, smash it)
       const newTile = this.map.cloneTile(1);
       const newTileWithCoords = newTile.modify({

@@ -13,12 +13,11 @@ export class Collisions {
     this.playerTypes = playerTypes;
   }
 
-  public checkAllCollisions(players: Player[]) : Player[] {
-
+  public checkAllCollisions(players: Player[]): Player[] {
     const combinations = this.getAllPlayerCombinations(players);
 
     // only one egg, do nothing
-    if (combinations.length === 0 ) {
+    if (combinations.length === 0) {
       return players;
     }
 
@@ -32,25 +31,31 @@ export class Collisions {
 
     const newPlayers = this.createNewPlayers(collided, players);
 
-    const allPlayers = this.combinePlayerLists(oldPlayers, newPlayers)
+    const allPlayers = this.combinePlayerLists(oldPlayers, newPlayers);
 
     return allPlayers;
   }
 
-  protected combinePlayerLists(oldPlayers: Player[], newPlayers: Player[]): Player[] {
+  protected combinePlayerLists(
+    oldPlayers: Player[],
+    newPlayers: Player[]
+  ): Player[] {
     const allPlayers = [];
     oldPlayers.map(player => {
       allPlayers.push(player);
     });
     newPlayers.map(player => {
       allPlayers.push(player);
-    })
+    });
     return fromJS(allPlayers);
   }
 
   // send an array of pairs of player ids, returns all that collide
-  protected findCollisions(combinations: number[][], players: Player[]): number[][] {
-    return combinations.filter((comb) => {
+  protected findCollisions(
+    combinations: number[][],
+    players: Player[]
+  ): number[][] {
+    return combinations.filter(comb => {
       const player1 = this.fetchPlayerByID(players, comb[0]);
       const player2 = this.fetchPlayerByID(players, comb[1]);
       return this.checkCollision(player1, player2);
@@ -58,8 +63,11 @@ export class Collisions {
   }
 
   // returns all non-collided players
-  // collided is any number of pairs of IDs, ie [[1,3], [3,5]] 
-  protected removeCollidedPlayers(collided: number[][], players: Player[]): Player[] {
+  // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
+  protected removeCollidedPlayers(
+    collided: number[][],
+    players: Player[]
+  ): Player[] {
     const collidedIDs = Utils.flattenArray(collided);
     const uniqueIDs = Utils.removeDuplicates(collidedIDs);
 
@@ -68,7 +76,7 @@ export class Collisions {
         return true;
       }
       return false;
-    })
+    });
   }
 
   // go through each collided pair and combine the players to create new ones
@@ -84,12 +92,12 @@ export class Collisions {
     }, []);
   }
 
-  protected fetchPlayerByID(players: Player[], id: number) : Player | boolean {
+  protected fetchPlayerByID(players: Player[], id: number): Player | boolean {
     const matching = players.filter(player => {
-      return (player.id === id);
+      return player.id === id;
     });
 
-    if (matching.length === 0 ) {
+    if (matching.length === 0) {
       return false;
     }
 
@@ -100,14 +108,13 @@ export class Collisions {
       return matching.first();
     }
     // array
-    return matching.slice(0,1)[0];  
+    return matching.slice(0, 1)[0];
   }
 
   protected getAllPlayerCombinations(players: Player[]): number[][] {
-
     return players.reduce((total, player) => {
       const otherPlayers = players.filter(otherPlayer => {
-        return (player.id < otherPlayer.id);
+        return player.id < otherPlayer.id;
       });
       const combos = otherPlayers.map(otherPlayer => {
         return [player.id, otherPlayer.id];
@@ -121,7 +128,7 @@ export class Collisions {
     if (List.isList(combo)) {
       return combo.toJS();
     }
-    return combo
+    return combo;
   }
 
   protected getAllPlayerIDs(players: Player[]) {
@@ -132,7 +139,6 @@ export class Collisions {
 
   // only deal with horizontal collisions for now
   protected checkCollision(player1: Player, player2: Player) {
-
     if (!player1 || !player2) {
       return false;
     }
@@ -191,23 +197,21 @@ export class Collisions {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    console.log('combinePlayers', newValue, higherPlayer, this.playerTypes);
+    console.log("combinePlayers", newValue, higherPlayer, this.playerTypes);
 
     const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
-    
+
     console.log(newPlayerType);
 
     if (!newPlayerType) {
-      return [
-        player1,
-        player2
-      ];
+      return [player1, player2];
     }
 
-    const newPlayerParams = Object.assign({}, newPlayerType, {coords: higherPlayer.coords, direction: higherPlayer.direction});
+    const newPlayerParams = Object.assign({}, newPlayerType, {
+      coords: higherPlayer.coords,
+      direction: higherPlayer.direction
+    });
 
-    return [
-      player1.modify(newPlayerParams)
-    ];
+    return [player1.modify(newPlayerParams)];
   }
 }
