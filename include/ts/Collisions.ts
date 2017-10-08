@@ -1,6 +1,8 @@
 import { Coords } from "./Coords";
+import { List, toJS } from "immutable";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
+import { Utils } from "./Utils";
 
 export class Collisions {
   protected playerTypes: object;
@@ -11,8 +13,8 @@ export class Collisions {
     this.playerTypes = playerTypes;
   }
 
-  public checkAllCollisions(players: Player[]) {
-    
+  public checkAllCollisions(players: Player[]) : Player[] {
+
     const combinations = this.getAllPlayerCombinations(players);
 
     // only one egg, do nothing
@@ -20,21 +22,51 @@ export class Collisions {
       return players;
     }
 
-    const newPlayers = [];
+    const collided = this.findCollisions(combinations, players);
 
-    combinations.reduce((currentPlayers, comb) => {
-      console.log(comb);
-      const player1 = this.fetchPlayerByID(players, comb[0]);
-      const player2 = this.fetchPlayerByID(players, comb[1]);
-      const checkedPlayers = this.handleCollision(player1, player2);
-      //const newPlayer1 = checkedPlayers[0];
-      //const newPlayer2 = checkedPlayers[1];
-    }, players);
+    const oldPlayers = this.removeCollidedPlayers(collided, players);
 
-    return players;
+    const newPlayers = this.createNewPlayers(collided, players);
+
+    return oldPlayers.concat(newPlayers);
   }
 
-  protected fetchPlayerByID(players: Player[], id: number) {
+  // send an array of pairs of player ids, returns all that collide
+  protected findCollisions(combinations: number[][], players: Player[]): number[][] {
+    return combinations.filter((comb) => {
+      const player1 = this.fetchPlayerByID(players, comb[0]);
+      const player2 = this.fetchPlayerByID(players, comb[1]);
+      return this.checkCollision(player1, player2);
+    });
+  }
+
+  // returns all non-collided players
+  // collided is any number of pairs of IDs, ie [[1,3], [3,5]] 
+  protected removeCollidedPlayers(collided: number[][], players: Player[]): Player[] {
+    const collidedIDs = Utils.flattenArray(collided);
+    const uniqueIDs = Utils.removeDuplicates(collidedIDs);
+
+    return players.filter(player => {
+      if (uniqueIDs.indexOf(player.id) === -1) {
+        return true;
+      }
+      return false;
+    })
+  }
+
+  // go through each collided pair and combine the players to create new ones
+  protected createNewPlayers(collided, players: Player[]): Player[] {
+    return collided.reduce((newPlayers, collidedIDs) => {
+      const player1 = this.fetchPlayerByID(players, collidedIDs[0]);
+      const player2 = this.fetchPlayerByID(players, collidedIDs[1]);
+      if (player1 === false || !player2 === false) {
+        return newPlayers;
+      }
+      return newPlayers.concat(this.combinePlayers(player1, player2));
+    }, []);
+  }
+
+  protected fetchPlayerByID(players: Player[], id: number) : Player | boolean {
     const matching = players.filter(player => {
       return (player.id === id);
     });
@@ -42,24 +74,30 @@ export class Collisions {
     if (matching.length === 0 ) {
       return false;
     }
-    
+
     // found one!
-    return matching.first();
+    return matching.slice(0,1)[0];
   }
 
-  protected getAllPlayerCombinations(players: Player[]) {
-    const keys = this.getAllPlayerIDs(players);
-    
-    console.log(keys);
+  protected getAllPlayerCombinations(players: Player[]): number[][] {
 
-    const combinations = [];
+    return players.reduce((total, player) => {
+      const otherPlayers = players.filter(otherPlayer => {
+        return (player.id < otherPlayer.id);
+      });
+      const combos = otherPlayers.map(otherPlayer => {
+        return [player.id, otherPlayer.id];
+      });
+      return total.concat(this.cleanCombos(combos));
+    }, []);
+  }
 
-    for (const i = 0; i<keys.length; i++) {
-      for (const j = i+1; j<keys.length; j++) {
-        combinations.push([i,j]);
-      }
+  // un-immutables values for sanity's sake
+  protected cleanCombos(combo: any): number[] {
+    if (List.isList(combo)) {
+      return combo.toJS();
     }
-    return combinations;
+    return combo
   }
 
   protected getAllPlayerIDs(players: Player[]) {
@@ -68,17 +106,8 @@ export class Collisions {
     });
   }
 
-  // this does the action so checkCollision can remain pure at heart
-  protected handleCollision(player1: Player, player2: Player) {
-    if (this.checkCollision(player1, player2)) {
-      return this.combinePlayers(player1, player2);
-    }
-    return [player1, player2];
-  }
-
   // only deal with horizontal collisions for now
   protected checkCollision(player1: Player, player2: Player) {
-    console.log('checkCollision', player1, player2);
     
     if (!player1 || !player2) {
       return false;
@@ -134,8 +163,7 @@ export class Collisions {
     return false;
   }
 
-  protected combinePlayers(player1: Player, player2: Player) {
-    console.log("COMBINE!");
+  protected combinePlayers(player1: Player, player2: Player): Player[] {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
@@ -148,20 +176,10 @@ export class Collisions {
       ];
     }
 
-    /*
-    const newPlayer = this.jetpack.createNewPlayer(
-      newPlayerType.type,
-      higherPlayer.coords,
-      higherPlayer.direction
-    );
-*/
     const newPlayerParams = Object.assign({}, newPlayerType, {coords: higherPlayer.coords, direction: higherPlayer.direction});
-    
+
     return [
-      player1.modify(newPlayerParams),
-      player2.modify({
-        type: ""
-      })
+      player1.modify(newPlayerParams)
     ];
   }
 }

@@ -189,6 +189,14 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
             }
             return coords.modify({ x: newX, y: newY });
         };
+        Utils.flattenArray = function (arr) {
+            return [].concat.apply([], arr);
+        };
+        Utils.removeDuplicates = function (arr) {
+            return arr.filter(function (value, index, self) {
+                return (self.indexOf(value) === index);
+            });
+        };
         return Utils;
     }());
     exports.Utils = Utils;
@@ -223,7 +231,8 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         value: 1,
         img: "",
         stop: false,
-        lastAction: ""
+        lastAction: "",
+        title: ""
     })));
     exports.Player = Player;
 });
@@ -935,7 +944,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
-define("Collisions", ["require", "exports"], function (require, exports) {
+define("Collisions", ["require", "exports", "immutable", "Utils"], function (require, exports, immutable_6, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Collisions = (function () {
@@ -943,22 +952,48 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             this.playerTypes = playerTypes;
         }
         Collisions.prototype.checkAllCollisions = function (players) {
-            var _this = this;
             var combinations = this.getAllPlayerCombinations(players);
             // only one egg, do nothing
             if (combinations.length === 0) {
                 return players;
             }
-            var newPlayers = [];
-            combinations.reduce(function (currentPlayers, comb) {
-                console.log(comb);
+            var collided = this.findCollisions(combinations, players);
+            var oldPlayers = this.removeCollidedPlayers(collided, players);
+            var newPlayers = this.createNewPlayers(collided, players);
+            return oldPlayers.concat(newPlayers);
+        };
+        // send an array of pairs of player ids, returns all that collide
+        Collisions.prototype.findCollisions = function (combinations, players) {
+            var _this = this;
+            return combinations.filter(function (comb) {
                 var player1 = _this.fetchPlayerByID(players, comb[0]);
                 var player2 = _this.fetchPlayerByID(players, comb[1]);
-                var checkedPlayers = _this.handleCollision(player1, player2);
-                //const newPlayer1 = checkedPlayers[0];
-                //const newPlayer2 = checkedPlayers[1];
-            }, players);
-            return players;
+                return _this.checkCollision(player1, player2);
+            });
+        };
+        // returns all non-collided players
+        // collided is any number of pairs of IDs, ie [[1,3], [3,5]] 
+        Collisions.prototype.removeCollidedPlayers = function (collided, players) {
+            var collidedIDs = Utils_3.Utils.flattenArray(collided);
+            var uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
+            return players.filter(function (player) {
+                if (uniqueIDs.indexOf(player.id) === -1) {
+                    return true;
+                }
+                return false;
+            });
+        };
+        // go through each collided pair and combine the players to create new ones
+        Collisions.prototype.createNewPlayers = function (collided, players) {
+            var _this = this;
+            return collided.reduce(function (newPlayers, collidedIDs) {
+                var player1 = _this.fetchPlayerByID(players, collidedIDs[0]);
+                var player2 = _this.fetchPlayerByID(players, collidedIDs[1]);
+                if (player1 === false || !player2 === false) {
+                    return newPlayers;
+                }
+                return newPlayers.concat(_this.combinePlayers(player1, player2));
+            }, []);
         };
         Collisions.prototype.fetchPlayerByID = function (players, id) {
             var matching = players.filter(function (player) {
@@ -968,34 +1003,34 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                 return false;
             }
             // found one!
-            return matching.first();
+            return matching.slice(0, 1)[0];
         };
         Collisions.prototype.getAllPlayerCombinations = function (players) {
-            var keys = this.getAllPlayerIDs(players);
-            console.log(keys);
-            var combinations = [];
-            for (var i = 0; i < keys.length; i++) {
-                for (var j = i + 1; j < keys.length; j++) {
-                    combinations.push([i, j]);
-                }
+            var _this = this;
+            return players.reduce(function (total, player) {
+                var otherPlayers = players.filter(function (otherPlayer) {
+                    return (player.id < otherPlayer.id);
+                });
+                var combos = otherPlayers.map(function (otherPlayer) {
+                    return [player.id, otherPlayer.id];
+                });
+                return total.concat(_this.cleanCombos(combos));
+            }, []);
+        };
+        // un-immutables values for sanity's sake
+        Collisions.prototype.cleanCombos = function (combo) {
+            if (immutable_6.List.isList(combo)) {
+                return combo.toJS();
             }
-            return combinations;
+            return combo;
         };
         Collisions.prototype.getAllPlayerIDs = function (players) {
             return players.map(function (player) {
                 return player.id;
             });
         };
-        // this does the action so checkCollision can remain pure at heart
-        Collisions.prototype.handleCollision = function (player1, player2) {
-            if (this.checkCollision(player1, player2)) {
-                return this.combinePlayers(player1, player2);
-            }
-            return [player1, player2];
-        };
         // only deal with horizontal collisions for now
         Collisions.prototype.checkCollision = function (player1, player2) {
-            console.log('checkCollision', player1, player2);
             if (!player1 || !player2) {
                 return false;
             }
@@ -1040,7 +1075,6 @@ define("Collisions", ["require", "exports"], function (require, exports) {
             return false;
         };
         Collisions.prototype.combinePlayers = function (player1, player2) {
-            console.log("COMBINE!");
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
             var newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
@@ -1050,19 +1084,9 @@ define("Collisions", ["require", "exports"], function (require, exports) {
                     player2
                 ];
             }
-            /*
-            const newPlayer = this.jetpack.createNewPlayer(
-              newPlayerType.type,
-              higherPlayer.coords,
-              higherPlayer.direction
-            );
-        */
             var newPlayerParams = Object.assign({}, newPlayerType, { coords: higherPlayer.coords, direction: higherPlayer.direction });
             return [
-                player1.modify(newPlayerParams),
-                player2.modify({
-                    type: ""
-                })
+                player1.modify(newPlayerParams)
             ];
         };
         return Collisions;
@@ -1555,7 +1579,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_2, Coords_3, Utils_3) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_2, Coords_3, Utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1578,7 +1602,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], func
             for (var x = startX; x <= endX; x++) {
                 for (var y = startY; y <= endY; y++) {
                     var newCoords = new Coords_3.Coords({ x: x, y: y });
-                    var fixedCoords = Utils_3.Utils.correctForOverflow(newCoords, boardSize);
+                    var fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
             }
@@ -1659,8 +1683,9 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Ma
             var newerGameState = action.checkAllPlayerTileActions(newGameState);
             var collisions = new Collisions_1.Collisions(this.playerTypes);
             var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
-            // this.players = sortedPlayers; // replace with new objects
-            return newerGameState;
+            return newerGameState.modify({
+                players: sortedPlayers
+            });
         };
         // this rotates board and players
         // it DOES NOT do animation - not our problem
@@ -1823,7 +1848,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_5, Canvas_1, Collisions_2, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map_2, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_1, TitleScreen_1, Utils_4) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_5, Canvas_1, Collisions_2, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map_2, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_1, TitleScreen_1, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -1925,7 +1950,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_4.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -2532,7 +2557,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
     }());
     exports.Movement = Movement;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_5, Levels_2, Loader_2, Map_4, Renderer_2, RenderMap_2, TileChooser_1, TileSet_2, Utils_5) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_5, Levels_2, Loader_2, Map_4, Renderer_2, RenderMap_2, TileChooser_1, TileSet_2, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Editor = (function () {
@@ -2653,7 +2678,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }

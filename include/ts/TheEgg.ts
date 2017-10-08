@@ -53,9 +53,9 @@ export class TheEgg {
     const collisions = new Collisions(this.playerTypes);
     const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
 
-    // this.players = sortedPlayers; // replace with new objects
-
-    return newerGameState;
+    return newerGameState.modify({
+      players: sortedPlayers
+    });
   }
 
   // this rotates board and players
