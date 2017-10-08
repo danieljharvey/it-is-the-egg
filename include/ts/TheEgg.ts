@@ -17,8 +17,9 @@ export class TheEgg {
   protected map: Map; // used to hold tile info mostly
   protected playerTypes: object; // used by Collisions
 
-  constructor(map: Map) {
+  constructor(map: Map, playerTypes) {
     this.map = map;
+    this.playerTypes = playerTypes;
   }
 
   public doAction(

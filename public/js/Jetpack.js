@@ -958,9 +958,23 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
                 return players;
             }
             var collided = this.findCollisions(combinations, players);
+            if (collided.length === 0) {
+                return players;
+            }
             var oldPlayers = this.removeCollidedPlayers(collided, players);
             var newPlayers = this.createNewPlayers(collided, players);
-            return oldPlayers.concat(newPlayers);
+            var allPlayers = this.combinePlayerLists(oldPlayers, newPlayers);
+            return allPlayers;
+        };
+        Collisions.prototype.combinePlayerLists = function (oldPlayers, newPlayers) {
+            var allPlayers = [];
+            oldPlayers.map(function (player) {
+                allPlayers.push(player);
+            });
+            newPlayers.map(function (player) {
+                allPlayers.push(player);
+            });
+            return immutable_6.fromJS(allPlayers);
         };
         // send an array of pairs of player ids, returns all that collide
         Collisions.prototype.findCollisions = function (combinations, players) {
@@ -989,10 +1003,11 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
             return collided.reduce(function (newPlayers, collidedIDs) {
                 var player1 = _this.fetchPlayerByID(players, collidedIDs[0]);
                 var player2 = _this.fetchPlayerByID(players, collidedIDs[1]);
-                if (player1 === false || !player2 === false) {
+                if (player1 === false || player2 === false) {
                     return newPlayers;
                 }
-                return newPlayers.concat(_this.combinePlayers(player1, player2));
+                var newOnes = _this.combinePlayers(player1, player2);
+                return newPlayers.concat(newOnes);
             }, []);
         };
         Collisions.prototype.fetchPlayerByID = function (players, id) {
@@ -1002,7 +1017,12 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
             if (matching.length === 0) {
                 return false;
             }
-            // found one!
+            // we've found one then
+            if (immutable_6.List.isList(matching)) {
+                // Immutable List
+                return matching.first();
+            }
+            // array
             return matching.slice(0, 1)[0];
         };
         Collisions.prototype.getAllPlayerCombinations = function (players) {
@@ -1067,7 +1087,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
             }
         };
         Collisions.prototype.getPlayerByValue = function (playerTypes, value) {
-            for (var i in this.playerTypes) {
+            for (var i in playerTypes) {
                 if (playerTypes[i].value === value) {
                     return playerTypes[i];
                 }
@@ -1077,7 +1097,9 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
         Collisions.prototype.combinePlayers = function (player1, player2) {
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
+            console.log('combinePlayers', newValue, higherPlayer, this.playerTypes);
             var newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
+            console.log(newPlayerType);
             if (!newPlayerType) {
                 return [
                     player1,
@@ -1656,8 +1678,9 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Ma
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TheEgg = (function () {
-        function TheEgg(map) {
+        function TheEgg(map, playerTypes) {
             this.map = map;
+            this.playerTypes = playerTypes;
         }
         TheEgg.prototype.doAction = function (gameState, action, timePassed) {
             if (action === "rotateLeft") {

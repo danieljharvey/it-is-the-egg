@@ -1,5 +1,5 @@
 import { Coords } from "./Coords";
-import { List, toJS } from "immutable";
+import { List, toJS, fromJS } from "immutable";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
@@ -24,11 +24,28 @@ export class Collisions {
 
     const collided = this.findCollisions(combinations, players);
 
+    if (collided.length === 0) {
+      return players;
+    }
+
     const oldPlayers = this.removeCollidedPlayers(collided, players);
 
     const newPlayers = this.createNewPlayers(collided, players);
 
-    return oldPlayers.concat(newPlayers);
+    const allPlayers = this.combinePlayerLists(oldPlayers, newPlayers)
+
+    return allPlayers;
+  }
+
+  protected combinePlayerLists(oldPlayers: Player[], newPlayers: Player[]): Player[] {
+    const allPlayers = [];
+    oldPlayers.map(player => {
+      allPlayers.push(player);
+    });
+    newPlayers.map(player => {
+      allPlayers.push(player);
+    })
+    return fromJS(allPlayers);
   }
 
   // send an array of pairs of player ids, returns all that collide
@@ -59,10 +76,11 @@ export class Collisions {
     return collided.reduce((newPlayers, collidedIDs) => {
       const player1 = this.fetchPlayerByID(players, collidedIDs[0]);
       const player2 = this.fetchPlayerByID(players, collidedIDs[1]);
-      if (player1 === false || !player2 === false) {
+      if (player1 === false || player2 === false) {
         return newPlayers;
       }
-      return newPlayers.concat(this.combinePlayers(player1, player2));
+      const newOnes = this.combinePlayers(player1, player2);
+      return newPlayers.concat(newOnes);
     }, []);
   }
 
@@ -75,8 +93,14 @@ export class Collisions {
       return false;
     }
 
-    // found one!
-    return matching.slice(0,1)[0];
+    // we've found one then
+
+    if (List.isList(matching)) {
+      // Immutable List
+      return matching.first();
+    }
+    // array
+    return matching.slice(0,1)[0];  
   }
 
   protected getAllPlayerCombinations(players: Player[]): number[][] {
@@ -108,7 +132,7 @@ export class Collisions {
 
   // only deal with horizontal collisions for now
   protected checkCollision(player1: Player, player2: Player) {
-    
+
     if (!player1 || !player2) {
       return false;
     }
@@ -155,7 +179,7 @@ export class Collisions {
   }
 
   protected getPlayerByValue(playerTypes, value: number) {
-    for (const i in this.playerTypes) {
+    for (const i in playerTypes) {
       if (playerTypes[i].value === value) {
         return playerTypes[i];
       }
@@ -167,7 +191,11 @@ export class Collisions {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
+    console.log('combinePlayers', newValue, higherPlayer, this.playerTypes);
+
     const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
+    
+    console.log(newPlayerType);
 
     if (!newPlayerType) {
       return [
