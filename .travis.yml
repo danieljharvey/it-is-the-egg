@@ -8,6 +8,7 @@ php:
 before_script:
  - cd include
  - composer install
+ - cd ..
 
 script:
  - phpunit include/modules/tests/*.php
