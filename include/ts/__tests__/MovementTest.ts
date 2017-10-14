@@ -40,8 +40,8 @@ test("change frame right", () => {
 
 test("Calculate move amount", () => {
   const player = new Player();
-  expect(movement.calcMoveAmount(10, 10)).toEqual(5);
-  expect(movement.calcMoveAmount(10, 20)).toEqual(10);
+  expect(Movement.calcMoveAmount(10, 10)).toEqual(5);
+  expect(Movement.calcMoveAmount(10, 20)).toEqual(10);
 });
 
 test("Egg with no speed stays still", () => {
@@ -57,7 +57,7 @@ test("Egg with no speed stays still", () => {
 });
 
 test("Stop broken tilesize ruining everything", () => {
-  expect(movement.calcMoveAmount(5, undefined, 3)).toEqual(0);
+  expect(Movement.calcMoveAmount(5, undefined, 3)).toEqual(0);
 });
 
 test("Overflow remains the same", () => {
