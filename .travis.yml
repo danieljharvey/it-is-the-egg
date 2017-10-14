@@ -5,7 +5,8 @@ php:
     - '7.1'
     - nightly
 
-before_script: composer install
+before_script:
+  - composer install ./include/
 
 script:
  - phpunit include/modules/tests/*.php
