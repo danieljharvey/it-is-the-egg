@@ -13,6 +13,8 @@ import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 
+import { is } from "immutable";
+
 export class TheEgg {
   protected map: Map; // used to hold tile info mostly
   protected playerTypes: object; // used by Collisions

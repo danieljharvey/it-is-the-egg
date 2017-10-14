@@ -43,7 +43,7 @@ export class Action {
   ): { outcome: string; board: Board; score: number } {
     const currentCoords = player.coords;
 
-    if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
+    if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0 || player.moved === false) {
       return {
         board,
         outcome,

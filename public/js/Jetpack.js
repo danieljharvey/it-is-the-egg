@@ -8,7 +8,36 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-define("Board", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
+define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Tile = (function (_super) {
+        __extends(Tile, _super);
+        function Tile(params) {
+            var _this = this;
+            params ? _this = _super.call(this, params) || this : _this = _super.call(this) || this;
+            return _this;
+        }
+        Tile.prototype.modify = function (values) {
+            return this.merge(values);
+        };
+        return Tile;
+    }(immutable_1.Record({
+        id: 0,
+        title: "Title",
+        background: false,
+        frontLayer: false,
+        collectable: 0,
+        breakable: false,
+        action: "",
+        dontAdd: false,
+        createPlayer: "",
+        x: 0,
+        y: 0
+    })));
+    exports.Tile = Tile;
+});
+define("Board", ["require", "exports", "immutable"], function (require, exports, immutable_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // new board is built from JS array
@@ -17,7 +46,7 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
         function Board(values, list) {
             if (list === void 0) { list = null; }
             if (values) {
-                this.list = immutable_1.fromJS(values); // create new
+                this.list = immutable_2.fromJS(values); // create new
             }
             else {
                 this.list = list; // re-use old
@@ -43,7 +72,7 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
     }());
     exports.Board = Board;
 });
-define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_2) {
+define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // import { Utils } from "./Utils";
@@ -67,7 +96,7 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
             };
         };
         return Coords;
-    }(immutable_2.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 })));
+    }(immutable_3.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 })));
     exports.Coords = Coords;
 });
 define("BoardSize", ["require", "exports"], function (require, exports) {
@@ -194,14 +223,14 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
         };
         Utils.removeDuplicates = function (arr) {
             return arr.filter(function (value, index, self) {
-                return (self.indexOf(value) === index);
+                return self.indexOf(value) === index;
             });
         };
         return Utils;
     }());
     exports.Utils = Utils;
 });
-define("Player", ["require", "exports", "immutable", "Coords"], function (require, exports, immutable_3, Coords_1) {
+define("Player", ["require", "exports", "immutable", "Coords"], function (require, exports, immutable_4, Coords_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
@@ -215,8 +244,11 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         Player.prototype.modify = function (values) {
             return this.merge(values);
         };
+        Player.prototype.first = function () {
+            return this.first();
+        };
         return Player;
-    }(immutable_3.Record({
+    }(immutable_4.Record({
         coords: new Coords_1.Coords(),
         direction: 0,
         oldDirection: 0,
@@ -232,11 +264,12 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         img: "",
         stop: false,
         lastAction: "",
-        title: ""
+        title: "",
+        moved: false
     })));
     exports.Player = Player;
 });
-define("GameState", ["require", "exports", "immutable"], function (require, exports, immutable_4) {
+define("GameState", ["require", "exports", "immutable"], function (require, exports, immutable_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var GameState = (function (_super) {
@@ -250,7 +283,7 @@ define("GameState", ["require", "exports", "immutable"], function (require, expo
             return this.merge(values);
         };
         return GameState;
-    }(immutable_4.Record({
+    }(immutable_5.Record({
         board: null,
         players: [],
         score: 0,
@@ -259,35 +292,6 @@ define("GameState", ["require", "exports", "immutable"], function (require, expo
         outcome: ""
     })));
     exports.GameState = GameState;
-});
-define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_5) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Tile = (function (_super) {
-        __extends(Tile, _super);
-        function Tile(params) {
-            var _this = this;
-            params ? _this = _super.call(this, params) || this : _this = _super.call(this) || this;
-            return _this;
-        }
-        Tile.prototype.modify = function (values) {
-            return this.merge(values);
-        };
-        return Tile;
-    }(immutable_5.Record({
-        id: 0,
-        title: "Title",
-        background: false,
-        frontLayer: false,
-        collectable: 0,
-        breakable: false,
-        action: "",
-        dontAdd: false,
-        createPlayer: "",
-        x: 0,
-        y: 0
-    })));
-    exports.Tile = Tile;
 });
 define("TileSet", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -739,7 +743,7 @@ define("Action", ["require", "exports"], function (require, exports) {
         };
         Action.prototype.checkPlayerTileAction = function (player, board, score, outcome) {
             var currentCoords = player.coords;
-            if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
+            if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0 || player.moved === false) {
                 return {
                     board: board,
                     outcome: outcome,
@@ -796,7 +800,7 @@ define("Action", ["require", "exports"], function (require, exports) {
             var coords = player.coords;
             var belowCoords = this.map.correctForOverflow(coords.modify({ y: coords.y + 1 }));
             var tile = board.getTile(belowCoords.x, belowCoords.y);
-            if (tile.get('breakable') === true) {
+            if (tile.get("breakable") === true) {
                 // if tile below is breakable (and we are already falling and thus have momentum, smash it)
                 var newTile = this.map.cloneTile(1);
                 var newTileWithCoords = newTile.modify({
@@ -986,7 +990,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
             });
         };
         // returns all non-collided players
-        // collided is any number of pairs of IDs, ie [[1,3], [3,5]] 
+        // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
         Collisions.prototype.removeCollidedPlayers = function (collided, players) {
             var collidedIDs = Utils_3.Utils.flattenArray(collided);
             var uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
@@ -1003,7 +1007,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
             return collided.reduce(function (newPlayers, collidedIDs) {
                 var player1 = _this.fetchPlayerByID(players, collidedIDs[0]);
                 var player2 = _this.fetchPlayerByID(players, collidedIDs[1]);
-                if (player1 === false || player2 === false) {
+                if (player1 === null || player2 === null) {
                     return newPlayers;
                 }
                 var newOnes = _this.combinePlayers(player1, player2);
@@ -1012,10 +1016,10 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
         };
         Collisions.prototype.fetchPlayerByID = function (players, id) {
             var matching = players.filter(function (player) {
-                return (player.id === id);
+                return player.id === id;
             });
             if (matching.length === 0) {
-                return false;
+                return null;
             }
             // we've found one then
             if (immutable_6.List.isList(matching)) {
@@ -1029,7 +1033,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
             var _this = this;
             return players.reduce(function (total, player) {
                 var otherPlayers = players.filter(function (otherPlayer) {
-                    return (player.id < otherPlayer.id);
+                    return player.id < otherPlayer.id;
                 });
                 var combos = otherPlayers.map(function (otherPlayer) {
                     return [player.id, otherPlayer.id];
@@ -1097,19 +1101,15 @@ define("Collisions", ["require", "exports", "immutable", "Utils"], function (req
         Collisions.prototype.combinePlayers = function (player1, player2) {
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            console.log('combinePlayers', newValue, higherPlayer, this.playerTypes);
             var newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
-            console.log(newPlayerType);
             if (!newPlayerType) {
-                return [
-                    player1,
-                    player2
-                ];
+                return [player1, player2];
             }
-            var newPlayerParams = Object.assign({}, newPlayerType, { coords: higherPlayer.coords, direction: higherPlayer.direction });
-            return [
-                player1.modify(newPlayerParams)
-            ];
+            var newPlayerParams = Object.assign({}, newPlayerType, {
+                coords: higherPlayer.coords,
+                direction: higherPlayer.direction
+            });
+            return [player1.modify(newPlayerParams)];
         };
         return Collisions;
     }());
@@ -2209,7 +2209,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
         Jetpack.prototype.getCollectable = function (board) {
             var tiles = board.getAllTiles();
             return tiles.reduce(function (collectable, tile) {
-                var score = tile.get('collectable');
+                var score = tile.get("collectable");
                 if (score > 0) {
                     return collectable + score;
                 }
@@ -2304,7 +2304,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
     }());
     exports.Jetpack = Jetpack;
 });
-define("Movement", ["require", "exports", "BoardSize", "Map"], function (require, exports, BoardSize_6, Map_3) {
+define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutable"], function (require, exports, _, BoardSize_6, Map_3, immutable_7) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var OFFSET_DIVIDE = 100;
@@ -2357,7 +2357,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
             return coords;
         };
         // only public so it can be tested, please don't use outside of here
-        Movement.prototype.checkFloorBelowPlayer = function (player, board, timePassed) {
+        Movement.prototype.checkFloorBelowPlayer = function (board, timePassed, player) {
             if (player.coords.offsetX !== 0) {
                 return player;
             }
@@ -2371,7 +2371,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
                     falling: true
                 });
             }
-            if (tile.get('breakable') === true && player.falling) {
+            if (tile.get("breakable") === true && player.falling) {
                 return player; // allow player to keep falling through breakable tile
             }
             // solid ground, stop falling
@@ -2379,18 +2379,56 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
                 falling: false
             });
         };
+        Movement.calcMoveAmount = function (moveSpeed, timePassed) {
+            var moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
+            var frameRateAdjusted = moveAmount * timePassed;
+            if (isNaN(frameRateAdjusted)) {
+                return 0;
+            }
+            return frameRateAdjusted;
+        };
+        // curry and compose together a nice pipeline function to transform old player state into new
+        Movement.prototype.getCalcFunction = function (oldPlayer, board, timePassed) {
+            var checkFloorBelowPlayer = _.curry(this.checkFloorBelowPlayer);
+            var checkPlayerDirection = _.curry(this.checkPlayerDirection);
+            var incrementPlayerDirection = _.curry(this.incrementPlayerDirection);
+            var checkForMovementTiles = _.curry(this.checkForMovementTiles);
+            var markPlayerAsMoved = _.curry(this.markPlayerAsMoved);
+            return _.compose(markPlayerAsMoved(oldPlayer), checkForMovementTiles(board), this.correctPlayerOverflow, incrementPlayerDirection(board), checkPlayerDirection(board), checkFloorBelowPlayer(board, timePassed), this.incrementPlayerFrame);
+        };
         Movement.prototype.doPlayerCalcs = function (player, board, timePassed) {
-            // TODO - compose the fucking shit out of this
+            // this is great but curried functions lose context, so need to get rid of 'this'
+            // inside them (which is fine really - need to classes like Map into stateless modules anyhow)
+            /*const playerCalcFn = this.getCalcFunction(player, board, timePassed);
+        
+            return playerCalcFn(player);*/
             var newPlayer = this.incrementPlayerFrame(player);
-            var newerPlayer = this.checkFloorBelowPlayer(newPlayer, board, timePassed);
-            var checkedPlayer = this.checkPlayerDirection(newerPlayer, board);
+            var newerPlayer = this.checkFloorBelowPlayer(board, timePassed, newPlayer);
+            var checkedPlayer = this.checkPlayerDirection(board, newerPlayer);
             var evenNewerPlayer = this.incrementPlayerDirection(timePassed, checkedPlayer);
             var newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
             // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
-            var maybeTeleportedPlayer = this.checkForMovementTiles(newestPlayer, board);
-            return maybeTeleportedPlayer;
+            var maybeTeleportedPlayer = this.checkForMovementTiles(board, newestPlayer);
+            var markedAsMovedPlayer = this.markPlayerAsMoved(player, maybeTeleportedPlayer);
+            return markedAsMovedPlayer;
         };
-        Movement.prototype.checkForMovementTiles = function (player, board) {
+        // work out whether player's location has moved since last go
+        Movement.prototype.markPlayerAsMoved = function (oldPlayer, newPlayer) {
+            if (this.playerHasMoved(oldPlayer, newPlayer)) {
+                return newPlayer.modify({
+                    moved: true
+                });
+            }
+            return newPlayer.modify({
+                moved: false
+            });
+        };
+        // works out whether Player has actually moved since last go
+        // used to decide whether to do an action to stop static players hitting switches infinitely etc
+        Movement.prototype.playerHasMoved = function (oldPlayer, newPlayer) {
+            return (!immutable_7.is(oldPlayer.coords, newPlayer.coords));
+        };
+        Movement.prototype.checkForMovementTiles = function (board, player) {
             var currentCoords = player.coords;
             if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
                 return player;
@@ -2405,7 +2443,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
         // find another teleport and go to it
         // if no others, do nothing
         Movement.prototype.teleport = function (player, board) {
-            if (player.lastAction === 'teleport') {
+            if (player.lastAction === "teleport") {
                 return player;
             }
             var newTile = this.map.findTile(board, player.coords, 14);
@@ -2454,7 +2492,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
             });
         };
         // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-        Movement.prototype.checkPlayerDirection = function (player, board) {
+        Movement.prototype.checkPlayerDirection = function (board, player) {
             var coords = player.coords;
             if (player.direction !== 0 && player.falling === false) {
                 if (!this.map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
@@ -2496,7 +2534,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
         Movement.prototype.incrementPlayerDirection = function (timePassed, player) {
             // falling is priority - do this if a thing
             if (player.falling) {
-                var fallAmount = this.calcMoveAmount(player.fallSpeed, timePassed);
+                var fallAmount = Movement.calcMoveAmount(player.fallSpeed, timePassed);
                 var newOffsetY = player.coords.offsetX + fallAmount;
                 var newCoords = player.coords.modify({
                     offsetY: player.coords.offsetY + fallAmount
@@ -2509,7 +2547,7 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
                 // we are still, no need for movement
                 return player;
             }
-            var moveAmount = this.calcMoveAmount(player.moveSpeed, timePassed);
+            var moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
             var coords = player.coords;
             if (player.direction < 0) {
                 // move left
@@ -2553,18 +2591,11 @@ define("Movement", ["require", "exports", "BoardSize", "Map"], function (require
             // do nothing, return same object
             return player;
         };
-        Movement.prototype.calcMoveAmount = function (moveSpeed, timePassed) {
-            var moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
-            var frameRateAdjusted = moveAmount * timePassed;
-            if (isNaN(frameRateAdjusted)) {
-                return 0;
-            }
-            return frameRateAdjusted;
-        };
         Movement.prototype.correctPlayerOverflow = function (player) {
             var newCoords = this.correctTileOverflow(player.coords);
             var loopedCoords = this.map.correctForOverflow(newCoords);
-            if (loopedCoords.x !== player.coords.x || loopedCoords.y !== player.coords.y) {
+            if (loopedCoords.x !== player.coords.x ||
+                loopedCoords.y !== player.coords.y) {
                 // if we've actually moved, then
                 return player.modify({
                     coords: loopedCoords,

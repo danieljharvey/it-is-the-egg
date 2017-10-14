@@ -1,5 +1,5 @@
 import { Coords } from "./Coords";
-import { List, toJS, fromJS } from "immutable";
+import { List, fromJS } from "immutable";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
@@ -84,7 +84,7 @@ export class Collisions {
     return collided.reduce((newPlayers, collidedIDs) => {
       const player1 = this.fetchPlayerByID(players, collidedIDs[0]);
       const player2 = this.fetchPlayerByID(players, collidedIDs[1]);
-      if (player1 === false || player2 === false) {
+      if (player1 === null || player2 === null) {
         return newPlayers;
       }
       const newOnes = this.combinePlayers(player1, player2);
@@ -92,13 +92,13 @@ export class Collisions {
     }, []);
   }
 
-  protected fetchPlayerByID(players: Player[], id: number): Player | boolean {
+  protected fetchPlayerByID(players: Player[], id: number): Player {
     const matching = players.filter(player => {
       return player.id === id;
     });
 
     if (matching.length === 0) {
-      return false;
+      return null;
     }
 
     // we've found one then
@@ -197,11 +197,7 @@ export class Collisions {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    console.log("combinePlayers", newValue, higherPlayer, this.playerTypes);
-
     const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
-
-    console.log(newPlayerType);
 
     if (!newPlayerType) {
       return [player1, player2];

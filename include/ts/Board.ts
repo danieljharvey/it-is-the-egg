@@ -1,12 +1,13 @@
 import { fromJS, List } from "immutable";
+import { Tile } from "./Tile";
 
 // new board is built from JS array
 // all changes reuse the re-generated List object
 
 export class Board {
-  protected list: List;
+  protected list: List<List<Tile>>;
 
-  constructor(values: array, list: List = null) {
+  constructor(values: any[], list: List<List<Tile>> = null) {
     if (values) {
       this.list = fromJS(values); // create new
     } else {

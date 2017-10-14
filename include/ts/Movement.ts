@@ -8,6 +8,8 @@ import { Map } from "./Map";
 import { Player } from "./Player";
 import { Renderer } from "./Renderer";
 
+import { is } from "immutable";
+
 const OFFSET_DIVIDE: number = 100;
 
 // movement takes the current map, the current players, and returns new player objects
@@ -69,9 +71,9 @@ export class Movement {
 
   // only public so it can be tested, please don't use outside of here
   public checkFloorBelowPlayer(
-    player: Player,
     board: Board,
-    timePassed: number
+    timePassed: number,
+    player: Player
   ): Player {
     if (player.coords.offsetX !== 0) {
       return player;
@@ -104,22 +106,55 @@ export class Movement {
     });
   }
 
+  public static calcMoveAmount(moveSpeed: number, timePassed: number): number {
+    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
+    const frameRateAdjusted: number = moveAmount * timePassed;
+    if (isNaN(frameRateAdjusted)) {
+      return 0;
+    }
+    return frameRateAdjusted;
+  }
+
+  // curry and compose together a nice pipeline function to transform old player state into new
+  protected getCalcFunction(oldPlayer: Player, board: Board, timePassed: number) {
+    const checkFloorBelowPlayer = _.curry(this.checkFloorBelowPlayer);
+    const checkPlayerDirection = _.curry(this.checkPlayerDirection);
+    const incrementPlayerDirection = _.curry(this.incrementPlayerDirection);
+    const checkForMovementTiles = _.curry(this.checkForMovementTiles);
+    const markPlayerAsMoved = _.curry(this.markPlayerAsMoved);
+
+    return _.compose(
+      markPlayerAsMoved(oldPlayer),
+      checkForMovementTiles(board),
+      this.correctPlayerOverflow,
+      incrementPlayerDirection(board),
+      checkPlayerDirection(board),
+      checkFloorBelowPlayer(board, timePassed),
+      this.incrementPlayerFrame
+     );
+  }
+
   protected doPlayerCalcs(
     player: Player,
     board: Board,
     timePassed: number
   ): Player {
-    // TODO - compose the fucking shit out of this
 
+    // this is great but curried functions lose context, so need to get rid of 'this'
+    // inside them (which is fine really - need to classes like Map into stateless modules anyhow)
+    /*const playerCalcFn = this.getCalcFunction(player, board, timePassed);
+
+    return playerCalcFn(player);*/
+    
     const newPlayer = this.incrementPlayerFrame(player);
 
     const newerPlayer = this.checkFloorBelowPlayer(
-      newPlayer,
       board,
-      timePassed
+      timePassed,
+      newPlayer
     );
 
-    const checkedPlayer = this.checkPlayerDirection(newerPlayer, board);
+    const checkedPlayer = this.checkPlayerDirection(board,newerPlayer);
 
     const evenNewerPlayer = this.incrementPlayerDirection(
       timePassed,
@@ -131,14 +166,34 @@ export class Movement {
     // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
 
     const maybeTeleportedPlayer = this.checkForMovementTiles(
-      newestPlayer,
-      board
+      board,
+      newestPlayer
     );
 
-    return maybeTeleportedPlayer;
+    const markedAsMovedPlayer = this.markPlayerAsMoved(player, maybeTeleportedPlayer);
+
+    return markedAsMovedPlayer;
   }
 
-  protected checkForMovementTiles(player: Player, board: Board): Player {
+  // work out whether player's location has moved since last go
+  protected markPlayerAsMoved(oldPlayer: Player, newPlayer: Player) : Player {
+    if (this.playerHasMoved(oldPlayer, newPlayer)) {
+      return newPlayer.modify({
+        moved: true
+      });
+    }
+    return newPlayer.modify({
+      moved: false
+    })
+  }
+
+  // works out whether Player has actually moved since last go
+  // used to decide whether to do an action to stop static players hitting switches infinitely etc
+  protected playerHasMoved(oldPlayer: Player, newPlayer: Player) : boolean {
+    return (!is(oldPlayer.coords, newPlayer.coords));
+  }
+
+  protected checkForMovementTiles(board: Board, player: Player): Player {
     const currentCoords = player.coords;
 
     if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
@@ -217,7 +272,7 @@ export class Movement {
   }
 
   // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-  protected checkPlayerDirection(player: Player, board: Board): Player {
+  protected checkPlayerDirection(board: Board, player: Player): Player {
     const coords = player.coords;
 
     if (player.direction !== 0 && player.falling === false) {
@@ -269,7 +324,7 @@ export class Movement {
   ): Player {
     // falling is priority - do this if a thing
     if (player.falling) {
-      const fallAmount: number = this.calcMoveAmount(
+      const fallAmount: number = Movement.calcMoveAmount(
         player.fallSpeed,
         timePassed
       );
@@ -287,7 +342,7 @@ export class Movement {
       return player;
     }
 
-    const moveAmount = this.calcMoveAmount(player.moveSpeed, timePassed);
+    const moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
 
     const coords = player.coords;
 
@@ -337,14 +392,7 @@ export class Movement {
     return player;
   }
 
-  protected calcMoveAmount(moveSpeed: number, timePassed: number): number {
-    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
-    const frameRateAdjusted: number = moveAmount * timePassed;
-    if (isNaN(frameRateAdjusted)) {
-      return 0;
-    }
-    return frameRateAdjusted;
-  }
+  
 
   protected correctPlayerOverflow(player: Player): Player {
     const newCoords = this.correctTileOverflow(player.coords);
