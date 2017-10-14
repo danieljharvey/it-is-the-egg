@@ -1,16 +1,13 @@
 import { BoardSize } from "./BoardSize";
-import { Jetpack } from "./Jetpack";
 import { Loader } from "./Loader";
 import { SavedLevel } from "./SavedLevel";
 
 export class Levels {
   public levelID: number = 0;
   protected levels: object = {};
-  protected jetpack: Jetpack;
   protected loader: Loader;
 
-  constructor(jetpack: Jetpack, loader: Loader) {
-    this.jetpack = jetpack;
+  constructor(loader: Loader) {
     this.loader = loader;
   }
 

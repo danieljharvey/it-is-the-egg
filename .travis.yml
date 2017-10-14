@@ -1,0 +1,20 @@
+language: php
+
+php:
+    - '7.0'
+    - '7.1'
+    - nightly
+
+before_script:
+ - cd include
+ - composer install
+ - cd ..
+
+script:
+ - phpunit include/modules/tests/*.php
+ - npm install
+ - npm test
+
+node_js:
+ - "7"
+ - "8"

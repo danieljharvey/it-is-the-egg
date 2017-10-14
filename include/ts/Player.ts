@@ -16,10 +16,12 @@ interface IPlayerParams {
   type?: string;
   moveSpeed?: number;
   fallSpeed?: number;
-  lastAction?: string;
   value?: number;
   img?: string;
   stop?: boolean;
+  lastAction?: string;
+  title?: string;
+  moved?: boolean;
 }
 
 export class Player extends Record({
@@ -34,10 +36,12 @@ export class Player extends Record({
   type: "egg",
   moveSpeed: 1,
   fallSpeed: 1,
-  lastAction: "",
   value: 1,
   img: "",
-  stop: false
+  stop: false,
+  lastAction: "",
+  title: "",
+  moved: false
 }) {
   public coords: Coords;
   public direction: number;
@@ -50,10 +54,12 @@ export class Player extends Record({
   public type: string;
   public moveSpeed: number;
   public fallSpeed: number;
-  public lastAction: string;
   public value: number;
   public img: string;
   public stop: boolean;
+  public lastAction: string;
+  public title: string;
+  public moved: boolean;
 
   constructor(params?: IPlayerParams) {
     params ? super(params) : super();
@@ -61,5 +67,9 @@ export class Player extends Record({
 
   public modify(values: IPlayerParams) {
     return this.merge(values) as this;
+  }
+
+  public first() {
+    return this.first();
   }
 }

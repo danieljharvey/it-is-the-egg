@@ -15,22 +15,24 @@ export class BoardSize {
     this.width = this.height = size;
   }
 
-  public grow(): void {
+  public grow(): BoardSize {
     if (this.width < this.maxSize) {
       this.width++;
     }
     if (this.height < this.maxSize) {
       this.height++;
     }
+    return new BoardSize(this.width);
   }
 
-  public shrink(): void {
+  public shrink(): BoardSize {
     if (this.width > this.minSize) {
       this.width--;
     }
     if (this.height > this.minSize) {
       this.height--;
     }
+    return new BoardSize(this.width);
   }
 
   public getData() {

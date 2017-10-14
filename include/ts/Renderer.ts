@@ -1,3 +1,4 @@
+import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Coords } from "./Coords";
@@ -20,6 +21,8 @@ export class Renderer {
   protected boardSize: BoardSize;
   protected canvas: Canvas;
 
+  protected animationHandle: number; // used only in rotations
+
   protected lampMode: boolean = false; // lamp mode only draws around the eggs
 
   protected renderMap: boolean[][]; // map of screen with whether it needs rendering
@@ -29,111 +32,89 @@ export class Renderer {
   protected tileImages: object = {}; // image elements of tiles
   protected playerImages: object = {}; // image element of players
 
+  protected rotating: boolean;
+
+  protected loadCallback: () => void; // call this when all the tiles are loaded
+  protected totalTiles: number = 0;
+  protected tilesLoaded: number = 0;
+
   constructor(
     jetpack: Jetpack,
-    map: Map,
     tiles: object,
     playerTypes: object,
     boardSize: BoardSize,
-    canvas: Canvas
+    canvas: Canvas,
+    loadCallback: () => void
   ) {
     this.jetpack = jetpack;
-    this.map = map;
     this.tiles = tiles;
     this.playerTypes = playerTypes;
     this.boardSize = boardSize;
     this.canvas = canvas;
-    this.loadTilePalette();
+    this.loadCallback = loadCallback;
+    this.loadTilePalette(tiles);
     this.loadPlayerPalette();
-    this.renderMap = this.createRenderMap(boardSize);
   }
 
-  public render() {
+  public render(
+    board: Board,
+    renderMap: boolean[][],
+    players: Player[],
+    renderAngle: number
+  ) {
+    //console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
-    this.renderBoard();
-    this.renderPlayers();
-    this.renderFrontLayerBoard();
+    this.renderBoard(board, renderMap, renderAngle);
+    this.renderPlayers(players);
+    this.renderFrontLayerBoard(board, renderMap, renderAngle);
   }
 
-  public resize() {
-    this.tileSize = this.canvas.sizeCanvas(this.boardSize);
-    this.renderMap = this.createRenderMap(this.boardSize); // re-create render map
+  public resize(boardSize: BoardSize) {
+    this.boardSize = boardSize;
+    this.tileSize = this.canvas.sizeCanvas(boardSize);
   }
 
-  public drawRotatingBoard(clockwise: boolean, completed: () => void) {
-    this.renderMap = this.createRenderMap(this.boardSize); // set redraw on everything to GREAT
+  public drawRotatingBoard(
+    clockwise: boolean,
+    moveSpeed: number,
+    completed: () => void
+  ) {
+    if (this.rotating === true) {
+      // already
+      return false;
+    }
 
     const canvas = this.canvas.getCanvas();
+    const savedData = this.getImageData(canvas);
+    this.rotating = true;
 
+    if (clockwise) {
+      this.drawRotated(savedData, 1, 0, 90, moveSpeed, completed);
+    } else {
+      this.drawRotated(savedData, -1, 0, -90, moveSpeed, completed);
+    }
+  }
+
+  protected getImageData(canvas: HTMLCanvasElement): HTMLImageElement {
     const cw = canvas.width;
     const ch = canvas.height;
 
     const savedData = new Image();
     savedData.src = canvas.toDataURL("image/png");
 
-    if (clockwise) {
-      this.drawRotated(savedData, 1, 0, 90, completed);
-    } else {
-      this.drawRotated(savedData, -1, 0, -90, completed);
-    }
+    return savedData;
   }
 
   public getTileImagePath(tile: Tile): string {
     return this.canvas.imagesFolder + tile.img;
   }
 
-  public setRenderMap(value: boolean, x: number, y: number) {
-    const coords = new Coords({ x, y });
-
-    const fixedCoords = Utils.correctForOverflow(coords, this.boardSize);
-    this.renderMap[fixedCoords.x][fixedCoords.y] = value;
-  }
-
-  public getRenderMapValue(x: number, y: number): boolean {
-    return this.renderMap[x][y];
-  }
-
-  // create new render map where every tile needs redrawing
-  public createRenderMap(boardSize: BoardSize) {
-    const renderMap = [];
-    for (let x = 0; x < boardSize.width; x++) {
-      renderMap[x] = [];
-      for (let y = 0; y < boardSize.height; y++) {
-        renderMap[x][y] = !this.lampMode;
-      }
-    }
-    return renderMap;
-  }
-
-  public markPlayerRedraw(coords: Coords) {
-    const startX = coords.x - 1; // coords.offsetX !== 0 ? coords.x - 1 : coords.x;
-    const endX = coords.x + 1; // coords.offsetX !== 0 ? coords.x + 1 : coords.x;
-
-    const startY = coords.y - 1; // coords.offsetY !== 0 ? coords.y - 1 : coords.y;
-    const endY = coords.y + 1; // coords.offsetY !== 0 ? coords.y + 1 : coords.y;
-
-    for (let x = startX; x <= endX; x++) {
-      for (let y = startY; y <= endY; y++) {
-        this.setRenderMap(true, x, y);
-      }
-    }
-    this.addExtraRedraws(coords);
-  }
-
-  // if in night time mode randomly glow a few tiles around the players too because that'll be nice
-  protected addExtraRedraws(coords: Coords) {
-    if (!this.lampMode) {
-      return false;
-    }
-    const randX = Math.floor(Math.random() * 2 - 1);
-    const randY = Math.floor(Math.random() * 2 - 1);
-    this.setRenderMap(true, coords.x + randX, coords.y + randY);
-  }
-
-  protected loadTilePalette() {
-    for (const i in this.tiles) {
-      if (this.tiles[i] !== undefined) {
-        const thisTile = this.tiles[i];
+  protected loadTilePalette(tiles) {
+    this.totalTiles = this.tilesLoaded = 0;
+    for (const i in tiles) {
+      if (tiles[i] !== undefined) {
+        this.totalTiles++;
+        const thisTile = tiles[i];
         const tileImage = document.createElement("img");
         tileImage.setAttribute("src", this.getTileImagePath(thisTile));
         tileImage.setAttribute("width", SPRITE_SIZE.toString());
@@ -179,47 +160,55 @@ export class Renderer {
   }
 
   protected markTileImageAsLoaded(id: number) {
+    this.tilesLoaded++;
     this.tileImages[id].ready = true;
+    if (this.tilesLoaded === this.totalTiles) {
+      this.loadCallback(); // we are ready to fucking party
+    }
   }
 
-  protected renderBoard(): void {
+  protected renderBoard(
+    board: Board,
+    renderMap: boolean[][],
+    renderAngle: number
+  ): void {
     const ctx = this.canvas.getDrawingContext();
     ctx.globalAlpha = 1;
-    const tiles = this.map.getAllTiles();
+    const tiles = board.getAllTiles();
     tiles.map(tile => {
-      const needsDraw = this.getRenderMapValue(tile.x, tile.y);
+      const needsDraw = renderMap[tile.x][tile.y];
       if (needsDraw === false) {
         this.showUnrenderedTile(tile.x, tile.y);
         return;
       }
       if (!tile.frontLayer) {
-        if (this.renderTile(tile.x, tile.y, tile)) {
-          this.setRenderMap(false, tile.x, tile.y);
-        }
+        this.renderTile(tile.x, tile.y, tile, renderAngle);
       } else {
         // render sky behind see through tiles
-        this.drawSkyTile(tile, tile.x, tile.y);
+        this.drawSkyTile(tile, tile.x, tile.y, renderAngle);
       }
     });
   }
 
-  protected drawSkyTile(tile: Tile, x: number, y: number) {
-    const skyTile = this.map.cloneTile(1);
-    this.renderTile(x, y, skyTile);
+  protected drawSkyTile(tile: Tile, x: number, y: number, renderAngle: number) {
+    const skyTile = this.tiles[1];
+    this.renderTile(x, y, skyTile, renderAngle);
   }
 
   // just go over and draw the over-the-top stuff
-  protected renderFrontLayerBoard() {
-    const tiles = this.map.getAllTiles();
+  protected renderFrontLayerBoard(
+    board: Board,
+    renderMap: boolean[][],
+    renderAngle: number
+  ) {
+    const tiles = board.getAllTiles();
     tiles.map(tile => {
-      const needsDraw = this.getRenderMapValue(tile.x, tile.y);
+      const needsDraw = renderMap[tile.x][tile.y];
       if (needsDraw === false) {
         return;
       }
       if (tile.frontLayer) {
-        if (this.renderTile(tile.x, tile.y, tile)) {
-          this.setRenderMap(false, tile.x, tile.y);
-        }
+        this.renderTile(tile.x, tile.y, tile, renderAngle);
       }
     });
   }
@@ -240,18 +229,15 @@ export class Renderer {
     );
   }
 
-  protected renderPlayers() {
-    for (const i in this.jetpack.players) {
-      if (this.jetpack.players[i]) {
-        const player = this.jetpack.players[i];
-        this.renderPlayer(player);
-      }
-    }
+  protected renderPlayers(players: Player[]) {
+    players.map(player => {
+      return this.renderPlayer(player);
+    });
   }
 
   protected getTileImage(tile: Tile) {
     if (tile.id < 1) {
-      console.log("invalid tile requested", tile.id, tile);
+      // console.log("invalid tile requested", tile.id, tile);
       return false;
     }
     const tileImage = this.tileImages[tile.id];
@@ -262,24 +248,29 @@ export class Renderer {
     return false;
   }
 
-  protected renderTile = function(x: number, y: number, tile: Tile): boolean {
+  protected renderTile = function(
+    x: number,
+    y: number,
+    tile: Tile,
+    renderAngle: number
+  ): boolean {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
     const img = this.getTileImage(tile);
 
     if (!img) {
-      // console.log("Could not find tile image for id " + tile.id);
+      console.log("Could not find tile image for id " + tile.id);
       return false;
     }
 
     let left = Math.floor(x * tileSize);
     let top = Math.floor(y * tileSize);
 
-    if (this.map.renderAngle === 0) {
+    if (renderAngle === 0) {
       ctx.drawImage(img, left, top, tileSize, tileSize);
     } else {
-      const angleInRad = this.map.renderAngle * (Math.PI / 180);
+      const angleInRad = renderAngle * (Math.PI / 180);
 
       const offset = Math.floor(tileSize / 2);
 
@@ -392,18 +383,21 @@ export class Renderer {
     direction: number,
     angle: number,
     targetAngle: number,
-    completed: () => void
+    moveSpeed: number,
+    completed: () => any
   ) {
     const canvas = this.canvas.getCanvas();
 
     if (direction > 0) {
       if (angle >= targetAngle) {
         completed();
+        this.rotating = false;
         return false;
       }
     } else {
       if (angle <= targetAngle) {
         completed();
+        this.rotating = false;
         return false;
       }
     }
@@ -427,10 +421,17 @@ export class Renderer {
     ctx.rotate(-angleInRad);
     ctx.translate(-left, -top);
 
-    angle += direction * (this.jetpack.moveSpeed / 2);
+    angle += direction * (moveSpeed / 2);
 
-    this.jetpack.animationHandle = window.requestAnimationFrame(() => {
-      this.drawRotated(savedData, direction, angle, targetAngle, completed);
+    this.animationHandle = window.requestAnimationFrame(() => {
+      this.drawRotated(
+        savedData,
+        direction,
+        angle,
+        targetAngle,
+        moveSpeed,
+        completed
+      );
     });
   }
 }

@@ -80,4 +80,14 @@ export class Utils {
     }
     return coords.modify({ x: newX, y: newY });
   }
+
+  public static flattenArray(arr: any[]) {
+    return [].concat.apply([], arr);
+  }
+
+  public static removeDuplicates(arr: any[]) {
+    return arr.filter((value, index, self) => {
+      return self.indexOf(value) === index;
+    });
+  }
 }

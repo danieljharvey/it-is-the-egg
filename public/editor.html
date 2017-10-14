@@ -44,13 +44,14 @@
 	<body>
 		<div id='wrapper'>
 			<div id='editHeader'>
-				<button onClick='jetpack.saveLevel();'>SAVE</button>
+				<button onClick='editor.saveLevel();'>SAVE</button>
 				<span id='message'>EDIT MODE</span>
 				<select id='levelList'>
 				</select>
-				<button onClick='jetpack.loadLevelFromList();'>LOAD</button>
-				<button onClick='jetpack.shrinkBoard();'> - </button>
-				<button onClick='jetpack.growBoard();'> + </button>
+				<button onClick='editor.loadLevelFromList();'>LOAD</button>
+				<button onClick='editor.shrinkBoard();'> - </button>
+				<button onClick='editor.growBoard();'> + </button>
+				<button onClick='editor.undo();'> UNDO </button>
 				<div id='tileChooser'>
 
 				</div>

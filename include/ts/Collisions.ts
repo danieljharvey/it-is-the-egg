@@ -1,42 +1,140 @@
 import { Coords } from "./Coords";
-import { Jetpack } from "./Jetpack";
+import { List, fromJS } from "immutable";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
+import { Utils } from "./Utils";
 
 export class Collisions {
-  protected jetpack: Jetpack;
   protected playerTypes: object;
 
   protected players: Player[];
 
-  constructor(jetpack: Jetpack, playerTypes: object) {
-    this.jetpack = jetpack;
+  constructor(playerTypes: object) {
     this.playerTypes = playerTypes;
   }
 
-  public checkAllCollisions(players: Player[]) {
-    this.players = players;
+  public checkAllCollisions(players: Player[]): Player[] {
+    const combinations = this.getAllPlayerCombinations(players);
 
-    players.map(player => {
-      this.checkPlayerCollisions(player, players);
-    });
-    return players;
-  }
-
-  // cycles through all players and check
-  protected checkPlayerCollisions(player: Player, otherPlayers: Player[]) {
-    otherPlayers.map(otherPlayer => {
-      this.handleCollision(player, otherPlayer);
-    });
-  }
-
-  // this does the action so checkCollision can remain pure at heart
-  protected handleCollision(player1: Player, player2: Player) {
-    if (this.checkCollision(player1, player2)) {
-      this.combinePlayers(player1, player2);
-      return true;
+    // only one egg, do nothing
+    if (combinations.length === 0) {
+      return players;
     }
-    return false;
+
+    const collided = this.findCollisions(combinations, players);
+
+    if (collided.length === 0) {
+      return players;
+    }
+
+    const oldPlayers = this.removeCollidedPlayers(collided, players);
+
+    const newPlayers = this.createNewPlayers(collided, players);
+
+    const allPlayers = this.combinePlayerLists(oldPlayers, newPlayers);
+
+    return allPlayers;
+  }
+
+  protected combinePlayerLists(
+    oldPlayers: Player[],
+    newPlayers: Player[]
+  ): Player[] {
+    const allPlayers = [];
+    oldPlayers.map(player => {
+      allPlayers.push(player);
+    });
+    newPlayers.map(player => {
+      allPlayers.push(player);
+    });
+    return fromJS(allPlayers);
+  }
+
+  // send an array of pairs of player ids, returns all that collide
+  protected findCollisions(
+    combinations: number[][],
+    players: Player[]
+  ): number[][] {
+    return combinations.filter(comb => {
+      const player1 = this.fetchPlayerByID(players, comb[0]);
+      const player2 = this.fetchPlayerByID(players, comb[1]);
+      return this.checkCollision(player1, player2);
+    });
+  }
+
+  // returns all non-collided players
+  // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
+  protected removeCollidedPlayers(
+    collided: number[][],
+    players: Player[]
+  ): Player[] {
+    const collidedIDs = Utils.flattenArray(collided);
+    const uniqueIDs = Utils.removeDuplicates(collidedIDs);
+
+    return players.filter(player => {
+      if (uniqueIDs.indexOf(player.id) === -1) {
+        return true;
+      }
+      return false;
+    });
+  }
+
+  // go through each collided pair and combine the players to create new ones
+  protected createNewPlayers(collided, players: Player[]): Player[] {
+    return collided.reduce((newPlayers, collidedIDs) => {
+      const player1 = this.fetchPlayerByID(players, collidedIDs[0]);
+      const player2 = this.fetchPlayerByID(players, collidedIDs[1]);
+      if (player1 === null || player2 === null) {
+        return newPlayers;
+      }
+      const newOnes = this.combinePlayers(player1, player2);
+      return newPlayers.concat(newOnes);
+    }, []);
+  }
+
+  protected fetchPlayerByID(players: Player[], id: number): Player {
+    const matching = players.filter(player => {
+      return player.id === id;
+    });
+
+    if (matching.length === 0) {
+      return null;
+    }
+
+    // we've found one then
+
+    if (List.isList(matching)) {
+      // Immutable List
+      return matching.first();
+    }
+    // array
+    return matching.slice(0, 1)[0];
+  }
+
+  protected getAllPlayerCombinations(players: Player[]): number[][] {
+    return players.reduce((total, player) => {
+      const otherPlayers = players.filter(otherPlayer => {
+        return player.id < otherPlayer.id;
+      });
+      const combos = otherPlayers.map(otherPlayer => {
+        return [player.id, otherPlayer.id];
+      });
+      return total.concat(this.cleanCombos(combos));
+    }, []);
+  }
+
+  // un-immutables values for sanity's sake
+  protected cleanCombos(combo: any): number[] {
+    if (List.isList(combo)) {
+      return combo.toJS();
+    }
+    return combo;
+  }
+
+  protected getAllPlayerIDs(players: Player[]) {
+    return players.map(player => {
+      return player.id;
+    });
   }
 
   // only deal with horizontal collisions for now
@@ -74,14 +172,6 @@ export class Collisions {
     return false;
   }
 
-  protected deletePlayer(player: Player) {
-    delete this.players[player.id];
-  }
-
-  protected addPlayer(player: Player) {
-    this.players[player.id] = player;
-  }
-
   protected chooseHigherLevelPlayer(player1: Player, player2: Player) {
     if (player1.value > player2.value) {
       return player1;
@@ -95,7 +185,7 @@ export class Collisions {
   }
 
   protected getPlayerByValue(playerTypes, value: number) {
-    for (const i in this.playerTypes) {
+    for (const i in playerTypes) {
       if (playerTypes[i].value === value) {
         return playerTypes[i];
       }
@@ -103,28 +193,21 @@ export class Collisions {
     return false;
   }
 
-  protected combinePlayers(player1: Player, player2: Player) {
-    // console.log('combinePlayers', player1, player2);
+  protected combinePlayers(player1: Player, player2: Player): Player[] {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
     const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
 
     if (!newPlayerType) {
-      return {
-        player1,
-        player2
-      };
+      return [player1, player2];
     }
 
-    const newPlayer = this.jetpack.createNewPlayer(
-      newPlayerType.type,
-      higherPlayer.coords,
-      higherPlayer.direction
-    );
-    this.addPlayer(newPlayer);
-    this.deletePlayer(player1);
-    this.deletePlayer(player2);
-    return true;
+    const newPlayerParams = Object.assign({}, newPlayerType, {
+      coords: higherPlayer.coords,
+      direction: higherPlayer.direction
+    });
+
+    return [player1.modify(newPlayerParams)];
   }
 }

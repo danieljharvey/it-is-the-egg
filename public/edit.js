@@ -9,7 +9,8 @@ requirejs.config({
 
 requirejs(['Jetpack'], function(stuff) {
     jetpack = new stuff.Jetpack;
-	jetpack.bootstrap(levelID => {
-		jetpack.edit(levelID);
+    editor = jetpack.getEditor();
+	editor.bootstrap(levelID => {
+		editor.edit(levelID);
 	});	
 });

@@ -1,7 +1,10 @@
+import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Collisions } from "./Collisions";
 import { Coords } from "./Coords";
+import { Editor } from "./Editor";
+import { GameState } from "./GameState";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
 import { Map } from "./Map";
@@ -9,7 +12,9 @@ import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
+import { RenderMap } from "./RenderMap";
 import { SavedLevel } from "./SavedLevel";
+import { TheEgg } from "./TheEgg";
 import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
@@ -26,7 +31,6 @@ export class Jetpack {
   protected levelID: number = 1;
   protected levelList: number[] = [];
 
-  protected map: Map; // Map object
   protected renderer: Renderer; // Renderer object
   protected collisions: Collisions; // Collisions object
   protected levels: Levels; // Levels object
@@ -34,6 +38,9 @@ export class Jetpack {
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
   protected tileChooser: TileChooser;
+
+  // big pile of moves
+  protected gameStates: GameState[];
 
   protected nextPlayerID: number = 1;
   protected score: number = 0;
@@ -45,6 +52,9 @@ export class Jetpack {
   protected defaultBoardSize: number = 20;
   protected checkResize: boolean = false;
 
+  protected isCalculating = false;
+  protected action: string = "";
+
   public go(levelID) {
     // this.bootstrap();
     this.bindSizeHandler();
@@ -53,30 +63,14 @@ export class Jetpack {
     this.pauseRender();
     this.getTitleScreen(() => {
       this.loadLevel(levelID, () => {
-        this.createPlayers();
-        this.resetScore(0);
-        this.rotationsUsed = 0;
+        this.setNextAction("");
         this.startRender();
       });
     });
   }
 
-  // go function but for edit mode
-  public edit() {
-    // this.bootstrap();
-    this.levels.populateLevelsList(this.levelList);
-
-    this.editMode = true;
-    this.bindSizeHandler();
-    this.bindClickHandler();
-    this.bindMouseMoveHandler();
-    this.createRenderer();
-    this.tileChooser = new TileChooser(this.tileSet, this.renderer);
-    this.tileChooser.render();
-
-    const s = setTimeout(() => {
-      this.startRender();
-    }, 1000);
+  public getEditor() {
+    return new Editor();
   }
 
   // load static stuff - map/renderer etc will be worked out later
@@ -96,7 +90,7 @@ export class Jetpack {
 
     const loader: Loader = new Loader(apiLocation);
 
-    this.levels = new Levels(this, loader);
+    this.levels = new Levels(loader);
 
     this.getLevelList(levelList => {
       const levelID = this.chooseLevelID(levelList);
@@ -105,20 +99,10 @@ export class Jetpack {
     });
   }
 
-  public addScore(amount) {
-    this.score += amount;
+  public displayScore(score) {
     const scoreElement = document.getElementById("score");
     if (scoreElement) {
-      scoreElement.innerHTML = this.score.toString();
-    }
-  }
-
-  // or at least try
-  public completeLevel() {
-    this.collectable = this.getCollectable();
-    const playerCount: number = this.countPlayers(this.players);
-    if (this.collectable < 1 && playerCount < 2) {
-      this.nextLevel();
+      scoreElement.innerHTML = score.toString();
     }
   }
 
@@ -138,72 +122,16 @@ export class Jetpack {
       params.fallSpeed = this.moveSpeed * 1.2;
     }
     const player = new Player(params);
-    this.players[player.id] = player;
     return player;
   }
 
   // make this actually fucking rotate, and choose direction, and do the visual effect thing
   public rotateBoard(clockwise) {
-    if (this.paused || this.editMode) {
-      return false;
+    if (clockwise) {
+      this.setNextAction("rotateRight");
+    } else {
+      this.setNextAction("rotateLeft");
     }
-    this.pauseRender();
-
-    this.rotationsUsed++;
-
-    this.map.rotateBoard(clockwise);
-
-    const rotatedPlayers = this.players.map(player => {
-      return this.map.rotatePlayer(player, clockwise);
-    });
-
-    this.players = [];
-    rotatedPlayers.map(player => {
-      this.players[player.id] = player;
-    });
-
-    this.renderer.drawRotatingBoard(clockwise, () => {
-      this.startRender();
-    });
-
-    return true;
-  }
-
-  public saveLevel() {
-    this.levels.saveLevel(
-      this.map.getBoard(),
-      this.map.boardSize,
-      this.levels.levelID,
-      levelID => {
-        const text = "Level " + levelID + " saved";
-        this.showEditMessage(text);
-      }
-    );
-  }
-
-  public loadLevelFromList() {
-    const select = document.getElementById("levelList") as HTMLSelectElement;
-    const index = select.selectedIndex;
-    const levelID = select.options[index].value;
-    this.loadLevel(levelID, () => {
-      // console.log("loaded!");
-    });
-  }
-
-  public growBoard() {
-    if (!this.editMode) {
-      return false;
-    }
-    this.boardSize = this.map.growBoard();
-    this.checkResize = true;
-  }
-
-  public shrinkBoard() {
-    if (!this.editMode) {
-      return false;
-    }
-    this.boardSize = this.map.shrinkBoard();
-    this.checkResize = true;
   }
 
   protected getTitleScreen(callback) {
@@ -240,57 +168,230 @@ export class Jetpack {
     return levelID;
   }
 
-  // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  protected createRenderer(board = [], size: number = 12) {
-    this.boardSize = new BoardSize(size);
-    this.canvas = new Canvas(this.boardSize);
+  protected setNextAction(action: string) {
+    this.action = action;
+  }
 
-    this.map = new Map(this.tileSet, this.boardSize, board);
-    this.map.updateBoard(
-      this.map.correctBoardSizeChange(board, this.boardSize),
-      this.boardSize
-    );
+  // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+  protected createRenderer(
+    tileSet: TileSet,
+    boardSize: BoardSize,
+    completedCallback: () => any
+  ) {
+    this.canvas = new Canvas(boardSize);
+    this.tileSet = tileSet;
+    this.boardSize = boardSize;
+
     const tiles = this.tileSet.getTiles();
-    this.renderer = new Renderer(
+
+    return new Renderer(
       this,
-      this.map,
       tiles,
       this.playerTypes,
       this.boardSize,
-      this.canvas
+      this.canvas,
+      () => completedCallback()
     );
   }
 
   protected startRender() {
-    if (!this.paused) {
-      return false;
-    }
     window.cancelAnimationFrame(this.animationHandle);
-    this.paused = false;
     this.showControls();
     this.animationHandle = window.requestAnimationFrame(time =>
       this.eventLoop(time, 0)
     );
   }
 
+  protected getNextAction(): string {
+    const action = this.action;
+    //this.action = "";
+    return action;
+  }
+
+  // change of heart - this runs all the time and requests various things do stuff
+  // if we are paused, it is nothing, but the loop runs all the same
+  // we are separating one frame ==== one turn
+  // as this does not work for things like rotation
+  // which is one 'turn' but many frames
+
   protected eventLoop(time: number, lastTime: number) {
-    if (this.paused) {
-      return false;
-    }
     this.animationHandle = window.requestAnimationFrame(newTime =>
       this.eventLoop(newTime, time)
     );
     const timePassed = this.calcTimePassed(time, lastTime);
     this.displayFrameRate(timePassed);
 
-    this.gameCycle(timePassed);
+    const action = this.getNextAction();
+
+    this.gameCycle(timePassed, action);
   }
 
   // this does one step of the game
-  protected gameCycle(timePassed: number) {
-    this.doPlayerCalcs(timePassed);
-    this.sizeCanvas();
-    this.renderer.render();
+  protected gameCycle(timePassed: number, action: string) {
+    const oldGameState = this.getCurrentGameState();
+
+    if (action === "rotateLeft") {
+      const rotatedLeftState = this.getNewGameState(
+        oldGameState,
+        "rotateLeft",
+        timePassed
+      );
+      this.doBoardRotation(false, rotatedLeftState);
+      this.setNextAction("rotatingLeft");
+      return false;
+    } else if (action === "rotateRight") {
+      const rotatedRightState = this.getNewGameState(
+        oldGameState,
+        "rotateRight",
+        timePassed
+      );
+      this.doBoardRotation(true, rotatedRightState);
+      this.setNextAction("rotatingRight");
+      return false;
+    } else if (action.length > 0) {
+      return false;
+    }
+
+    if (oldGameState.outcome.length > 0) {
+      const continueGame = this.checkOutcome(oldGameState);
+      if (continueGame === false) {
+        this.setNextAction("stop");
+      }
+    }
+
+    const newGameState = this.getNewGameState(oldGameState, action, timePassed);
+
+    if (oldGameState.score !== newGameState.score) {
+      this.displayScore(newGameState.score);
+    }
+
+    this.renderChanges(oldGameState, newGameState);
+  }
+
+  // return true for continue play, false for stop
+  protected checkOutcome(gameState: GameState): boolean {
+    if (gameState.outcome === "completeLevel") {
+      // egg is over cup - check whether we've completed
+      const completed = this.completeLevel(gameState.board, gameState.players);
+      if (completed) {
+        this.nextLevel();
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // or at least try
+  protected completeLevel(board: Board, players: Player[]): boolean {
+    const collectable = this.getCollectable(board);
+    const playerCount: number = this.countPlayers(players);
+
+    if (collectable < 1 && playerCount < 2) {
+      return true;
+    }
+    return false;
+  }
+
+  protected getBoardFromArray(boardArray): Board {
+    const map = new Map(this.tileSet, this.boardSize);
+    return map.makeBoardFromArray(boardArray);
+  }
+
+  // create first "frame" of gameState from board
+  // create players etc
+  protected getBlankGameState(board: Board): GameState {
+    const players = this.createPlayers(board);
+    return new GameState({
+      board,
+      players
+    });
+  }
+
+  // current game state from array
+  protected getCurrentGameState() {
+    return this.gameStates.slice(-1)[0]; // set to new last item
+  }
+
+  protected resetGameState(board: Board) {
+    const gameState = this.getBlankGameState(board);
+    this.gameStates = [gameState];
+  }
+
+  // do next move, plop new state on pile, return new state
+  protected getNewGameState(
+    gameState: GameState,
+    action: string,
+    timePassed: number
+  ): GameState {
+    const map = new Map(this.tileSet, this.boardSize);
+    const theEgg = new TheEgg(map, this.playerTypes);
+    const newGameState = theEgg.doAction(gameState, action, timePassed);
+    this.gameStates.push(newGameState); // add to history
+    return newGameState;
+  }
+
+  protected renderEverything(gameState: GameState) {
+    const boardSize = new BoardSize(gameState.board.getLength());
+    const blankMap = RenderMap.createRenderMap(boardSize.width, true);
+    this.renderer.render(
+      gameState.board,
+      blankMap,
+      gameState.players,
+      gameState.rotateAngle
+    );
+  }
+
+  protected renderChanges(oldGameState: GameState, newGameState: GameState) {
+    const boardSize = new BoardSize(newGameState.board.getLength());
+
+    // if rotated everything changes anyway
+    if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
+      return this.renderEverything(newGameState);
+    }
+
+    // player map is covering old shit up
+    const playerRenderMap = this.createRenderMapFromPlayers(
+      oldGameState.players,
+      boardSize
+    );
+
+    // render changes
+    const boardRenderMap = RenderMap.createRenderMapFromBoards(
+      oldGameState.board,
+      newGameState.board
+    );
+
+    const finalRenderMap = RenderMap.combineRenderMaps(
+      playerRenderMap,
+      boardRenderMap
+    );
+
+    this.renderer.render(
+      newGameState.board,
+      finalRenderMap,
+      newGameState.players,
+      newGameState.rotateAngle
+    );
+  }
+
+  protected sizeCanvas(boardSize: BoardSize) {
+    if (!this.checkResize) {
+      return false;
+    }
+    this.renderer.resize(boardSize);
+    this.checkResize = false;
+  }
+
+  // create empty renderMap based on boardSize, and then apply each player's position to it
+  protected createRenderMapFromPlayers(
+    players: Player[],
+    boardSize: BoardSize
+  ): boolean[][] {
+    const blankMap = RenderMap.createRenderMap(boardSize.width, false);
+    return players.reduce((map, player) => {
+      return RenderMap.addPlayerToRenderMap(player, map);
+    }, blankMap);
   }
 
   protected calcTimePassed(time: number, lastTime: number): number {
@@ -301,22 +402,9 @@ export class Jetpack {
   protected displayFrameRate(timePassed: number) {
     const frameRate = Math.floor(1000 / timePassed);
     const fps = document.getElementById("fps");
-    fps.innerHTML = frameRate.toFixed(3) + "fps";
-  }
-
-  protected sizeCanvas() {
-    if (!this.checkResize) {
-      return false;
+    if (fps) {
+      fps.innerHTML = frameRate.toFixed(3) + "fps";
     }
-
-    this.canvas.sizeCanvas(this.boardSize);
-    this.renderer.resize();
-    this.checkResize = false;
-  }
-
-  protected resetScore(score) {
-    this.score = 0;
-    this.addScore(0);
   }
 
   protected nextLevel() {
@@ -353,92 +441,87 @@ export class Jetpack {
     }
   }
 
-  protected doPlayerCalcs(timePassed: number) {
-    const movement = new Movement(this.map, this.renderer, this);
-    const newPlayers = movement.doCalcs(this.players, timePassed);
-
-    const collisions = new Collisions(this, this.playerTypes);
-    const sortedPlayers = collisions.checkAllCollisions(newPlayers);
-
-    this.players = sortedPlayers; // replace with new objects
-  }
-
   protected countPlayers(players: Player[]): number {
-    const validPlayers = players.filter(player => {
-      return player && player.value > 0;
-    });
-    return validPlayers.length;
+    return players.reduce((total, player) => {
+      if (player && player.value > 0) {
+        return total + 1;
+      } else {
+        return total;
+      }
+    }, 0);
   }
 
   // cycle through all map tiles, find egg cups etc and create players
-  protected createPlayers() {
-    this.destroyPlayers();
-    const tiles = this.map.getAllTiles();
-    const players = tiles.map(tile => {
+  protected createPlayers(board: Board): Player[] {
+    const tiles = board.getAllTiles();
+    const playerTiles = tiles.map(tile => {
       const type = tile.createPlayer;
       if (type) {
         const coords = new Coords({
-          x: tile.x,
-          y: tile.y,
           offsetX: 0,
-          offsetY: 0
+          offsetY: 0,
+          x: tile.x,
+          y: tile.y
         });
-        const player = this.createNewPlayer(type, coords, 1);
-        this.players[player.id] = player;
+        return this.createNewPlayer(type, coords, 1);
+      } else {
+        return false;
       }
+    });
+    return playerTiles.filter(player => {
+      return player !== false;
     });
   }
 
-  protected destroyPlayers() {
-    this.players = [];
-  }
-
-  // cycle through all map tiles, find egg cups etc and create players
-  protected getCollectable() {
-    let collectable = 0;
-    const tiles = this.map.getAllTiles();
-    tiles.map(tile => {
-      const score = tile.collectable;
+  // get total outstanding points left to grab on board
+  protected getCollectable(board: Board): number {
+    const tiles = board.getAllTiles();
+    return tiles.reduce((collectable, tile) => {
+      const score = tile.get("collectable");
       if (score > 0) {
-        collectable += score;
+        return collectable + score;
+      } else {
+        return collectable;
       }
+    }, 0);
+  }
+
+  protected doBoardRotation(clockwise: boolean, gameState: GameState) {
+    this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
+      this.renderEverything(gameState);
+      this.setNextAction(""); // continue playing the game
     });
-    return collectable;
-  }
-
-  protected deletePlayer(player: Player) {
-    delete this.players[player.id];
-  }
-
-  protected revertEditMessage() {
-    const s = setTimeout(() => {
-      const message = document.getElementById("message");
-      message.innerHTML = "EDIT MODE";
-    }, 3000);
-  }
-
-  protected showEditMessage(text) {
-    if (!this.editMode) {
-      return false;
-    }
-    const message = document.getElementById("message");
-    message.innerHTML = text;
-    this.revertEditMessage();
   }
 
   protected loadLevel(levelID, callback) {
     this.levels.loadLevel(
       levelID,
       (savedLevel: SavedLevel) => {
-        const text = "Level " + savedLevel.levelID.toString() + " loaded!";
-        this.showEditMessage(text);
-        this.createRenderer(savedLevel.board, savedLevel.boardSize.width);
-        callback();
+        this.renderer = this.createRenderer(
+          this.tileSet,
+          savedLevel.boardSize,
+          () => {
+            const board = this.getBoardFromArray(savedLevel.board);
+            this.resetGameState(board);
+            const gameState = this.getCurrentGameState();
+            this.renderEverything(gameState);
+            callback();
+          }
+        );
       },
       () => {
-        this.createRenderer();
-        this.map.updateBoardWithRandom(this.boardSize);
-        callback();
+        this.renderer = this.createRenderer(
+          this.tileSet,
+          this.boardSize,
+          () => {
+            const map = new Map(this.tileSet, this.boardSize);
+            const board = map.generateRandomBoard(this.boardSize);
+            this.resetGameState(board);
+            const gameState = this.getCurrentGameState();
+            this.renderEverything(gameState);
+            callback();
+          }
+        );
       }
     );
   }
@@ -469,20 +552,24 @@ export class Jetpack {
       }
       if (event.keyCode === 70) {
         // 'f'
-        this.showFPS();
+        this.toggleFPS();
       }
     });
   }
 
-  protected showFPS() {
+  protected toggleFPS() {
     const fps = document.getElementById("fps");
-    if (fps) {
+    if (!fps) {
+      return false;
+    }
+    if (fps.style.display !== "block") {
       fps.style.display = "block";
+    } else {
+      fps.style.display = "none";
     }
   }
 
   protected togglePaused() {
-    console.log("togglePaused");
     if (this.paused) {
       this.startRender();
     } else {
@@ -491,46 +578,6 @@ export class Jetpack {
   }
 
   protected doStep() {
-    if (!this.paused) {
-      return false;
-    }
-    this.gameCycle(16); // movement based on 60 fps
-  }
-
-  protected bindClickHandler() {
-    const canvas = document.getElementById("canvas");
-    canvas.addEventListener("click", event => {
-      this.handleDrawEvent(event);
-    });
-  }
-
-  protected bindMouseMoveHandler() {
-    const canvas = document.getElementById("canvas");
-    canvas.addEventListener("mousemove", event => {
-      if (event.button > 0 || event.buttons > 0) {
-        this.handleDrawEvent(event);
-      }
-    });
-  }
-
-  protected handleDrawEvent(event) {
-    const tileSize = this.canvas.calcTileSize(this.boardSize);
-    const coords = new Coords({
-      offsetX: event.offsetX % tileSize - tileSize / 2,
-      offsetY: event.offsetY % tileSize - tileSize / 2,
-      x: (event.offsetX / tileSize) as number,
-      y: (event.offsetY / tileSize) as number
-    });
-    this.drawCurrentTile(coords);
-  }
-
-  // coords is always x,y,offsetX, offsetY
-  protected drawCurrentTile(coords: Coords) {
-    const tileID = this.tileChooser.chosenTileID;
-    if (tileID < 1) {
-      return false;
-    }
-    const tile = this.map.cloneTile(tileID);
-    this.map.changeTile(coords, tile);
+    this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
   }
 }
