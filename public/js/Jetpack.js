@@ -2055,7 +2055,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 // egg is over cup - check whether we've completed
                 var completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
-                    this.nextLevel();
+                    this.nextLevel(gameState.score, gameState.rotations);
                     return false;
                 }
             }
@@ -2142,10 +2142,10 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Collisions", "C
                 fps.innerHTML = frameRate.toFixed(3) + "fps";
             }
         };
-        Jetpack.prototype.nextLevel = function () {
+        Jetpack.prototype.nextLevel = function (score, rotations) {
             var _this = this;
             this.pauseRender();
-            this.levels.saveData(this.levelID, this.rotationsUsed, this.score, function (data) {
+            this.levels.saveData(this.levelID, rotations, score, function (data) {
                 _this.levelList = _this.markLevelAsCompleted(_this.levelList, _this.levelID);
                 _this.levelID = _this.chooseLevelID(_this.levelList);
                 _this.go(_this.levelID);
