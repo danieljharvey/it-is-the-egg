@@ -274,7 +274,7 @@ export class Jetpack {
       // egg is over cup - check whether we've completed
       const completed = this.completeLevel(gameState.board, gameState.players);
       if (completed) {
-        this.nextLevel();
+        this.nextLevel(gameState.score, gameState.rotations);
         return false;
       }
     }
@@ -407,9 +407,9 @@ export class Jetpack {
     }
   }
 
-  protected nextLevel() {
+  protected nextLevel(score: number, rotations: number) {
     this.pauseRender();
-    this.levels.saveData(this.levelID, this.rotationsUsed, this.score, data => {
+    this.levels.saveData(this.levelID, rotations, score, data => {
       this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
       this.levelID = this.chooseLevelID(this.levelList);
       this.go(this.levelID);
