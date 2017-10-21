@@ -15,6 +15,7 @@ script:
  - npm install yarn
  - yarn install
  - yarn test
+ - tsc
 
 node_js:
  - "7"
