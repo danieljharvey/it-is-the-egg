@@ -15,6 +15,16 @@ const OFFSET_DIVIDE: number = 100;
 // movement takes the current map, the current players, and returns new player objects
 // it is then trashed and a new one made for next move to reduce any real held state
 export class Movement {
+
+  public static calcMoveAmount(moveSpeed: number, timePassed: number): number {
+    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
+    const frameRateAdjusted: number = moveAmount * timePassed;
+    if (isNaN(frameRateAdjusted)) {
+      return 0;
+    }
+    return frameRateAdjusted;
+  }
+
   protected map: Map;
 
   constructor(map: Map) {
@@ -84,7 +94,7 @@ export class Movement {
     // not needed yet, but...
     const boardSize = new BoardSize(board.getLength());
 
-    const map = new Map([]);
+    const map = this.map;
 
     const belowCoords = map.correctForOverflow(board,
       coords.modify({ y: coords.y + 1 })
@@ -107,15 +117,6 @@ export class Movement {
     return player.modify({
       falling: false
     });
-  }
-
-  public static calcMoveAmount(moveSpeed: number, timePassed: number): number {
-    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
-    const frameRateAdjusted: number = moveAmount * timePassed;
-    if (isNaN(frameRateAdjusted)) {
-      return 0;
-    }
-    return frameRateAdjusted;
   }
 
   // curry and compose together a nice pipeline function to transform old player state into new
@@ -224,7 +225,6 @@ export class Movement {
     }
     const newTile = this.map.findTile(board, player.coords, 14);
     if (newTile) {
-      // console.log('newTile',newTile.x,newTile.y);
       return player.modify({
         coords: player.coords.modify({
           x: newTile.x,

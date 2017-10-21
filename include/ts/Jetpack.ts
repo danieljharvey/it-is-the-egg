@@ -15,6 +15,7 @@ import { Renderer } from "./Renderer";
 import { RenderMap } from "./RenderMap";
 import { SavedLevel } from "./SavedLevel";
 import { TheEgg } from "./TheEgg";
+import { Tile } from "./Tile";
 import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
@@ -201,7 +202,7 @@ export class Jetpack {
 
   protected getNextAction(): string {
     const action = this.action;
-    //this.action = "";
+    // this.action = "";
     return action;
   }
 
@@ -451,23 +452,20 @@ export class Jetpack {
   // cycle through all map tiles, find egg cups etc and create players
   protected createPlayers(board: Board): Player[] {
     const tiles = board.getAllTiles();
-    const playerTiles = tiles.map(tile => {
+
+    const players: Player[] = tiles.filter((tile: Tile) => {
+      return (tile.createPlayer !== undefined)
+    }).map((tile: Tile) => {
       const type = tile.createPlayer;
-      if (type) {
-        const coords = new Coords({
-          offsetX: 0,
-          offsetY: 0,
-          x: tile.x,
-          y: tile.y
-        });
-        return this.createNewPlayer(type, coords, 1);
-      } else {
-        return false;
-      }
-    });
-    return playerTiles.filter(player => {
-      return player !== false;
-    });
+      const coords = new Coords({
+        offsetX: 0,
+        offsetY: 0,
+        x: tile.x,
+        y: tile.y
+      });
+      return this.createNewPlayer(type, coords, 1);
+    }).toJS();
+    return players;
   }
 
   // get total outstanding points left to grab on board

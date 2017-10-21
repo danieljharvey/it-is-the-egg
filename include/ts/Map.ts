@@ -164,7 +164,7 @@ export class Map {
   }
 
   // find random tile of type that is NOT at currentCoords
-  public findTile(board: Board, currentCoords: Coords, id): Tile | boolean {
+  public findTile(board: Board, currentCoords: Coords, id): Tile {
     const tiles = board.getAllTiles();
     const teleporters = tiles.filter(tile => {
       if (tile.x === currentCoords.x && tile.y === currentCoords.y) {
@@ -172,8 +172,8 @@ export class Map {
       }
       return tile.id === id;
     });
-    if (teleporters.length === 0) {
-      return false; // no options
+    if (teleporters.size === 0) {
+      return null;
     }
     const chosenID = Math.floor(Math.random() * teleporters.size);
 

@@ -5,5 +5,8 @@
 		"tslint-config-prettier"
     ],
     "jsRules": {},
-    "rulesDirectory": []
+    "rulesDirectory": [],
+    "rules": {
+
+    }
 }

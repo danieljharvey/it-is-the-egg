@@ -63,7 +63,7 @@ export class Renderer {
     players: Player[],
     renderAngle: number
   ) {
-    //console.log("Renderer->render",board, renderMap, renderAngle);
+    // console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard(board, renderMap, renderAngle);
     this.renderPlayers(players);
@@ -314,7 +314,7 @@ export class Renderer {
 
     const image = this.getPlayerImage(player.img);
     if (!image) {
-      //console.log('player image not loaded', player.img);
+      // console.log('player image not loaded', player.img);
       return false;
     }
 

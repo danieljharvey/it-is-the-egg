@@ -164,7 +164,7 @@ export class TileSet {
 
   public getTile(id) {
     const tiles = this.getTiles();
-    if (tiles.hasOwnProperty(id)) return tiles[id];
+    if (tiles.hasOwnProperty(id)) { return tiles[id]; }
     return false;
   }
 }

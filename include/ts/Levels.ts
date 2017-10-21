@@ -46,7 +46,7 @@ export class Levels {
 
     for (const i in levelList) {
       if (levelList[i] !== undefined) {
-        const levelID: number = parseInt(i);
+        const levelID: number = parseInt(i, 10);
         const el = document.createElement("option");
         el.textContent = levelID.toString();
         el.value = levelID.toString();
@@ -92,7 +92,7 @@ export class Levels {
     failCallback: () => any
   ): void {
     this.getLevelList(() => {
-      console.log("gotLevelList");
+      // console.log("gotLevelList");
     });
     const params = {
       levelID

@@ -42,7 +42,8 @@ export class Tile extends Record({
   public y: number;
 
   constructor(params?: ITileParams) {
-    params ? super(params) : super();
+    const superParams = params ? params : undefined;
+    super(superParams);
   }
 
   public modify(values: ITileParams) {

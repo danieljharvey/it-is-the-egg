@@ -26,22 +26,22 @@ interface IPlayerParams {
 
 export class Player extends Record({
   coords: new Coords(),
-  direction: 0,
-  oldDirection: 0,
   currentFrame: 0,
-  id: 0,
-  frames: 1,
-  multiplier: 1,
-  falling: false,
-  type: "egg",
-  moveSpeed: 1,
+  direction: 0,
   fallSpeed: 1,
-  value: 1,
+  falling: false,
+  frames: 1,
+  id: 0,
   img: "",
-  stop: false,
   lastAction: "",
+  moveSpeed: 1,
+  moved: false,
+  multiplier: 1,
+  oldDirection: 0,
+  stop: false,
   title: "",
-  moved: false
+  type: "egg",
+  value: 1
 }) {
   public coords: Coords;
   public direction: number;
@@ -62,7 +62,8 @@ export class Player extends Record({
   public moved: boolean;
 
   constructor(params?: IPlayerParams) {
-    params ? super(params) : super();
+    const superParams = params ? params : undefined;
+    super(superParams);
   }
 
   public modify(values: IPlayerParams) {

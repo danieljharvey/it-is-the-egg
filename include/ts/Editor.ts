@@ -128,16 +128,13 @@ export class Editor {
   }
 
   public undo() {
-    console.log("Undo! current steps...", this.boardHistory.length);
     if (this.boardHistory.length === 1) {
-      console.log("No steps to undo!");
       return false;
     }
     this.boardHistory.pop(); // get rid of most recent
     this.board = this.boardHistory.slice(-1)[0]; // set to new last item
     this.boardSize = new BoardSize(this.board.getLength());
     this.renderEverything(this.board);
-    console.log("Undo! Steps left", this.boardHistory.length);
   }
 
   // replaces this.board with board
@@ -200,7 +197,9 @@ export class Editor {
       [], // no players in edit mode
       this.boardSize,
       this.canvas,
-      () => { }
+      () => {
+        // console.log("yes")
+      }
     );
   }
 
