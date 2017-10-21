@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/danieljharvey/it-is-the-egg#readme",
   "devDependencies": {
+    "@types/core-js": "^0.9.43",
     "@types/jest": "^20.0.5",
     "@types/ramda": "^0.24.7",
     "jest": "^20.0.4",
@@ -42,7 +43,6 @@
     ]
   },
   "dependencies": {
-    "@types/immutable": "^3.8.7",
     "core-js": "^2.5.1",
     "fastclick": "^1.0.6",
     "immutable": "^3.8.1",

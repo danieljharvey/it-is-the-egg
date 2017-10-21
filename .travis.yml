@@ -12,8 +12,9 @@ before_script:
 
 script:
  - phpunit include/modules/tests/*.php
- - npm install
- - npm test
+ - npm install yarn
+ - yarn install
+ - yarn test
 
 node_js:
  - "7"
