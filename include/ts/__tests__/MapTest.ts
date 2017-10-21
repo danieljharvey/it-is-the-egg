@@ -29,13 +29,13 @@ test("Translate rotation", () => {
 
   const boardSize = new BoardSize(10);
 
-  const map = new Map(undefined, boardSize, []);
+  const map = new Map(undefined);
 
   rotateData.map(data => {
     const expected = new Coords({ x: data.outX, y: data.outY });
 
     const coords = new Coords({ x: data.inX, y: data.inY });
-    const result = map.translateRotation(coords, data.clockwise);
+    const result = map.translateRotation(boardSize, coords, data.clockwise);
     return expect(result).toEqual(expected);
   });
 });
@@ -78,7 +78,7 @@ test("Correct board size with growing", () => {
   const boardSize = new BoardSize(6);
 
   const tileSet = new TileSet();
-  const map = new Map(tileSet, boardSize, []);
+  const map = new Map(tileSet);
 
   const tile = map.cloneTile(1);
 
@@ -101,7 +101,7 @@ test("Correct non-existant empty board to reasonably full one", () => {
   const boardSize = new BoardSize(5);
 
   const tileSet = new TileSet();
-  const map = new Map(tileSet, boardSize, []);
+  const map = new Map(tileSet);
 
   const tile = map.cloneTile(1);
 
@@ -123,7 +123,7 @@ test("Make board from array", () => {
   const boardSize = new BoardSize(5);
 
   const tileSet = new TileSet();
-  const map = new Map(tileSet, boardSize, []);
+  const map = new Map(tileSet);
 
   const tile1 = map.cloneTile(1).modify({ x: 0, y: 0 });
   const tile2 = map.cloneTile(2).modify({ x: 1, y: 0 });

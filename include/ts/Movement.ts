@@ -81,9 +81,12 @@ export class Movement {
 
     const coords = player.coords;
 
-    const map = new Map([], new BoardSize(board.getLength()));
+    // not needed yet, but...
+    const boardSize = new BoardSize(board.getLength());
 
-    const belowCoords = map.correctForOverflow(
+    const map = new Map([]);
+
+    const belowCoords = map.correctForOverflow(board,
       coords.modify({ y: coords.y + 1 })
     );
 
@@ -122,16 +125,18 @@ export class Movement {
     const incrementPlayerDirection = _.curry(this.incrementPlayerDirection);
     const checkForMovementTiles = _.curry(this.checkForMovementTiles);
     const markPlayerAsMoved = _.curry(this.markPlayerAsMoved);
+    const correctPlayerOverflow = _.curry(this.correctPlayerOverflow)
 
+    /*
     return _.compose(
       markPlayerAsMoved(oldPlayer),
       checkForMovementTiles(board),
-      this.correctPlayerOverflow,
+      correctPlayerOverflow(board),
       incrementPlayerDirection(board),
       checkPlayerDirection(board),
       checkFloorBelowPlayer(board, timePassed),
       this.incrementPlayerFrame
-     );
+     );*/
   }
 
   protected doPlayerCalcs(
@@ -161,7 +166,7 @@ export class Movement {
       checkedPlayer
     );
 
-    const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
+    const newestPlayer = this.correctPlayerOverflow(board, evenNewerPlayer);
 
     // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
 
@@ -200,7 +205,7 @@ export class Movement {
       return player;
     }
 
-    const coords = this.map.correctForOverflow(currentCoords);
+    const coords = this.map.correctForOverflow(board, currentCoords);
 
     const tile = board.getTile(coords.x, coords.y);
 
@@ -394,9 +399,9 @@ export class Movement {
 
   
 
-  protected correctPlayerOverflow(player: Player): Player {
+  protected correctPlayerOverflow(board: Board, player: Player): Player {
     const newCoords = this.correctTileOverflow(player.coords);
-    const loopedCoords = this.map.correctForOverflow(newCoords);
+    const loopedCoords = this.map.correctForOverflow(board, newCoords);
 
     if (
       loopedCoords.x !== player.coords.x ||

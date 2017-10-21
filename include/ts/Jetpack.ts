@@ -32,7 +32,6 @@ export class Jetpack {
   protected levelList: number[] = [];
 
   protected renderer: Renderer; // Renderer object
-  protected collisions: Collisions; // Collisions object
   protected levels: Levels; // Levels object
   protected tileSet: TileSet; // TileSet object
   protected boardSize: BoardSize; // BoardSize object
@@ -83,8 +82,6 @@ export class Jetpack {
 
     const playerTypes = new PlayerTypes();
     this.playerTypes = playerTypes.getPlayerTypes();
-
-    this.collisions = new Collisions(this, this.playerTypes); // pass the data, not the object
 
     const apiLocation = "http://" + window.location.hostname + "/levels/";
 
@@ -294,7 +291,7 @@ export class Jetpack {
   }
 
   protected getBoardFromArray(boardArray): Board {
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
     return map.makeBoardFromArray(boardArray);
   }
 
@@ -324,7 +321,7 @@ export class Jetpack {
     action: string,
     timePassed: number
   ): GameState {
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
     const theEgg = new TheEgg(map, this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.gameStates.push(newGameState); // add to history
@@ -514,8 +511,8 @@ export class Jetpack {
           this.tileSet,
           this.boardSize,
           () => {
-            const map = new Map(this.tileSet, this.boardSize);
-            const board = map.generateRandomBoard(this.boardSize);
+            const map = new Map(this.tileSet);
+            const board = map.generateRandomBoard(this.boardSize, this.tileSet);
             this.resetGameState(board);
             const gameState = this.getCurrentGameState();
             this.renderEverything(gameState);

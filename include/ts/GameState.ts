@@ -13,11 +13,11 @@ interface IGameState {
 
 export class GameState extends Record({
   board: null,
+  outcome: "",
   players: [],
-  score: 0,
-  rotations: 0,
   rotateAngle: 0,
-  outcome: ""
+  rotations: 0,
+  score: 0
 }) {
   public players: Player[];
   public board: Board;
@@ -27,7 +27,8 @@ export class GameState extends Record({
   public outcome: string; // this may be 'level complete' or some other shit, who knows
 
   constructor(params?: IGameState) {
-    params ? super(params) : super();
+    const superParams = params ? params : undefined
+    super(superParams)
   }
 
   public modify(values: IGameState) {

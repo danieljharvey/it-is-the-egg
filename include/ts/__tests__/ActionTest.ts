@@ -70,9 +70,8 @@ test("Do nothing if player has not moved", () => {
   });
 
 
-  const boardSize = new BoardSize(1);
   const tileSet = new TileSet();
-  const map = new Map(tileSet, boardSize);
+  const map = new Map(tileSet);
 
   const action = new Action(map);
 
@@ -93,9 +92,8 @@ test("Change board if player has moved", () => {
   });
 
 
-  const boardSize = new BoardSize(1);
   const tileSet = new TileSet();
-  const map = new Map(tileSet, boardSize);
+  const map = new Map(tileSet);
 
   const action = new Action(map);
 

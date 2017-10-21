@@ -2,6 +2,7 @@ import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Coords } from "./Coords";
+import { Editor } from "./Editor";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
@@ -14,7 +15,7 @@ const OFFSET_DIVIDE: number = 100;
 export class Renderer {
   public tileSize: number;
 
-  protected jetpack: Jetpack;
+  protected jetpack: Jetpack | Editor;
   protected map: Map;
   protected tiles: object;
   protected playerTypes: object;
@@ -39,7 +40,7 @@ export class Renderer {
   protected tilesLoaded: number = 0;
 
   constructor(
-    jetpack: Jetpack,
+    jetpack: Jetpack | Editor,
     tiles: object,
     playerTypes: object,
     boardSize: BoardSize,
