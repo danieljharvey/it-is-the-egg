@@ -22,5 +22,4 @@ test("Test using createPlayer", () => {
   const tile = new Tile({ x: 3, y: 10, createPlayer: "dog" });
 
   expect(tile.createPlayer).toEqual("dog");
-
 });

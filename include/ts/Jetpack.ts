@@ -450,11 +450,11 @@ export class Jetpack {
     }, 0);
   }
 
-  protected filterCreateTiles = (tiles) => {
+  protected filterCreateTiles = tiles => {
     return tiles.filter(tile => {
-      return (tile.createPlayer !== "");
-    })
-  }
+      return tile.createPlayer !== "";
+    });
+  };
 
   // cycle through all map tiles, find egg cups etc and create players
   protected createPlayers(playerTypes, board: Board) {
@@ -463,15 +463,15 @@ export class Jetpack {
     const filtered = this.filterCreateTiles(tiles);
 
     const players = filtered.map((tile: Tile) => {
-        const type = tile.createPlayer;
-        const coords = new Coords({
-          offsetX: 0,
-          offsetY: 0,
-          x: tile.x,
-          y: tile.y
-        });
-        return this.createNewPlayer(playerTypes, type, coords, 1);
-      })
+      const type = tile.createPlayer;
+      const coords = new Coords({
+        offsetX: 0,
+        offsetY: 0,
+        x: tile.x,
+        y: tile.y
+      });
+      return this.createNewPlayer(playerTypes, type, coords, 1);
+    });
     return players;
   }
 
