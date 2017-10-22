@@ -17,19 +17,19 @@ const makeSimpleBoard = () => {
     collectable: 100
   });
 
-  const boardArray =[[tile]];
+  const boardArray = [[tile]];
 
   return new Board(boardArray);
-}
+};
 
 test("Do nothing if player not centered on board in X axis", () => {
   const board = makeSimpleBoard();
 
   const player = new Player({
     coords: new Coords({
-      x:0,
-      y:0,
-      offsetX:1
+      x: 0,
+      y: 0,
+      offsetX: 1
     })
   });
 
@@ -45,9 +45,9 @@ test("Do nothing if player not centered on board in Y axis", () => {
 
   const player = new Player({
     coords: new Coords({
-      x:0,
-      y:0,
-      offsetY:-10
+      x: 0,
+      y: 0,
+      offsetY: -10
     })
   });
 
@@ -63,12 +63,11 @@ test("Do nothing if player has not moved", () => {
 
   const player = new Player({
     coords: new Coords({
-      x:0,
-      y:0
+      x: 0,
+      y: 0
     }),
     moved: false
   });
-
 
   const tileSet = new TileSet();
   const map = new Map(tileSet);
@@ -85,12 +84,11 @@ test("Change board if player has moved", () => {
 
   const player = new Player({
     coords: new Coords({
-      x:0,
-      y:0
+      x: 0,
+      y: 0
     }),
     moved: true
   });
-
 
   const tileSet = new TileSet();
   const map = new Map(tileSet);

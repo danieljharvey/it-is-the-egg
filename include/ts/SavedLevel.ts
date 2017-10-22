@@ -1,8 +1,8 @@
 import { BoardSize } from "./BoardSize";
 
 export class SavedLevel {
-  public boardSize: BoardSize;
   public board: any;
+  public boardSize: BoardSize;
   public levelID: number;
 
   constructor(boardSize: BoardSize, board: any, levelID: number) {
@@ -18,9 +18,9 @@ export class SavedLevel {
 
   public getData() {
     return {
-      levelID: this.levelID,
+      board: this.board,
       boardSize: this.boardSize.getData(),
-      board: this.board
+      levelID: this.levelID
     };
   }
 }

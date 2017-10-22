@@ -4,6 +4,8 @@ import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
 
+import * as _ from "ramda";
+
 export class Collisions {
   protected playerTypes: object;
 
@@ -103,9 +105,9 @@ export class Collisions {
 
     // we've found one then
 
-    return matching.find(item => {
-      return (item !== undefined)
-    });
+    return _.find(item => {
+      return item !== undefined;
+    }, matching);
   }
 
   protected getAllPlayerCombinations(players: Player[]): number[][] {

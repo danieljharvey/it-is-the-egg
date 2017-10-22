@@ -27,8 +27,8 @@ export class GameState extends Record({
   public outcome: string; // this may be 'level complete' or some other shit, who knows
 
   constructor(params?: IGameState) {
-    const superParams = params ? params : undefined
-    super(superParams)
+    const superParams = params ? params : undefined;
+    super(superParams);
   }
 
   public modify(values: IGameState) {

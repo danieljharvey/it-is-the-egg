@@ -106,11 +106,12 @@ export class Jetpack {
 
   // create player
   public createNewPlayer(
+    playerTypes,
     type: string,
     coords: Coords,
     direction: number
   ): Player {
-    const playerType = this.playerTypes[type];
+    const playerType = playerTypes[type];
     const params = JSON.parse(JSON.stringify(playerType));
     params.id = this.nextPlayerID++;
     params.coords = coords;
@@ -299,7 +300,7 @@ export class Jetpack {
   // create first "frame" of gameState from board
   // create players etc
   protected getBlankGameState(board: Board): GameState {
-    const players = this.createPlayers(board);
+    const players = this.createPlayers(this.playerTypes, board);
     return new GameState({
       board,
       players
@@ -449,22 +450,28 @@ export class Jetpack {
     }, 0);
   }
 
+  protected filterCreateTiles = (tiles) => {
+    return tiles.filter(tile => {
+      return (tile.createPlayer !== "");
+    })
+  }
+
   // cycle through all map tiles, find egg cups etc and create players
-  protected createPlayers(board: Board): Player[] {
+  protected createPlayers(playerTypes, board: Board) {
     const tiles = board.getAllTiles();
 
-    const players: Player[] = tiles.filter((tile: Tile) => {
-      return (tile.createPlayer !== undefined)
-    }).map((tile: Tile) => {
-      const type = tile.createPlayer;
-      const coords = new Coords({
-        offsetX: 0,
-        offsetY: 0,
-        x: tile.x,
-        y: tile.y
-      });
-      return this.createNewPlayer(type, coords, 1);
-    }).toJS();
+    const filtered = this.filterCreateTiles(tiles);
+
+    const players = filtered.map((tile: Tile) => {
+        const type = tile.createPlayer;
+        const coords = new Coords({
+          offsetX: 0,
+          offsetY: 0,
+          x: tile.x,
+          y: tile.y
+        });
+        return this.createNewPlayer(playerTypes, type, coords, 1);
+      })
     return players;
   }
 

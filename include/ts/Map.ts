@@ -73,7 +73,7 @@ export class Map {
   }
 
   public calcBoardSize(board: Board): number {
-    return board.getLength()
+    return board.getLength();
   }
 
   public correctForOverflow(board: Board, coords: Coords): Coords {
@@ -98,7 +98,11 @@ export class Map {
   }
 
   public rotatePlayer(boardSize: BoardSize, player: Player, clockwise): Player {
-    const newCoords = this.translateRotation(boardSize, player.coords, clockwise);
+    const newCoords = this.translateRotation(
+      boardSize,
+      player.coords,
+      clockwise
+    );
 
     let direction = player.direction;
 
@@ -189,7 +193,7 @@ export class Map {
     const width = board.getLength() - 1;
     const height = board.getLength() - 1;
 
-    const boardSize = new BoardSize(this.calcBoardSize(board))
+    const boardSize = new BoardSize(this.calcBoardSize(board));
 
     const rotatedBoard = tiles.reduce((currentBoard, tile) => {
       const coords = new Coords({ x: tile.x, y: tile.y });
@@ -260,7 +264,11 @@ export class Map {
     return this.tileSet.getTile(id);
   }
 
-  protected translateRotation(boardSize: BoardSize, coords: Coords, clockwise: boolean): Coords {
+  protected translateRotation(
+    boardSize: BoardSize,
+    coords: Coords,
+    clockwise: boolean
+  ): Coords {
     const width = boardSize.width - 1;
     const height = boardSize.height - 1;
 

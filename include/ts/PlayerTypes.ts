@@ -8,7 +8,7 @@ export class PlayerTypes {
       type: "blue-egg",
       value: 3
     },
-    "egg": {
+    egg: {
       frames: 18,
       img: "egg-sprite.png",
       multiplier: 1,
@@ -41,7 +41,7 @@ export class PlayerTypes {
       title: "It is of course the yellow egg",
       type: "yellow-egg",
       value: 4
-    },
+    }
   };
 
   public getPlayerTypes() {

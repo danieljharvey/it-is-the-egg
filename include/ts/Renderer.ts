@@ -96,6 +96,10 @@ export class Renderer {
     }
   }
 
+  public getTileImagePath(tile: Tile): string {
+    return this.canvas.imagesFolder + tile.img;
+  }
+
   protected getImageData(canvas: HTMLCanvasElement): HTMLImageElement {
     const cw = canvas.width;
     const ch = canvas.height;
@@ -104,10 +108,6 @@ export class Renderer {
     savedData.src = canvas.toDataURL("image/png");
 
     return savedData;
-  }
-
-  public getTileImagePath(tile: Tile): string {
-    return this.canvas.imagesFolder + tile.img;
   }
 
   protected loadTilePalette(tiles) {
@@ -261,7 +261,7 @@ export class Renderer {
     const img = this.getTileImage(tile);
 
     if (!img) {
-      console.log("Could not find tile image for id " + tile.id);
+      // console.log("Could not find tile image for id " + tile.id);
       return false;
     }
 

@@ -16,15 +16,15 @@ interface ITileParams {
 }
 
 export class Tile extends Record({
+  action: "",
+  background: false,
+  breakable: false,
+  collectable: 0,
+  createPlayer: "",
+  dontAdd: false,
+  frontLayer: false,
   id: 0,
   title: "Title",
-  background: false,
-  frontLayer: false,
-  collectable: 0,
-  breakable: false,
-  action: "",
-  dontAdd: false,
-  createPlayer: "",
   x: 0,
   y: 0
 }) {

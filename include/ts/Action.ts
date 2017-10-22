@@ -43,7 +43,11 @@ export class Action {
   ): { outcome: string; board: Board; score: number } {
     const currentCoords = player.coords;
 
-    if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0 || player.moved === false) {
+    if (
+      currentCoords.offsetX !== 0 ||
+      currentCoords.offsetY !== 0 ||
+      player.moved === false
+    ) {
       return {
         board,
         outcome,
@@ -104,7 +108,8 @@ export class Action {
 
     const coords = player.coords;
 
-    const belowCoords = this.map.correctForOverflow(board, 
+    const belowCoords = this.map.correctForOverflow(
+      board,
       coords.modify({ y: coords.y + 1 })
     );
 

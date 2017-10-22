@@ -23,15 +23,15 @@ export class TileChooser {
   public highlightChosenTile(id) {
     const tileChooser = document.getElementById("tileChooser");
     const children = tileChooser.children;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
+    const childrenArray = [].slice.call(children);
+    childrenArray.forEach(child => {
       const className = child.getAttribute("class");
-      if (className == "tile" + id) {
+      if (className === "tile" + id) {
         child.setAttribute("style", "border: 1px red solid;");
       } else {
         child.setAttribute("style", "border: 1px white solid;");
       }
-    }
+    });
   }
 
   public makeTileImages(tiles) {
@@ -54,8 +54,8 @@ export class TileChooser {
     const tiles = this.tileSet.getTiles();
     const images = this.makeTileImages(tiles);
     const tileChooser = document.getElementById("tileChooser");
-    for (const i in images) {
-      tileChooser.appendChild(images[i]);
-    }
+    (Object as any).values(images).forEach(image => {
+      tileChooser.appendChild(image);
+    });
   }
 }

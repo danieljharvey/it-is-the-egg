@@ -14,148 +14,148 @@ export class TileSet {
         background: false,
         id: 2,
         img: "fabric.png",
-        title: "Fabric",
-        needsDraw: true
+        needsDraw: true,
+        title: "Fabric"
       },
       3: {
-        id: 3,
-        title: "Cacti",
-        img: "cacti.png",
         background: true,
-        needsDraw: true,
+        collectable: 1,
         frontLayer: true,
-        collectable: 1
+        id: 3,
+        img: "cacti.png",
+        needsDraw: true,
+        title: "Cacti"
       },
       4: {
-        id: 4,
-        title: "Plant",
-        img: "plant.png",
         background: true,
-        needsDraw: true,
+        collectable: 10,
         frontLayer: true,
-        collectable: 10
+        id: 4,
+        img: "plant.png",
+        needsDraw: true,
+        title: "Plant"
       },
       5: {
-        id: 5,
-        title: "Crate",
-        img: "crate.png",
         background: false,
+        breakable: true,
+        id: 5,
+        img: "crate.png",
         needsDraw: true,
-        breakable: true
+        title: "Crate"
       },
       8: {
-        id: 8,
-        title: "Work surface 2",
-        img: "work-surface-2.png",
         background: false,
-        needsDraw: true
+        id: 8,
+        img: "work-surface-2.png",
+        needsDraw: true,
+        title: "Work surface 2"
       },
       9: {
-        id: 9,
-        title: "Work surface 3",
-        img: "work-surface-3.png",
         background: false,
-        needsDraw: true
+        id: 9,
+        img: "work-surface-3.png",
+        needsDraw: true,
+        title: "Work surface 3"
       },
       10: {
-        id: 10,
-        title: "Work surface 4",
-        img: "work-surface-4.png",
         background: false,
-        needsDraw: true
+        id: 10,
+        img: "work-surface-4.png",
+        needsDraw: true,
+        title: "Work surface 4"
       },
       11: {
-        id: 11,
-        title: "Tiles",
-        img: "tile.png",
         background: false,
-        needsDraw: true
+        id: 11,
+        img: "tile.png",
+        needsDraw: true,
+        title: "Tiles"
       },
       12: {
-        id: 12,
-        title: "Egg Cup",
-        img: "egg-cup.png",
+        action: "completeLevel",
         background: true,
-        needsDraw: true,
-        frontLayer: true,
         createPlayer: "egg",
-        action: "completeLevel"
+        frontLayer: true,
+        id: 12,
+        img: "egg-cup.png",
+        needsDraw: true,
+        title: "Egg Cup"
       },
       13: {
-        id: 13,
-        title: "Toast",
-        img: "toast.png",
         background: true,
-        needsDraw: true,
-        frontLayer: true,
         collectable: 100,
-        dontAdd: true
+        dontAdd: true,
+        frontLayer: true,
+        id: 13,
+        img: "toast.png",
+        needsDraw: true,
+        title: "Toast"
       },
       14: {
-        id: 14,
-        title: "Door",
-        img: "door.png",
+        action: "teleport",
         background: true,
-        needsDraw: true,
         frontLayer: true,
-        action: "teleport"
+        id: 14,
+        img: "door.png",
+        needsDraw: true,
+        title: "Door"
       },
       15: {
-        id: 15,
-        title: "Pink door open",
-        img: "pink-door-open.png",
         background: true,
+        frontLayer: true,
+        id: 15,
+        img: "pink-door-open.png",
         needsDraw: true,
-        frontLayer: true
+        title: "Pink door open"
       },
       16: {
-        id: 16,
-        title: "Pink door closed",
-        img: "pink-door.png",
         background: false,
-        needsDraw: true
+        id: 16,
+        img: "pink-door.png",
+        needsDraw: true,
+        title: "Pink door closed"
       },
       17: {
-        id: 17,
-        title: "Pink door switch",
-        img: "pink-switch.png",
+        action: "pink-switch",
         background: true,
-        needsDraw: true,
         frontLayer: true,
-        action: "pink-switch"
+        id: 17,
+        img: "pink-switch.png",
+        needsDraw: true,
+        title: "Pink door switch"
       },
       18: {
-        id: 18,
-        title: "Green door open",
-        img: "green-door-open.png",
         background: true,
+        frontLayer: true,
+        id: 18,
+        img: "green-door-open.png",
         needsDraw: true,
-        frontLayer: true
+        title: "Green door open"
       },
       19: {
-        id: 19,
-        title: "Green door closed",
-        img: "green-door.png",
         background: false,
-        needsDraw: true
+        id: 19,
+        img: "green-door.png",
+        needsDraw: true,
+        title: "Green door closed"
       },
       20: {
-        id: 20,
-        title: "Green door switch",
-        img: "green-switch.png",
+        action: "green-switch",
         background: true,
-        needsDraw: true,
         frontLayer: true,
-        action: "green-switch"
+        id: 20,
+        img: "green-switch.png",
+        needsDraw: true,
+        title: "Green door switch"
       },
       21: {
-        id: 21,
-        title: "Silver Egg Cup",
-        img: "silver-egg-cup.png",
         background: true,
-        needsDraw: true,
+        createPlayer: "silver-egg",
         frontLayer: true,
-        createPlayer: "silver-egg"
+        id: 21,
+        img: "silver-egg-cup.png",
+        needsDraw: true,
+        title: "Silver Egg Cup"
       }
     };
     // return a copy rather than letting this get messed with
@@ -164,7 +164,9 @@ export class TileSet {
 
   public getTile(id) {
     const tiles = this.getTiles();
-    if (tiles.hasOwnProperty(id)) { return tiles[id]; }
+    if (tiles.hasOwnProperty(id)) {
+      return tiles[id];
+    }
     return false;
   }
 }
