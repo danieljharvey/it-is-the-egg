@@ -96,5 +96,5 @@ test("Create multiple new players", () => {
   	const players = jetpack.createPlayers(playerTypes, board);
 
   	expect(typeof players).toEqual('object');
-  	expect(players[0]).toEqual(expected);
+  	expect(players.first()).toEqual(expected);
 });
