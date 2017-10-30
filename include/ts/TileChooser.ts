@@ -6,35 +6,35 @@ import * as _ from "ramda";
 // used in editor, draws a bunch of 32x32 tiles for selecting
 
 export class TileChooser {
-  tileSet: TileSet;
-  renderer: Renderer;
-  chosenTileID: number = 0;
+  public tileSet: TileSet;
+  public renderer: Renderer;
+  public chosenTileID: number = 0;
 
   constructor(tileSet: TileSet, renderer: Renderer) {
     this.tileSet = tileSet;
     this.renderer = renderer;
   }
 
-  chooseTile(id) {
+  public chooseTile(id) {
     this.chosenTileID = id;
     this.highlightChosenTile(id);
   }
 
-  highlightChosenTile(id) {
+  public highlightChosenTile(id) {
     const tileChooser = document.getElementById("tileChooser");
     const children = tileChooser.children;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
+    const childrenArray = [].slice.call(children);
+    childrenArray.forEach(child => {
       const className = child.getAttribute("class");
-      if (className == "tile" + id) {
+      if (className === "tile" + id) {
         child.setAttribute("style", "border: 1px red solid;");
       } else {
         child.setAttribute("style", "border: 1px white solid;");
       }
-    }
+    });
   }
 
-  makeTileImages(tiles) {
+  public makeTileImages(tiles) {
     return _.map(tile => {
       const tileImage = document.createElement("img");
       tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
@@ -50,12 +50,12 @@ export class TileChooser {
     }, tiles);
   }
 
-  render() {
+  public render() {
     const tiles = this.tileSet.getTiles();
     const images = this.makeTileImages(tiles);
     const tileChooser = document.getElementById("tileChooser");
-    for (const i in images) {
-      tileChooser.appendChild(images[i]);
-    }
+    (Object as any).values(images).forEach(image => {
+      tileChooser.appendChild(image);
+    });
   }
 }

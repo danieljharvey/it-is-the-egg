@@ -1,9 +1,11 @@
 import { Board } from "../Board";
 import { Coords } from "../Coords";
+import { Map } from "../Map";
 import { Movement } from "../Movement";
 import { Player } from "../Player";
 
-const movement = new Movement();
+const map = new Map();
+const movement = new Movement(map);
 
 test("Stay still when not moving", () => {
   const player = new Player();
@@ -158,29 +160,27 @@ test("Don't fall through floor", () => {
 });
 
 test("Check player has not moved", () => {
-  
-    const oldPlayer = new Player({
-        coords: new Coords({x:0, y:0})
-    });
+  const oldPlayer = new Player({
+    coords: new Coords({ x: 0, y: 0 })
+  });
 
-    const newPlayer = oldPlayer.modify({id:3});
+  const newPlayer = oldPlayer.modify({ id: 3 });
 
-    const moved = movement.playerHasMoved(oldPlayer, newPlayer);
+  const moved = movement.playerHasMoved(oldPlayer, newPlayer);
 
-    expect(moved).toEqual(false);
+  expect(moved).toEqual(false);
 });
 
 test("Check player has moved", () => {
-    
-      const oldPlayer = new Player({
-          coords: new Coords({x:0, y:0, offsetX: 3})
-      });
-  
-      const newPlayer = oldPlayer.modify({
-          coords: oldPlayer.coords.modify({offsetX:0})
-      });
-  
-      const moved = movement.playerHasMoved(oldPlayer, newPlayer);
-  
-      expect(moved).toEqual(true);
+  const oldPlayer = new Player({
+    coords: new Coords({ x: 0, y: 0, offsetX: 3 })
   });
+
+  const newPlayer = oldPlayer.modify({
+    coords: oldPlayer.coords.modify({ offsetX: 0 })
+  });
+
+  const moved = movement.playerHasMoved(oldPlayer, newPlayer);
+
+  expect(moved).toEqual(true);
+});

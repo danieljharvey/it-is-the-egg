@@ -15,6 +15,15 @@ const OFFSET_DIVIDE: number = 100;
 // movement takes the current map, the current players, and returns new player objects
 // it is then trashed and a new one made for next move to reduce any real held state
 export class Movement {
+  public static calcMoveAmount(moveSpeed: number, timePassed: number): number {
+    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
+    const frameRateAdjusted: number = moveAmount * timePassed;
+    if (isNaN(frameRateAdjusted)) {
+      return 0;
+    }
+    return frameRateAdjusted;
+  }
+
   protected map: Map;
 
   constructor(map: Map) {
@@ -81,9 +90,13 @@ export class Movement {
 
     const coords = player.coords;
 
-    const map = new Map([], new BoardSize(board.getLength()));
+    // not needed yet, but...
+    const boardSize = new BoardSize(board.getLength());
+
+    const map = this.map;
 
     const belowCoords = map.correctForOverflow(
+      board,
       coords.modify({ y: coords.y + 1 })
     );
 
@@ -106,32 +119,29 @@ export class Movement {
     });
   }
 
-  public static calcMoveAmount(moveSpeed: number, timePassed: number): number {
-    const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
-    const frameRateAdjusted: number = moveAmount * timePassed;
-    if (isNaN(frameRateAdjusted)) {
-      return 0;
-    }
-    return frameRateAdjusted;
-  }
-
   // curry and compose together a nice pipeline function to transform old player state into new
-  protected getCalcFunction(oldPlayer: Player, board: Board, timePassed: number) {
+  protected getCalcFunction(
+    oldPlayer: Player,
+    board: Board,
+    timePassed: number
+  ) {
     const checkFloorBelowPlayer = _.curry(this.checkFloorBelowPlayer);
     const checkPlayerDirection = _.curry(this.checkPlayerDirection);
     const incrementPlayerDirection = _.curry(this.incrementPlayerDirection);
     const checkForMovementTiles = _.curry(this.checkForMovementTiles);
     const markPlayerAsMoved = _.curry(this.markPlayerAsMoved);
+    const correctPlayerOverflow = _.curry(this.correctPlayerOverflow);
 
+    /*
     return _.compose(
       markPlayerAsMoved(oldPlayer),
       checkForMovementTiles(board),
-      this.correctPlayerOverflow,
+      correctPlayerOverflow(board),
       incrementPlayerDirection(board),
       checkPlayerDirection(board),
       checkFloorBelowPlayer(board, timePassed),
       this.incrementPlayerFrame
-     );
+     );*/
   }
 
   protected doPlayerCalcs(
@@ -139,13 +149,12 @@ export class Movement {
     board: Board,
     timePassed: number
   ): Player {
-
     // this is great but curried functions lose context, so need to get rid of 'this'
     // inside them (which is fine really - need to classes like Map into stateless modules anyhow)
     /*const playerCalcFn = this.getCalcFunction(player, board, timePassed);
 
     return playerCalcFn(player);*/
-    
+
     const newPlayer = this.incrementPlayerFrame(player);
 
     const newerPlayer = this.checkFloorBelowPlayer(
@@ -154,14 +163,14 @@ export class Movement {
       newPlayer
     );
 
-    const checkedPlayer = this.checkPlayerDirection(board,newerPlayer);
+    const checkedPlayer = this.checkPlayerDirection(board, newerPlayer);
 
     const evenNewerPlayer = this.incrementPlayerDirection(
       timePassed,
       checkedPlayer
     );
 
-    const newestPlayer = this.correctPlayerOverflow(evenNewerPlayer);
+    const newestPlayer = this.correctPlayerOverflow(board, evenNewerPlayer);
 
     // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
 
@@ -170,13 +179,16 @@ export class Movement {
       newestPlayer
     );
 
-    const markedAsMovedPlayer = this.markPlayerAsMoved(player, maybeTeleportedPlayer);
+    const markedAsMovedPlayer = this.markPlayerAsMoved(
+      player,
+      maybeTeleportedPlayer
+    );
 
     return markedAsMovedPlayer;
   }
 
   // work out whether player's location has moved since last go
-  protected markPlayerAsMoved(oldPlayer: Player, newPlayer: Player) : Player {
+  protected markPlayerAsMoved(oldPlayer: Player, newPlayer: Player): Player {
     if (this.playerHasMoved(oldPlayer, newPlayer)) {
       return newPlayer.modify({
         moved: true
@@ -184,13 +196,13 @@ export class Movement {
     }
     return newPlayer.modify({
       moved: false
-    })
+    });
   }
 
   // works out whether Player has actually moved since last go
   // used to decide whether to do an action to stop static players hitting switches infinitely etc
-  protected playerHasMoved(oldPlayer: Player, newPlayer: Player) : boolean {
-    return (!is(oldPlayer.coords, newPlayer.coords));
+  protected playerHasMoved(oldPlayer: Player, newPlayer: Player): boolean {
+    return !is(oldPlayer.coords, newPlayer.coords);
   }
 
   protected checkForMovementTiles(board: Board, player: Player): Player {
@@ -200,7 +212,7 @@ export class Movement {
       return player;
     }
 
-    const coords = this.map.correctForOverflow(currentCoords);
+    const coords = this.map.correctForOverflow(board, currentCoords);
 
     const tile = board.getTile(coords.x, coords.y);
 
@@ -219,7 +231,6 @@ export class Movement {
     }
     const newTile = this.map.findTile(board, player.coords, 14);
     if (newTile) {
-      // console.log('newTile',newTile.x,newTile.y);
       return player.modify({
         coords: player.coords.modify({
           x: newTile.x,
@@ -392,11 +403,9 @@ export class Movement {
     return player;
   }
 
-  
-
-  protected correctPlayerOverflow(player: Player): Player {
+  protected correctPlayerOverflow(board: Board, player: Player): Player {
     const newCoords = this.correctTileOverflow(player.coords);
-    const loopedCoords = this.map.correctForOverflow(newCoords);
+    const loopedCoords = this.map.correctForOverflow(board, newCoords);
 
     if (
       loopedCoords.x !== player.coords.x ||

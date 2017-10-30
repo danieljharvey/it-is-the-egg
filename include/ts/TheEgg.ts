@@ -67,12 +67,12 @@ export class TheEgg {
 
     const boardSize = new BoardSize(gameState.board.getLength());
 
-    const map = new Map(null, boardSize);
+    const map = new Map(null);
 
     const newBoard = map.rotateBoard(gameState.board, clockwise);
 
     const rotatedPlayers = gameState.players.map(player => {
-      return map.rotatePlayer(player, clockwise);
+      return map.rotatePlayer(boardSize, player, clockwise);
     });
 
     const rotateAngle: number = map.changeRenderAngle(

@@ -9,7 +9,7 @@ export class Loader {
     action: string,
     params: any,
     callback: (object) => any,
-    failCallback: (string) => any
+    failCallback: (str) => any
   ) {
     const xhr = new XMLHttpRequest();
 

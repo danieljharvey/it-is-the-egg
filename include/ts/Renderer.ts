@@ -2,6 +2,7 @@ import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
 import { Coords } from "./Coords";
+import { Editor } from "./Editor";
 import { Jetpack } from "./Jetpack";
 import { Map } from "./Map";
 import { Player } from "./Player";
@@ -14,7 +15,7 @@ const OFFSET_DIVIDE: number = 100;
 export class Renderer {
   public tileSize: number;
 
-  protected jetpack: Jetpack;
+  protected jetpack: Jetpack | Editor;
   protected map: Map;
   protected tiles: object;
   protected playerTypes: object;
@@ -39,7 +40,7 @@ export class Renderer {
   protected tilesLoaded: number = 0;
 
   constructor(
-    jetpack: Jetpack,
+    jetpack: Jetpack | Editor,
     tiles: object,
     playerTypes: object,
     boardSize: BoardSize,
@@ -62,7 +63,7 @@ export class Renderer {
     players: Player[],
     renderAngle: number
   ) {
-    //console.log("Renderer->render",board, renderMap, renderAngle);
+    // console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard(board, renderMap, renderAngle);
     this.renderPlayers(players);
@@ -95,6 +96,10 @@ export class Renderer {
     }
   }
 
+  public getTileImagePath(tile: Tile): string {
+    return this.canvas.imagesFolder + tile.img;
+  }
+
   protected getImageData(canvas: HTMLCanvasElement): HTMLImageElement {
     const cw = canvas.width;
     const ch = canvas.height;
@@ -103,10 +108,6 @@ export class Renderer {
     savedData.src = canvas.toDataURL("image/png");
 
     return savedData;
-  }
-
-  public getTileImagePath(tile: Tile): string {
-    return this.canvas.imagesFolder + tile.img;
   }
 
   protected loadTilePalette(tiles) {
@@ -260,7 +261,7 @@ export class Renderer {
     const img = this.getTileImage(tile);
 
     if (!img) {
-      console.log("Could not find tile image for id " + tile.id);
+      // console.log("Could not find tile image for id " + tile.id);
       return false;
     }
 
@@ -313,7 +314,7 @@ export class Renderer {
 
     const image = this.getPlayerImage(player.img);
     if (!image) {
-      //console.log('player image not loaded', player.img);
+      // console.log('player image not loaded', player.img);
       return false;
     }
 

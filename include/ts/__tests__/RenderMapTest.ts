@@ -21,7 +21,7 @@ function configureTileSetMock() {
 test("Create render map from board changes", () => {
   const tileSet = configureTileSetMock();
 
-  const map = new Map(tileSet, new BoardSize(1), []);
+  const map = new Map(tileSet);
 
   const tile1 = map.cloneTile(1);
   const tile2 = map.cloneTile(2);
@@ -65,7 +65,7 @@ test("Combine render maps", () => {
     [false, false, true]
   ];
 
-  const map = new Map(undefined, new BoardSize(1), []);
+  const map = new Map(undefined);
 
   const result = RenderMap.combineRenderMaps(renderMap1, renderMap2);
   expect(result).toEqual(expected);

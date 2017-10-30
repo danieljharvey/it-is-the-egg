@@ -104,7 +104,7 @@ export class Editor {
   }
 
   public growBoard() {
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
 
     const newBoard = map.growBoard(this.board);
     this.boardSize = new BoardSize(newBoard.getLength());
@@ -116,7 +116,7 @@ export class Editor {
   }
 
   public shrinkBoard() {
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
 
     const newBoard = map.shrinkBoard(this.board);
     this.boardSize = new BoardSize(newBoard.getLength());
@@ -128,16 +128,13 @@ export class Editor {
   }
 
   public undo() {
-    console.log("Undo! current steps...", this.boardHistory.length);
     if (this.boardHistory.length === 1) {
-      console.log("No steps to undo!");
       return false;
     }
     this.boardHistory.pop(); // get rid of most recent
     this.board = this.boardHistory.slice(-1)[0]; // set to new last item
     this.boardSize = new BoardSize(this.board.getLength());
     this.renderEverything(this.board);
-    console.log("Undo! Steps left", this.boardHistory.length);
   }
 
   // replaces this.board with board
@@ -148,8 +145,8 @@ export class Editor {
   }
 
   protected getBlankBoard(tileSet: TileSet, boardSize: BoardSize): Board {
-    const map = new Map(tileSet, boardSize);
-    return map.generateBlankBoard();
+    const map = new Map(tileSet);
+    return map.generateBlankBoard(boardSize);
   }
 
   protected getLevelBoard(
@@ -157,7 +154,7 @@ export class Editor {
     tileSet: TileSet,
     boardSize: BoardSize
   ): Board {
-    const map = new Map(tileSet, boardSize);
+    const map = new Map(tileSet);
     return map.makeBoardFromArray(boardArray);
   }
 
@@ -199,7 +196,10 @@ export class Editor {
       tiles,
       [], // no players in edit mode
       this.boardSize,
-      this.canvas
+      this.canvas,
+      () => {
+        // console.log("yes")
+      }
     );
   }
 
@@ -300,7 +300,7 @@ export class Editor {
 
     const currentTile = this.board.getTile(coords.x, coords.y);
 
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
     const tile = map.cloneTile(tileID);
 
     const placedTile = tile.modify({

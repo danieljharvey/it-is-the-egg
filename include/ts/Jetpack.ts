@@ -15,6 +15,7 @@ import { Renderer } from "./Renderer";
 import { RenderMap } from "./RenderMap";
 import { SavedLevel } from "./SavedLevel";
 import { TheEgg } from "./TheEgg";
+import { Tile } from "./Tile";
 import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
@@ -32,7 +33,6 @@ export class Jetpack {
   protected levelList: number[] = [];
 
   protected renderer: Renderer; // Renderer object
-  protected collisions: Collisions; // Collisions object
   protected levels: Levels; // Levels object
   protected tileSet: TileSet; // TileSet object
   protected boardSize: BoardSize; // BoardSize object
@@ -84,8 +84,6 @@ export class Jetpack {
     const playerTypes = new PlayerTypes();
     this.playerTypes = playerTypes.getPlayerTypes();
 
-    this.collisions = new Collisions(this, this.playerTypes); // pass the data, not the object
-
     const apiLocation = "http://" + window.location.hostname + "/levels/";
 
     const loader: Loader = new Loader(apiLocation);
@@ -108,11 +106,12 @@ export class Jetpack {
 
   // create player
   public createNewPlayer(
+    playerTypes,
     type: string,
     coords: Coords,
     direction: number
   ): Player {
-    const playerType = this.playerTypes[type];
+    const playerType = playerTypes[type];
     const params = JSON.parse(JSON.stringify(playerType));
     params.id = this.nextPlayerID++;
     params.coords = coords;
@@ -204,7 +203,7 @@ export class Jetpack {
 
   protected getNextAction(): string {
     const action = this.action;
-    //this.action = "";
+    // this.action = "";
     return action;
   }
 
@@ -294,14 +293,14 @@ export class Jetpack {
   }
 
   protected getBoardFromArray(boardArray): Board {
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
     return map.makeBoardFromArray(boardArray);
   }
 
   // create first "frame" of gameState from board
   // create players etc
   protected getBlankGameState(board: Board): GameState {
-    const players = this.createPlayers(board);
+    const players = this.createPlayers(this.playerTypes, board);
     return new GameState({
       board,
       players
@@ -324,7 +323,7 @@ export class Jetpack {
     action: string,
     timePassed: number
   ): GameState {
-    const map = new Map(this.tileSet, this.boardSize);
+    const map = new Map(this.tileSet);
     const theEgg = new TheEgg(map, this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.gameStates.push(newGameState); // add to history
@@ -451,26 +450,29 @@ export class Jetpack {
     }, 0);
   }
 
+  protected filterCreateTiles = tiles => {
+    return tiles.filter(tile => {
+      return tile.createPlayer !== "";
+    });
+  };
+
   // cycle through all map tiles, find egg cups etc and create players
-  protected createPlayers(board: Board): Player[] {
+  protected createPlayers(playerTypes, board: Board) {
     const tiles = board.getAllTiles();
-    const playerTiles = tiles.map(tile => {
+
+    const filtered = this.filterCreateTiles(tiles);
+
+    const players = filtered.map((tile: Tile) => {
       const type = tile.createPlayer;
-      if (type) {
-        const coords = new Coords({
-          offsetX: 0,
-          offsetY: 0,
-          x: tile.x,
-          y: tile.y
-        });
-        return this.createNewPlayer(type, coords, 1);
-      } else {
-        return false;
-      }
+      const coords = new Coords({
+        offsetX: 0,
+        offsetY: 0,
+        x: tile.x,
+        y: tile.y
+      });
+      return this.createNewPlayer(playerTypes, type, coords, 1);
     });
-    return playerTiles.filter(player => {
-      return player !== false;
-    });
+    return players;
   }
 
   // get total outstanding points left to grab on board
@@ -514,8 +516,8 @@ export class Jetpack {
           this.tileSet,
           this.boardSize,
           () => {
-            const map = new Map(this.tileSet, this.boardSize);
-            const board = map.generateRandomBoard(this.boardSize);
+            const map = new Map(this.tileSet);
+            const board = map.generateRandomBoard(this.boardSize, this.tileSet);
             this.resetGameState(board);
             const gameState = this.getCurrentGameState();
             this.renderEverything(gameState);

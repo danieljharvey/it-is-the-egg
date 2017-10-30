@@ -1,8 +1,10 @@
+import { fromJS, List } from "immutable";
 import { Coords } from "./Coords";
-import { List, fromJS } from "immutable";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
+
+import * as _ from "ramda";
 
 export class Collisions {
   protected playerTypes: object;
@@ -103,12 +105,9 @@ export class Collisions {
 
     // we've found one then
 
-    if (List.isList(matching)) {
-      // Immutable List
-      return matching.first();
-    }
-    // array
-    return matching.slice(0, 1)[0];
+    return _.find(item => {
+      return item !== undefined;
+    }, matching);
   }
 
   protected getAllPlayerCombinations(players: Player[]): number[][] {
@@ -203,7 +202,7 @@ export class Collisions {
       return [player1, player2];
     }
 
-    const newPlayerParams = Object.assign({}, newPlayerType, {
+    const newPlayerParams = (Object as any).assign({}, newPlayerType, {
       coords: higherPlayer.coords,
       direction: higherPlayer.direction
     });

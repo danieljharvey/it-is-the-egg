@@ -17,3 +17,9 @@ test("Test modify object", () => {
   expect(newTile.y).toEqual(100);
   expect(newTile.id).toEqual(90);
 });
+
+test("Test using createPlayer", () => {
+  const tile = new Tile({ x: 3, y: 10, createPlayer: "dog" });
+
+  expect(tile.createPlayer).toEqual("dog");
+});

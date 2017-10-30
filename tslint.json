@@ -5,5 +5,9 @@
 		"tslint-config-prettier"
     ],
     "jsRules": {},
-    "rulesDirectory": []
+    "rulesDirectory": [],
+    "rules": {
+		"no-bitwise": false,
+		"object-literal-sort-keys": false
+    }
 }

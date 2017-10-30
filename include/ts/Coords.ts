@@ -17,7 +17,8 @@ export class Coords extends Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 }) {
   public offsetY: number;
 
   constructor(params?: ICoordsParams) {
-    params ? super(params) : super();
+    const superParams = params ? params : undefined;
+    super(superParams);
   }
 
   public modify(values: ICoordsParams) {
