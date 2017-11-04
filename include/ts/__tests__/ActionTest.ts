@@ -2,7 +2,7 @@ import { Action } from "../Action";
 import { Board } from "../Board";
 import { BoardSize } from "../BoardSize";
 import { Coords } from "../Coords";
-import { Map } from "../Map";
+import * as Map from "../Map";
 import { Player } from "../Player";
 import { Tile } from "../Tile";
 import { TileSet } from "../TileSet";
@@ -33,7 +33,7 @@ test("Do nothing if player not centered on board in X axis", () => {
     })
   });
 
-  const action = new Action();
+  const action = new Action
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 
@@ -51,7 +51,7 @@ test("Do nothing if player not centered on board in Y axis", () => {
     })
   });
 
-  const action = new Action();
+  const action = new Action
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 
@@ -69,10 +69,7 @@ test("Do nothing if player has not moved", () => {
     moved: false
   });
 
-  const tileSet = new TileSet();
-  const map = new Map(tileSet);
-
-  const action = new Action(map);
+  const action = new Action
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 
@@ -90,10 +87,7 @@ test("Change board if player has moved", () => {
     moved: true
   });
 
-  const tileSet = new TileSet();
-  const map = new Map(tileSet);
-
-  const action = new Action(map);
+  const action = new Action
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 

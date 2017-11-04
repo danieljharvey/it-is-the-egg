@@ -4,7 +4,7 @@ import { Canvas } from "./Canvas";
 import { Coords } from "./Coords";
 import { Editor } from "./Editor";
 import { Jetpack } from "./Jetpack";
-import { Map } from "./Map";
+import * as Map from "./Map";
 import { Player } from "./Player";
 import { Tile } from "./Tile";
 import { Utils } from "./Utils";
@@ -16,7 +16,6 @@ export class Renderer {
   public tileSize: number;
 
   protected jetpack: Jetpack | Editor;
-  protected map: Map;
   protected tiles: object;
   protected playerTypes: object;
   protected boardSize: BoardSize;

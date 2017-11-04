@@ -4,7 +4,7 @@ import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
 import { GameState } from "./GameState";
 import { Jetpack } from "./Jetpack";
-import { Map } from "./Map";
+import * as Map from "./Map";
 import { Player } from "./Player";
 import { Renderer } from "./Renderer";
 
@@ -15,6 +15,7 @@ const OFFSET_DIVIDE: number = 100;
 // movement takes the current map, the current players, and returns new player objects
 // it is then trashed and a new one made for next move to reduce any real held state
 export class Movement {
+  
   public static calcMoveAmount(moveSpeed: number, timePassed: number): number {
     const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
     const frameRateAdjusted: number = moveAmount * timePassed;
@@ -22,12 +23,6 @@ export class Movement {
       return 0;
     }
     return frameRateAdjusted;
-  }
-
-  protected map: Map;
-
-  constructor(map: Map) {
-    this.map = map; // object that has been loaded with tiles for us to use - does not hold data
   }
 
   // loop through passed players[] array, do changes, return new one
@@ -93,9 +88,7 @@ export class Movement {
     // not needed yet, but...
     const boardSize = new BoardSize(board.getLength());
 
-    const map = this.map;
-
-    const belowCoords = map.correctForOverflow(
+    const belowCoords = Map.correctForOverflow(
       board,
       coords.modify({ y: coords.y + 1 })
     );
@@ -212,7 +205,7 @@ export class Movement {
       return player;
     }
 
-    const coords = this.map.correctForOverflow(board, currentCoords);
+    const coords = Map.correctForOverflow(board, currentCoords);
 
     const tile = board.getTile(coords.x, coords.y);
 
@@ -229,7 +222,7 @@ export class Movement {
     if (player.lastAction === "teleport") {
       return player;
     }
-    const newTile = this.map.findTile(board, player.coords, 14);
+    const newTile = Map.findTile(board, player.coords, 14);
     if (newTile) {
       return player.modify({
         coords: player.coords.modify({
@@ -288,8 +281,8 @@ export class Movement {
 
     if (player.direction !== 0 && player.falling === false) {
       if (
-        !this.map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
-        !this.map.checkTileIsEmpty(board, coords.x + 1, coords.y)
+        !Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
+        !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)
       ) {
         return player.modify({
           stop: true // don't go on this turn
@@ -298,7 +291,7 @@ export class Movement {
     }
 
     if (player.direction < 0 && player.falling === false) {
-      if (!this.map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
+      if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
         // turn around
         return player.modify({
           coords: coords.modify({
@@ -311,7 +304,7 @@ export class Movement {
     }
 
     if (player.direction > 0 && player.falling === false) {
-      if (!this.map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
+      if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
         // turn around
         return player.modify({
           coords: coords.modify({
@@ -405,7 +398,7 @@ export class Movement {
 
   protected correctPlayerOverflow(board: Board, player: Player): Player {
     const newCoords = this.correctTileOverflow(player.coords);
-    const loopedCoords = this.map.correctForOverflow(board, newCoords);
+    const loopedCoords = Map.correctForOverflow(board, newCoords);
 
     if (
       loopedCoords.x !== player.coords.x ||

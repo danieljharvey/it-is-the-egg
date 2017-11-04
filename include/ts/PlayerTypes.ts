@@ -41,6 +41,14 @@ export class PlayerTypes {
       title: "It is of course the yellow egg",
       type: "yellow-egg",
       value: 4
+    },
+    "blade":{
+      frames: 18,
+      img: "blade-sprite.png",
+      title: "It is the mean spirited blade",
+      type: "blade",
+      value: 0,
+      movePattern: 'seek-egg'
     }
   };
 

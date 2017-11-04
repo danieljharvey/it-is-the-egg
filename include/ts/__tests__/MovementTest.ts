@@ -1,11 +1,10 @@
 import { Board } from "../Board";
 import { Coords } from "../Coords";
-import { Map } from "../Map";
+import * as Map from "../Map";
 import { Movement } from "../Movement";
 import { Player } from "../Player";
 
-const map = new Map();
-const movement = new Movement(map);
+const movement = new Movement
 
 test("Stay still when not moving", () => {
   const player = new Player();

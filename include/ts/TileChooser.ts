@@ -6,12 +6,10 @@ import * as _ from "ramda";
 // used in editor, draws a bunch of 32x32 tiles for selecting
 
 export class TileChooser {
-  public tileSet: TileSet;
   public renderer: Renderer;
   public chosenTileID: number = 0;
 
-  constructor(tileSet: TileSet, renderer: Renderer) {
-    this.tileSet = tileSet;
+  constructor(renderer: Renderer) {
     this.renderer = renderer;
   }
 
@@ -41,6 +39,7 @@ export class TileChooser {
       tileImage.setAttribute("width", "32");
       tileImage.setAttribute("height", "32");
       tileImage.setAttribute("padding", "2px");
+      tileImage.setAttribute("alt", tile.title);
       tileImage.setAttribute("style", "border: 1px white solid;");
       tileImage.setAttribute("class", "tile" + tile.id);
       tileImage.onclick = () => {
@@ -51,7 +50,7 @@ export class TileChooser {
   }
 
   public render() {
-    const tiles = this.tileSet.getTiles();
+    const tiles = TileSet.getTiles();
     const images = this.makeTileImages(tiles);
     const tileChooser = document.getElementById("tileChooser");
     (Object as any).values(images).forEach(image => {

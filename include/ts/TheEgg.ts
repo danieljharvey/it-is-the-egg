@@ -8,7 +8,7 @@ import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Collisions } from "./Collisions";
 import { GameState } from "./GameState";
-import { Map } from "./Map";
+import * as Map from "./Map";
 import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
@@ -16,11 +16,9 @@ import { PlayerTypes } from "./PlayerTypes";
 import { is } from "immutable";
 
 export class TheEgg {
-  protected map: Map; // used to hold tile info mostly
   protected playerTypes: object; // used by Collisions
 
-  constructor(map: Map, playerTypes) {
-    this.map = map;
+  constructor(playerTypes) {
     this.playerTypes = playerTypes;
   }
 
@@ -46,10 +44,10 @@ export class TheEgg {
       outcome: ""
     });
 
-    const movement = new Movement(this.map);
+    const movement = new Movement();
     const newGameState = movement.doCalcs(startGameState, timePassed);
 
-    const action = new Action(this.map);
+    const action = new Action
     const newerGameState = action.checkAllPlayerTileActions(newGameState);
 
     const collisions = new Collisions(this.playerTypes);
@@ -67,15 +65,13 @@ export class TheEgg {
 
     const boardSize = new BoardSize(gameState.board.getLength());
 
-    const map = new Map(null);
-
-    const newBoard = map.rotateBoard(gameState.board, clockwise);
+    const newBoard = Map.rotateBoard(gameState.board, clockwise);
 
     const rotatedPlayers = gameState.players.map(player => {
-      return map.rotatePlayer(boardSize, player, clockwise);
+      return Map.rotatePlayer(boardSize, player, clockwise);
     });
 
-    const rotateAngle: number = map.changeRenderAngle(
+    const rotateAngle: number = Map.changeRenderAngle(
       gameState.rotateAngle,
       clockwise
     );

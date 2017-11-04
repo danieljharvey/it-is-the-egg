@@ -7,7 +7,7 @@ import { Editor } from "./Editor";
 import { GameState } from "./GameState";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
-import { Map } from "./Map";
+import * as Map from "./Map";
 import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
@@ -34,7 +34,6 @@ export class Jetpack {
 
   protected renderer: Renderer; // Renderer object
   protected levels: Levels; // Levels object
-  protected tileSet: TileSet; // TileSet object
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
   protected tileChooser: TileChooser;
@@ -75,7 +74,6 @@ export class Jetpack {
 
   // load static stuff - map/renderer etc will be worked out later
   public bootstrap(callback) {
-    this.tileSet = new TileSet();
 
     const boardSize = new BoardSize(this.defaultBoardSize);
 
@@ -173,15 +171,13 @@ export class Jetpack {
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
   protected createRenderer(
-    tileSet: TileSet,
     boardSize: BoardSize,
     completedCallback: () => any
   ) {
     this.canvas = new Canvas(boardSize);
-    this.tileSet = tileSet;
     this.boardSize = boardSize;
 
-    const tiles = this.tileSet.getTiles();
+    const tiles = TileSet.getTiles();
 
     return new Renderer(
       this,
@@ -293,8 +289,7 @@ export class Jetpack {
   }
 
   protected getBoardFromArray(boardArray): Board {
-    const map = new Map(this.tileSet);
-    return map.makeBoardFromArray(boardArray);
+    return Map.makeBoardFromArray(boardArray);
   }
 
   // create first "frame" of gameState from board
@@ -323,8 +318,7 @@ export class Jetpack {
     action: string,
     timePassed: number
   ): GameState {
-    const map = new Map(this.tileSet);
-    const theEgg = new TheEgg(map, this.playerTypes);
+    const theEgg = new TheEgg(this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.gameStates.push(newGameState); // add to history
     return newGameState;
@@ -500,7 +494,6 @@ export class Jetpack {
       levelID,
       (savedLevel: SavedLevel) => {
         this.renderer = this.createRenderer(
-          this.tileSet,
           savedLevel.boardSize,
           () => {
             const board = this.getBoardFromArray(savedLevel.board);
@@ -513,11 +506,9 @@ export class Jetpack {
       },
       () => {
         this.renderer = this.createRenderer(
-          this.tileSet,
           this.boardSize,
           () => {
-            const map = new Map(this.tileSet);
-            const board = map.generateRandomBoard(this.boardSize, this.tileSet);
+            const board = Map.generateRandomBoard(this.boardSize);
             this.resetGameState(board);
             const gameState = this.getCurrentGameState();
             this.renderEverything(gameState);

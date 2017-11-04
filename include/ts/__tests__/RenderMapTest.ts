@@ -1,30 +1,15 @@
 import { Board } from "../Board";
 import { BoardSize } from "../BoardSize";
 import { Coords } from "../Coords";
-import { Map } from "../Map";
+import * as Map from "../Map";
 import { Player } from "../Player";
 import { RenderMap } from "../RenderMap";
 import { TileSet } from "../TileSet";
 
-function configureTileSetMock() {
-  const tileSet = jest.fn(); // create mock that does nothing
-  tileSet.getTile = id => {
-    return {
-      id,
-      title: "made up tile"
-    };
-  };
-
-  return tileSet;
-}
-
 test("Create render map from board changes", () => {
-  const tileSet = configureTileSetMock();
 
-  const map = new Map(tileSet);
-
-  const tile1 = map.cloneTile(1);
-  const tile2 = map.cloneTile(2);
+  const tile1 = Map.cloneTile(1);
+  const tile2 = Map.cloneTile(2);
 
   const boardArray = [
     [tile1, tile1, tile1],
@@ -64,8 +49,6 @@ test("Combine render maps", () => {
     [false, true, false],
     [false, false, true]
   ];
-
-  const map = new Map(undefined);
 
   const result = RenderMap.combineRenderMaps(renderMap1, renderMap2);
   expect(result).toEqual(expected);
