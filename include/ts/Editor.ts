@@ -19,7 +19,7 @@ import { Utils } from "./Utils";
 export class Editor {
   protected levelID: number = 1;
   protected levelList: number[] = [];
-  
+
   protected renderer: Renderer; // Renderer object
   protected levels: Levels; // Levels object
   protected boardSize: BoardSize; // BoardSize object
@@ -55,7 +55,6 @@ export class Editor {
 
   // load static stuff - map/renderer etc will be worked out later
   public bootstrap(callback) {
-
     this.boardSize = new BoardSize(this.defaultBoardSize);
 
     this.canvas = new Canvas(this.boardSize);
@@ -100,7 +99,6 @@ export class Editor {
   }
 
   public growBoard() {
-
     const newBoard = Map.growBoard(this.board);
     this.boardSize = new BoardSize(newBoard.getLength());
 
@@ -111,7 +109,6 @@ export class Editor {
   }
 
   public shrinkBoard() {
-
     const newBoard = Map.shrinkBoard(this.board);
     this.boardSize = new BoardSize(newBoard.getLength());
 
@@ -142,10 +139,7 @@ export class Editor {
     return Map.generateBlankBoard(boardSize);
   }
 
-  protected getLevelBoard(
-    boardArray,
-    boardSize: BoardSize
-  ): Board {
+  protected getLevelBoard(boardArray, boardSize: BoardSize): Board {
     return Map.makeBoardFromArray(boardArray);
   }
 
@@ -232,10 +226,7 @@ export class Editor {
       (savedLevel: SavedLevel) => {
         const text = "Level " + savedLevel.levelID.toString() + " loaded!";
         this.showEditMessage(text);
-        this.board = this.getLevelBoard(
-          savedLevel.board,
-          savedLevel.boardSize
-        );
+        this.board = this.getLevelBoard(savedLevel.board, savedLevel.boardSize);
         this.renderer = this.createRenderer(savedLevel.boardSize);
         callback();
       },

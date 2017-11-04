@@ -42,13 +42,13 @@ export class PlayerTypes {
       type: "yellow-egg",
       value: 4
     },
-    "blade":{
+    blade: {
       frames: 18,
       img: "blade-sprite.png",
       title: "It is the mean spirited blade",
       type: "blade",
       value: 0,
-      movePattern: 'seek-egg'
+      movePattern: "seek-egg"
     }
   };
 

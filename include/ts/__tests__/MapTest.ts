@@ -5,7 +5,6 @@ import * as Map from "../Map";
 import { TileSet } from "../TileSet";
 
 test("Translate rotation", () => {
-  
   const rotateData = [
     { inX: 0, inY: 0, clockwise: true, outX: 9, outY: 0 },
     { inX: 9, inY: 0, clockwise: true, outX: 9, outY: 9 },

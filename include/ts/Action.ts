@@ -6,7 +6,6 @@ import { Player } from "./Player";
 // this concerns all the changes between player and board
 
 export class Action {
-
   // go through each player, check it's effect on board, score and outcome, return new gameState obj
   public checkAllPlayerTileActions(gameState: GameState): GameState {
     return gameState.players.reduce(

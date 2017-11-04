@@ -11,18 +11,18 @@ import { Utils } from "./Utils";
 
 export const calcBoardSize = (board: Board): number => {
   return board.getLength();
-}
+};
 
 export const correctForOverflow = (board: Board, coords: Coords): Coords => {
   const boardSize = calcBoardSize(board);
   return Utils.correctForOverflow(coords, new BoardSize(boardSize));
-}
+};
 
 // is intended next tile empty / a wall?
 export const checkTileIsEmpty = (board: Board, x, y): boolean => {
   const tile = getTile(board, x, y);
   return tile.background;
-}
+};
 
 // find random tile of type that is NOT at currentCoords
 export const findTile = (board: Board, currentCoords: Coords, id): Tile => {
@@ -40,24 +40,27 @@ export const findTile = (board: Board, currentCoords: Coords, id): Tile => {
 
   const newTile = teleporters.get(chosenID); // this is an Immutable list so needs to use their functions
   return newTile;
-}
+};
 
 export const shrinkBoard = (board: Board): Board => {
   const boardSize = new BoardSize(board.getLength());
   const shrunkBoardSize = boardSize.shrink();
   return correctBoardSizeChange(board, shrunkBoardSize);
-}
+};
 
 export const growBoard = (board: Board): Board => {
   const boardSize = new BoardSize(board.getLength());
   const grownBoardSize = boardSize.grow();
   return correctBoardSizeChange(board, grownBoardSize);
-}
+};
 
 // board is current board
 // boardSize is intended board size
 // returns new Board
-export const correctBoardSizeChange = (board: Board, boardSize: BoardSize): Board => {
+export const correctBoardSizeChange = (
+  board: Board,
+  boardSize: BoardSize
+): Board => {
   const newBoard = [];
 
   const currentWidth = board.getLength();
@@ -79,7 +82,7 @@ export const correctBoardSizeChange = (board: Board, boardSize: BoardSize): Boar
     }
   }
   return new Board(newBoard);
-}
+};
 
 export const generateBlankBoard = (boardSize: BoardSize): Board => {
   const board = [];
@@ -96,24 +99,24 @@ export const generateBlankBoard = (boardSize: BoardSize): Board => {
     }
   }
   return new Board(board);
-}
+};
 
 export const getTileWithCoords = (board: Board, coords: Coords): Tile => {
   const fixedCoords = correctForOverflow(board, coords);
   const { x, y } = fixedCoords;
   return board.getTile(x, y);
-}
+};
 
 export const changeTile = (board: Board, coords: Coords, tile: Tile): Board => {
   return board.modify(coords.x, coords.y, tile);
-}
+};
 
-export const rotatePlayer = (boardSize: BoardSize, player: Player, clockwise): Player => {
-  const newCoords = translateRotation(
-    boardSize,
-    player.coords,
-    clockwise
-  );
+export const rotatePlayer = (
+  boardSize: BoardSize,
+  player: Player,
+  clockwise
+): Player => {
+  const newCoords = translateRotation(boardSize, player.coords, clockwise);
 
   let direction = player.direction;
 
@@ -133,12 +136,12 @@ export const rotatePlayer = (boardSize: BoardSize, player: Player, clockwise): P
     }),
     direction
   });
-}
+};
 
 export const cloneTile = (id): Tile => {
   const prototypeTile = getPrototypeTile(id);
   return new Tile(prototypeTile); // create new Tile object with these
-}
+};
 
 export const getRandomTile = (tiles): Tile => {
   const randomProperty = obj => {
@@ -153,7 +156,7 @@ export const getRandomTile = (tiles): Tile => {
     return true;
   });
   return randomProperty(tiles);
-}
+};
 
 // swap two types of tiles on map (used by pink/green switching door things)
 export const switchTiles = (board: Board, id1, id2): Board => {
@@ -176,7 +179,7 @@ export const switchTiles = (board: Board, id1, id2): Board => {
     }
     return currentBoard;
   }, board);
-}
+};
 
 // rotates board, returns new board and new renderAngle
 // really should be two functions
@@ -199,7 +202,7 @@ export const rotateBoard = (board: Board, clockwise: boolean): Board => {
   }, board);
 
   return rotatedBoard;
-}
+};
 
 export const changeRenderAngle = (renderAngle: number, clockwise: boolean) => {
   let newRenderAngle;
@@ -216,7 +219,7 @@ export const changeRenderAngle = (renderAngle: number, clockwise: boolean) => {
     newRenderAngle = 360 + newRenderAngle;
   }
   return newRenderAngle;
-}
+};
 
 export const makeBoardFromArray = (boardArray: Tile[][] = []): Board => {
   const newBoard = boardArray.map((column, mapX) => {
@@ -229,7 +232,7 @@ export const makeBoardFromArray = (boardArray: Tile[][] = []): Board => {
     });
   });
   return new Board(newBoard);
-}
+};
 
 export const generateRandomBoard = (boardSize: BoardSize): Board => {
   const boardArray = [];
@@ -246,22 +249,22 @@ export const generateRandomBoard = (boardSize: BoardSize): Board => {
     }
   }
   return new Board(boardArray);
-}
+};
 
 export const getTile = (board: Board, x: number, y: number) => {
   const coords = new Coords({ x, y });
   return getTileWithCoords(board, coords);
-}
+};
 
-export const getPrototypeTile = (id : number) : object => {
+export const getPrototypeTile = (id: number): object => {
   return TileSet.getTile(id);
-}
+};
 
 export const translateRotation = (
   boardSize: BoardSize,
   coords: Coords,
   clockwise: boolean
-) : Coords => {
+): Coords => {
   const width = boardSize.width - 1;
   const height = boardSize.height - 1;
 
@@ -284,4 +287,4 @@ export const translateRotation = (
       y: height - coords.x
     });
   }
-}
+};

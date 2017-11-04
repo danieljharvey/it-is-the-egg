@@ -470,7 +470,7 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                 }
             };
             // return a copy rather than letting this get messed with
-            return (JSON.parse(JSON.stringify(tiles)));
+            return JSON.parse(JSON.stringify(tiles));
         };
         TileSet.getTile = function (id) {
             var tiles = TileSet.getTiles();
@@ -947,13 +947,13 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     type: "yellow-egg",
                     value: 4
                 },
-                "blade": {
+                blade: {
                     frames: 18,
                     img: "blade-sprite.png",
                     title: "It is the mean spirited blade",
                     type: "blade",
                     value: 0,
-                    movePattern: 'seek-egg'
+                    movePattern: "seek-egg"
                 }
             };
         }
@@ -1411,13 +1411,10 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
     // doCalcs takes the current map, the current players, and returns new player objects
     // loop through passed players[] array, do changes, return new one
     exports.doCalcs = function (gameState, timePassed) {
-        var newPlayers = gameState.players.map(function (player) {
-            return exports.doPlayerCalcs(gameState.board, timePassed)(player);
+        var playerCalcs = exports.doPlayerCalcs(gameState.board, timePassed);
+        return gameState.modify({
+            players: gameState.players.map(playerCalcs)
         });
-        var newGameState = gameState.modify({
-            players: newPlayers
-        });
-        return newGameState;
     };
     exports.calcMoveAmount = function (moveSpeed, timePassed) {
         var moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
@@ -1459,31 +1456,29 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
         return coords;
     };
     // only public so it can be tested, please don't use outside of here
-    exports.checkFloorBelowPlayer = function (board, timePassed) {
-        return function (player) {
-            if (player.coords.offsetX !== 0) {
-                return player;
-            }
-            var coords = player.coords;
-            // not needed yet, but...
-            var boardSize = new BoardSize_4.BoardSize(board.getLength());
-            var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
-            var tile = board.getTile(belowCoords.x, belowCoords.y);
-            if (tile.background) {
-                // gap below, start falling down it
-                return player.modify({
-                    falling: true
-                });
-            }
-            if (tile.get("breakable") === true && player.falling) {
-                return player; // allow player to keep falling through breakable tile
-            }
-            // solid ground, stop falling
+    exports.checkFloorBelowPlayer = function (board, timePassed) { return function (player) {
+        if (player.coords.offsetX !== 0) {
+            return player;
+        }
+        var coords = player.coords;
+        // not needed yet, but...
+        var boardSize = new BoardSize_4.BoardSize(board.getLength());
+        var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
+        var tile = board.getTile(belowCoords.x, belowCoords.y);
+        if (tile.background) {
+            // gap below, start falling down it
             return player.modify({
-                falling: false
+                falling: true
             });
-        };
-    };
+        }
+        if (tile.get("breakable") === true && player.falling) {
+            return player; // allow player to keep falling through breakable tile
+        }
+        // solid ground, stop falling
+        return player.modify({
+            falling: false
+        });
+    }; };
     // curry and compose together a nice pipeline function to transform old player state into new
     exports.getCalcFunction = function (oldPlayer, board, timePassed) {
         // separated as not all functions will be the same for enemies
@@ -1716,7 +1711,7 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Ma
                 outcome: ""
             });
             var newGameState = Movement.doCalcs(startGameState, timePassed);
-            var action = new Action_1.Action;
+            var action = new Action_1.Action();
             var newerGameState = action.checkAllPlayerTileActions(newGameState);
             var collisions = new Collisions_1.Collisions(this.playerTypes);
             var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);

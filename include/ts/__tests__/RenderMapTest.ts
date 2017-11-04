@@ -7,7 +7,6 @@ import { RenderMap } from "../RenderMap";
 import { TileSet } from "../TileSet";
 
 test("Create render map from board changes", () => {
-
   const tile1 = Map.cloneTile(1);
   const tile2 = Map.cloneTile(2);
 

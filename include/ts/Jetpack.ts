@@ -73,7 +73,6 @@ export class Jetpack {
 
   // load static stuff - map/renderer etc will be worked out later
   public bootstrap(callback) {
-
     const boardSize = new BoardSize(this.defaultBoardSize);
 
     this.canvas = new Canvas(boardSize);
@@ -169,10 +168,7 @@ export class Jetpack {
   }
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  protected createRenderer(
-    boardSize: BoardSize,
-    completedCallback: () => any
-  ) {
+  protected createRenderer(boardSize: BoardSize, completedCallback: () => any) {
     this.canvas = new Canvas(boardSize);
     this.boardSize = boardSize;
 
@@ -492,28 +488,22 @@ export class Jetpack {
     this.levels.loadLevel(
       levelID,
       (savedLevel: SavedLevel) => {
-        this.renderer = this.createRenderer(
-          savedLevel.boardSize,
-          () => {
-            const board = this.getBoardFromArray(savedLevel.board);
-            this.resetGameState(board);
-            const gameState = this.getCurrentGameState();
-            this.renderEverything(gameState);
-            callback();
-          }
-        );
+        this.renderer = this.createRenderer(savedLevel.boardSize, () => {
+          const board = this.getBoardFromArray(savedLevel.board);
+          this.resetGameState(board);
+          const gameState = this.getCurrentGameState();
+          this.renderEverything(gameState);
+          callback();
+        });
       },
       () => {
-        this.renderer = this.createRenderer(
-          this.boardSize,
-          () => {
-            const board = Map.generateRandomBoard(this.boardSize);
-            this.resetGameState(board);
-            const gameState = this.getCurrentGameState();
-            this.renderEverything(gameState);
-            callback();
-          }
-        );
+        this.renderer = this.createRenderer(this.boardSize, () => {
+          const board = Map.generateRandomBoard(this.boardSize);
+          this.resetGameState(board);
+          const gameState = this.getCurrentGameState();
+          this.renderEverything(gameState);
+          callback();
+        });
       }
     );
   }

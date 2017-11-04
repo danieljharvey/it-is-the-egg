@@ -15,25 +15,27 @@ const OFFSET_DIVIDE: number = 100;
 // doCalcs takes the current map, the current players, and returns new player objects
 
 // loop through passed players[] array, do changes, return new one
-export const doCalcs = (gameState: GameState, timePassed: number): GameState => {
-  const newPlayers = gameState.players.map(player => {
-    return doPlayerCalcs(gameState.board, timePassed)(player)
+export const doCalcs = (
+  gameState: GameState,
+  timePassed: number
+): GameState => {
+  const playerCalcs = doPlayerCalcs(gameState.board, timePassed);
+  return gameState.modify({
+    players: gameState.players.map(playerCalcs)
   });
-  const newGameState = gameState.modify({
-    players: newPlayers
-  });
+};
 
-  return newGameState;
-}
-
-export const calcMoveAmount = (moveSpeed: number, timePassed: number): number => {
+export const calcMoveAmount = (
+  moveSpeed: number,
+  timePassed: number
+): number => {
   const moveAmount: number = 1 / OFFSET_DIVIDE * moveSpeed * 5;
   const frameRateAdjusted: number = moveAmount * timePassed;
   if (isNaN(frameRateAdjusted)) {
     return 0;
   }
   return frameRateAdjusted;
-}
+};
 
 export const correctTileOverflow = (coords: Coords): Coords => {
   if (coords.offsetX >= OFFSET_DIVIDE) {
@@ -69,12 +71,11 @@ export const correctTileOverflow = (coords: Coords): Coords => {
   }
 
   return coords;
-}
+};
 
 // only public so it can be tested, please don't use outside of here
-export const checkFloorBelowPlayer = (
-  board: Board, timePassed: number) =>
-  (player: Player
+export const checkFloorBelowPlayer = (board: Board, timePassed: number) => (
+  player: Player
 ): Player => {
   if (player.coords.offsetX !== 0) {
     return player;
@@ -107,7 +108,7 @@ export const checkFloorBelowPlayer = (
   return player.modify({
     falling: false
   });
-}
+};
 
 // curry and compose together a nice pipeline function to transform old player state into new
 export const getCalcFunction = (
@@ -115,14 +116,13 @@ export const getCalcFunction = (
   board: Board,
   timePassed: number
 ) => {
-
   // separated as not all functions will be the same for enemies
   const eggMoves = _.compose(
     incrementPlayerDirection(timePassed),
     checkPlayerDirection(board),
     checkFloorBelowPlayer(board, timePassed)
-  )
-  
+  );
+
   return _.compose(
     markPlayerAsMoved(oldPlayer),
     checkForMovementTiles(board),
@@ -130,15 +130,16 @@ export const getCalcFunction = (
     eggMoves,
     incrementPlayerFrame
   );
-}
+};
 
-export const doPlayerCalcs = (
-  board: Board,
-  timePassed: number) => (player: Player
+export const doPlayerCalcs = (board: Board, timePassed: number) => (
+  player: Player
 ): Player => getCalcFunction(player, board, timePassed)(player);
 
 // work out whether player's location has moved since last go
-export const markPlayerAsMoved = (oldPlayer: Player) => (newPlayer: Player): Player => {
+export const markPlayerAsMoved = (oldPlayer: Player) => (
+  newPlayer: Player
+): Player => {
   if (playerHasMoved(oldPlayer, newPlayer)) {
     return newPlayer.modify({
       moved: true
@@ -147,15 +148,20 @@ export const markPlayerAsMoved = (oldPlayer: Player) => (newPlayer: Player): Pla
   return newPlayer.modify({
     moved: false
   });
-}
+};
 
 // works out whether Player has actually moved since last go
 // used to decide whether to do an action to stop static players hitting switches infinitely etc
-export const playerHasMoved = (oldPlayer: Player, newPlayer: Player): boolean => {
+export const playerHasMoved = (
+  oldPlayer: Player,
+  newPlayer: Player
+): boolean => {
   return !is(oldPlayer.coords, newPlayer.coords);
-}
+};
 
-export const checkForMovementTiles = (board: Board) => (player: Player): Player => {
+export const checkForMovementTiles = (board: Board) => (
+  player: Player
+): Player => {
   const currentCoords = player.coords;
 
   if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
@@ -171,7 +177,7 @@ export const checkForMovementTiles = (board: Board) => (player: Player): Player 
   }
 
   return player;
-}
+};
 
 // find another teleport and go to it
 // if no others, do nothing
@@ -190,7 +196,7 @@ export const teleport = (board: Board) => (player: Player): Player => {
     });
   }
   return player;
-}
+};
 
 export const incrementPlayerFrame = (player: Player): Player => {
   if (
@@ -230,10 +236,12 @@ export const incrementPlayerFrame = (player: Player): Player => {
   return player.modify({
     currentFrame: newFrame
   });
-}
+};
 
 // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-export const checkPlayerDirection = (board: Board) => (player: Player): Player => {
+export const checkPlayerDirection = (board: Board) => (
+  player: Player
+): Player => {
   const coords = player.coords;
 
   if (player.direction !== 0 && player.falling === false) {
@@ -276,19 +284,15 @@ export const checkPlayerDirection = (board: Board) => (player: Player): Player =
   return player.modify({
     stop: false
   });
-}
+};
 
 // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
-export const incrementPlayerDirection = (
-  timePassed: number) => (
+export const incrementPlayerDirection = (timePassed: number) => (
   player: Player
 ): Player => {
   // falling is priority - do this if a thing
   if (player.falling) {
-    const fallAmount: number = calcMoveAmount(
-      player.fallSpeed,
-      timePassed
-    );
+    const fallAmount: number = calcMoveAmount(player.fallSpeed, timePassed);
     const newOffsetY = player.coords.offsetX + fallAmount;
     const newCoords = player.coords.modify({
       offsetY: player.coords.offsetY + fallAmount
@@ -351,9 +355,11 @@ export const incrementPlayerDirection = (
 
   // do nothing, return same object
   return player;
-}
+};
 
-export const correctPlayerOverflow = (board: Board) => (player: Player): Player => {
+export const correctPlayerOverflow = (board: Board) => (
+  player: Player
+): Player => {
   const newCoords = this.correctTileOverflow(player.coords);
   const loopedCoords = Map.correctForOverflow(board, newCoords);
 
@@ -372,4 +378,4 @@ export const correctPlayerOverflow = (board: Board) => (player: Player): Player 
   return player.modify({
     coords: loopedCoords
   });
-}
+};

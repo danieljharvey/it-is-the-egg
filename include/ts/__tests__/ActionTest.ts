@@ -33,7 +33,7 @@ test("Do nothing if player not centered on board in X axis", () => {
     })
   });
 
-  const action = new Action
+  const action = new Action();
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 
@@ -51,7 +51,7 @@ test("Do nothing if player not centered on board in Y axis", () => {
     })
   });
 
-  const action = new Action
+  const action = new Action();
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 
@@ -69,7 +69,7 @@ test("Do nothing if player has not moved", () => {
     moved: false
   });
 
-  const action = new Action
+  const action = new Action();
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 
@@ -87,7 +87,7 @@ test("Change board if player has moved", () => {
     moved: true
   });
 
-  const action = new Action
+  const action = new Action();
 
   const output = action.checkPlayerTileAction(player, board, 0, "");
 

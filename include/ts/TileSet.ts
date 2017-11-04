@@ -1,5 +1,4 @@
 export class TileSet {
-  
   public static getTiles() {
     const tiles = {
       1: {
@@ -167,7 +166,7 @@ export class TileSet {
       }
     };
     // return a copy rather than letting this get messed with
-    return (JSON.parse(JSON.stringify(tiles)))
+    return JSON.parse(JSON.stringify(tiles));
   }
 
   public static getTile(id) {

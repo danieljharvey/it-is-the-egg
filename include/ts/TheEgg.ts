@@ -46,7 +46,7 @@ export class TheEgg {
 
     const newGameState = Movement.doCalcs(startGameState, timePassed);
 
-    const action = new Action
+    const action = new Action();
     const newerGameState = action.checkAllPlayerTileActions(newGameState);
 
     const collisions = new Collisions(this.playerTypes);
