@@ -1334,6 +1334,982 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
     }());
     exports.Levels = Levels;
 });
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_3, Coords_3, Utils_4) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // this is not a render map object, but a class for making them
+    var RenderMap = /** @class */ (function () {
+        function RenderMap() {
+        }
+        // render map
+        RenderMap.copyRenderMap = function (renderMap) {
+            return renderMap.slice(0);
+        };
+        // add player to renderMap, returning new renderMap
+        RenderMap.addPlayerToRenderMap = function (player, renderMap) {
+            var coords = player.coords;
+            var startX = coords.x - 1;
+            var endX = coords.x + 1;
+            var startY = coords.y - 1;
+            var endY = coords.y + 1;
+            var newRenderMap = this.copyRenderMap(renderMap);
+            var boardSize = new BoardSize_3.BoardSize(renderMap.length);
+            for (var x = startX; x <= endX; x++) {
+                for (var y = startY; y <= endY; y++) {
+                    var newCoords = new Coords_3.Coords({ x: x, y: y });
+                    var fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
+                    newRenderMap[fixedCoords.x][fixedCoords.y] = true;
+                }
+            }
+            return newRenderMap;
+        };
+        // takes oldBoard and newBoard and creates a map of changes between them
+        RenderMap.createRenderMapFromBoards = function (oldBoard, newBoard) {
+            var boardArray = this.createRenderMap(oldBoard.getLength(), false);
+            return boardArray.map(function (column, x) {
+                return column.map(function (tile, y) {
+                    var oldTile = oldBoard.getTile(x, y);
+                    var newTile = newBoard.getTile(x, y);
+                    if (oldTile.equals(newTile)) {
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            });
+        };
+        // combines any two renderMaps (using OR)
+        // assumes they are same size
+        RenderMap.combineRenderMaps = function (renderMap, newRenderMap) {
+            return renderMap.map(function (column, x) {
+                return column.map(function (entry, y) {
+                    return entry || newRenderMap[x][y];
+                });
+            });
+        };
+        // create an empty render map
+        RenderMap.createRenderMap = function (size, value) {
+            var boardArray = [];
+            for (var x = 0; x < size; x++) {
+                boardArray[x] = [];
+                for (var y = 0; y < size; y++) {
+                    boardArray[x][y] = value;
+                }
+            }
+            return boardArray;
+        };
+        return RenderMap;
+    }());
+    exports.RenderMap = RenderMap;
+});
+define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutable"], function (require, exports, _, BoardSize_4, Map, immutable_7) {
+    "use strict";
+    var _this = this;
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var OFFSET_DIVIDE = 100;
+    // doCalcs takes the current map, the current players, and returns new player objects
+    // loop through passed players[] array, do changes, return new one
+    exports.doCalcs = function (gameState, timePassed) {
+        var newPlayers = gameState.players.map(function (player) {
+            return exports.doPlayerCalcs(gameState.board, timePassed)(player);
+        });
+        var newGameState = gameState.modify({
+            players: newPlayers
+        });
+        return newGameState;
+    };
+    exports.calcMoveAmount = function (moveSpeed, timePassed) {
+        var moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
+        var frameRateAdjusted = moveAmount * timePassed;
+        if (isNaN(frameRateAdjusted)) {
+            return 0;
+        }
+        return frameRateAdjusted;
+    };
+    exports.correctTileOverflow = function (coords) {
+        if (coords.offsetX >= OFFSET_DIVIDE) {
+            // move one tile to right
+            return coords.modify({
+                offsetX: 0,
+                x: coords.x + 1
+            });
+        }
+        if (coords.offsetX <= -1 * OFFSET_DIVIDE) {
+            // move one tile to left
+            return coords.modify({
+                offsetX: 0,
+                x: coords.x - 1
+            });
+        }
+        if (coords.offsetY >= OFFSET_DIVIDE) {
+            // move one tile down
+            return coords.modify({
+                offsetY: 0,
+                y: coords.y + 1
+            });
+        }
+        if (coords.offsetY <= -1 * OFFSET_DIVIDE) {
+            // move one tile up
+            return coords.modify({
+                offsetY: 0,
+                y: coords.y - 1
+            });
+        }
+        return coords;
+    };
+    // only public so it can be tested, please don't use outside of here
+    exports.checkFloorBelowPlayer = function (board, timePassed) {
+        return function (player) {
+            if (player.coords.offsetX !== 0) {
+                return player;
+            }
+            var coords = player.coords;
+            // not needed yet, but...
+            var boardSize = new BoardSize_4.BoardSize(board.getLength());
+            var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
+            var tile = board.getTile(belowCoords.x, belowCoords.y);
+            if (tile.background) {
+                // gap below, start falling down it
+                return player.modify({
+                    falling: true
+                });
+            }
+            if (tile.get("breakable") === true && player.falling) {
+                return player; // allow player to keep falling through breakable tile
+            }
+            // solid ground, stop falling
+            return player.modify({
+                falling: false
+            });
+        };
+    };
+    // curry and compose together a nice pipeline function to transform old player state into new
+    exports.getCalcFunction = function (oldPlayer, board, timePassed) {
+        // separated as not all functions will be the same for enemies
+        var eggMoves = _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.checkFloorBelowPlayer(board, timePassed));
+        return _.compose(exports.markPlayerAsMoved(oldPlayer), exports.checkForMovementTiles(board), exports.correctPlayerOverflow(board), eggMoves, exports.incrementPlayerFrame);
+    };
+    exports.doPlayerCalcs = function (board, timePassed) { return function (player) { return exports.getCalcFunction(player, board, timePassed)(player); }; };
+    // work out whether player's location has moved since last go
+    exports.markPlayerAsMoved = function (oldPlayer) { return function (newPlayer) {
+        if (exports.playerHasMoved(oldPlayer, newPlayer)) {
+            return newPlayer.modify({
+                moved: true
+            });
+        }
+        return newPlayer.modify({
+            moved: false
+        });
+    }; };
+    // works out whether Player has actually moved since last go
+    // used to decide whether to do an action to stop static players hitting switches infinitely etc
+    exports.playerHasMoved = function (oldPlayer, newPlayer) {
+        return !immutable_7.is(oldPlayer.coords, newPlayer.coords);
+    };
+    exports.checkForMovementTiles = function (board) { return function (player) {
+        var currentCoords = player.coords;
+        if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
+            return player;
+        }
+        var coords = Map.correctForOverflow(board, currentCoords);
+        var tile = board.getTile(coords.x, coords.y);
+        if (tile.action === "teleport") {
+            return exports.teleport(board)(player);
+        }
+        return player;
+    }; };
+    // find another teleport and go to it
+    // if no others, do nothing
+    exports.teleport = function (board) { return function (player) {
+        if (player.lastAction === "teleport") {
+            return player;
+        }
+        var newTile = Map.findTile(board, player.coords, 14);
+        if (newTile) {
+            return player.modify({
+                coords: player.coords.modify({
+                    x: newTile.x,
+                    y: newTile.y
+                }),
+                lastAction: "teleport"
+            });
+        }
+        return player;
+    }; };
+    exports.incrementPlayerFrame = function (player) {
+        if (player.direction === 0 &&
+            player.oldDirection === 0 &&
+            player.currentFrame === 0) {
+            // we are still, as it should be
+            return player;
+        }
+        if (player.direction === 0 && player.currentFrame === 0) {
+            // if we're still, and have returned to main frame, disregard old movement
+            return player.modify({
+                oldDirection: 0
+            });
+        }
+        var newFrame = player.currentFrame;
+        // if going left, reduce frame
+        if (player.direction < 0 || player.oldDirection < 0) {
+            newFrame = player.currentFrame - 1;
+            if (newFrame < 0) {
+                newFrame = player.frames - 1;
+            }
+        }
+        // if going right, increase frame
+        if (player.direction > 0 || player.oldDirection > 0) {
+            newFrame = player.currentFrame + 1;
+            if (newFrame >= player.frames) {
+                newFrame = 0;
+            }
+        }
+        return player.modify({
+            currentFrame: newFrame
+        });
+    };
+    // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
+    exports.checkPlayerDirection = function (board) { return function (player) {
+        var coords = player.coords;
+        if (player.direction !== 0 && player.falling === false) {
+            if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
+                !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
+                return player.modify({
+                    stop: true // don't go on this turn
+                });
+            }
+        }
+        if (player.direction < 0 && player.falling === false) {
+            if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
+                // turn around
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: 0
+                    }),
+                    direction: 1,
+                    stop: false
+                });
+            }
+        }
+        if (player.direction > 0 && player.falling === false) {
+            if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
+                // turn around
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: 0
+                    }),
+                    direction: -1,
+                    stop: false
+                });
+            }
+        }
+        return player.modify({
+            stop: false
+        });
+    }; };
+    // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
+    exports.incrementPlayerDirection = function (timePassed) { return function (player) {
+        // falling is priority - do this if a thing
+        if (player.falling) {
+            var fallAmount = exports.calcMoveAmount(player.fallSpeed, timePassed);
+            var newOffsetY = player.coords.offsetX + fallAmount;
+            var newCoords = player.coords.modify({
+                offsetY: player.coords.offsetY + fallAmount
+            });
+            return player.modify({
+                coords: newCoords
+            });
+        }
+        if (player.moveSpeed === 0 || player.stop !== false) {
+            // we are still, no need for movement
+            return player;
+        }
+        var moveAmount = exports.calcMoveAmount(player.moveSpeed, timePassed);
+        var coords = player.coords;
+        if (player.direction < 0) {
+            // move left
+            var newOffsetX = coords.offsetX - moveAmount;
+            return player.modify({
+                coords: coords.modify({
+                    offsetX: newOffsetX
+                })
+            });
+        }
+        else if (player.direction > 0) {
+            // move right
+            var newOffsetX = coords.offsetX + moveAmount;
+            return player.modify({
+                coords: coords.modify({
+                    offsetX: newOffsetX
+                })
+            });
+        }
+        // if we've stopped and ended up not quite squared up, correct this
+        if (player.direction === 0) {
+            if (coords.offsetX > 0) {
+                // shuffle left
+                var newOffsetX = coords.offsetX - moveAmount;
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: newOffsetX
+                    })
+                });
+            }
+            else if (coords.offsetX < 0) {
+                // shuffle right
+                var newOffsetX = coords.offsetX + moveAmount;
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: newOffsetX
+                    })
+                });
+            }
+        }
+        // do nothing, return same object
+        return player;
+    }; };
+    exports.correctPlayerOverflow = function (board) { return function (player) {
+        var newCoords = _this.correctTileOverflow(player.coords);
+        var loopedCoords = Map.correctForOverflow(board, newCoords);
+        if (loopedCoords.x !== player.coords.x ||
+            loopedCoords.y !== player.coords.y) {
+            // if we've actually moved, then
+            return player.modify({
+                coords: loopedCoords,
+                lastAction: ""
+            });
+        }
+        // else
+        return player.modify({
+            coords: loopedCoords
+        });
+    }; };
+});
+// this is the egg
+// it accepts a GameState and an Action
+// and returns a new GameState
+// totally fucking stateless and burnable in itself
+define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_5, Collisions_1, Map, Movement) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var TheEgg = /** @class */ (function () {
+        function TheEgg(playerTypes) {
+            this.playerTypes = playerTypes;
+        }
+        TheEgg.prototype.doAction = function (gameState, action, timePassed) {
+            if (action === "rotateLeft") {
+                return this.doRotate(gameState, false);
+            }
+            else if (action === "rotateRight") {
+                return this.doRotate(gameState, true);
+            }
+            else if (action === "") {
+                return this.doGameMove(gameState, timePassed);
+            }
+            return gameState;
+        };
+        // this is where we have to do a shitload of things
+        TheEgg.prototype.doGameMove = function (gameState, timePassed) {
+            // first get rid of old outcome
+            var startGameState = gameState.modify({
+                outcome: ""
+            });
+            var newGameState = Movement.doCalcs(startGameState, timePassed);
+            var action = new Action_1.Action;
+            var newerGameState = action.checkAllPlayerTileActions(newGameState);
+            var collisions = new Collisions_1.Collisions(this.playerTypes);
+            var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
+            return newerGameState.modify({
+                players: sortedPlayers
+            });
+        };
+        // this rotates board and players
+        // it DOES NOT do animation - not our problem
+        TheEgg.prototype.doRotate = function (gameState, clockwise) {
+            var rotations = gameState.rotations + 1;
+            var boardSize = new BoardSize_5.BoardSize(gameState.board.getLength());
+            var newBoard = Map.rotateBoard(gameState.board, clockwise);
+            var rotatedPlayers = gameState.players.map(function (player) {
+                return Map.rotatePlayer(boardSize, player, clockwise);
+            });
+            var rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
+            return gameState.modify({
+                board: newBoard,
+                players: rotatedPlayers,
+                rotateAngle: rotateAngle,
+                rotations: rotations
+            });
+        };
+        // check leftovers on board and whether player is over finish tile
+        TheEgg.prototype.checkLevelIsCompleted = function (gameState) {
+            var collectable = this.getCollectable(gameState.board);
+            var playerCount = this.countPlayers(gameState.players);
+            if (collectable < 1 && playerCount < 2) {
+                // change gameState.outcome to "nextLevel" or something, I don't know
+            }
+            return gameState;
+        };
+        TheEgg.prototype.countPlayers = function (players) {
+            var validPlayers = players.filter(function (player) {
+                return player && player.value > 0;
+            });
+            return validPlayers.length;
+        };
+        // get total outstanding points left to grab on board
+        TheEgg.prototype.getCollectable = function (board) {
+            var tiles = board.getAllTiles();
+            return tiles.reduce(function (collectable, tile) {
+                var score = tile.collectable;
+                if (score > 0) {
+                    return collectable + score;
+                }
+            }, 0);
+        };
+        return TheEgg;
+    }());
+    exports.TheEgg = TheEgg;
+});
+define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (require, exports, TileSet_2, _) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // used in editor, draws a bunch of 32x32 tiles for selecting
+    var TileChooser = /** @class */ (function () {
+        function TileChooser(renderer) {
+            this.chosenTileID = 0;
+            this.renderer = renderer;
+        }
+        TileChooser.prototype.chooseTile = function (id) {
+            this.chosenTileID = id;
+            this.highlightChosenTile(id);
+        };
+        TileChooser.prototype.highlightChosenTile = function (id) {
+            var tileChooser = document.getElementById("tileChooser");
+            var children = tileChooser.children;
+            var childrenArray = [].slice.call(children);
+            childrenArray.forEach(function (child) {
+                var className = child.getAttribute("class");
+                if (className === "tile" + id) {
+                    child.setAttribute("style", "border: 1px red solid;");
+                }
+                else {
+                    child.setAttribute("style", "border: 1px white solid;");
+                }
+            });
+        };
+        TileChooser.prototype.makeTileImages = function (tiles) {
+            var _this = this;
+            return _.map(function (tile) {
+                var tileImage = document.createElement("img");
+                tileImage.setAttribute("src", _this.renderer.getTileImagePath(tile));
+                tileImage.setAttribute("width", "32");
+                tileImage.setAttribute("height", "32");
+                tileImage.setAttribute("padding", "2px");
+                tileImage.setAttribute("alt", tile.title);
+                tileImage.setAttribute("style", "border: 1px white solid;");
+                tileImage.setAttribute("class", "tile" + tile.id);
+                tileImage.onclick = function () {
+                    _this.chooseTile(tile.id);
+                };
+                return tileImage;
+            }, tiles);
+        };
+        TileChooser.prototype.render = function () {
+            var tiles = TileSet_2.TileSet.getTiles();
+            var images = this.makeTileImages(tiles);
+            var tileChooser = document.getElementById("tileChooser");
+            Object.values(images).forEach(function (image) {
+                tileChooser.appendChild(image);
+            });
+        };
+        return TileChooser;
+    }());
+    exports.TileChooser = TileChooser;
+});
+define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_6) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var TitleScreen = /** @class */ (function () {
+        function TitleScreen(jetpack, canvas, imagePath, width, height) {
+            this.jetpack = jetpack;
+            this.canvas = canvas;
+            this.imagePath = this.canvas.getImagesFolder() + imagePath;
+            this.width = width;
+            this.height = height;
+        }
+        TitleScreen.prototype.render = function (callback) {
+            var _this = this;
+            var boardSize = new BoardSize_6.BoardSize(10);
+            this.canvas.sizeCanvas(boardSize);
+            var titleImage = document.createElement("img");
+            titleImage.addEventListener("load", function () {
+                _this.drawTheBigEgg(titleImage, 0.02, true, callback);
+            }, false);
+            titleImage.setAttribute("src", this.imagePath);
+            titleImage.setAttribute("width", this.width.toString());
+            titleImage.setAttribute("height", this.height.toString());
+        };
+        TitleScreen.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
+            var _this = this;
+            var ctx = this.canvas.getDrawingContext();
+            var canvas = this.canvas.getCanvas();
+            ctx.globalAlpha = 1;
+            this.canvas.wipeCanvas("rgb(0,0,0)");
+            ctx.globalAlpha = opacity;
+            ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
+            if (show) {
+                opacity += 0.01;
+                if (opacity >= 1) {
+                    // wait, fade the egg
+                    var v = setTimeout(function () {
+                        // and start fading!
+                        _this.drawTheBigEgg(titleImage, opacity, false, callback);
+                    }, 1000);
+                    return false;
+                }
+            }
+            else {
+                opacity = opacity - 0.03;
+                if (opacity <= 0) {
+                    callback();
+                    titleImage = null;
+                    return false;
+                }
+            }
+            this.jetpack.animationHandle = window.requestAnimationFrame(function () {
+                _this.drawTheBigEgg(titleImage, opacity, show, callback);
+            });
+        };
+        return TitleScreen;
+    }());
+    exports.TitleScreen = TitleScreen;
+});
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_7, Canvas_1, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Jetpack = /** @class */ (function () {
+        function Jetpack() {
+            this.moveSpeed = 10;
+            this.paused = true;
+            this.editMode = false;
+            this.levelID = 1;
+            this.levelList = [];
+            this.nextPlayerID = 1;
+            this.score = 0;
+            this.rotationsUsed = 0;
+            this.collectable = 0; // total points on screen
+            this.playerTypes = {};
+            this.defaultBoardSize = 20;
+            this.checkResize = false;
+            this.isCalculating = false;
+            this.action = "";
+            this.filterCreateTiles = function (tiles) {
+                return tiles.filter(function (tile) {
+                    return tile.createPlayer !== "";
+                });
+            };
+        }
+        Jetpack.prototype.go = function (levelID) {
+            var _this = this;
+            // this.bootstrap();
+            this.bindSizeHandler();
+            this.bindKeyboardHandler();
+            this.pauseRender();
+            this.getTitleScreen(function () {
+                _this.loadLevel(levelID, function () {
+                    _this.setNextAction("");
+                    _this.startRender();
+                });
+            });
+        };
+        Jetpack.prototype.getEditor = function () {
+            return new Editor_1.Editor();
+        };
+        // load static stuff - map/renderer etc will be worked out later
+        Jetpack.prototype.bootstrap = function (callback) {
+            var _this = this;
+            var boardSize = new BoardSize_7.BoardSize(this.defaultBoardSize);
+            this.canvas = new Canvas_1.Canvas(boardSize);
+            var playerTypes = new PlayerTypes_1.PlayerTypes();
+            this.playerTypes = playerTypes.getPlayerTypes();
+            var apiLocation = "http://" + window.location.hostname + "/levels/";
+            var loader = new Loader_1.Loader(apiLocation);
+            this.levels = new Levels_1.Levels(loader);
+            this.getLevelList(function (levelList) {
+                var levelID = _this.chooseLevelID(levelList);
+                _this.levelID = levelID;
+                callback(levelID);
+            });
+        };
+        Jetpack.prototype.displayScore = function (score) {
+            var scoreElement = document.getElementById("score");
+            if (scoreElement) {
+                scoreElement.innerHTML = score.toString();
+            }
+        };
+        // create player
+        Jetpack.prototype.createNewPlayer = function (playerTypes, type, coords, direction) {
+            var playerType = playerTypes[type];
+            var params = JSON.parse(JSON.stringify(playerType));
+            params.id = this.nextPlayerID++;
+            params.coords = coords;
+            params.direction = direction;
+            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
+                params.moveSpeed = this.moveSpeed;
+                params.fallSpeed = this.moveSpeed * 1.2;
+            }
+            var player = new Player_1.Player(params);
+            return player;
+        };
+        // make this actually fucking rotate, and choose direction, and do the visual effect thing
+        Jetpack.prototype.rotateBoard = function (clockwise) {
+            if (clockwise) {
+                this.setNextAction("rotateRight");
+            }
+            else {
+                this.setNextAction("rotateLeft");
+            }
+        };
+        Jetpack.prototype.getTitleScreen = function (callback) {
+            var imageSize = { width: 1024, height: 1024 };
+            var imagePath = "large/the-egg.png";
+            var titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
+            titleScreen.render(callback);
+        };
+        Jetpack.prototype.getLevelList = function (callback) {
+            var _this = this;
+            this.levels.getLevelList(function (levelList) {
+                _this.levelList = levelList;
+                callback(levelList);
+            });
+        };
+        // select a random level that has not been completed yet
+        // a return of false means none available (generate a random one)
+        Jetpack.prototype.chooseLevelID = function (levelList) {
+            var availableLevels = levelList.filter(function (level) {
+                return level.completed === false;
+            });
+            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
+            if (!chosenKey) {
+                return false;
+            }
+            var levelID = availableLevels[chosenKey].levelID;
+            return levelID;
+        };
+        Jetpack.prototype.setNextAction = function (action) {
+            this.action = action;
+        };
+        // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+        Jetpack.prototype.createRenderer = function (boardSize, completedCallback) {
+            this.canvas = new Canvas_1.Canvas(boardSize);
+            this.boardSize = boardSize;
+            var tiles = TileSet_3.TileSet.getTiles();
+            return new Renderer_1.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, function () { return completedCallback(); });
+        };
+        Jetpack.prototype.startRender = function () {
+            var _this = this;
+            window.cancelAnimationFrame(this.animationHandle);
+            this.showControls();
+            this.animationHandle = window.requestAnimationFrame(function (time) {
+                return _this.eventLoop(time, 0);
+            });
+        };
+        Jetpack.prototype.getNextAction = function () {
+            var action = this.action;
+            // this.action = "";
+            return action;
+        };
+        // change of heart - this runs all the time and requests various things do stuff
+        // if we are paused, it is nothing, but the loop runs all the same
+        // we are separating one frame ==== one turn
+        // as this does not work for things like rotation
+        // which is one 'turn' but many frames
+        Jetpack.prototype.eventLoop = function (time, lastTime) {
+            var _this = this;
+            this.animationHandle = window.requestAnimationFrame(function (newTime) {
+                return _this.eventLoop(newTime, time);
+            });
+            var timePassed = this.calcTimePassed(time, lastTime);
+            this.displayFrameRate(timePassed);
+            var action = this.getNextAction();
+            this.gameCycle(timePassed, action);
+        };
+        // this does one step of the game
+        Jetpack.prototype.gameCycle = function (timePassed, action) {
+            var oldGameState = this.getCurrentGameState();
+            if (action === "rotateLeft") {
+                var rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
+                this.doBoardRotation(false, rotatedLeftState);
+                this.setNextAction("rotatingLeft");
+                return false;
+            }
+            else if (action === "rotateRight") {
+                var rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
+                this.doBoardRotation(true, rotatedRightState);
+                this.setNextAction("rotatingRight");
+                return false;
+            }
+            else if (action.length > 0) {
+                return false;
+            }
+            if (oldGameState.outcome.length > 0) {
+                var continueGame = this.checkOutcome(oldGameState);
+                if (continueGame === false) {
+                    this.setNextAction("stop");
+                }
+            }
+            var newGameState = this.getNewGameState(oldGameState, action, timePassed);
+            if (oldGameState.score !== newGameState.score) {
+                this.displayScore(newGameState.score);
+            }
+            this.renderChanges(oldGameState, newGameState);
+        };
+        // return true for continue play, false for stop
+        Jetpack.prototype.checkOutcome = function (gameState) {
+            if (gameState.outcome === "completeLevel") {
+                // egg is over cup - check whether we've completed
+                var completed = this.completeLevel(gameState.board, gameState.players);
+                if (completed) {
+                    this.nextLevel(gameState.score, gameState.rotations);
+                    return false;
+                }
+            }
+            return true;
+        };
+        // or at least try
+        Jetpack.prototype.completeLevel = function (board, players) {
+            var collectable = this.getCollectable(board);
+            var playerCount = this.countPlayers(players);
+            if (collectable < 1 && playerCount < 2) {
+                return true;
+            }
+            return false;
+        };
+        Jetpack.prototype.getBoardFromArray = function (boardArray) {
+            return Map.makeBoardFromArray(boardArray);
+        };
+        // create first "frame" of gameState from board
+        // create players etc
+        Jetpack.prototype.getBlankGameState = function (board) {
+            var players = this.createPlayers(this.playerTypes, board);
+            return new GameState_1.GameState({
+                board: board,
+                players: players
+            });
+        };
+        // current game state from array
+        Jetpack.prototype.getCurrentGameState = function () {
+            return this.gameStates.slice(-1)[0]; // set to new last item
+        };
+        Jetpack.prototype.resetGameState = function (board) {
+            var gameState = this.getBlankGameState(board);
+            this.gameStates = [gameState];
+        };
+        // do next move, plop new state on pile, return new state
+        Jetpack.prototype.getNewGameState = function (gameState, action, timePassed) {
+            var theEgg = new TheEgg_1.TheEgg(this.playerTypes);
+            var newGameState = theEgg.doAction(gameState, action, timePassed);
+            this.gameStates.push(newGameState); // add to history
+            return newGameState;
+        };
+        Jetpack.prototype.renderEverything = function (gameState) {
+            var boardSize = new BoardSize_7.BoardSize(gameState.board.getLength());
+            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
+            this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
+        };
+        Jetpack.prototype.renderChanges = function (oldGameState, newGameState) {
+            var boardSize = new BoardSize_7.BoardSize(newGameState.board.getLength());
+            // if rotated everything changes anyway
+            if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
+                return this.renderEverything(newGameState);
+            }
+            // player map is covering old shit up
+            var playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
+            // render changes
+            var boardRenderMap = RenderMap_1.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
+            var finalRenderMap = RenderMap_1.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+            this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
+        };
+        Jetpack.prototype.sizeCanvas = function (boardSize) {
+            if (!this.checkResize) {
+                return false;
+            }
+            this.renderer.resize(boardSize);
+            this.checkResize = false;
+        };
+        // create empty renderMap based on boardSize, and then apply each player's position to it
+        Jetpack.prototype.createRenderMapFromPlayers = function (players, boardSize) {
+            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, false);
+            return players.reduce(function (map, player) {
+                return RenderMap_1.RenderMap.addPlayerToRenderMap(player, map);
+            }, blankMap);
+        };
+        Jetpack.prototype.calcTimePassed = function (time, lastTime) {
+            var difference = Math.min(time - lastTime, 20);
+            return difference;
+        };
+        Jetpack.prototype.displayFrameRate = function (timePassed) {
+            var frameRate = Math.floor(1000 / timePassed);
+            var fps = document.getElementById("fps");
+            if (fps) {
+                fps.innerHTML = frameRate.toFixed(3) + "fps";
+            }
+        };
+        Jetpack.prototype.nextLevel = function (score, rotations) {
+            var _this = this;
+            this.pauseRender();
+            this.levels.saveData(this.levelID, rotations, score, function (data) {
+                _this.levelList = _this.markLevelAsCompleted(_this.levelList, _this.levelID);
+                _this.levelID = _this.chooseLevelID(_this.levelList);
+                _this.go(_this.levelID);
+            });
+        };
+        Jetpack.prototype.markLevelAsCompleted = function (levelList, levelID) {
+            levelList[levelID].completed = true;
+            return levelList;
+        };
+        Jetpack.prototype.pauseRender = function () {
+            this.paused = true;
+            this.hideControls();
+            window.cancelAnimationFrame(this.animationHandle);
+        };
+        Jetpack.prototype.showControls = function () {
+            var controlHeader = document.getElementById("controlHeader");
+            if (controlHeader && controlHeader.classList.contains("hidden")) {
+                controlHeader.classList.remove("hidden");
+            }
+        };
+        Jetpack.prototype.hideControls = function () {
+            var controlHeader = document.getElementById("controlHeader");
+            if (controlHeader && !controlHeader.classList.contains("hidden")) {
+                controlHeader.classList.add("hidden");
+            }
+        };
+        Jetpack.prototype.countPlayers = function (players) {
+            return players.reduce(function (total, player) {
+                if (player && player.value > 0) {
+                    return total + 1;
+                }
+                else {
+                    return total;
+                }
+            }, 0);
+        };
+        // cycle through all map tiles, find egg cups etc and create players
+        Jetpack.prototype.createPlayers = function (playerTypes, board) {
+            var _this = this;
+            var tiles = board.getAllTiles();
+            var filtered = this.filterCreateTiles(tiles);
+            var players = filtered.map(function (tile) {
+                var type = tile.createPlayer;
+                var coords = new Coords_4.Coords({
+                    offsetX: 0,
+                    offsetY: 0,
+                    x: tile.x,
+                    y: tile.y
+                });
+                return _this.createNewPlayer(playerTypes, type, coords, 1);
+            });
+            return players;
+        };
+        // get total outstanding points left to grab on board
+        Jetpack.prototype.getCollectable = function (board) {
+            var tiles = board.getAllTiles();
+            return tiles.reduce(function (collectable, tile) {
+                var score = tile.get("collectable");
+                if (score > 0) {
+                    return collectable + score;
+                }
+                else {
+                    return collectable;
+                }
+            }, 0);
+        };
+        Jetpack.prototype.doBoardRotation = function (clockwise, gameState) {
+            var _this = this;
+            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, function () {
+                _this.renderEverything(gameState);
+                _this.setNextAction(""); // continue playing the game
+            });
+        };
+        Jetpack.prototype.loadLevel = function (levelID, callback) {
+            var _this = this;
+            this.levels.loadLevel(levelID, function (savedLevel) {
+                _this.renderer = _this.createRenderer(savedLevel.boardSize, function () {
+                    var board = _this.getBoardFromArray(savedLevel.board);
+                    _this.resetGameState(board);
+                    var gameState = _this.getCurrentGameState();
+                    _this.renderEverything(gameState);
+                    callback();
+                });
+            }, function () {
+                _this.renderer = _this.createRenderer(_this.boardSize, function () {
+                    var board = Map.generateRandomBoard(_this.boardSize);
+                    _this.resetGameState(board);
+                    var gameState = _this.getCurrentGameState();
+                    _this.renderEverything(gameState);
+                    callback();
+                });
+            });
+        };
+        Jetpack.prototype.bindSizeHandler = function () {
+            var _this = this;
+            window.addEventListener("resize", function () {
+                _this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+            });
+        };
+        Jetpack.prototype.bindKeyboardHandler = function () {
+            var _this = this;
+            window.addEventListener("keydown", function (event) {
+                if (event.keyCode === 37) {
+                    // left arrow
+                    _this.rotateBoard(false);
+                }
+                if (event.keyCode === 39) {
+                    // right arrow
+                    _this.rotateBoard(true);
+                }
+                if (event.keyCode === 80) {
+                    // 'p'
+                    _this.togglePaused();
+                }
+                if (event.keyCode === 83) {
+                    // 's'
+                    _this.doStep();
+                }
+                if (event.keyCode === 70) {
+                    // 'f'
+                    _this.toggleFPS();
+                }
+            });
+        };
+        Jetpack.prototype.toggleFPS = function () {
+            var fps = document.getElementById("fps");
+            if (!fps) {
+                return false;
+            }
+            if (fps.style.display !== "block") {
+                fps.style.display = "block";
+            }
+            else {
+                fps.style.display = "none";
+            }
+        };
+        Jetpack.prototype.togglePaused = function () {
+            if (this.paused) {
+                this.startRender();
+            }
+            else {
+                this.pauseRender();
+            }
+        };
+        Jetpack.prototype.doStep = function () {
+            this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
+        };
+        return Jetpack;
+    }());
+    exports.Jetpack = Jetpack;
+});
 define("Renderer", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1613,1016 +2589,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         return Renderer;
     }());
     exports.Renderer = Renderer;
-});
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_3, Coords_3, Utils_4) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // this is not a render map object, but a class for making them
-    var RenderMap = /** @class */ (function () {
-        function RenderMap() {
-        }
-        // render map
-        RenderMap.copyRenderMap = function (renderMap) {
-            return renderMap.slice(0);
-        };
-        // add player to renderMap, returning new renderMap
-        RenderMap.addPlayerToRenderMap = function (player, renderMap) {
-            var coords = player.coords;
-            var startX = coords.x - 1;
-            var endX = coords.x + 1;
-            var startY = coords.y - 1;
-            var endY = coords.y + 1;
-            var newRenderMap = this.copyRenderMap(renderMap);
-            var boardSize = new BoardSize_3.BoardSize(renderMap.length);
-            for (var x = startX; x <= endX; x++) {
-                for (var y = startY; y <= endY; y++) {
-                    var newCoords = new Coords_3.Coords({ x: x, y: y });
-                    var fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
-                    newRenderMap[fixedCoords.x][fixedCoords.y] = true;
-                }
-            }
-            return newRenderMap;
-        };
-        // takes oldBoard and newBoard and creates a map of changes between them
-        RenderMap.createRenderMapFromBoards = function (oldBoard, newBoard) {
-            var boardArray = this.createRenderMap(oldBoard.getLength(), false);
-            return boardArray.map(function (column, x) {
-                return column.map(function (tile, y) {
-                    var oldTile = oldBoard.getTile(x, y);
-                    var newTile = newBoard.getTile(x, y);
-                    if (oldTile.equals(newTile)) {
-                        return false;
-                    }
-                    else {
-                        return true;
-                    }
-                });
-            });
-        };
-        // combines any two renderMaps (using OR)
-        // assumes they are same size
-        RenderMap.combineRenderMaps = function (renderMap, newRenderMap) {
-            return renderMap.map(function (column, x) {
-                return column.map(function (entry, y) {
-                    return entry || newRenderMap[x][y];
-                });
-            });
-        };
-        // create an empty render map
-        RenderMap.createRenderMap = function (size, value) {
-            var boardArray = [];
-            for (var x = 0; x < size; x++) {
-                boardArray[x] = [];
-                for (var y = 0; y < size; y++) {
-                    boardArray[x][y] = value;
-                }
-            }
-            return boardArray;
-        };
-        return RenderMap;
-    }());
-    exports.RenderMap = RenderMap;
-});
-// this is the egg
-// it accepts a GameState and an Action
-// and returns a new GameState
-// totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_4, Collisions_1, Map, Movement_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var TheEgg = /** @class */ (function () {
-        function TheEgg(playerTypes) {
-            this.playerTypes = playerTypes;
-        }
-        TheEgg.prototype.doAction = function (gameState, action, timePassed) {
-            if (action === "rotateLeft") {
-                return this.doRotate(gameState, false);
-            }
-            else if (action === "rotateRight") {
-                return this.doRotate(gameState, true);
-            }
-            else if (action === "") {
-                return this.doGameMove(gameState, timePassed);
-            }
-            return gameState;
-        };
-        // this is where we have to do a shitload of things
-        TheEgg.prototype.doGameMove = function (gameState, timePassed) {
-            // first get rid of old outcome
-            var startGameState = gameState.modify({
-                outcome: ""
-            });
-            var movement = new Movement_1.Movement();
-            var newGameState = movement.doCalcs(startGameState, timePassed);
-            var action = new Action_1.Action;
-            var newerGameState = action.checkAllPlayerTileActions(newGameState);
-            var collisions = new Collisions_1.Collisions(this.playerTypes);
-            var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
-            return newerGameState.modify({
-                players: sortedPlayers
-            });
-        };
-        // this rotates board and players
-        // it DOES NOT do animation - not our problem
-        TheEgg.prototype.doRotate = function (gameState, clockwise) {
-            var rotations = gameState.rotations + 1;
-            var boardSize = new BoardSize_4.BoardSize(gameState.board.getLength());
-            var newBoard = Map.rotateBoard(gameState.board, clockwise);
-            var rotatedPlayers = gameState.players.map(function (player) {
-                return Map.rotatePlayer(boardSize, player, clockwise);
-            });
-            var rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
-            return gameState.modify({
-                board: newBoard,
-                players: rotatedPlayers,
-                rotateAngle: rotateAngle,
-                rotations: rotations
-            });
-        };
-        // check leftovers on board and whether player is over finish tile
-        TheEgg.prototype.checkLevelIsCompleted = function (gameState) {
-            var collectable = this.getCollectable(gameState.board);
-            var playerCount = this.countPlayers(gameState.players);
-            if (collectable < 1 && playerCount < 2) {
-                // change gameState.outcome to "nextLevel" or something, I don't know
-            }
-            return gameState;
-        };
-        TheEgg.prototype.countPlayers = function (players) {
-            var validPlayers = players.filter(function (player) {
-                return player && player.value > 0;
-            });
-            return validPlayers.length;
-        };
-        // get total outstanding points left to grab on board
-        TheEgg.prototype.getCollectable = function (board) {
-            var tiles = board.getAllTiles();
-            return tiles.reduce(function (collectable, tile) {
-                var score = tile.collectable;
-                if (score > 0) {
-                    return collectable + score;
-                }
-            }, 0);
-        };
-        return TheEgg;
-    }());
-    exports.TheEgg = TheEgg;
-});
-define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (require, exports, TileSet_2, _) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // used in editor, draws a bunch of 32x32 tiles for selecting
-    var TileChooser = /** @class */ (function () {
-        function TileChooser(renderer) {
-            this.chosenTileID = 0;
-            this.renderer = renderer;
-        }
-        TileChooser.prototype.chooseTile = function (id) {
-            this.chosenTileID = id;
-            this.highlightChosenTile(id);
-        };
-        TileChooser.prototype.highlightChosenTile = function (id) {
-            var tileChooser = document.getElementById("tileChooser");
-            var children = tileChooser.children;
-            var childrenArray = [].slice.call(children);
-            childrenArray.forEach(function (child) {
-                var className = child.getAttribute("class");
-                if (className === "tile" + id) {
-                    child.setAttribute("style", "border: 1px red solid;");
-                }
-                else {
-                    child.setAttribute("style", "border: 1px white solid;");
-                }
-            });
-        };
-        TileChooser.prototype.makeTileImages = function (tiles) {
-            var _this = this;
-            return _.map(function (tile) {
-                var tileImage = document.createElement("img");
-                tileImage.setAttribute("src", _this.renderer.getTileImagePath(tile));
-                tileImage.setAttribute("width", "32");
-                tileImage.setAttribute("height", "32");
-                tileImage.setAttribute("padding", "2px");
-                tileImage.setAttribute("alt", tile.title);
-                tileImage.setAttribute("style", "border: 1px white solid;");
-                tileImage.setAttribute("class", "tile" + tile.id);
-                tileImage.onclick = function () {
-                    _this.chooseTile(tile.id);
-                };
-                return tileImage;
-            }, tiles);
-        };
-        TileChooser.prototype.render = function () {
-            var tiles = TileSet_2.TileSet.getTiles();
-            var images = this.makeTileImages(tiles);
-            var tileChooser = document.getElementById("tileChooser");
-            Object.values(images).forEach(function (image) {
-                tileChooser.appendChild(image);
-            });
-        };
-        return TileChooser;
-    }());
-    exports.TileChooser = TileChooser;
-});
-define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_5) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var TitleScreen = /** @class */ (function () {
-        function TitleScreen(jetpack, canvas, imagePath, width, height) {
-            this.jetpack = jetpack;
-            this.canvas = canvas;
-            this.imagePath = this.canvas.getImagesFolder() + imagePath;
-            this.width = width;
-            this.height = height;
-        }
-        TitleScreen.prototype.render = function (callback) {
-            var _this = this;
-            var boardSize = new BoardSize_5.BoardSize(10);
-            this.canvas.sizeCanvas(boardSize);
-            var titleImage = document.createElement("img");
-            titleImage.addEventListener("load", function () {
-                _this.drawTheBigEgg(titleImage, 0.02, true, callback);
-            }, false);
-            titleImage.setAttribute("src", this.imagePath);
-            titleImage.setAttribute("width", this.width.toString());
-            titleImage.setAttribute("height", this.height.toString());
-        };
-        TitleScreen.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
-            var _this = this;
-            var ctx = this.canvas.getDrawingContext();
-            var canvas = this.canvas.getCanvas();
-            ctx.globalAlpha = 1;
-            this.canvas.wipeCanvas("rgb(0,0,0)");
-            ctx.globalAlpha = opacity;
-            ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
-            if (show) {
-                opacity += 0.01;
-                if (opacity >= 1) {
-                    // wait, fade the egg
-                    var v = setTimeout(function () {
-                        // and start fading!
-                        _this.drawTheBigEgg(titleImage, opacity, false, callback);
-                    }, 1000);
-                    return false;
-                }
-            }
-            else {
-                opacity = opacity - 0.03;
-                if (opacity <= 0) {
-                    callback();
-                    titleImage = null;
-                    return false;
-                }
-            }
-            this.jetpack.animationHandle = window.requestAnimationFrame(function () {
-                _this.drawTheBigEgg(titleImage, opacity, show, callback);
-            });
-        };
-        return TitleScreen;
-    }());
-    exports.TitleScreen = TitleScreen;
-});
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Jetpack = /** @class */ (function () {
-        function Jetpack() {
-            this.moveSpeed = 10;
-            this.paused = true;
-            this.editMode = false;
-            this.levelID = 1;
-            this.levelList = [];
-            this.nextPlayerID = 1;
-            this.score = 0;
-            this.rotationsUsed = 0;
-            this.collectable = 0; // total points on screen
-            this.playerTypes = {};
-            this.defaultBoardSize = 20;
-            this.checkResize = false;
-            this.isCalculating = false;
-            this.action = "";
-            this.filterCreateTiles = function (tiles) {
-                return tiles.filter(function (tile) {
-                    return tile.createPlayer !== "";
-                });
-            };
-        }
-        Jetpack.prototype.go = function (levelID) {
-            var _this = this;
-            // this.bootstrap();
-            this.bindSizeHandler();
-            this.bindKeyboardHandler();
-            this.pauseRender();
-            this.getTitleScreen(function () {
-                _this.loadLevel(levelID, function () {
-                    _this.setNextAction("");
-                    _this.startRender();
-                });
-            });
-        };
-        Jetpack.prototype.getEditor = function () {
-            return new Editor_1.Editor();
-        };
-        // load static stuff - map/renderer etc will be worked out later
-        Jetpack.prototype.bootstrap = function (callback) {
-            var _this = this;
-            var boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
-            this.canvas = new Canvas_1.Canvas(boardSize);
-            var playerTypes = new PlayerTypes_1.PlayerTypes();
-            this.playerTypes = playerTypes.getPlayerTypes();
-            var apiLocation = "http://" + window.location.hostname + "/levels/";
-            var loader = new Loader_1.Loader(apiLocation);
-            this.levels = new Levels_1.Levels(loader);
-            this.getLevelList(function (levelList) {
-                var levelID = _this.chooseLevelID(levelList);
-                _this.levelID = levelID;
-                callback(levelID);
-            });
-        };
-        Jetpack.prototype.displayScore = function (score) {
-            var scoreElement = document.getElementById("score");
-            if (scoreElement) {
-                scoreElement.innerHTML = score.toString();
-            }
-        };
-        // create player
-        Jetpack.prototype.createNewPlayer = function (playerTypes, type, coords, direction) {
-            var playerType = playerTypes[type];
-            var params = JSON.parse(JSON.stringify(playerType));
-            params.id = this.nextPlayerID++;
-            params.coords = coords;
-            params.direction = direction;
-            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
-                params.moveSpeed = this.moveSpeed;
-                params.fallSpeed = this.moveSpeed * 1.2;
-            }
-            var player = new Player_1.Player(params);
-            return player;
-        };
-        // make this actually fucking rotate, and choose direction, and do the visual effect thing
-        Jetpack.prototype.rotateBoard = function (clockwise) {
-            if (clockwise) {
-                this.setNextAction("rotateRight");
-            }
-            else {
-                this.setNextAction("rotateLeft");
-            }
-        };
-        Jetpack.prototype.getTitleScreen = function (callback) {
-            var imageSize = { width: 1024, height: 1024 };
-            var imagePath = "large/the-egg.png";
-            var titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
-            titleScreen.render(callback);
-        };
-        Jetpack.prototype.getLevelList = function (callback) {
-            var _this = this;
-            this.levels.getLevelList(function (levelList) {
-                _this.levelList = levelList;
-                callback(levelList);
-            });
-        };
-        // select a random level that has not been completed yet
-        // a return of false means none available (generate a random one)
-        Jetpack.prototype.chooseLevelID = function (levelList) {
-            var availableLevels = levelList.filter(function (level) {
-                return level.completed === false;
-            });
-            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
-            if (!chosenKey) {
-                return false;
-            }
-            var levelID = availableLevels[chosenKey].levelID;
-            return levelID;
-        };
-        Jetpack.prototype.setNextAction = function (action) {
-            this.action = action;
-        };
-        // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-        Jetpack.prototype.createRenderer = function (boardSize, completedCallback) {
-            this.canvas = new Canvas_1.Canvas(boardSize);
-            this.boardSize = boardSize;
-            var tiles = TileSet_3.TileSet.getTiles();
-            return new Renderer_1.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, function () { return completedCallback(); });
-        };
-        Jetpack.prototype.startRender = function () {
-            var _this = this;
-            window.cancelAnimationFrame(this.animationHandle);
-            this.showControls();
-            this.animationHandle = window.requestAnimationFrame(function (time) {
-                return _this.eventLoop(time, 0);
-            });
-        };
-        Jetpack.prototype.getNextAction = function () {
-            var action = this.action;
-            // this.action = "";
-            return action;
-        };
-        // change of heart - this runs all the time and requests various things do stuff
-        // if we are paused, it is nothing, but the loop runs all the same
-        // we are separating one frame ==== one turn
-        // as this does not work for things like rotation
-        // which is one 'turn' but many frames
-        Jetpack.prototype.eventLoop = function (time, lastTime) {
-            var _this = this;
-            this.animationHandle = window.requestAnimationFrame(function (newTime) {
-                return _this.eventLoop(newTime, time);
-            });
-            var timePassed = this.calcTimePassed(time, lastTime);
-            this.displayFrameRate(timePassed);
-            var action = this.getNextAction();
-            this.gameCycle(timePassed, action);
-        };
-        // this does one step of the game
-        Jetpack.prototype.gameCycle = function (timePassed, action) {
-            var oldGameState = this.getCurrentGameState();
-            if (action === "rotateLeft") {
-                var rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
-                this.doBoardRotation(false, rotatedLeftState);
-                this.setNextAction("rotatingLeft");
-                return false;
-            }
-            else if (action === "rotateRight") {
-                var rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
-                this.doBoardRotation(true, rotatedRightState);
-                this.setNextAction("rotatingRight");
-                return false;
-            }
-            else if (action.length > 0) {
-                return false;
-            }
-            if (oldGameState.outcome.length > 0) {
-                var continueGame = this.checkOutcome(oldGameState);
-                if (continueGame === false) {
-                    this.setNextAction("stop");
-                }
-            }
-            var newGameState = this.getNewGameState(oldGameState, action, timePassed);
-            if (oldGameState.score !== newGameState.score) {
-                this.displayScore(newGameState.score);
-            }
-            this.renderChanges(oldGameState, newGameState);
-        };
-        // return true for continue play, false for stop
-        Jetpack.prototype.checkOutcome = function (gameState) {
-            if (gameState.outcome === "completeLevel") {
-                // egg is over cup - check whether we've completed
-                var completed = this.completeLevel(gameState.board, gameState.players);
-                if (completed) {
-                    this.nextLevel(gameState.score, gameState.rotations);
-                    return false;
-                }
-            }
-            return true;
-        };
-        // or at least try
-        Jetpack.prototype.completeLevel = function (board, players) {
-            var collectable = this.getCollectable(board);
-            var playerCount = this.countPlayers(players);
-            if (collectable < 1 && playerCount < 2) {
-                return true;
-            }
-            return false;
-        };
-        Jetpack.prototype.getBoardFromArray = function (boardArray) {
-            return Map.makeBoardFromArray(boardArray);
-        };
-        // create first "frame" of gameState from board
-        // create players etc
-        Jetpack.prototype.getBlankGameState = function (board) {
-            var players = this.createPlayers(this.playerTypes, board);
-            return new GameState_1.GameState({
-                board: board,
-                players: players
-            });
-        };
-        // current game state from array
-        Jetpack.prototype.getCurrentGameState = function () {
-            return this.gameStates.slice(-1)[0]; // set to new last item
-        };
-        Jetpack.prototype.resetGameState = function (board) {
-            var gameState = this.getBlankGameState(board);
-            this.gameStates = [gameState];
-        };
-        // do next move, plop new state on pile, return new state
-        Jetpack.prototype.getNewGameState = function (gameState, action, timePassed) {
-            var theEgg = new TheEgg_1.TheEgg(this.playerTypes);
-            var newGameState = theEgg.doAction(gameState, action, timePassed);
-            this.gameStates.push(newGameState); // add to history
-            return newGameState;
-        };
-        Jetpack.prototype.renderEverything = function (gameState) {
-            var boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
-            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
-            this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
-        };
-        Jetpack.prototype.renderChanges = function (oldGameState, newGameState) {
-            var boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
-            // if rotated everything changes anyway
-            if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
-                return this.renderEverything(newGameState);
-            }
-            // player map is covering old shit up
-            var playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
-            // render changes
-            var boardRenderMap = RenderMap_1.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
-            var finalRenderMap = RenderMap_1.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
-            this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
-        };
-        Jetpack.prototype.sizeCanvas = function (boardSize) {
-            if (!this.checkResize) {
-                return false;
-            }
-            this.renderer.resize(boardSize);
-            this.checkResize = false;
-        };
-        // create empty renderMap based on boardSize, and then apply each player's position to it
-        Jetpack.prototype.createRenderMapFromPlayers = function (players, boardSize) {
-            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, false);
-            return players.reduce(function (map, player) {
-                return RenderMap_1.RenderMap.addPlayerToRenderMap(player, map);
-            }, blankMap);
-        };
-        Jetpack.prototype.calcTimePassed = function (time, lastTime) {
-            var difference = Math.min(time - lastTime, 20);
-            return difference;
-        };
-        Jetpack.prototype.displayFrameRate = function (timePassed) {
-            var frameRate = Math.floor(1000 / timePassed);
-            var fps = document.getElementById("fps");
-            if (fps) {
-                fps.innerHTML = frameRate.toFixed(3) + "fps";
-            }
-        };
-        Jetpack.prototype.nextLevel = function (score, rotations) {
-            var _this = this;
-            this.pauseRender();
-            this.levels.saveData(this.levelID, rotations, score, function (data) {
-                _this.levelList = _this.markLevelAsCompleted(_this.levelList, _this.levelID);
-                _this.levelID = _this.chooseLevelID(_this.levelList);
-                _this.go(_this.levelID);
-            });
-        };
-        Jetpack.prototype.markLevelAsCompleted = function (levelList, levelID) {
-            levelList[levelID].completed = true;
-            return levelList;
-        };
-        Jetpack.prototype.pauseRender = function () {
-            this.paused = true;
-            this.hideControls();
-            window.cancelAnimationFrame(this.animationHandle);
-        };
-        Jetpack.prototype.showControls = function () {
-            var controlHeader = document.getElementById("controlHeader");
-            if (controlHeader && controlHeader.classList.contains("hidden")) {
-                controlHeader.classList.remove("hidden");
-            }
-        };
-        Jetpack.prototype.hideControls = function () {
-            var controlHeader = document.getElementById("controlHeader");
-            if (controlHeader && !controlHeader.classList.contains("hidden")) {
-                controlHeader.classList.add("hidden");
-            }
-        };
-        Jetpack.prototype.countPlayers = function (players) {
-            return players.reduce(function (total, player) {
-                if (player && player.value > 0) {
-                    return total + 1;
-                }
-                else {
-                    return total;
-                }
-            }, 0);
-        };
-        // cycle through all map tiles, find egg cups etc and create players
-        Jetpack.prototype.createPlayers = function (playerTypes, board) {
-            var _this = this;
-            var tiles = board.getAllTiles();
-            var filtered = this.filterCreateTiles(tiles);
-            var players = filtered.map(function (tile) {
-                var type = tile.createPlayer;
-                var coords = new Coords_4.Coords({
-                    offsetX: 0,
-                    offsetY: 0,
-                    x: tile.x,
-                    y: tile.y
-                });
-                return _this.createNewPlayer(playerTypes, type, coords, 1);
-            });
-            return players;
-        };
-        // get total outstanding points left to grab on board
-        Jetpack.prototype.getCollectable = function (board) {
-            var tiles = board.getAllTiles();
-            return tiles.reduce(function (collectable, tile) {
-                var score = tile.get("collectable");
-                if (score > 0) {
-                    return collectable + score;
-                }
-                else {
-                    return collectable;
-                }
-            }, 0);
-        };
-        Jetpack.prototype.doBoardRotation = function (clockwise, gameState) {
-            var _this = this;
-            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, function () {
-                _this.renderEverything(gameState);
-                _this.setNextAction(""); // continue playing the game
-            });
-        };
-        Jetpack.prototype.loadLevel = function (levelID, callback) {
-            var _this = this;
-            this.levels.loadLevel(levelID, function (savedLevel) {
-                _this.renderer = _this.createRenderer(savedLevel.boardSize, function () {
-                    var board = _this.getBoardFromArray(savedLevel.board);
-                    _this.resetGameState(board);
-                    var gameState = _this.getCurrentGameState();
-                    _this.renderEverything(gameState);
-                    callback();
-                });
-            }, function () {
-                _this.renderer = _this.createRenderer(_this.boardSize, function () {
-                    var board = Map.generateRandomBoard(_this.boardSize);
-                    _this.resetGameState(board);
-                    var gameState = _this.getCurrentGameState();
-                    _this.renderEverything(gameState);
-                    callback();
-                });
-            });
-        };
-        Jetpack.prototype.bindSizeHandler = function () {
-            var _this = this;
-            window.addEventListener("resize", function () {
-                _this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
-            });
-        };
-        Jetpack.prototype.bindKeyboardHandler = function () {
-            var _this = this;
-            window.addEventListener("keydown", function (event) {
-                if (event.keyCode === 37) {
-                    // left arrow
-                    _this.rotateBoard(false);
-                }
-                if (event.keyCode === 39) {
-                    // right arrow
-                    _this.rotateBoard(true);
-                }
-                if (event.keyCode === 80) {
-                    // 'p'
-                    _this.togglePaused();
-                }
-                if (event.keyCode === 83) {
-                    // 's'
-                    _this.doStep();
-                }
-                if (event.keyCode === 70) {
-                    // 'f'
-                    _this.toggleFPS();
-                }
-            });
-        };
-        Jetpack.prototype.toggleFPS = function () {
-            var fps = document.getElementById("fps");
-            if (!fps) {
-                return false;
-            }
-            if (fps.style.display !== "block") {
-                fps.style.display = "block";
-            }
-            else {
-                fps.style.display = "none";
-            }
-        };
-        Jetpack.prototype.togglePaused = function () {
-            if (this.paused) {
-                this.startRender();
-            }
-            else {
-                this.pauseRender();
-            }
-        };
-        Jetpack.prototype.doStep = function () {
-            this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
-        };
-        return Jetpack;
-    }());
-    exports.Jetpack = Jetpack;
-});
-define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutable"], function (require, exports, _, BoardSize_7, Map, immutable_7) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var OFFSET_DIVIDE = 100;
-    // movement takes the current map, the current players, and returns new player objects
-    // it is then trashed and a new one made for next move to reduce any real held state
-    var Movement = /** @class */ (function () {
-        function Movement() {
-        }
-        Movement.calcMoveAmount = function (moveSpeed, timePassed) {
-            var moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
-            var frameRateAdjusted = moveAmount * timePassed;
-            if (isNaN(frameRateAdjusted)) {
-                return 0;
-            }
-            return frameRateAdjusted;
-        };
-        // loop through passed players[] array, do changes, return new one
-        Movement.prototype.doCalcs = function (gameState, timePassed) {
-            var _this = this;
-            var newPlayers = gameState.players.map(function (player) {
-                return _this.doPlayerCalcs(player, gameState.board, timePassed);
-            });
-            var newGameState = gameState.modify({
-                players: newPlayers
-            });
-            return newGameState;
-        };
-        Movement.prototype.correctTileOverflow = function (coords) {
-            if (coords.offsetX >= OFFSET_DIVIDE) {
-                // move one tile to right
-                return coords.modify({
-                    offsetX: 0,
-                    x: coords.x + 1
-                });
-            }
-            if (coords.offsetX <= -1 * OFFSET_DIVIDE) {
-                // move one tile to left
-                return coords.modify({
-                    offsetX: 0,
-                    x: coords.x - 1
-                });
-            }
-            if (coords.offsetY >= OFFSET_DIVIDE) {
-                // move one tile down
-                return coords.modify({
-                    offsetY: 0,
-                    y: coords.y + 1
-                });
-            }
-            if (coords.offsetY <= -1 * OFFSET_DIVIDE) {
-                // move one tile up
-                return coords.modify({
-                    offsetY: 0,
-                    y: coords.y - 1
-                });
-            }
-            return coords;
-        };
-        // only public so it can be tested, please don't use outside of here
-        Movement.prototype.checkFloorBelowPlayer = function (board, timePassed, player) {
-            if (player.coords.offsetX !== 0) {
-                return player;
-            }
-            var coords = player.coords;
-            // not needed yet, but...
-            var boardSize = new BoardSize_7.BoardSize(board.getLength());
-            var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
-            var tile = board.getTile(belowCoords.x, belowCoords.y);
-            if (tile.background) {
-                // gap below, start falling down it
-                return player.modify({
-                    falling: true
-                });
-            }
-            if (tile.get("breakable") === true && player.falling) {
-                return player; // allow player to keep falling through breakable tile
-            }
-            // solid ground, stop falling
-            return player.modify({
-                falling: false
-            });
-        };
-        // curry and compose together a nice pipeline function to transform old player state into new
-        Movement.prototype.getCalcFunction = function (oldPlayer, board, timePassed) {
-            var checkFloorBelowPlayer = _.curry(this.checkFloorBelowPlayer);
-            var checkPlayerDirection = _.curry(this.checkPlayerDirection);
-            var incrementPlayerDirection = _.curry(this.incrementPlayerDirection);
-            var checkForMovementTiles = _.curry(this.checkForMovementTiles);
-            var markPlayerAsMoved = _.curry(this.markPlayerAsMoved);
-            var correctPlayerOverflow = _.curry(this.correctPlayerOverflow);
-            /*
-            return _.compose(
-              markPlayerAsMoved(oldPlayer),
-              checkForMovementTiles(board),
-              correctPlayerOverflow(board),
-              incrementPlayerDirection(board),
-              checkPlayerDirection(board),
-              checkFloorBelowPlayer(board, timePassed),
-              this.incrementPlayerFrame
-             );*/
-        };
-        Movement.prototype.doPlayerCalcs = function (player, board, timePassed) {
-            // this is great but curried functions lose context, so need to get rid of 'this'
-            // inside them (which is fine really - need to classes like Map into stateless modules anyhow)
-            /*const playerCalcFn = this.getCalcFunction(player, board, timePassed);
-        
-            return playerCalcFn(player);*/
-            var newPlayer = this.incrementPlayerFrame(player);
-            var newerPlayer = this.checkFloorBelowPlayer(board, timePassed, newPlayer);
-            var checkedPlayer = this.checkPlayerDirection(board, newerPlayer);
-            var evenNewerPlayer = this.incrementPlayerDirection(timePassed, checkedPlayer);
-            var newestPlayer = this.correctPlayerOverflow(board, evenNewerPlayer);
-            // do our checks for current tile once the overflow has put us into a nice new space (if appropriate)
-            var maybeTeleportedPlayer = this.checkForMovementTiles(board, newestPlayer);
-            var markedAsMovedPlayer = this.markPlayerAsMoved(player, maybeTeleportedPlayer);
-            return markedAsMovedPlayer;
-        };
-        // work out whether player's location has moved since last go
-        Movement.prototype.markPlayerAsMoved = function (oldPlayer, newPlayer) {
-            if (this.playerHasMoved(oldPlayer, newPlayer)) {
-                return newPlayer.modify({
-                    moved: true
-                });
-            }
-            return newPlayer.modify({
-                moved: false
-            });
-        };
-        // works out whether Player has actually moved since last go
-        // used to decide whether to do an action to stop static players hitting switches infinitely etc
-        Movement.prototype.playerHasMoved = function (oldPlayer, newPlayer) {
-            return !immutable_7.is(oldPlayer.coords, newPlayer.coords);
-        };
-        Movement.prototype.checkForMovementTiles = function (board, player) {
-            var currentCoords = player.coords;
-            if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
-                return player;
-            }
-            var coords = Map.correctForOverflow(board, currentCoords);
-            var tile = board.getTile(coords.x, coords.y);
-            if (tile.action === "teleport") {
-                return this.teleport(player, board);
-            }
-            return player;
-        };
-        // find another teleport and go to it
-        // if no others, do nothing
-        Movement.prototype.teleport = function (player, board) {
-            if (player.lastAction === "teleport") {
-                return player;
-            }
-            var newTile = Map.findTile(board, player.coords, 14);
-            if (newTile) {
-                return player.modify({
-                    coords: player.coords.modify({
-                        x: newTile.x,
-                        y: newTile.y
-                    }),
-                    lastAction: "teleport"
-                });
-            }
-            return player;
-        };
-        Movement.prototype.incrementPlayerFrame = function (player) {
-            if (player.direction === 0 &&
-                player.oldDirection === 0 &&
-                player.currentFrame === 0) {
-                // we are still, as it should be
-                return player;
-            }
-            if (player.direction === 0 && player.currentFrame === 0) {
-                // if we're still, and have returned to main frame, disregard old movement
-                return player.modify({
-                    oldDirection: 0
-                });
-            }
-            var newFrame = player.currentFrame;
-            // if going left, reduce frame
-            if (player.direction < 0 || player.oldDirection < 0) {
-                newFrame = player.currentFrame - 1;
-                if (newFrame < 0) {
-                    newFrame = player.frames - 1;
-                }
-            }
-            // if going right, increase frame
-            if (player.direction > 0 || player.oldDirection > 0) {
-                newFrame = player.currentFrame + 1;
-                if (newFrame >= player.frames) {
-                    newFrame = 0;
-                }
-            }
-            return player.modify({
-                currentFrame: newFrame
-            });
-        };
-        // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-        Movement.prototype.checkPlayerDirection = function (board, player) {
-            var coords = player.coords;
-            if (player.direction !== 0 && player.falling === false) {
-                if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
-                    !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
-                    return player.modify({
-                        stop: true // don't go on this turn
-                    });
-                }
-            }
-            if (player.direction < 0 && player.falling === false) {
-                if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
-                    // turn around
-                    return player.modify({
-                        coords: coords.modify({
-                            offsetX: 0
-                        }),
-                        direction: 1,
-                        stop: false
-                    });
-                }
-            }
-            if (player.direction > 0 && player.falling === false) {
-                if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
-                    // turn around
-                    return player.modify({
-                        coords: coords.modify({
-                            offsetX: 0
-                        }),
-                        direction: -1,
-                        stop: false
-                    });
-                }
-            }
-            return player.modify({
-                stop: false
-            });
-        };
-        // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
-        Movement.prototype.incrementPlayerDirection = function (timePassed, player) {
-            // falling is priority - do this if a thing
-            if (player.falling) {
-                var fallAmount = Movement.calcMoveAmount(player.fallSpeed, timePassed);
-                var newOffsetY = player.coords.offsetX + fallAmount;
-                var newCoords = player.coords.modify({
-                    offsetY: player.coords.offsetY + fallAmount
-                });
-                return player.modify({
-                    coords: newCoords
-                });
-            }
-            if (player.moveSpeed === 0 || player.stop !== false) {
-                // we are still, no need for movement
-                return player;
-            }
-            var moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
-            var coords = player.coords;
-            if (player.direction < 0) {
-                // move left
-                var newOffsetX = coords.offsetX - moveAmount;
-                return player.modify({
-                    coords: coords.modify({
-                        offsetX: newOffsetX
-                    })
-                });
-            }
-            else if (player.direction > 0) {
-                // move right
-                var newOffsetX = coords.offsetX + moveAmount;
-                return player.modify({
-                    coords: coords.modify({
-                        offsetX: newOffsetX
-                    })
-                });
-            }
-            // if we've stopped and ended up not quite squared up, correct this
-            if (player.direction === 0) {
-                if (coords.offsetX > 0) {
-                    // shuffle left
-                    var newOffsetX = coords.offsetX - moveAmount;
-                    return player.modify({
-                        coords: coords.modify({
-                            offsetX: newOffsetX
-                        })
-                    });
-                }
-                else if (coords.offsetX < 0) {
-                    // shuffle right
-                    var newOffsetX = coords.offsetX + moveAmount;
-                    return player.modify({
-                        coords: coords.modify({
-                            offsetX: newOffsetX
-                        })
-                    });
-                }
-            }
-            // do nothing, return same object
-            return player;
-        };
-        Movement.prototype.correctPlayerOverflow = function (board, player) {
-            var newCoords = this.correctTileOverflow(player.coords);
-            var loopedCoords = Map.correctForOverflow(board, newCoords);
-            if (loopedCoords.x !== player.coords.x ||
-                loopedCoords.y !== player.coords.y) {
-                // if we've actually moved, then
-                return player.modify({
-                    coords: loopedCoords,
-                    lastAction: ""
-                });
-            }
-            // else
-            return player.modify({
-                coords: loopedCoords
-            });
-        };
-        return Movement;
-    }());
-    exports.Movement = Movement;
 });
 define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_8, Canvas_2, Coords_5, Levels_2, Loader_2, Map, Renderer_2, RenderMap_2, TileChooser_1, TileSet_4, Utils_6) {
     "use strict";

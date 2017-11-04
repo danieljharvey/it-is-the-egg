@@ -8,7 +8,6 @@ import { GameState } from "./GameState";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
 import * as Map from "./Map";
-import { Movement } from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";

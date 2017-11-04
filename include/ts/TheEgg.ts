@@ -9,7 +9,7 @@ import { BoardSize } from "./BoardSize";
 import { Collisions } from "./Collisions";
 import { GameState } from "./GameState";
 import * as Map from "./Map";
-import { Movement } from "./Movement";
+import * as Movement from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 
@@ -44,8 +44,7 @@ export class TheEgg {
       outcome: ""
     });
 
-    const movement = new Movement();
-    const newGameState = movement.doCalcs(startGameState, timePassed);
+    const newGameState = Movement.doCalcs(startGameState, timePassed);
 
     const action = new Action
     const newerGameState = action.checkAllPlayerTileActions(newGameState);
