@@ -269,7 +269,8 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         title: "",
         type: "egg",
         value: 1,
-        flying: false
+        flying: false,
+        movePattern: ""
     })));
     exports.Player = Player;
 });
@@ -1410,7 +1411,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "immutable"]
     // doCalcs takes the current map, the current players, and returns new player objects
     // loop through passed players[] array, do changes, return new one
     exports.doCalcs = function (gameState, timePassed) {
-        var playerCalcs = exports.doPlayerCalcs(gameState.board, timePassed);
+        var playerCalcs = exports.doPlayerCalcs(gameState.board, timePassed, gameState.players);
         return gameState.modify({
             players: gameState.players.map(playerCalcs)
         });
@@ -1482,12 +1483,28 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "immutable"]
         });
     }; };
     // curry and compose together a nice pipeline function to transform old player state into new
-    exports.getCalcFunction = function (oldPlayer, board, timePassed) {
+    exports.getCalcFunction = function (oldPlayer, board, timePassed, players) {
         // separated as not all functions will be the same for enemies
-        var eggMoves = _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.checkFloorBelowPlayer(board, timePassed));
-        return _.compose(exports.markPlayerAsMoved(oldPlayer), exports.checkForMovementTiles(board), exports.correctPlayerOverflow(board), eggMoves, exports.incrementPlayerFrame);
+        var playerSpecific = exports.getPlayerSpecificMoves(oldPlayer, board, timePassed, players);
+        return _.compose(exports.markPlayerAsMoved(oldPlayer), exports.checkForMovementTiles(board), exports.correctPlayerOverflow(board), playerSpecific, exports.incrementPlayerFrame);
     };
-    exports.doPlayerCalcs = function (board, timePassed) { return function (player) { return exports.getCalcFunction(player, board, timePassed)(player); }; };
+    exports.getPlayerSpecificMoves = function (player, board, timePassed, players) {
+        if (player.movePattern === "seek-egg") {
+            return exports.getSeekEggMoves(player, board, timePassed, players);
+        }
+        return exports.getEggMoves(player, board, timePassed);
+    };
+    exports.getEggMoves = function (oldPlayer, board, timePassed) {
+        return _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.checkFloorBelowPlayer(board, timePassed));
+    };
+    exports.getSeekEggMoves = function (oldPlayer, board, timePassed, players) {
+        return _.compose(exports.incrementPlayerDirection(timePassed), exports.pathFinding(board, players));
+    };
+    // decide on next direction to follow based on closest egg to chase
+    exports.pathFinding = function (board, players) { return function (player) {
+        return player;
+    }; };
+    exports.doPlayerCalcs = function (board, timePassed, players) { return function (player) { return exports.getCalcFunction(player, board, timePassed, players)(player); }; };
     // work out whether player's location has moved since last go
     exports.markPlayerAsMoved = function (oldPlayer) { return function (newPlayer) {
         if (exports.playerHasMoved(oldPlayer, newPlayer)) {

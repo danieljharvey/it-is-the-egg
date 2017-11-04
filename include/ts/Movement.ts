@@ -19,7 +19,7 @@ export const doCalcs = (
   gameState: GameState,
   timePassed: number
 ): GameState => {
-  const playerCalcs = doPlayerCalcs(gameState.board, timePassed);
+  const playerCalcs = doPlayerCalcs(gameState.board, timePassed, gameState.players);
   return gameState.modify({
     players: gameState.players.map(playerCalcs)
   });
@@ -117,27 +117,57 @@ export const checkFloorBelowPlayer = (board: Board, timePassed: number) => (
 export const getCalcFunction = (
   oldPlayer: Player,
   board: Board,
-  timePassed: number
+  timePassed: number,
+  players: Player[]
 ) => {
   // separated as not all functions will be the same for enemies
-  const eggMoves = _.compose(
-    incrementPlayerDirection(timePassed),
-    checkPlayerDirection(board),
-    checkFloorBelowPlayer(board, timePassed)
-  );
+  const playerSpecific = getPlayerSpecificMoves(oldPlayer, board, timePassed, players);
 
   return _.compose(
     markPlayerAsMoved(oldPlayer),
     checkForMovementTiles(board),
     correctPlayerOverflow(board),
-    eggMoves,
+    playerSpecific,
     incrementPlayerFrame
   );
 };
 
-export const doPlayerCalcs = (board: Board, timePassed: number) => (
+export const getPlayerSpecificMoves = (player: Player,
+  board: Board,
+  timePassed: number, players: Player[]) => {
+    if (player.movePattern === "seek-egg") {
+      return getSeekEggMoves(player, board, timePassed, players)
+    }
+    return getEggMoves(player, board, timePassed)
+  }
+
+export const getEggMoves = (oldPlayer: Player,
+  board: Board,
+  timePassed: number) => {
+  return _.compose(
+    incrementPlayerDirection(timePassed),
+    checkPlayerDirection(board),
+    checkFloorBelowPlayer(board, timePassed)
+  );
+}
+
+export const getSeekEggMoves = (oldPlayer: Player,
+  board: Board,
+  timePassed: number, players: Player[]) => {
+    return _.compose(
+      incrementPlayerDirection(timePassed),
+      pathFinding(board, players)
+    );
+  }
+
+// decide on next direction to follow based on closest egg to chase
+export const pathFinding = (board: Board, players: Player[]) => (player: Player) => {
+  return player
+}
+
+export const doPlayerCalcs = (board: Board, timePassed: number, players: Player[]) => (
   player: Player
-): Player => getCalcFunction(player, board, timePassed)(player);
+): Player => getCalcFunction(player, board, timePassed, players)(player);
 
 // work out whether player's location has moved since last go
 export const markPlayerAsMoved = (oldPlayer: Player) => (

@@ -23,6 +23,7 @@ interface IPlayerParams {
   title?: string;
   moved?: boolean;
   flying?: boolean;
+  movePattern?: string;
 }
 
 export class Player extends Record({
@@ -43,7 +44,8 @@ export class Player extends Record({
   title: "",
   type: "egg",
   value: 1,
-  flying: false
+  flying: false,
+  movePattern: ""
 }) {
   public coords: Coords;
   public direction: Coords;
@@ -63,6 +65,7 @@ export class Player extends Record({
   public title: string;
   public moved: boolean;
   public flying: boolean;
+  public movePattern: string;
 
   constructor(params?: IPlayerParams) {
     const superParams = params ? params : undefined;
