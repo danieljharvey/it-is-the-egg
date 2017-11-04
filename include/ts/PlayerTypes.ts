@@ -48,7 +48,8 @@ export class PlayerTypes {
       title: "It is the mean spirited blade",
       type: "blade",
       value: 0,
-      movePattern: "seek-egg"
+      movePattern: "seek-egg",
+      flying: true
     }
   };
 

@@ -3,6 +3,7 @@ import { Coords } from "../Coords";
 import * as Map from "../Map";
 import * as Movement from "../Movement";
 import { Player } from "../Player";
+import { Tile } from "../Tile"
 
 test("Stay still when not moving", () => {
   const player = new Player();
@@ -12,16 +13,121 @@ test("Stay still when not moving", () => {
 
 test("Wipe old direction when stopped", () => {
   const player = new Player({
-    oldDirection: 1
+    oldDirection: new Coords({
+      x:1,
+      y:0
+    })
   });
+  
+  const expected = new Coords()
+
   const response = Movement.incrementPlayerFrame(player);
-  expect(response.oldDirection).toEqual(0);
+  expect(response.oldDirection).toEqual(expected);
 });
+
+test("Move left", () => {
+  const player = new Player({
+    direction: new Coords({
+      x:-1
+    }),
+    coords: new Coords({
+      x: 2,
+      y: 2
+    })
+  });
+  
+  const timePassed = 10
+  const moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
+
+  const expected = player.modify({
+    coords: player.coords.modify({
+      offsetX: -moveAmount
+    })
+  })
+
+  const response = Movement.incrementPlayerDirection(timePassed)(player)
+  expect(response).toEqual(expected);
+})
+
+test("Move right", () => {
+  const player = new Player({
+    direction: new Coords({
+      x:1
+    }),
+    coords: new Coords({
+      x: 2,
+      y: 2
+    })
+  });
+  
+  const timePassed = 10
+  const moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
+
+  const expected = player.modify({
+    coords: player.coords.modify({
+      offsetX: moveAmount
+    })
+  })
+
+  const response = Movement.incrementPlayerDirection(timePassed)(player)
+  expect(response).toEqual(expected);
+})
+
+test("Move up", () => {
+  const player = new Player({
+    direction: new Coords({
+      y:-1
+    }),
+    coords: new Coords({
+      x: 2,
+      y: 2
+    })
+  });
+  
+  const timePassed = 10
+  const moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
+
+  const expected = player.modify({
+    coords: player.coords.modify({
+      offsetY: -moveAmount
+    })
+  })
+
+  const response = Movement.incrementPlayerDirection(timePassed)(player)
+  expect(response).toEqual(expected);
+})
+
+test("Move down", () => {
+  const player = new Player({
+    direction: new Coords({
+      y:1
+    }),
+    coords: new Coords({
+      x: 2,
+      y: 2
+    })
+  });
+  
+  const timePassed = 10
+  const moveAmount = Movement.calcMoveAmount(player.moveSpeed, timePassed);
+
+  const expected = player.modify({
+    coords: player.coords.modify({
+      offsetY: moveAmount
+    })
+  })
+
+  const response = Movement.incrementPlayerDirection(timePassed)(player)
+  expect(response).toEqual(expected);
+})
 
 test("change frame left", () => {
   const player = new Player({
     currentFrame: 3,
-    direction: -1
+    direction: new Coords({
+      x:-1,
+      y:0
+    })
   });
   const response = Movement.incrementPlayerFrame(player);
   expect(response.currentFrame).toEqual(2);
@@ -31,7 +137,35 @@ test("change frame right", () => {
   const player = new Player({
     currentFrame: 10,
     frames: 11,
-    oldDirection: 1
+    oldDirection: new Coords({
+      x:1,
+      y:0
+    })
+  });
+  const response = Movement.incrementPlayerFrame(player);
+  expect(response.currentFrame).toEqual(0);
+});
+
+test("change going up", () => {
+  const player = new Player({
+    currentFrame: 3,
+    direction: new Coords({
+      x:0,
+      y:-1
+    })
+  });
+  const response = Movement.incrementPlayerFrame(player);
+  expect(response.currentFrame).toEqual(2);
+});
+
+test("change going down", () => {
+  const player = new Player({
+    currentFrame: 10,
+    frames: 11,
+    oldDirection: new Coords({
+      x:0,
+      y:1
+    })
   });
   const response = Movement.incrementPlayerFrame(player);
   expect(response.currentFrame).toEqual(0);
@@ -103,8 +237,8 @@ test("No overflow below", () => {
 test("Fall through breakable block", () => {
   const boardArray = [
     [
-      { background: true, breakable: false },
-      { background: false, breakable: true }
+      new Tile({ background: true, breakable: false }),
+      new Tile({ background: false, breakable: true })
     ]
   ];
 
@@ -127,8 +261,8 @@ test("Fall through breakable block", () => {
 test("Don't fall through floor", () => {
   const boardArray = [
     [
-      { background: true, breakable: false },
-      { background: false, breakable: false }
+      new Tile({ background: true, breakable: false }),
+      new Tile({ background: false, breakable: false })
     ]
   ];
 
@@ -144,6 +278,63 @@ test("Don't fall through floor", () => {
 
   const expected = player.modify({
     falling: false
+  });
+
+  const result = Movement.checkFloorBelowPlayer(board, 10)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+  expect(result.falling).toEqual(false);
+});
+
+test("Non-flying players fall downwards", () => {
+  const boardArray = [
+    [
+      new Tile({ background: true }),
+      new Tile({ background: true })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 0,
+      y: 0
+    }),
+    falling: false
+  });
+
+  const expected = player.modify({
+    falling: true
+  });
+  
+  const result = Movement.checkFloorBelowPlayer(board, 10)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+  expect(result.falling).toEqual(true);
+});
+
+test("Flying players don't fall through floor", () => {
+  const boardArray = [
+    [
+      new Tile({ background: true, breakable: false }),
+      new Tile({ background: true, breakable: false })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 0,
+      y: 0
+    }),
+    flying: true,
+    falling: true
+  });
+
+  const expected = player.modify({
+    falling: false // flying players are never falling
   });
 
   const result = Movement.checkFloorBelowPlayer(board, 10)(player);
@@ -176,4 +367,172 @@ test("Check player has moved", () => {
   const moved = Movement.playerHasMoved(oldPlayer, newPlayer);
 
   expect(moved).toEqual(true);
+});
+
+test("Don't bounce off anything", () => {
+  const boardArray = [
+    [
+      new Tile({background: true}),
+    ],
+    [
+      new Tile({background: true}),
+    ],
+    [
+      new Tile({background: true}),
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 1,
+      y: 0
+    }),
+    direction: new Coords({
+      x: -1
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(player)).toEqual(true);
+});
+
+test("Bounce off a wall to the left", () => {
+  const boardArray = [
+    [
+      new Tile({background: false}),
+    ],
+    [
+      new Tile({background: true}),
+    ],
+    [
+      new Tile({background: true}),
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 1,
+      y: 0
+    }),
+    direction: new Coords({
+      x: -1
+    })
+  });
+
+  const expected = player.modify({
+    direction: new Coords({
+      x: 1
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+});
+
+test("Bounce off a wall to the right", () => {
+  const boardArray = [
+    [
+      new Tile({ background: true, breakable: false })
+    ],
+    [
+      new Tile({ background: true, breakable: false })
+    ],
+    [
+      new Tile({ background: false, breakable: false })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 1,
+      y: 0
+    }),
+    direction: new Coords({
+      x: 1
+    })
+  });
+
+  const expected = player.modify({
+    direction: new Coords({
+      x: -1
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+});
+
+test("Bounce off wall above", () => {
+  const boardArray = [
+    [
+      new Tile({ background: false, breakable: false }),
+      new Tile({ background: true, breakable: false }),
+      new Tile({ background: true, breakable: false })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 0,
+      y: 1
+    }),
+    direction: new Coords({
+      y: -1
+    }),
+    flying: true
+  });
+
+  const expected = player.modify({
+    direction: new Coords({
+      y: 1
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+});
+
+test("Bounce off floor below", () => {
+  const boardArray = [
+    [
+      new Tile({ background: true, breakable: false }),
+      new Tile({ background: true, breakable: false }),
+      new Tile({ background: false, breakable: false })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 0,
+      y: 1
+    }),
+    direction: new Coords({
+      y: 1
+    }),
+    flying: true
+  });
+
+  const expected = player.modify({
+    direction: new Coords({
+      y: -1
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(expected)).toEqual(true);
 });

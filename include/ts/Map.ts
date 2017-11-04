@@ -19,6 +19,7 @@ export const correctForOverflow = (board: Board, coords: Coords): Coords => {
 };
 
 // is intended next tile empty / a wall?
+// need to make this wrap around the board
 export const checkTileIsEmpty = (board: Board, x, y): boolean => {
   const tile = getTile(board, x, y);
   return tile.background;
@@ -111,6 +112,13 @@ export const changeTile = (board: Board, coords: Coords, tile: Tile): Board => {
   return board.modify(coords.x, coords.y, tile);
 };
 
+const getNewPlayerDirection = (direction, clockwise) => {
+  if (direction !== 0) {
+    return direction
+  }
+  return clockwise ? 1 : -1
+}
+
 export const rotatePlayer = (
   boardSize: BoardSize,
   player: Player,
@@ -118,23 +126,12 @@ export const rotatePlayer = (
 ): Player => {
   const newCoords = translateRotation(boardSize, player.coords, clockwise);
 
-  let direction = player.direction;
-
-  // if player is still, nudge them in rotation direction
-  if (direction === 0) {
-    if (clockwise) {
-      direction = 1;
-    } else {
-      direction = -1;
-    }
-  }
-
   return player.modify({
     coords: newCoords.modify({
       offsetX: 0,
       offsetY: 0
     }),
-    direction
+    direction: getNewPlayerDirection(player.direction, clockwise)
   });
 };
 

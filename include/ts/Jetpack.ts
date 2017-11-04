@@ -105,7 +105,7 @@ export class Jetpack {
     playerTypes,
     type: string,
     coords: Coords,
-    direction: number
+    direction: Coords
   ): Player {
     const playerType = playerTypes[type];
     const params = JSON.parse(JSON.stringify(playerType));
@@ -459,7 +459,8 @@ export class Jetpack {
         x: tile.x,
         y: tile.y
       });
-      return this.createNewPlayer(playerTypes, type, coords, 1);
+      const direction = new Coords({x:1})
+      return this.createNewPlayer(playerTypes, type, coords, direction);
     });
     return players;
   }

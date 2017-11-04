@@ -163,7 +163,7 @@ test("Create new players", () => {
     })
   });
 
-  const playerTypes = {
+  const types = {
     madeUp: {
       frames: 18,
       img: "egg-sprite.png",
@@ -190,7 +190,7 @@ test("Create new players", () => {
     })
   ];
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions(types);
 
   const actual = collisions.combinePlayers(player1, player2);
 

@@ -254,7 +254,7 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
     }(immutable_4.Record({
         coords: new Coords_1.Coords(),
         currentFrame: 0,
-        direction: 0,
+        direction: new Coords_1.Coords(),
         fallSpeed: 1,
         falling: false,
         frames: 1,
@@ -264,11 +264,12 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         moveSpeed: 1,
         moved: false,
         multiplier: 1,
-        oldDirection: 0,
+        oldDirection: new Coords_1.Coords(),
         stop: false,
         title: "",
         type: "egg",
-        value: 1
+        value: 1,
+        flying: false
     })));
     exports.Player = Player;
 });
@@ -496,6 +497,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         return Utils_1.Utils.correctForOverflow(coords, new BoardSize_1.BoardSize(boardSize));
     };
     // is intended next tile empty / a wall?
+    // need to make this wrap around the board
     exports.checkTileIsEmpty = function (board, x, y) {
         var tile = exports.getTile(board, x, y);
         return tile.background;
@@ -573,24 +575,20 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
     exports.changeTile = function (board, coords, tile) {
         return board.modify(coords.x, coords.y, tile);
     };
+    var getNewPlayerDirection = function (direction, clockwise) {
+        if (direction !== 0) {
+            return direction;
+        }
+        return clockwise ? 1 : -1;
+    };
     exports.rotatePlayer = function (boardSize, player, clockwise) {
         var newCoords = exports.translateRotation(boardSize, player.coords, clockwise);
-        var direction = player.direction;
-        // if player is still, nudge them in rotation direction
-        if (direction === 0) {
-            if (clockwise) {
-                direction = 1;
-            }
-            else {
-                direction = -1;
-            }
-        }
         return player.modify({
             coords: newCoords.modify({
                 offsetX: 0,
                 offsetY: 0
             }),
-            direction: direction
+            direction: getNewPlayerDirection(player.direction, clockwise)
         });
     };
     exports.cloneTile = function (id) {
@@ -953,7 +951,8 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     title: "It is the mean spirited blade",
                     type: "blade",
                     value: 0,
-                    movePattern: "seek-egg"
+                    movePattern: "seek-egg",
+                    flying: true
                 }
             };
         }
@@ -1403,7 +1402,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], func
     }());
     exports.RenderMap = RenderMap;
 });
-define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutable"], function (require, exports, _, BoardSize_4, Map, immutable_7) {
+define("Movement", ["require", "exports", "ramda", "Coords", "Map", "immutable"], function (require, exports, _, Coords_4, Map, immutable_7) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1460,9 +1459,12 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
         if (player.coords.offsetX !== 0) {
             return player;
         }
+        if (player.flying === true) {
+            return player.modify({
+                falling: false
+            });
+        }
         var coords = player.coords;
-        // not needed yet, but...
-        var boardSize = new BoardSize_4.BoardSize(board.getLength());
         var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
         var tile = board.getTile(belowCoords.x, belowCoords.y);
         if (tile.background) {
@@ -1533,28 +1535,30 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
         return player;
     }; };
     exports.incrementPlayerFrame = function (player) {
-        if (player.direction === 0 &&
-            player.oldDirection === 0 &&
+        if (player.direction.x === 0 &&
+            player.oldDirection.x === 0 &&
+            player.direction.y === 0 &&
+            player.oldDirection.y === 0 &&
             player.currentFrame === 0) {
             // we are still, as it should be
             return player;
         }
-        if (player.direction === 0 && player.currentFrame === 0) {
+        if (player.direction.x === 0 && player.direction.y === 0 && player.currentFrame === 0) {
             // if we're still, and have returned to main frame, disregard old movement
             return player.modify({
-                oldDirection: 0
+                oldDirection: new Coords_4.Coords()
             });
         }
         var newFrame = player.currentFrame;
         // if going left, reduce frame
-        if (player.direction < 0 || player.oldDirection < 0) {
+        if (player.direction.x < 0 || player.oldDirection.x < 0 || player.direction.y < 0 || player.oldDirection.y < 0) {
             newFrame = player.currentFrame - 1;
             if (newFrame < 0) {
                 newFrame = player.frames - 1;
             }
         }
         // if going right, increase frame
-        if (player.direction > 0 || player.oldDirection > 0) {
+        if (player.direction.x > 0 || player.oldDirection.x > 0 || player.direction.y > 0 || player.oldDirection.y > 0) {
             newFrame = player.currentFrame + 1;
             if (newFrame >= player.frames) {
                 newFrame = 0;
@@ -1567,7 +1571,35 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
     // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
     exports.checkPlayerDirection = function (board) { return function (player) {
         var coords = player.coords;
-        if (player.direction !== 0 && player.falling === false) {
+        if (player.direction.y < 0 && player.flying === true) {
+            if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1)) {
+                // turn around
+                return player.modify({
+                    coords: coords.modify({
+                        offsetY: 0
+                    }),
+                    direction: player.direction.modify({
+                        y: 1
+                    }),
+                    stop: false
+                });
+            }
+        }
+        if (player.direction.y > 0 && player.flying === true) {
+            if (!Map.checkTileIsEmpty(board, coords.x, coords.y + 1)) {
+                // turn around
+                return player.modify({
+                    coords: coords.modify({
+                        offsetY: 0
+                    }),
+                    direction: player.direction.modify({
+                        y: -1
+                    }),
+                    stop: false
+                });
+            }
+        }
+        if (player.direction.x !== 0 && player.falling === false) {
             if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
                 !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
                 return player.modify({
@@ -1575,26 +1607,30 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
                 });
             }
         }
-        if (player.direction < 0 && player.falling === false) {
+        if (player.direction.x < 0 && player.falling === false) {
             if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
                 // turn around
                 return player.modify({
                     coords: coords.modify({
                         offsetX: 0
                     }),
-                    direction: 1,
+                    direction: player.direction.modify({
+                        x: 1
+                    }),
                     stop: false
                 });
             }
         }
-        if (player.direction > 0 && player.falling === false) {
+        if (player.direction.x > 0 && player.falling === false) {
             if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
                 // turn around
                 return player.modify({
                     coords: coords.modify({
                         offsetX: 0
                     }),
-                    direction: -1,
+                    direction: player.direction.modify({
+                        x: -1
+                    }),
                     stop: false
                 });
             }
@@ -1622,7 +1658,8 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
         }
         var moveAmount = exports.calcMoveAmount(player.moveSpeed, timePassed);
         var coords = player.coords;
-        if (player.direction < 0) {
+        // X axis movement
+        if (player.direction.x < 0) {
             // move left
             var newOffsetX = coords.offsetX - moveAmount;
             return player.modify({
@@ -1631,7 +1668,7 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
                 })
             });
         }
-        else if (player.direction > 0) {
+        else if (player.direction.x > 0) {
             // move right
             var newOffsetX = coords.offsetX + moveAmount;
             return player.modify({
@@ -1641,7 +1678,7 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
             });
         }
         // if we've stopped and ended up not quite squared up, correct this
-        if (player.direction === 0) {
+        if (player.direction.x === 0) {
             if (coords.offsetX > 0) {
                 // shuffle left
                 var newOffsetX = coords.offsetX - moveAmount;
@@ -1657,6 +1694,46 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
                 return player.modify({
                     coords: coords.modify({
                         offsetX: newOffsetX
+                    })
+                });
+            }
+        }
+        // Y axis movement
+        if (player.direction.y < 0) {
+            // move up
+            var newOffsetY = coords.offsetY - moveAmount;
+            return player.modify({
+                coords: coords.modify({
+                    offsetY: newOffsetY
+                })
+            });
+        }
+        else if (player.direction.y > 0) {
+            // move down
+            var newOffsetY = coords.offsetY + moveAmount;
+            return player.modify({
+                coords: coords.modify({
+                    offsetY: newOffsetY
+                })
+            });
+        }
+        // if we've stopped and ended up not quite squared up, correct this
+        if (player.direction.y === 0) {
+            if (coords.offsetY > 0) {
+                // shuffle up
+                var newOffsetY = coords.offsetY - moveAmount;
+                return player.modify({
+                    coords: coords.modify({
+                        offsetY: newOffsetY
+                    })
+                });
+            }
+            else if (coords.offsetY < 0) {
+                // shuffle down
+                var newOffsetY = coords.offsetY + moveAmount;
+                return player.modify({
+                    coords: coords.modify({
+                        offsetY: newOffsetY
                     })
                 });
             }
@@ -1685,7 +1762,7 @@ define("Movement", ["require", "exports", "ramda", "BoardSize", "Map", "immutabl
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_5, Collisions_1, Map, Movement) {
+define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_4, Collisions_1, Map, Movement) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TheEgg = /** @class */ (function () {
@@ -1723,7 +1800,7 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Ma
         // it DOES NOT do animation - not our problem
         TheEgg.prototype.doRotate = function (gameState, clockwise) {
             var rotations = gameState.rotations + 1;
-            var boardSize = new BoardSize_5.BoardSize(gameState.board.getLength());
+            var boardSize = new BoardSize_4.BoardSize(gameState.board.getLength());
             var newBoard = Map.rotateBoard(gameState.board, clockwise);
             var rotatedPlayers = gameState.players.map(function (player) {
                 return Map.rotatePlayer(boardSize, player, clockwise);
@@ -1821,7 +1898,7 @@ define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (requ
     }());
     exports.TileChooser = TileChooser;
 });
-define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_6) {
+define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TitleScreen = /** @class */ (function () {
@@ -1834,7 +1911,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
         }
         TitleScreen.prototype.render = function (callback) {
             var _this = this;
-            var boardSize = new BoardSize_6.BoardSize(10);
+            var boardSize = new BoardSize_5.BoardSize(10);
             this.canvas.sizeCanvas(boardSize);
             var titleImage = document.createElement("img");
             titleImage.addEventListener("load", function () {
@@ -1879,7 +1956,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_7, Canvas_1, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_5, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = /** @class */ (function () {
@@ -1923,7 +2000,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
         // load static stuff - map/renderer etc will be worked out later
         Jetpack.prototype.bootstrap = function (callback) {
             var _this = this;
-            var boardSize = new BoardSize_7.BoardSize(this.defaultBoardSize);
+            var boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
             var playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
@@ -2108,12 +2185,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             return newGameState;
         };
         Jetpack.prototype.renderEverything = function (gameState) {
-            var boardSize = new BoardSize_7.BoardSize(gameState.board.getLength());
+            var boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
             var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
         };
         Jetpack.prototype.renderChanges = function (oldGameState, newGameState) {
-            var boardSize = new BoardSize_7.BoardSize(newGameState.board.getLength());
+            var boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
             // if rotated everything changes anyway
             if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
                 return this.renderEverything(newGameState);
@@ -2197,13 +2274,14 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             var filtered = this.filterCreateTiles(tiles);
             var players = filtered.map(function (tile) {
                 var type = tile.createPlayer;
-                var coords = new Coords_4.Coords({
+                var coords = new Coords_5.Coords({
                     offsetX: 0,
                     offsetY: 0,
                     x: tile.x,
                     y: tile.y
                 });
-                return _this.createNewPlayer(playerTypes, type, coords, 1);
+                var direction = new Coords_5.Coords({ x: 1 });
+                return _this.createNewPlayer(playerTypes, type, coords, direction);
             });
             return players;
         };
@@ -2585,7 +2663,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_8, Canvas_2, Coords_5, Levels_2, Loader_2, Map, Renderer_2, RenderMap_2, TileChooser_1, TileSet_4, Utils_6) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_6, Levels_2, Loader_2, Map, Renderer_2, RenderMap_2, TileChooser_1, TileSet_4, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Editor = /** @class */ (function () {
@@ -2615,7 +2693,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         // load static stuff - map/renderer etc will be worked out later
         Editor.prototype.bootstrap = function (callback) {
             var _this = this;
-            this.boardSize = new BoardSize_8.BoardSize(this.defaultBoardSize);
+            this.boardSize = new BoardSize_7.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_2.Canvas(this.boardSize);
             var apiLocation = "http://" + window.location.hostname + "/levels/";
             var loader = new Loader_2.Loader(apiLocation);
@@ -2649,14 +2727,14 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         Editor.prototype.growBoard = function () {
             var newBoard = Map.growBoard(this.board);
-            this.boardSize = new BoardSize_8.BoardSize(newBoard.getLength());
+            this.boardSize = new BoardSize_7.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.updateBoard(newBoard);
             this.renderEverything(newBoard);
         };
         Editor.prototype.shrinkBoard = function () {
             var newBoard = Map.shrinkBoard(this.board);
-            this.boardSize = new BoardSize_8.BoardSize(newBoard.getLength());
+            this.boardSize = new BoardSize_7.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.updateBoard(newBoard);
             this.renderEverything(newBoard);
@@ -2667,7 +2745,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             }
             this.boardHistory.pop(); // get rid of most recent
             this.board = this.boardHistory.slice(-1)[0]; // set to new last item
-            this.boardSize = new BoardSize_8.BoardSize(this.board.getLength());
+            this.boardSize = new BoardSize_7.BoardSize(this.board.getLength());
             this.renderEverything(this.board);
         };
         // replaces this.board with board
@@ -2716,7 +2794,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             });
         };
         Editor.prototype.renderEverything = function (board) {
-            var boardSize = new BoardSize_8.BoardSize(board.getLength());
+            var boardSize = new BoardSize_7.BoardSize(board.getLength());
             var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(board, blankMap, [], 0);
         };
@@ -2780,7 +2858,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         Editor.prototype.handleDrawEvent = function (event) {
             var tileSize = this.canvas.calcTileSize(this.boardSize);
-            var coords = new Coords_5.Coords({
+            var coords = new Coords_6.Coords({
                 offsetX: event.offsetX % tileSize - tileSize / 2,
                 offsetY: event.offsetY % tileSize - tileSize / 2,
                 x: Math.floor(event.offsetX / tileSize),

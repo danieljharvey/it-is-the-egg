@@ -81,10 +81,13 @@ export const checkFloorBelowPlayer = (board: Board, timePassed: number) => (
     return player;
   }
 
-  const coords = player.coords;
+  if (player.flying === true) {
+    return player.modify({
+      falling: false
+    })
+  }
 
-  // not needed yet, but...
-  const boardSize = new BoardSize(board.getLength());
+  const coords = player.coords;
 
   const belowCoords = Map.correctForOverflow(
     board,
@@ -200,25 +203,27 @@ export const teleport = (board: Board) => (player: Player): Player => {
 
 export const incrementPlayerFrame = (player: Player): Player => {
   if (
-    player.direction === 0 &&
-    player.oldDirection === 0 &&
+    player.direction.x === 0 &&
+    player.oldDirection.x === 0 &&
+    player.direction.y === 0 &&
+    player.oldDirection.y === 0 &&
     player.currentFrame === 0
   ) {
     // we are still, as it should be
     return player;
   }
 
-  if (player.direction === 0 && player.currentFrame === 0) {
+  if (player.direction.x === 0 && player.direction.y === 0 && player.currentFrame === 0) {
     // if we're still, and have returned to main frame, disregard old movement
     return player.modify({
-      oldDirection: 0
+      oldDirection: new Coords()
     });
   }
 
   let newFrame = player.currentFrame;
 
   // if going left, reduce frame
-  if (player.direction < 0 || player.oldDirection < 0) {
+  if (player.direction.x < 0 || player.oldDirection.x < 0 || player.direction.y < 0 || player.oldDirection.y < 0) {
     newFrame = player.currentFrame - 1;
     if (newFrame < 0) {
       newFrame = player.frames - 1;
@@ -226,7 +231,7 @@ export const incrementPlayerFrame = (player: Player): Player => {
   }
 
   // if going right, increase frame
-  if (player.direction > 0 || player.oldDirection > 0) {
+  if (player.direction.x > 0 || player.oldDirection.x > 0 || player.direction.y > 0 || player.oldDirection.y > 0) {
     newFrame = player.currentFrame + 1;
     if (newFrame >= player.frames) {
       newFrame = 0;
@@ -244,7 +249,37 @@ export const checkPlayerDirection = (board: Board) => (
 ): Player => {
   const coords = player.coords;
 
-  if (player.direction !== 0 && player.falling === false) {
+  if (player.direction.y < 0 && player.flying === true) {
+    if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1 )) {
+      // turn around
+      return player.modify({
+        coords: coords.modify({
+          offsetY: 0
+        }),
+        direction: player.direction.modify({
+          y: 1
+        }),
+        stop: false
+      });
+    }
+  }
+
+  if (player.direction.y > 0 && player.flying === true) {
+    if (!Map.checkTileIsEmpty(board, coords.x, coords.y + 1 )) {
+      // turn around
+      return player.modify({
+        coords: coords.modify({
+          offsetY: 0
+        }),
+        direction: player.direction.modify({
+          y: -1
+        }),
+        stop: false
+      });
+    }
+  }
+
+  if (player.direction.x !== 0 && player.falling === false) {
     if (
       !Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
       !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)
@@ -255,31 +290,40 @@ export const checkPlayerDirection = (board: Board) => (
     }
   }
 
-  if (player.direction < 0 && player.falling === false) {
+  if (player.direction.x < 0 && player.falling === false) {
     if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
       // turn around
       return player.modify({
         coords: coords.modify({
           offsetX: 0
         }),
-        direction: 1,
+        direction: player.direction.modify({
+          x: 1
+        }),
         stop: false
       });
     }
   }
 
-  if (player.direction > 0 && player.falling === false) {
+  if (player.direction.x > 0 && player.falling === false) {
     if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
       // turn around
       return player.modify({
         coords: coords.modify({
           offsetX: 0
         }),
-        direction: -1,
+        direction: player.direction.modify({
+          x: -1
+        }),
         stop: false
       });
     }
   }
+
+
+  
+
+ 
 
   return player.modify({
     stop: false
@@ -311,7 +355,9 @@ export const incrementPlayerDirection = (timePassed: number) => (
 
   const coords = player.coords;
 
-  if (player.direction < 0) {
+  // X axis movement
+
+  if (player.direction.x < 0) {
     // move left
     const newOffsetX = coords.offsetX - moveAmount;
     return player.modify({
@@ -319,7 +365,7 @@ export const incrementPlayerDirection = (timePassed: number) => (
         offsetX: newOffsetX
       })
     });
-  } else if (player.direction > 0) {
+  } else if (player.direction.x > 0) {
     // move right
     const newOffsetX = coords.offsetX + moveAmount;
 
@@ -331,7 +377,7 @@ export const incrementPlayerDirection = (timePassed: number) => (
   }
 
   // if we've stopped and ended up not quite squared up, correct this
-  if (player.direction === 0) {
+  if (player.direction.x === 0) {
     if (coords.offsetX > 0) {
       // shuffle left
       const newOffsetX = coords.offsetX - moveAmount;
@@ -348,6 +394,50 @@ export const incrementPlayerDirection = (timePassed: number) => (
       return player.modify({
         coords: coords.modify({
           offsetX: newOffsetX
+        })
+      });
+    }
+  }
+
+  // Y axis movement
+
+  if (player.direction.y < 0) {
+    // move up
+    const newOffsetY = coords.offsetY - moveAmount;
+    return player.modify({
+      coords: coords.modify({
+        offsetY: newOffsetY
+      })
+    });
+  } else if (player.direction.y > 0) {
+    // move down
+    const newOffsetY = coords.offsetY + moveAmount;
+
+    return player.modify({
+      coords: coords.modify({
+        offsetY: newOffsetY
+      })
+    });
+  }
+
+  // if we've stopped and ended up not quite squared up, correct this
+  if (player.direction.y === 0) {
+    if (coords.offsetY > 0) {
+      // shuffle up
+      const newOffsetY = coords.offsetY - moveAmount;
+
+      return player.modify({
+        coords: coords.modify({
+          offsetY: newOffsetY
+        })
+      });
+    } else if (coords.offsetY < 0) {
+      // shuffle down
+      const newOffsetY = coords.offsetY + moveAmount;
+
+      return player.modify({
+        coords: coords.modify({
+          offsetY: newOffsetY
         })
       });
     }
