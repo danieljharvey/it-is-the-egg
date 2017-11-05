@@ -307,6 +307,10 @@ export class Jetpack {
     this.gameStates = [gameState];
   }
 
+  protected updateGameState(oldGameState: GameState, gameState: GameState) {
+    this.gameStates = [oldGameState, gameState];
+  }
+
   // do next move, plop new state on pile, return new state
   protected getNewGameState(
     gameState: GameState,
@@ -315,7 +319,7 @@ export class Jetpack {
   ): GameState {
     const theEgg = new TheEgg(this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
-    this.gameStates.push(newGameState); // add to history
+    this.updateGameState(gameState, newGameState);
     return newGameState;
   }
 

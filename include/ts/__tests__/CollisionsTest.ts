@@ -1,6 +1,6 @@
+import { Collisions } from "../Collisions";
 import { Coords } from "../Coords";
 import { Player } from "../Player";
-import { Collisions } from "../Collisions";
 import { fromJS, List } from "immutable";
 
 const playerTypes = {
@@ -216,11 +216,11 @@ test("Create no new players as no type found", () => {
     })
   });
 
-  const playerTypes = {};
+  const types = {};
 
   const expected = [player1, player2];
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions(types);
 
   const actual = collisions.combinePlayers(player1, player2);
 

@@ -2390,11 +2390,14 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             var gameState = this.getBlankGameState(board);
             this.gameStates = [gameState];
         };
+        Jetpack.prototype.updateGameState = function (oldGameState, gameState) {
+            this.gameStates = [oldGameState, gameState];
+        };
         // do next move, plop new state on pile, return new state
         Jetpack.prototype.getNewGameState = function (gameState, action, timePassed) {
             var theEgg = new TheEgg_1.TheEgg(this.playerTypes);
             var newGameState = theEgg.doAction(gameState, action, timePassed);
-            this.gameStates.push(newGameState); // add to history
+            this.updateGameState(gameState, newGameState);
             return newGameState;
         };
         Jetpack.prototype.renderEverything = function (gameState) {
