@@ -334,13 +334,15 @@ export const incrementPlayerFrame = (player: Player): Player => {
   });
 };
 
-// this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-export const checkPlayerDirection = (board: Board) => (
-  player: Player
-): Player => {
+export const checkPlayerDirection = (board: Board) => (player: Player) : Player => {
+  return (player.flying === true) ? checkFlyingPlayerDirection(board)(player) : checkStandardPlayerDirection(board)(player)
+}
+
+export const checkFlyingPlayerDirection = (board: Board) => (player: Player) : Player => {
+  
   const coords = player.coords;
 
-  if (player.direction.y < 0 && player.flying === true) {
+  if (player.direction.y < 0) {
     if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1)) {
       // turn around
       return player.modify({
@@ -348,14 +350,15 @@ export const checkPlayerDirection = (board: Board) => (
           offsetY: 0
         }),
         direction: player.direction.modify({
-          y: 1
+          x: 1,
+          y: 0
         }),
         stop: false
       });
     }
   }
 
-  if (player.direction.y > 0 && player.flying === true) {
+  if (player.direction.y > 0) {
     if (!Map.checkTileIsEmpty(board, coords.x, coords.y + 1)) {
       // turn around
       return player.modify({
@@ -363,12 +366,56 @@ export const checkPlayerDirection = (board: Board) => (
           offsetY: 0
         }),
         direction: player.direction.modify({
+          x: -1,
+          y: 0
+        }),
+        stop: false
+      });
+    }
+  }
+
+  if (player.direction.x < 0) {
+    if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
+      // turn around
+      return player.modify({
+        coords: coords.modify({
+          offsetX: 0
+        }),
+        direction: player.direction.modify({
+          x: 0,
           y: -1
         }),
         stop: false
       });
     }
   }
+
+  if (player.direction.x > 0) {
+    if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
+      // turn around
+      return player.modify({
+        coords: coords.modify({
+          offsetX: 0
+        }),
+        direction: player.direction.modify({
+          x: 0,
+          y: 1
+        }),
+        stop: false
+      });
+    }
+  }
+
+  return player.modify({
+    stop: false
+  });
+}
+// this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
+export const checkStandardPlayerDirection = (board: Board) => (
+  player: Player
+): Player => {
+
+  const coords = player.coords;
 
   if (player.direction.x !== 0 && player.falling === false) {
     if (

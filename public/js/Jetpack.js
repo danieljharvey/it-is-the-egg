@@ -1791,10 +1791,12 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             currentFrame: newFrame
         });
     };
-    // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
     exports.checkPlayerDirection = function (board) { return function (player) {
+        return (player.flying === true) ? exports.checkFlyingPlayerDirection(board)(player) : exports.checkStandardPlayerDirection(board)(player);
+    }; };
+    exports.checkFlyingPlayerDirection = function (board) { return function (player) {
         var coords = player.coords;
-        if (player.direction.y < 0 && player.flying === true) {
+        if (player.direction.y < 0) {
             if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1)) {
                 // turn around
                 return player.modify({
@@ -1802,13 +1804,14 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
                         offsetY: 0
                     }),
                     direction: player.direction.modify({
-                        y: 1
+                        x: 1,
+                        y: 0
                     }),
                     stop: false
                 });
             }
         }
-        if (player.direction.y > 0 && player.flying === true) {
+        if (player.direction.y > 0) {
             if (!Map.checkTileIsEmpty(board, coords.x, coords.y + 1)) {
                 // turn around
                 return player.modify({
@@ -1816,12 +1819,50 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
                         offsetY: 0
                     }),
                     direction: player.direction.modify({
+                        x: -1,
+                        y: 0
+                    }),
+                    stop: false
+                });
+            }
+        }
+        if (player.direction.x < 0) {
+            if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y)) {
+                // turn around
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: 0
+                    }),
+                    direction: player.direction.modify({
+                        x: 0,
                         y: -1
                     }),
                     stop: false
                 });
             }
         }
+        if (player.direction.x > 0) {
+            if (!Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
+                // turn around
+                return player.modify({
+                    coords: coords.modify({
+                        offsetX: 0
+                    }),
+                    direction: player.direction.modify({
+                        x: 0,
+                        y: 1
+                    }),
+                    stop: false
+                });
+            }
+        }
+        return player.modify({
+            stop: false
+        });
+    }; };
+    // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
+    exports.checkStandardPlayerDirection = function (board) { return function (player) {
+        var coords = player.coords;
         if (player.direction.x !== 0 && player.falling === false) {
             if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
                 !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {

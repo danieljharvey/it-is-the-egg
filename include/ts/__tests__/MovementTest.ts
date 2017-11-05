@@ -450,7 +450,7 @@ test("Bounce off a wall to the right", () => {
   expect(result.equals(expected)).toEqual(true);
 });
 
-test("Bounce off wall above", () => {
+test("Flying player bounce off wall above", () => {
   const boardArray = [
     [
       new Tile({ background: false, breakable: false }),
@@ -474,6 +474,45 @@ test("Bounce off wall above", () => {
 
   const expected = player.modify({
     direction: new Coords({
+      x :1,
+      y: 0
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+});
+
+test("Flying player bounce off right", () => {
+  const boardArray = [
+    [
+      new Tile({ background: true, breakable: false }),
+    ],
+    [
+      new Tile({ background: true, breakable: false })
+    ],
+    [
+      new Tile({ background: false, breakable: false })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 1,
+      y: 0
+    }),
+    direction: new Coords({
+      x: 1
+    }),
+    flying: true
+  });
+
+  const expected = player.modify({
+    direction: new Coords({
+      x: 0,
       y: 1
     })
   });
@@ -483,7 +522,7 @@ test("Bounce off wall above", () => {
   expect(result.equals(expected)).toEqual(true);
 });
 
-test("Bounce off floor below", () => {
+test("Flying player bounce off wall below", () => {
   const boardArray = [
     [
       new Tile({ background: true, breakable: false }),
@@ -507,6 +546,46 @@ test("Bounce off floor below", () => {
 
   const expected = player.modify({
     direction: new Coords({
+      x: -1,
+      y: 0
+    })
+  });
+
+  const result = Movement.checkPlayerDirection(board)(player);
+
+  expect(result.equals(expected)).toEqual(true);
+});
+
+test("Flying player bounce off left", () => {
+  const boardArray = [
+    [
+      new Tile({ background: false})
+
+    ],
+    [
+      new Tile({ background: true })
+    ],
+    [
+      new Tile({ background: true })
+    ]
+  ];
+
+  const board = new Board(boardArray);
+
+  const player = new Player({
+    coords: new Coords({
+      x: 1,
+      y: 0
+    }),
+    direction: new Coords({
+      x: -1
+    }),
+    flying: true
+  });
+
+  const expected = player.modify({
+    direction: new Coords({
+      x: 0,
       y: -1
     })
   });
