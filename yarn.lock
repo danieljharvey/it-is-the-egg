@@ -10,6 +10,10 @@
   version "20.0.8"
   resolved "https://registry.yarnpkg.com/@types/jest/-/jest-20.0.8.tgz#7f8c97f73d20d3bf5448fbe33661a342002b5954"
 
+"@types/lodash@^4.14.81":
+  version "4.14.81"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.81.tgz#c944b38118615fa54be6cac1ef7ba5326ff70d6e"
+
 "@types/node@^4.0.30":
   version "4.2.21"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-4.2.21.tgz#4f537f1ccf974193436828a9f312164bd7d7e699"
@@ -17,6 +21,12 @@
 "@types/ramda@^0.24.7":
   version "0.24.17"
   resolved "https://registry.yarnpkg.com/@types/ramda/-/ramda-0.24.17.tgz#9a399c69d102588dea1c6817e4401e8fa780e40b"
+
+"@types/tsmonad@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@types/tsmonad/-/tsmonad-0.5.0.tgz#a95f2d3c41c7d4553e49e578d4fc00ffdebae03a"
+  dependencies:
+    tsmonad "*"
 
 abab@^1.0.3:
   version "1.0.4"
@@ -2124,6 +2134,10 @@ tslint@^5.8.0:
     semver "^5.3.0"
     tslib "^1.7.1"
     tsutils "^2.12.1"
+
+tsmonad@*, tsmonad@^0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/tsmonad/-/tsmonad-0.8.0.tgz#ce3cf13192f323db8f78c81f54a5f5bc4a2130fc"
 
 tsutils@^2.12.1:
   version "2.12.1"

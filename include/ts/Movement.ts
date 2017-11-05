@@ -5,8 +5,10 @@ import { Coords } from "./Coords";
 import { GameState } from "./GameState";
 import { Jetpack } from "./Jetpack";
 import * as Map from "./Map";
+import * as PathFinder from "./PathFinder"
 import { Player } from "./Player";
 import { Renderer } from "./Renderer";
+import { RenderMap } from "./RenderMap"
 
 import { is } from "immutable";
 
@@ -162,7 +164,31 @@ export const getSeekEggMoves = (oldPlayer: Player,
 
 // decide on next direction to follow based on closest egg to chase
 export const pathFinding = (board: Board, players: Player[]) => (player: Player) => {
-  return player
+  // only move when at actual place
+  if (player.coords.offsetX !== 0 || player.coords.offsetY !== 0) {
+    return player
+  }
+  const pathMap = RenderMap.createPathFindingMapFromBoard(board)
+  const maybe = PathFinder.findClosestPath(pathMap)(player.coords.toObject())(getAllCoords(players).toArray())
+
+  return maybe.map(PathFinder.findNextDirection)
+              .caseOf({
+                just: val => player.modify({
+                  direction: new Coords(val)
+                }),
+                nothing: () => player.modify({
+                  direction: new Coords({
+                    x:0,
+                    y:0
+                  })
+                })
+              })
+}
+
+const getAllCoords = (players: Player[]) => {
+  return players.map(player => {
+    return player.coords.toObject()
+  })
 }
 
 export const doPlayerCalcs = (board: Board, timePassed: number, players: Player[]) => (

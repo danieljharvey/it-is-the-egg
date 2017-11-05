@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Tile = /** @class */ (function (_super) {
+    var Tile = (function (_super) {
         __extends(Tile, _super);
         function Tile(params) {
             var _this = this;
@@ -43,7 +43,7 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
     Object.defineProperty(exports, "__esModule", { value: true });
     // new board is built from JS array
     // all changes reuse the re-generated List object
-    var Board = /** @class */ (function () {
+    var Board = (function () {
         function Board(values, list) {
             if (list === void 0) { list = null; }
             if (values) {
@@ -78,7 +78,7 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
     Object.defineProperty(exports, "__esModule", { value: true });
     // import { Utils } from "./Utils";
     var OFFSET_DIVIDE = 100;
-    var Coords = /** @class */ (function (_super) {
+    var Coords = (function (_super) {
         __extends(Coords, _super);
         function Coords(params) {
             var _this = this;
@@ -104,7 +104,7 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
 define("BoardSize", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var BoardSize = /** @class */ (function () {
+    var BoardSize = (function () {
         function BoardSize(size) {
             this.minSize = 5;
             this.maxSize = 40;
@@ -148,7 +148,7 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // wee lad full of reusable functions
-    var Utils = /** @class */ (function () {
+    var Utils = (function () {
         function Utils() {
         }
         Utils.getRandomObjectKey = function (object) {
@@ -236,7 +236,7 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
-    var Player = /** @class */ (function (_super) {
+    var Player = (function (_super) {
         __extends(Player, _super);
         function Player(params) {
             var _this = this;
@@ -277,7 +277,7 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
 define("GameState", ["require", "exports", "immutable"], function (require, exports, immutable_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var GameState = /** @class */ (function (_super) {
+    var GameState = (function (_super) {
         __extends(GameState, _super);
         function GameState(params) {
             var _this = this;
@@ -302,7 +302,7 @@ define("GameState", ["require", "exports", "immutable"], function (require, expo
 define("TileSet", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TileSet = /** @class */ (function () {
+    var TileSet = (function () {
         function TileSet() {
         }
         TileSet.getTiles = function () {
@@ -730,7 +730,7 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this concerns all the changes between player and board
-    var Action = /** @class */ (function () {
+    var Action = (function () {
         function Action() {
         }
         // go through each player, check it's effect on board, score and outcome, return new gameState obj
@@ -826,7 +826,7 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
 define("Canvas", ["require", "exports", "Utils"], function (require, exports, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Canvas = /** @class */ (function () {
+    var Canvas = (function () {
         function Canvas(boardSize) {
             this.imagesFolder = "img/";
             this.boardSize = boardSize;
@@ -901,7 +901,7 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var PlayerTypes = /** @class */ (function () {
+    var PlayerTypes = (function () {
         function PlayerTypes() {
             this.playerTypes = {
                 "blue-egg": {
@@ -967,7 +967,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
 define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Collisions = /** @class */ (function () {
+    var Collisions = (function () {
         function Collisions(playerTypes) {
             this.playerTypes = playerTypes;
         }
@@ -1131,7 +1131,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
 define("Loader", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Loader = /** @class */ (function () {
+    var Loader = (function () {
         function Loader(apiLocation) {
             this.apiLocation = apiLocation;
         }
@@ -1200,7 +1200,7 @@ define("Loader", ["require", "exports"], function (require, exports) {
 define("SavedLevel", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SavedLevel = /** @class */ (function () {
+    var SavedLevel = (function () {
         function SavedLevel(boardSize, board, levelID) {
             this.boardSize = boardSize;
             this.board = board;
@@ -1224,7 +1224,7 @@ define("SavedLevel", ["require", "exports"], function (require, exports) {
 define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (require, exports, BoardSize_2, SavedLevel_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Levels = /** @class */ (function () {
+    var Levels = (function () {
         function Levels(loader) {
             this.levelID = 0;
             this.levels = {};
@@ -1334,11 +1334,11 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
     }());
     exports.Levels = Levels;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], function (require, exports, BoardSize_3, Coords_3, Utils_4) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_3, Map, Utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
-    var RenderMap = /** @class */ (function () {
+    var RenderMap = (function () {
         function RenderMap() {
         }
         // render map
@@ -1365,18 +1365,20 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], func
         };
         // takes oldBoard and newBoard and creates a map of changes between them
         RenderMap.createRenderMapFromBoards = function (oldBoard, newBoard) {
-            var boardArray = this.createRenderMap(oldBoard.getLength(), false);
-            return boardArray.map(function (column, x) {
-                return column.map(function (tile, y) {
-                    var oldTile = oldBoard.getTile(x, y);
-                    var newTile = newBoard.getTile(x, y);
-                    if (oldTile.equals(newTile)) {
-                        return false;
-                    }
-                    else {
-                        return true;
-                    }
-                });
+            var renderFunc = RenderMap.renderMapMaker(newBoard);
+            return RenderMap.createMap(oldBoard, renderFunc);
+        };
+        RenderMap.renderMapMaker = function (newBoard) {
+            return function (board, x, y) {
+                var oldTile = board.getTile(x, y);
+                var newTile = newBoard.getTile(x, y);
+                return (!oldTile.equals(newTile));
+            };
+        };
+        // returns map of boolean values for background or not for pathfinding
+        RenderMap.createPathFindingMapFromBoard = function (board) {
+            return RenderMap.createMap(board, function (newBoard, x, y) {
+                return !Map.checkTileIsEmpty(newBoard, x, y);
             });
         };
         // combines any two renderMaps (using OR)
@@ -1399,11 +1401,164 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Utils"], func
             }
             return boardArray;
         };
+        RenderMap.createMap = function (board, func) {
+            var boardArray = RenderMap.createRenderMap(board.getLength(), false);
+            return boardArray.map(function (column, x) {
+                return column.map(function (tile, y) {
+                    return func(board, x, y);
+                });
+            });
+        };
         return RenderMap;
     }());
     exports.RenderMap = RenderMap;
 });
-define("Movement", ["require", "exports", "ramda", "Coords", "Map", "immutable"], function (require, exports, _, Coords_4, Map, immutable_7) {
+define("PathFinder", ["require", "exports", "lodash", "tsmonad"], function (require, exports, _, tsmonad_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getMapSize = function (map) {
+        return {
+            width: map.length,
+            height: map[0].length
+        };
+    };
+    var overflow = function (num, max) {
+        if (num < 0) {
+            return max + num;
+        }
+        return (num < max) ? num : num % max;
+    };
+    exports.wrapValue = function (map) { return function (point) {
+        var mapSize = exports.getMapSize(map);
+        return {
+            x: overflow(point.x, mapSize.width),
+            y: overflow(point.y, mapSize.height)
+        };
+    }; };
+    exports.findAdjacent = function (map) { return function (point) {
+        var wrappedPoint = exports.wrapValue(map)(point);
+        var x = wrappedPoint.x, y = wrappedPoint.y;
+        return tsmonad_1.Maybe.just(map[x][y]);
+    }; };
+    exports.addToList = function (list, point) { return [point].concat(list); };
+    exports.squaresAround = function (map) { return function (point) {
+        var partialWrapValue = exports.wrapValue(map);
+        var x = point.x, y = point.y;
+        return [
+            partialWrapValue({ x: x - 1, y: y }),
+            partialWrapValue({ x: x + 1, y: y }),
+            partialWrapValue({ x: x, y: y - 1 }),
+            partialWrapValue({ x: x, y: y + 1 })
+        ];
+    }; };
+    exports.checkAnswer = function (list) { return function (point) { return function (tile) {
+        if (tile === 0) {
+            return exports.addToList(list, point);
+        }
+        return [];
+    }; }; };
+    exports.addAdjacent = function (map) { return function (list) { return function (point) {
+        return exports.findAdjacent(map)(point)
+            .map(exports.checkAnswer(list)(point))
+            .caseOf({
+            just: function (tile) { return tile; },
+            nothing: function () { return []; }
+        });
+    }; }; };
+    exports.filterDuplicates = function (arr) {
+        var problems = arr.filter(function (item) {
+            var matching = arr.filter(function (checkItem) {
+                return exports.pointMatch(item)(checkItem);
+            });
+            return (matching.length > 1);
+        });
+        return (problems.length < 1);
+    };
+    exports.pointMatch = function (matchPoint) { return function (point) { return (matchPoint.x == point.x && matchPoint.y == point.y); }; };
+    exports.isInList = function (list, point) {
+        var partialPointMatch = exports.pointMatch(point);
+        return (list.filter(partialPointMatch).length > 0);
+    };
+    exports.getMoveOptions = function (map) { return function (list) {
+        var startPoint = list[0];
+        var partialAddAdjacent = exports.addAdjacent(map)(list);
+        return exports.squaresAround(map)(startPoint)
+            .map(partialAddAdjacent)
+            .filter(function (entry) { return (entry.length > 0); })
+            .filter(exports.filterDuplicates);
+    }; };
+    // try out all possible and return new list of options
+    exports.getMultipleMoveOptions = function (map) { return function (lists) {
+        return _.flatMap(lists, function (list) {
+            return exports.getMoveOptions(map)(list);
+        });
+    }; };
+    exports.findAnswer = function (targetPoint) { return function (potentialAnswer) { return (exports.pointMatch(potentialAnswer[0])(targetPoint)); }; };
+    exports.findAnswerInList = function (targetPoint) { return function (list) {
+        var partialFindAnswer = exports.findAnswer(targetPoint);
+        var found = _.find(list, partialFindAnswer);
+        if (found) {
+            return tsmonad_1.Maybe.just(found);
+        }
+        return tsmonad_1.Maybe.nothing();
+    }; };
+    exports.flipAnswer = function (list) { return _.reverse(list); };
+    exports.processMoveList = function (map) { return function (lists) { return function (targetPoint) {
+        var moveOptions = exports.getMultipleMoveOptions(map)(lists);
+        if (moveOptions.length === 0) {
+            return tsmonad_1.Maybe.nothing();
+        }
+        var solution = exports.findAnswerInList(targetPoint)(moveOptions);
+        return solution.caseOf({
+            just: function (value) {
+                return tsmonad_1.Maybe.just(exports.flipAnswer(value));
+            },
+            nothing: function () {
+                return exports.processMoveList(map)(moveOptions)(targetPoint);
+            }
+        });
+    }; }; };
+    exports.findPath = function (map) { return function (start) { return function (target) {
+        return exports.processMoveList(map)([[start]])(target);
+    }; }; };
+    // do findPath for each thing, return shortest
+    exports.findClosestPath = function (map) { return function (start) { return function (targets) {
+        console.log('findClosestPath map', map);
+        console.log('findClosestPath start', start);
+        console.log('findClosestPath targets', targets);
+        var paths = targets.map(function (target) {
+            return exports.findPath(map)(start)(target);
+        }).filter(function (maybe) {
+            return maybe.caseOf({
+                just: function (val) { return true; },
+                nothing: function () { return false; }
+            });
+        }).map(function (obj) {
+            return obj.caseOf({
+                just: function (val) { return val; },
+                nothing: function () { return false; }
+            });
+        }).sort(function (a, b) {
+            return (b.length < a.length);
+        });
+        if (paths.length === 0) {
+            return tsmonad_1.Maybe.nothing();
+        }
+        var first = _.first(paths);
+        return tsmonad_1.Maybe.just(first);
+    }; }; };
+    // work out what first move is according to directions
+    exports.findNextDirection = function (pointList) {
+        var parts = _.slice(pointList, 0, 2);
+        var start = parts[0];
+        var end = parts[1];
+        return {
+            x: end.x - start.x,
+            y: end.y - start.y
+        };
+    };
+});
+define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_4, Map, PathFinder, RenderMap_1, immutable_7) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1502,8 +1657,30 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "immutable"]
     };
     // decide on next direction to follow based on closest egg to chase
     exports.pathFinding = function (board, players) { return function (player) {
-        return player;
+        // only move when at actual place
+        if (player.coords.offsetX !== 0 || player.coords.offsetY !== 0) {
+            return player;
+        }
+        var pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
+        var maybe = PathFinder.findClosestPath(pathMap)(player.coords.toObject())(getAllCoords(players).toArray());
+        return maybe.map(PathFinder.findNextDirection)
+            .caseOf({
+            just: function (val) { return player.modify({
+                direction: new Coords_4.Coords(val)
+            }); },
+            nothing: function () { return player.modify({
+                direction: new Coords_4.Coords({
+                    x: 0,
+                    y: 0
+                })
+            }); }
+        });
     }; };
+    var getAllCoords = function (players) {
+        return players.map(function (player) {
+            return player.coords.toObject();
+        });
+    };
     exports.doPlayerCalcs = function (board, timePassed, players) { return function (player) { return exports.getCalcFunction(player, board, timePassed, players)(player); }; };
     // work out whether player's location has moved since last go
     exports.markPlayerAsMoved = function (oldPlayer) { return function (newPlayer) {
@@ -1782,7 +1959,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "immutable"]
 define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_4, Collisions_1, Map, Movement) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TheEgg = /** @class */ (function () {
+    var TheEgg = (function () {
         function TheEgg(playerTypes) {
             this.playerTypes = playerTypes;
         }
@@ -1863,7 +2040,7 @@ define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (requ
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // used in editor, draws a bunch of 32x32 tiles for selecting
-    var TileChooser = /** @class */ (function () {
+    var TileChooser = (function () {
         function TileChooser(renderer) {
             this.chosenTileID = 0;
             this.renderer = renderer;
@@ -1918,7 +2095,7 @@ define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (requ
 define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TitleScreen = /** @class */ (function () {
+    var TitleScreen = (function () {
         function TitleScreen(jetpack, canvas, imagePath, width, height) {
             this.jetpack = jetpack;
             this.canvas = canvas;
@@ -1973,10 +2150,10 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_5, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_5, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Jetpack = /** @class */ (function () {
+    var Jetpack = (function () {
         function Jetpack() {
             this.moveSpeed = 10;
             this.paused = true;
@@ -2203,7 +2380,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
         };
         Jetpack.prototype.renderEverything = function (gameState) {
             var boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
-            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
+            var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
         };
         Jetpack.prototype.renderChanges = function (oldGameState, newGameState) {
@@ -2215,8 +2392,8 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             // player map is covering old shit up
             var playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
             // render changes
-            var boardRenderMap = RenderMap_1.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
-            var finalRenderMap = RenderMap_1.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+            var boardRenderMap = RenderMap_2.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
+            var finalRenderMap = RenderMap_2.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
             this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
         };
         Jetpack.prototype.sizeCanvas = function (boardSize) {
@@ -2228,9 +2405,9 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
         };
         // create empty renderMap based on boardSize, and then apply each player's position to it
         Jetpack.prototype.createRenderMapFromPlayers = function (players, boardSize) {
-            var blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, false);
+            var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, false);
             return players.reduce(function (map, player) {
-                return RenderMap_1.RenderMap.addPlayerToRenderMap(player, map);
+                return RenderMap_2.RenderMap.addPlayerToRenderMap(player, map);
             }, blankMap);
         };
         Jetpack.prototype.calcTimePassed = function (time, lastTime) {
@@ -2405,7 +2582,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
     var OFFSET_DIVIDE = 100;
-    var Renderer = /** @class */ (function () {
+    var Renderer = (function () {
         function Renderer(jetpack, tiles, playerTypes, boardSize, canvas, loadCallback) {
             this.lampMode = false; // lamp mode only draws around the eggs
             this.checkResize = true;
@@ -2680,10 +2857,10 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_6, Levels_2, Loader_2, Map, Renderer_2, RenderMap_2, TileChooser_1, TileSet_4, Utils_6) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_6, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Editor = /** @class */ (function () {
+    var Editor = (function () {
         function Editor() {
             this.levelID = 1;
             this.levelList = [];
@@ -2812,14 +2989,14 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         Editor.prototype.renderEverything = function (board) {
             var boardSize = new BoardSize_7.BoardSize(board.getLength());
-            var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
+            var blankMap = RenderMap_3.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(board, blankMap, [], 0);
         };
         Editor.prototype.renderSelected = function (board, renderMap) {
             this.renderer.render(board, renderMap, [], 0);
         };
         Editor.prototype.renderFromBoards = function (oldBoard, newBoard) {
-            var renderMap = RenderMap_2.RenderMap.createRenderMapFromBoards(oldBoard, newBoard);
+            var renderMap = RenderMap_3.RenderMap.createRenderMapFromBoards(oldBoard, newBoard);
             this.renderSelected(newBoard, renderMap);
         };
         Editor.prototype.sizeCanvas = function (boardSize) {

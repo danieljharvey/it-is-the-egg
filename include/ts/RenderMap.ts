@@ -1,6 +1,7 @@
 import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
+import * as Map from "./Map"
 import { Player } from "./Player";
 import { Utils } from "./Utils";
 
@@ -40,24 +41,39 @@ export class RenderMap {
     return newRenderMap;
   }
 
+  public static createMap = (board: Board, func) : boolean[][] => {
+    const boardArray = RenderMap.createRenderMap(board.getLength(), false);
+    return boardArray.map((column, x) => {
+      return column.map((tile, y) => {
+        return func(board, x, y)
+      })
+    })
+  }
+
   // takes oldBoard and newBoard and creates a map of changes between them
   public static createRenderMapFromBoards(
     oldBoard: Board,
     newBoard: Board
   ): boolean[][] {
-    const boardArray = this.createRenderMap(oldBoard.getLength(), false);
+    const renderFunc = RenderMap.renderMapMaker(newBoard)
+    return RenderMap.createMap(oldBoard, renderFunc);
+  }
 
-    return boardArray.map((column, x) => {
-      return column.map((tile, y) => {
-        const oldTile = oldBoard.getTile(x, y);
-        const newTile = newBoard.getTile(x, y);
-        if (oldTile.equals(newTile)) {
-          return false;
-        } else {
-          return true;
-        }
-      });
-    });
+  public static renderMapMaker(newBoard: Board) {
+    return (board: Board, x: number, y: number) : boolean => {
+      const oldTile = board.getTile(x, y);
+      const newTile = newBoard.getTile(x, y);
+      return (!oldTile.equals(newTile))
+    }
+  }
+
+  // returns map of boolean values for background or not for pathfinding
+  public static createPathFindingMapFromBoard(
+    board: Board
+  ): boolean[][] {
+    return RenderMap.createMap(board, (newBoard: Board, x: number, y: number ) => {
+      return !Map.checkTileIsEmpty(newBoard, x, y)
+    })
   }
 
   // combines any two renderMaps (using OR)

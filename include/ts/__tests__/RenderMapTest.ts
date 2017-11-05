@@ -30,6 +30,28 @@ test("Create render map from board changes", () => {
   expect(result).toEqual(expected);
 });
 
+test("Create path finding map", () => {
+  const background = Map.cloneTile(1);
+  const solid = Map.cloneTile(2);
+
+  const boardArray = [
+    [background, solid, background],
+    [solid, background, solid],
+    [background, solid, background]
+  ];
+
+  const board = new Board(boardArray);
+
+  const expected = [
+    [false, true, false],
+    [true, false, true],
+    [false, true, false]
+  ];
+
+  const result = RenderMap.createPathFindingMapFromBoard(board);
+  expect(result).toEqual(expected);
+});
+
 test("Combine render maps", () => {
   const renderMap1 = [
     [false, false, false],
