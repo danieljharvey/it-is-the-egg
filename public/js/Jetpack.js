@@ -1413,7 +1413,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
     }());
     exports.RenderMap = RenderMap;
 });
-define("PathFinder", ["require", "exports", "lodash", "tsmonad"], function (require, exports, _, tsmonad_1) {
+define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_1, Coords_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getMapSize = function (map) {
@@ -1428,15 +1428,15 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad"], function (requ
         }
         return (num < max) ? num : num % max;
     };
-    exports.wrapValue = function (map) { return function (point) {
+    exports.wrapValue = function (map) { return function (x, y) {
         var mapSize = exports.getMapSize(map);
-        return {
-            x: overflow(point.x, mapSize.width),
-            y: overflow(point.y, mapSize.height)
-        };
+        return new Coords_4.Coords({
+            x: overflow(x, mapSize.width),
+            y: overflow(y, mapSize.height)
+        });
     }; };
     exports.findAdjacent = function (map) { return function (point) {
-        var wrappedPoint = exports.wrapValue(map)(point);
+        var wrappedPoint = exports.wrapValue(map)(point.x, point.y);
         var x = wrappedPoint.x, y = wrappedPoint.y;
         return tsmonad_1.Maybe.just(map[x][y]);
     }; };
@@ -1445,17 +1445,14 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad"], function (requ
         var partialWrapValue = exports.wrapValue(map);
         var x = point.x, y = point.y;
         return [
-            partialWrapValue({ x: x - 1, y: y }),
-            partialWrapValue({ x: x + 1, y: y }),
-            partialWrapValue({ x: x, y: y - 1 }),
-            partialWrapValue({ x: x, y: y + 1 })
+            partialWrapValue(x - 1, y),
+            partialWrapValue(x + 1, y),
+            partialWrapValue(x, y - 1),
+            partialWrapValue(x, y + 1)
         ];
     }; };
     exports.checkAnswer = function (list) { return function (point) { return function (tile) {
-        if (tile === 0) {
-            return exports.addToList(list, point);
-        }
-        return [];
+        return tile ? [] : exports.addToList(list, point);
     }; }; };
     exports.addAdjacent = function (map) { return function (list) { return function (point) {
         return exports.findAdjacent(map)(point)
@@ -1519,46 +1516,41 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad"], function (requ
         });
     }; }; };
     exports.findPath = function (map) { return function (start) { return function (target) {
-        return exports.processMoveList(map)([[start]])(target);
-    }; }; };
-    // do findPath for each thing, return shortest
-    exports.findClosestPath = function (map) { return function (start) { return function (targets) {
-        console.log('findClosestPath map', map);
-        console.log('findClosestPath start', start);
-        console.log('findClosestPath targets', targets);
-        var paths = targets.map(function (target) {
-            return exports.findPath(map)(start)(target);
-        }).filter(function (maybe) {
-            return maybe.caseOf({
-                just: function (val) { return true; },
-                nothing: function () { return false; }
-            });
-        }).map(function (obj) {
-            return obj.caseOf({
-                just: function (val) { return val; },
-                nothing: function () { return false; }
-            });
-        }).sort(function (a, b) {
-            return (b.length < a.length);
-        });
-        if (paths.length === 0) {
+        if (start.equals(target)) {
             return tsmonad_1.Maybe.nothing();
         }
-        var first = _.first(paths);
-        return tsmonad_1.Maybe.just(first);
+        return exports.processMoveList(map)([[start]])(target);
+    }; }; };
+    var sortArray = function (a, b) {
+        if (b.length < a.length) {
+            return -1;
+        }
+        if (b.length > a.length) {
+            return 1;
+        }
+        return 0;
+    };
+    // do findPath for each thing, return shortest
+    exports.findClosestPath = function (map) { return function (start) { return function (targets) {
+        var partialFindPath = exports.findPath(map)(start);
+        var paths = targets.map(partialFindPath)
+            .map(function (obj) { return obj.valueOr([]); })
+            .filter(function (arr) { return arr.length > 0; })
+            .sort(sortArray);
+        return paths.count() > 0 ? tsmonad_1.Maybe.just(paths.first()) : tsmonad_1.Maybe.nothing();
     }; }; };
     // work out what first move is according to directions
     exports.findNextDirection = function (pointList) {
         var parts = _.slice(pointList, 0, 2);
         var start = parts[0];
         var end = parts[1];
-        return {
+        return new Coords_4.Coords({
             x: end.x - start.x,
             y: end.y - start.y
-        };
+        });
     };
 });
-define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_4, Map, PathFinder, RenderMap_1, immutable_7) {
+define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_5, Map, PathFinder, RenderMap_1, immutable_7) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1662,14 +1654,14 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             return player;
         }
         var pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
-        var maybe = PathFinder.findClosestPath(pathMap)(player.coords.toObject())(getAllCoords(players).toArray());
+        var maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players));
         return maybe.map(PathFinder.findNextDirection)
             .caseOf({
             just: function (val) { return player.modify({
-                direction: new Coords_4.Coords(val)
+                direction: new Coords_5.Coords(val)
             }); },
             nothing: function () { return player.modify({
-                direction: new Coords_4.Coords({
+                direction: new Coords_5.Coords({
                     x: 0,
                     y: 0
                 })
@@ -1677,20 +1669,15 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         });
     }; };
     var getAllCoords = function (players) {
-        return players.map(function (player) {
-            return player.coords.toObject();
-        });
+        return immutable_7.fromJS(players.map(function (player) {
+            return player.coords;
+        }));
     };
     exports.doPlayerCalcs = function (board, timePassed, players) { return function (player) { return exports.getCalcFunction(player, board, timePassed, players)(player); }; };
     // work out whether player's location has moved since last go
     exports.markPlayerAsMoved = function (oldPlayer) { return function (newPlayer) {
-        if (exports.playerHasMoved(oldPlayer, newPlayer)) {
-            return newPlayer.modify({
-                moved: true
-            });
-        }
         return newPlayer.modify({
-            moved: false
+            moved: exports.playerHasMoved(oldPlayer, newPlayer)
         });
     }; };
     // works out whether Player has actually moved since last go
@@ -1740,7 +1727,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         if (player.direction.x === 0 && player.direction.y === 0 && player.currentFrame === 0) {
             // if we're still, and have returned to main frame, disregard old movement
             return player.modify({
-                oldDirection: new Coords_4.Coords()
+                oldDirection: new Coords_5.Coords()
             });
         }
         var newFrame = player.currentFrame;
@@ -2150,7 +2137,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_5, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_6, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -2468,13 +2455,13 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             var filtered = this.filterCreateTiles(tiles);
             var players = filtered.map(function (tile) {
                 var type = tile.createPlayer;
-                var coords = new Coords_5.Coords({
+                var coords = new Coords_6.Coords({
                     offsetX: 0,
                     offsetY: 0,
                     x: tile.x,
                     y: tile.y
                 });
-                var direction = new Coords_5.Coords({ x: 1 });
+                var direction = new Coords_6.Coords({ x: 1 });
                 return _this.createNewPlayer(playerTypes, type, coords, direction);
             });
             return players;
@@ -2857,7 +2844,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_6, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_7, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Editor = (function () {
@@ -3052,7 +3039,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         Editor.prototype.handleDrawEvent = function (event) {
             var tileSize = this.canvas.calcTileSize(this.boardSize);
-            var coords = new Coords_6.Coords({
+            var coords = new Coords_7.Coords({
                 offsetX: event.offsetX % tileSize - tileSize / 2,
                 offsetY: event.offsetY % tileSize - tileSize / 2,
                 x: Math.floor(event.offsetX / tileSize),

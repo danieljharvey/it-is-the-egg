@@ -4,6 +4,7 @@
 		"emitDecoratorMetadata": true,
         "module": "amd",
         "target": "ES5",
+        "moduleResolution": "node",
         "outFile": "public/js/Jetpack.js",
         "rootDir": "include/ts/",
         "sourceMap": true,

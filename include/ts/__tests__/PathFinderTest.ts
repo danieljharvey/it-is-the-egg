@@ -1,9 +1,10 @@
 /* tslint:disable: only-arrow-functions */
 
-import assert from 'assert'
+import { Coords } from "../Coords"
 import { Maybe } from 'tsmonad';
 import * as path from "../PathFinder";
-import { Coords } from "../Coords"
+
+import { fromJS } from "immutable";
 
 test("Map size", function() {
 	const map = [
@@ -19,15 +20,17 @@ test("Wraps width under", function() {
 		[1,2],
 		[3,4]
 	]
-	const point = {
+	const point = new Coords({
 		x: -1,
 		y: 4
-	}
-	const expected = {
+	})
+
+	const expected = new Coords({
 		x: 1,
 		y: 0
-	}
-	const actual = path.wrapValue(map)(point)
+	})
+
+	const actual = path.wrapValue(map)(point.x, point.y)
 	expect(actual).toEqual(expected)
 })
 
@@ -157,13 +160,13 @@ test("Finds them all", function() {
 		[1,1,1]
 	]
 
-	const point = {x:0,y:0}
+	const point = new Coords({x:0,y:0})
 
 	const expected = [
-		{x:2, y:0},
-		{x:1, y:0},
-		{x:0, y:2},
-		{x:0, y:1}
+		new Coords({x:2, y:0}),
+		new Coords({x:1, y:0}),
+		new Coords({x:0, y:2}),
+		new Coords({x:0, y:1})
 	]
 
 	const actual = path.squaresAround(map)(point)
@@ -207,10 +210,15 @@ test("Finds only option from starting point", function() {
 		[1,1,1,1,1]
 	]
 
-	const list = [{x:0,y:0}]
+	const list = [
+		new Coords({x:0,y:0})
+	]
 
 	const expected = [
-		[{x:1,y:0},{x:0,y:0}]
+		[
+			new Coords({x:1,y:0}),
+			new Coords({x:0,y:0})
+		]
 	]
 		
 	const actual = path.getMoveOptions(map)(list)
@@ -229,10 +237,17 @@ test("Doesn't go back on itself", function() {
 		[1,1,1,1,1]
 	]
 
-	const list = [{x:1, y:0},{x:0, y:0}]
+	const list = [
+		new Coords({x:1, y:0}),
+		new Coords({x:0, y:0})
+	]
 
 	const expected = [
-		[{x:2, y:0}, {x:1, y:0}, {x:0, y:0}]
+		[
+			new Coords({x:2, y:0}), 
+			new Coords({x:1, y:0}),
+			new Coords({x:0, y:0})
+		]
 	]
 		
 	const actual = path.getMoveOptions(map)(list)
@@ -244,16 +259,24 @@ test("Doesn't go back on itself", function() {
 test("Returns multiple options", function() {
 	
 	const map = [
-		[0,1],
-		[0,1],
-		[0,1]
+		[false,true],
+		[false,true],
+		[false,true]
 	]
 
-	const list = [{x:1,y:0}]
+	const list = [
+		new Coords({x:1,y:0})
+	]
 
 	const expected = [
-		[{x:0,y:0},{x:1,y:0}],
-		[{x:2,y:0},{x:1,y:0}]
+		[
+			new Coords({x:0,y:0}),
+			new Coords({x:1,y:0})
+		],
+		[
+			new Coords({x:2,y:0}),
+			new Coords({x:1,y:0})
+		]
 	]
 		
 	const actual = path.getMoveOptions(map)(list)
@@ -322,16 +345,19 @@ it ("Very quickly fails", function() {
 
 it ("Very quickly wins", function() {
 	const map = [
-		[0,1,1],
-		[0,1,1],
-		[1,1,1]
+		[false,true,true],
+		[false,true,true],
+		[true,true,true]
 	]
 
-	const start = {x:0,y:0}
+	const start = new Coords({x:0,y:0})
 
-	const end = {x:1,y:0}
+	const end = new Coords({x:1,y:0})
 
-	const expected = Maybe.just([{x:0,y:0},{x:1,y:0}])
+	const expected = Maybe.just([
+		new Coords({x:0,y:0}),
+		new Coords({x:1,y:0})
+	])
 
 	const startList = [[start]]
 
@@ -349,18 +375,18 @@ it ("Wins I suppose", function() {
 		[1,1,1,1,1]
 	]
 
-	const start = {x:0,y:0}
+	const start = new Coords({x:0,y:0})
 
-	const end = {x:2,y:2}
+	const end = new Coords({x:2,y:2})
 
 	const expected = Maybe.just([
-		{x:0,y:0},
-		{x:1,y:0},
-		{x:2,y:0},
-		{x:3,y:0},
-		{x:3,y:1},
-		{x:3,y:2},
-		{x:2,y:2}
+		new Coords({x:0,y:0}),
+		new Coords({x:1,y:0}),
+		new Coords({x:2,y:0}),
+		new Coords({x:3,y:0}),
+		new Coords({x:3,y:1}),
+		new Coords({x:3,y:2}),
+		new Coords({x:2,y:2})
 	]);
 
 	const startList = [[start]]
@@ -380,18 +406,18 @@ it ("Wins another map", function() {
 		[1,1,1,1]
 	]
 
-	const start = {x:2, y:0}
+	const start = new Coords({x:2, y:0})
 
-	const end = {x:0, y:0}
+	const end = new Coords({x:0, y:0})
 
 	const expected = Maybe.just([
-		{x:2, y:0},
-		{x:2, y:1},
-		{x:2, y:2},
-		{x:1, y:2},
-		{x:0, y:2},
-		{x:0, y:1},
-		{x:0, y:0}
+		new Coords({x:2, y:0}),
+		new Coords({x:2, y:1}),
+		new Coords({x:2, y:2}),
+		new Coords({x:1, y:2}),
+		new Coords({x:0, y:2}),
+		new Coords({x:0, y:1}),
+		new Coords({x:0, y:0})
 	]);
 
 	const startList = [[start]]
@@ -419,9 +445,9 @@ it ("Wins a silly map", function() {
 		[1,1,1,1]
 	]
 
-	const start = {x:0, y:0}
+	const start = new Coords({x:0, y:0})
 
-	const end = {x:11, y:3}
+	const end = new Coords({x:11, y:3})
 
 	const expectedLength = 23
 
@@ -440,27 +466,22 @@ it ("Wins a silly map", function() {
 it ("Finds the easier path", function() {
 	
 	const map = [
-		[1,1,1,1,1,1,1],
-		[1,0,0,0,1,0,1],
-		[1,0,1,1,1,1,1],
-		[1,0,0,0,0,0,1],
-		[1,0,1,1,1,0,1],
-		[1,0,0,0,0,0,1],
-		[1,1,1,1,1,1,1],
+		[true,true,true,true,true,true,true],
+		[true,false,false,false,false,false,true],
+		[true,true,true,true,true,true,true]
 	]
 
-	const start = {x:3, y:3}
+	const start = new Coords({x:2, y:1})
 
-	const ends = [
-		{x:5, y:4},
-		{x:3, y:1}, // closer
-		{x:1, y:5}
-	]
+	const ends = fromJS([
+		new Coords({x:5, y:1}),
+		new Coords({x:1, y:1}), // closer
+		new Coords({x:2, y:1}) // need to ignore this one
+	])
 
 	const expected = [
-		{x:3,y:3},
-		{x:3,y:2},
-		{x:3,y:1}
+		new Coords({x:2,y:1}),
+		new Coords({x:1,y:1})
 	]
 
 	const actual = path.findClosestPath(map)(start)(ends)
@@ -476,14 +497,67 @@ it ("Finds the easier path", function() {
 it ("Takes path and works out next move", function() {
 
 	const pointList = [
-		{x:2, y:2},
-		{x:3,y:2},
-		{x:4, y:2}
+		new Coords({x:2, y:2}),
+		new Coords({x:3, y:2}),
+		new Coords({x:4, y:2})
 	]
 
-	const expected = {x:1,y:0}
+	const expected = new Coords({x:1, y:0})
 
 	const actual = path.findNextDirection(pointList)
 
 	expect(actual).toEqual(expected)
+})
+
+it ("Don't bother looking for itself", function() {
+
+	const map = [
+		[true,true,true,true],
+		[true,false,false,true],
+		[true,true,true,true]
+	]
+
+	const start = new Coords({x:1, y:1})
+
+	const target = new Coords({x:1, y:1})
+	
+	const expected = Maybe.nothing()
+
+	const actual = path.findPath(map)(start)(target)
+
+	expect(actual).toEqual(expected)
+})
+
+it ("Deals with stuff from actual game", function() {
+	const map =[
+		[false,true,false,true,false,true,false,true,false,true,false,true,false,true,false],
+		[false,true,false,true,false,true,false,true,false,true,false,true,false,true,true],
+		[false,true,false,true,false,true,false,true,false,true,false,true,false,false,false],
+		[false,true,false,true,false,true,false,true,false,true,false,true,true,true,true],
+		[false,true,false,true,false,true,false,true,false,true,false,false,false,false,false],
+		[false,true,false,true,false,true,false,true,false,true,true,true,true,true,true],
+		[false,true,false,true,false,true,false,true,false,false,false,false,false,false,false],
+		[false,true,false,true,false,true,false,true,true,true,true,true,true,true,true],
+		[false,true,false,true,false,true,false,false,false,false,false,false,false,false,false],
+		[false,true,false,true,false,true,true,true,true,true,true,true,true,true,true],
+		[false,true,false,true,false,false,false,false,false,false,false,false,false,false,false],
+		[false,true,false,true,true,true,true,true,true,true,true,true,true,true,true],
+		[false,true,false,false,false,false,false,false,false,false,false,false,false,false,false],
+		[false,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+		[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
+	]
+	const start = new Coords({"x":0,"y":12,"offsetX":0,"offsetY":0})
+	const targets = fromJS([
+		new Coords({"x":0,"y":12,"offsetX":0,"offsetY":0}),
+		new Coords({"x":7,"y":0,"offsetX":0,"offsetY":0})
+	])
+
+	const actual = path.findClosestPath(map)(start)(targets)
+
+	const value = actual.caseOf({
+		just: val => val,
+		nothing: () => false
+	})
+
+	expect(value.length).toEqual(11)
 })

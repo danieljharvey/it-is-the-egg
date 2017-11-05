@@ -10,7 +10,7 @@ import { Player } from "./Player";
 import { Renderer } from "./Renderer";
 import { RenderMap } from "./RenderMap"
 
-import { is } from "immutable";
+import { fromJS, is, List } from "immutable";
 
 const OFFSET_DIVIDE: number = 100;
 
@@ -169,7 +169,7 @@ export const pathFinding = (board: Board, players: Player[]) => (player: Player)
     return player
   }
   const pathMap = RenderMap.createPathFindingMapFromBoard(board)
-  const maybe = PathFinder.findClosestPath(pathMap)(player.coords.toObject())(getAllCoords(players).toArray())
+  const maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players))
 
   return maybe.map(PathFinder.findNextDirection)
               .caseOf({
@@ -185,10 +185,10 @@ export const pathFinding = (board: Board, players: Player[]) => (player: Player)
               })
 }
 
-const getAllCoords = (players: Player[]) => {
-  return players.map(player => {
-    return player.coords.toObject()
-  })
+const getAllCoords = (players: Player[]) : List<Coords> => {
+  return fromJS(players.map(player => {
+    return player.coords
+  }))
 }
 
 export const doPlayerCalcs = (board: Board, timePassed: number, players: Player[]) => (
@@ -199,13 +199,8 @@ export const doPlayerCalcs = (board: Board, timePassed: number, players: Player[
 export const markPlayerAsMoved = (oldPlayer: Player) => (
   newPlayer: Player
 ): Player => {
-  if (playerHasMoved(oldPlayer, newPlayer)) {
-    return newPlayer.modify({
-      moved: true
-    });
-  }
   return newPlayer.modify({
-    moved: false
+    moved: playerHasMoved(oldPlayer, newPlayer)
   });
 };
 

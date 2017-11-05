@@ -1,14 +1,12 @@
 import * as _ from 'lodash'
 import { Maybe } from 'tsmonad';
+import { Coords } from './Coords'
 
-export interface Point {
-	x: number
-	y: number
-}
+import { List } from 'immutable'
 
-export type PointList = Point[]
+export type PointList = Coords[]
 
-export type Map = number[][]
+export type Map = boolean[][]
 
 export const getMapSize = (map : Map) => {
 	return {
@@ -24,41 +22,38 @@ const overflow = (num: number, max: number) : number => {
 	return (num < max) ? num : num % max
 }
 
-export const wrapValue = (map: Map) => (point: Point) : Point => {
+export const wrapValue = (map: Map) => (x: number, y: number) : Coords => {
 	const mapSize = getMapSize(map)
-	return {
-		x: overflow(point.x, mapSize.width),
-		y: overflow(point.y, mapSize.height)
-	}
+	return new Coords({
+		x: overflow(x, mapSize.width),
+		y: overflow(y, mapSize.height)
+	})
 }
 
-export const findAdjacent = (map: Map) => (point: Point) : Maybe<number> => {
-	const wrappedPoint = wrapValue(map)(point)
+export const findAdjacent = (map: Map) => (point: Coords) : Maybe<boolean> => {
+	const wrappedPoint = wrapValue(map)(point.x, point.y)
 	const {x,y} = wrappedPoint
 	return Maybe.just(map[x][y])
 }
 
-export const addToList = (list: PointList, point: Point) : PointList => [point, ...list]
+export const addToList = (list: PointList, point: Coords) : PointList => [point, ...list]
 
-export const squaresAround = (map: Map) => (point: Point) : PointList => {
+export const squaresAround = (map: Map) => (point: Coords) : PointList => {
 	const partialWrapValue = wrapValue(map)
 	const {x, y} = point
 	return [
-		partialWrapValue({x: x - 1, y}),
-		partialWrapValue({x: x + 1, y}),
-		partialWrapValue({x, y: y - 1}),
-		partialWrapValue({x, y: y + 1})
+		partialWrapValue(x - 1, y),
+		partialWrapValue(x + 1, y),
+		partialWrapValue(x, y - 1),
+		partialWrapValue(x, y + 1)
 	]
 }
 
-export const checkAnswer = (list: PointList) => (point: Point) => (tile: Number) : PointList => {
-	if (tile === 0) {
-		return addToList(list, point)
-	}
-	return []
+export const checkAnswer = (list: PointList) => (point: Coords) => (tile: boolean) : PointList => {
+	return tile ? [] : addToList(list, point)
 }
 
-export const addAdjacent = (map: Map) => (list: PointList) => (point: Point) : PointList => {
+export const addAdjacent = (map: Map) => (list: PointList) => (point: Coords) : PointList => {
 	return findAdjacent(map)(point)
 			.map(checkAnswer(list)(point))
 			.caseOf({
@@ -68,8 +63,8 @@ export const addAdjacent = (map: Map) => (list: PointList) => (point: Point) : P
 }
 
 export const filterDuplicates = (arr: PointList) : boolean => {
-	const problems = arr.filter((item: Point) => {
-		const matching = arr.filter((checkItem: Point) => {
+	const problems = arr.filter((item: Coords) => {
+		const matching = arr.filter((checkItem: Coords) => {
 			return pointMatch(item)(checkItem);
 		})
 		return (matching.length > 1)
@@ -77,9 +72,9 @@ export const filterDuplicates = (arr: PointList) : boolean => {
 	return (problems.length < 1)
 }
 
-export const pointMatch = (matchPoint: Point) => (point: Point) : boolean => (matchPoint.x==point.x && matchPoint.y==point.y)
+export const pointMatch = (matchPoint: Coords) => (point: Coords) : boolean => (matchPoint.x === point.x && matchPoint.y === point.y)
 
-export const isInList = (list: PointList, point: Point) : boolean => {
+export const isInList = (list: PointList, point: Coords) : boolean => {
 	const partialPointMatch = pointMatch(point)
 	return (list.filter(partialPointMatch).length > 0)
 }
@@ -100,9 +95,9 @@ export const getMultipleMoveOptions = (map: Map) => (lists: PointList[]) : Point
 	})
 }
 
-export const findAnswer = (targetPoint: Point) => (potentialAnswer: PointList) : boolean => (pointMatch(potentialAnswer[0])(targetPoint))
+export const findAnswer = (targetPoint: Coords) => (potentialAnswer: PointList) : boolean => (pointMatch(potentialAnswer[0])(targetPoint))
 
-export const findAnswerInList = (targetPoint: Point) => (list: PointList[]) : Maybe<PointList> => {
+export const findAnswerInList = (targetPoint: Coords) => (list: PointList[]) : Maybe<PointList> => {
 	const partialFindAnswer = findAnswer(targetPoint)
 	const found = _.find(list, partialFindAnswer)
 	if (found) {
@@ -113,9 +108,8 @@ export const findAnswerInList = (targetPoint: Point) => (list: PointList[]) : Ma
 
 export const flipAnswer = (list: PointList) => _.reverse(list)
 
-export const processMoveList = (map: Map) => (lists: PointList[]) => (targetPoint: Point) : Maybe<PointList> => {
+export const processMoveList = (map: Map) => (lists: PointList[]) => (targetPoint: Coords) : Maybe<PointList> => {
 	const moveOptions = getMultipleMoveOptions(map)(lists)
-
 	if (moveOptions.length === 0) {
 		return Maybe.nothing()
 	}
@@ -132,44 +126,41 @@ export const processMoveList = (map: Map) => (lists: PointList[]) => (targetPoin
 	})
 }
 
-export const findPath = (map: Map) => (start: Point) => (target: Point) : Maybe<PointList> => {
+export const findPath = (map: Map) => (start: Coords) => (target: Coords) : Maybe<PointList> => {
+	if (start.equals(target)) {
+		return Maybe.nothing()
+	}
 	return processMoveList(map)([[start]])(target)
 }
 
-// do findPath for each thing, return shortest
-export const findClosestPath = (map: Map) => (start: Point) => (targets: Point[]) : Maybe<PointList> => {
-	console.log('findClosestPath map', map)
-	console.log('findClosestPath start', start)
-	console.log('findClosestPath targets', targets)
-	const paths = targets.map(target => {
-		return findPath(map)(start)(target)
-	}).filter(maybe => {
-		return maybe.caseOf({
-			just: val => true,
-			nothing: () => false
-		})
-	}).map(obj => {
-		return obj.caseOf({
-			just: val => val,
-			nothing: () => false
-		})
-	}).sort((a,b) => {
-		return (b.length < a.length)
-	})
-	if (paths.length === 0) {
-		return Maybe.nothing()
+const sortArray = (a: Coords[], b: Coords[]) : number => {
+	if (b.length < a.length) {
+		return -1
 	}
-	const first = _.first(paths);
-	return Maybe.just(first)
+	if (b.length > a.length) {
+		return 1
+	}
+	return 0
+}
+
+// do findPath for each thing, return shortest
+export const findClosestPath = (map: Map) => (start: Coords) => (targets: List<Coords>) : Maybe<PointList> => {
+	const partialFindPath = findPath(map)(start)
+	const paths = targets.map(partialFindPath)
+						 .map(obj => obj.valueOr([]))
+						 .filter(arr => arr.length > 0)
+						 .sort(sortArray)
+	
+	return paths.count() > 0 ? Maybe.just(paths.first()) : Maybe.nothing()
 }
 
 // work out what first move is according to directions
-export const findNextDirection = (pointList: PointList) : Point => {
+export const findNextDirection = (pointList: PointList) : Coords => {
 	const parts = _.slice(pointList, 0, 2);
 	const start = parts[0]
 	const end = parts[1]
-	return {
+	return new Coords({
 		x: end.x - start.x,
 		y: end.y - start.y
-	}
+	})
 }
