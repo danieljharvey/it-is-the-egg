@@ -2220,7 +2220,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_6, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_6, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, Hammer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -2250,6 +2250,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             // this.bootstrap();
             this.bindSizeHandler();
             this.bindKeyboardHandler();
+            this.bindSwipeHandler();
             this.pauseRender();
             this.getTitleScreen(function () {
                 _this.loadLevel(levelID, function () {
@@ -2621,6 +2622,17 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
                     // 'f'
                     _this.toggleFPS();
                 }
+            });
+        };
+        Jetpack.prototype.bindSwipeHandler = function () {
+            var _this = this;
+            var element = document.getElementById('wrapper');
+            var hammertime = new Hammer(element, {});
+            hammertime.on('swipeleft', function (ev) {
+                _this.rotateBoard(false);
+            });
+            hammertime.on('swiperight', function (ev) {
+                _this.rotateBoard(true);
             });
         };
         Jetpack.prototype.toggleFPS = function () {

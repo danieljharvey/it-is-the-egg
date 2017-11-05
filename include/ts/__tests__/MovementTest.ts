@@ -474,7 +474,7 @@ test("Flying player bounce off wall above", () => {
 
   const expected = player.modify({
     direction: new Coords({
-      x :1,
+      x: 1,
       y: 0
     })
   });
@@ -486,15 +486,9 @@ test("Flying player bounce off wall above", () => {
 
 test("Flying player bounce off right", () => {
   const boardArray = [
-    [
-      new Tile({ background: true, breakable: false }),
-    ],
-    [
-      new Tile({ background: true, breakable: false })
-    ],
-    [
-      new Tile({ background: false, breakable: false })
-    ]
+    [new Tile({ background: true, breakable: false })],
+    [new Tile({ background: true, breakable: false })],
+    [new Tile({ background: false, breakable: false })]
   ];
 
   const board = new Board(boardArray);
@@ -558,16 +552,9 @@ test("Flying player bounce off wall below", () => {
 
 test("Flying player bounce off left", () => {
   const boardArray = [
-    [
-      new Tile({ background: false})
-
-    ],
-    [
-      new Tile({ background: true })
-    ],
-    [
-      new Tile({ background: true })
-    ]
+    [new Tile({ background: false })],
+    [new Tile({ background: true })],
+    [new Tile({ background: true })]
   ];
 
   const board = new Board(boardArray);

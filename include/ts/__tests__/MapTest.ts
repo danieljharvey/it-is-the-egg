@@ -117,36 +117,36 @@ test("Don't get new player direction on rotate", () => {
   const direction = new Coords({
     x: 1,
     y: 0
-  })
-  const actual = Map.getNewPlayerDirection(direction, true)
+  });
+  const actual = Map.getNewPlayerDirection(direction, true);
 
-  expect(actual).toEqual(direction)
-})
+  expect(actual).toEqual(direction);
+});
 
 test("Do get new player direction on clockwise rotate", () => {
   const direction = new Coords({
     x: 0,
     y: 0
-  })
+  });
   const expected = new Coords({
     x: 1,
     y: 0
-  })
-  const actual = Map.getNewPlayerDirection(direction, true)
+  });
+  const actual = Map.getNewPlayerDirection(direction, true);
 
-  expect(actual).toEqual(expected)
-})
+  expect(actual).toEqual(expected);
+});
 
 test("Do get new player direction on anti-clockwise rotate", () => {
   const direction = new Coords({
     x: 0,
     y: 0
-  })
+  });
   const expected = new Coords({
     x: -1,
     y: 0
-  })
-  const actual = Map.getNewPlayerDirection(direction, false)
+  });
+  const actual = Map.getNewPlayerDirection(direction, false);
 
-  expect(actual).toEqual(expected)
-})
+  expect(actual).toEqual(expected);
+});

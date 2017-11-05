@@ -334,12 +334,17 @@ export const incrementPlayerFrame = (player: Player): Player => {
   });
 };
 
-export const checkPlayerDirection = (board: Board) => (player: Player) : Player => {
-  return (player.flying === true) ? checkFlyingPlayerDirection(board)(player) : checkStandardPlayerDirection(board)(player)
-}
+export const checkPlayerDirection = (board: Board) => (
+  player: Player
+): Player => {
+  return player.flying === true
+    ? checkFlyingPlayerDirection(board)(player)
+    : checkStandardPlayerDirection(board)(player);
+};
 
-export const checkFlyingPlayerDirection = (board: Board) => (player: Player) : Player => {
-  
+export const checkFlyingPlayerDirection = (board: Board) => (
+  player: Player
+): Player => {
   const coords = player.coords;
 
   if (player.direction.y < 0) {
@@ -409,12 +414,11 @@ export const checkFlyingPlayerDirection = (board: Board) => (player: Player) : P
   return player.modify({
     stop: false
   });
-}
+};
 // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
 export const checkStandardPlayerDirection = (board: Board) => (
   player: Player
 ): Player => {
-
   const coords = player.coords;
 
   if (player.direction.x !== 0 && player.falling === false) {
