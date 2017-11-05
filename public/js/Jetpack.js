@@ -1372,7 +1372,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
             return function (board, x, y) {
                 var oldTile = board.getTile(x, y);
                 var newTile = newBoard.getTile(x, y);
-                return (!oldTile.equals(newTile));
+                return !oldTile.equals(newTile);
             };
         };
         // returns map of boolean values for background or not for pathfinding
@@ -1426,7 +1426,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         if (num < 0) {
             return max + num;
         }
-        return (num < max) ? num : num % max;
+        return num < max ? num : num % max;
     };
     exports.wrapValue = function (map) { return function (x, y) {
         var mapSize = exports.getMapSize(map);
@@ -1440,7 +1440,9 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         var x = wrappedPoint.x, y = wrappedPoint.y;
         return tsmonad_1.Maybe.just(map[x][y]);
     }; };
-    exports.addToList = function (list, point) { return [point].concat(list); };
+    exports.addToList = function (list, point) { return [
+        point
+    ].concat(list); };
     exports.squaresAround = function (map) { return function (point) {
         var partialWrapValue = exports.wrapValue(map);
         var x = point.x, y = point.y;
@@ -1467,21 +1469,23 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             var matching = arr.filter(function (checkItem) {
                 return exports.pointMatch(item)(checkItem);
             });
-            return (matching.length > 1);
+            return matching.length > 1;
         });
-        return (problems.length < 1);
+        return problems.length < 1;
     };
-    exports.pointMatch = function (matchPoint) { return function (point) { return (matchPoint.x === point.x && matchPoint.y === point.y); }; };
+    exports.pointMatch = function (matchPoint) { return function (point) {
+        return matchPoint.x === point.x && matchPoint.y === point.y;
+    }; };
     exports.isInList = function (list, point) {
         var partialPointMatch = exports.pointMatch(point);
-        return (list.filter(partialPointMatch).length > 0);
+        return list.filter(partialPointMatch).length > 0;
     };
     exports.getMoveOptions = function (map) { return function (list) {
         var startPoint = list[0];
         var partialAddAdjacent = exports.addAdjacent(map)(list);
         return exports.squaresAround(map)(startPoint)
             .map(partialAddAdjacent)
-            .filter(function (entry) { return (entry.length > 0); })
+            .filter(function (entry) { return entry.length > 0; })
             .filter(exports.filterDuplicates);
     }; };
     // try out all possible and return new list of options
@@ -1490,7 +1494,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             return exports.getMoveOptions(map)(list);
         });
     }; };
-    exports.findAnswer = function (targetPoint) { return function (potentialAnswer) { return (exports.pointMatch(potentialAnswer[0])(targetPoint)); }; };
+    exports.findAnswer = function (targetPoint) { return function (potentialAnswer) { return exports.pointMatch(potentialAnswer[0])(targetPoint); }; };
     exports.findAnswerInList = function (targetPoint) { return function (list) {
         var partialFindAnswer = exports.findAnswer(targetPoint);
         var found = _.find(list, partialFindAnswer);
@@ -1533,7 +1537,8 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     // do findPath for each thing, return shortest
     exports.findClosestPath = function (map) { return function (start) { return function (targets) {
         var partialFindPath = exports.findPath(map)(start);
-        var paths = targets.map(partialFindPath)
+        var paths = targets
+            .map(partialFindPath)
             .map(function (obj) { return obj.valueOr([]); })
             .filter(function (arr) { return arr.length > 0; })
             .sort(sortArray);
@@ -1665,27 +1670,34 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         }
         var pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
         var maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players));
-        return maybe.map(PathFinder.findNextDirection)
-            .caseOf({
-            just: function (val) { return player.modify({
-                direction: new Coords_5.Coords(val)
-            }); },
-            nothing: function () { return player.modify({
-                direction: new Coords_5.Coords({
-                    x: 0,
-                    y: 0
-                })
-            }); }
+        return maybe.map(PathFinder.findNextDirection).caseOf({
+            just: function (val) {
+                return player.modify({
+                    direction: new Coords_5.Coords(val)
+                });
+            },
+            nothing: function () {
+                return player.modify({
+                    direction: new Coords_5.Coords({
+                        x: 0,
+                        y: 0
+                    })
+                });
+            }
         });
     }; };
     var getAllCoords = function (players) {
-        return immutable_7.fromJS(players.filter(function (player) {
-            return (player.value > 1);
-        }).map(function (player) {
+        return immutable_7.fromJS(players
+            .filter(function (player) {
+            return player.value > 0;
+        })
+            .map(function (player) {
             return player.coords;
         }));
     };
-    exports.doPlayerCalcs = function (board, timePassed, players) { return function (player) { return exports.getCalcFunction(player, board, timePassed, players)(player); }; };
+    exports.doPlayerCalcs = function (board, timePassed, players) { return function (player) {
+        return exports.getCalcFunction(player, board, timePassed, players)(player);
+    }; };
     // work out whether player's location has moved since last go
     exports.markPlayerAsMoved = function (oldPlayer) { return function (newPlayer) {
         return newPlayer.modify({
@@ -1736,7 +1748,9 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             // we are still, as it should be
             return player;
         }
-        if (player.direction.x === 0 && player.direction.y === 0 && player.currentFrame === 0) {
+        if (player.direction.x === 0 &&
+            player.direction.y === 0 &&
+            player.currentFrame === 0) {
             // if we're still, and have returned to main frame, disregard old movement
             return player.modify({
                 oldDirection: new Coords_5.Coords()
@@ -1744,14 +1758,20 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         }
         var newFrame = player.currentFrame;
         // if going left, reduce frame
-        if (player.direction.x < 0 || player.oldDirection.x < 0 || player.direction.y < 0 || player.oldDirection.y < 0) {
+        if (player.direction.x < 0 ||
+            player.oldDirection.x < 0 ||
+            player.direction.y < 0 ||
+            player.oldDirection.y < 0) {
             newFrame = player.currentFrame - 1;
             if (newFrame < 0) {
                 newFrame = player.frames - 1;
             }
         }
         // if going right, increase frame
-        if (player.direction.x > 0 || player.oldDirection.x > 0 || player.direction.y > 0 || player.oldDirection.y > 0) {
+        if (player.direction.x > 0 ||
+            player.oldDirection.x > 0 ||
+            player.direction.y > 0 ||
+            player.oldDirection.y > 0) {
             newFrame = player.currentFrame + 1;
             if (newFrame >= player.frames) {
                 newFrame = 0;

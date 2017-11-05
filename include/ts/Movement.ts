@@ -211,7 +211,7 @@ const getAllCoords = (players: Player[]): List<Coords> => {
   return fromJS(
     players
       .filter(player => {
-        return player.value > 1;
+        return player.value > 0;
       })
       .map(player => {
         return player.coords;
