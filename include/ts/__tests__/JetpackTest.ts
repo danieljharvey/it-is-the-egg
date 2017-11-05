@@ -84,7 +84,7 @@ test("Create multiple new players", () => {
 
   const expected = new Player({
     coords: new Coords({ x: 1, y: 1 }),
-    direction: 1,
+    direction: new Coords({ x: 1 }),
     id: 3,
     type: "dog",
     value: 2,

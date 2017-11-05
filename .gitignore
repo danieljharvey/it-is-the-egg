@@ -1,4 +1,11 @@
 node_modules/
 include/settings/connection.json
 
+# jest coverage report
+coverage/
+
+# composer libraries
 include/vendor/
+
+# OSX nonsense
+.DS_Store

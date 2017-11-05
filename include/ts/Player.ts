@@ -6,8 +6,8 @@ const SPRITE_SIZE: number = 64;
 
 interface IPlayerParams {
   coords?: Coords;
-  direction?: number;
-  oldDirection?: number;
+  direction?: Coords;
+  oldDirection?: Coords;
   currentFrame?: number;
   id?: number;
   frames?: number;
@@ -22,12 +22,14 @@ interface IPlayerParams {
   lastAction?: string;
   title?: string;
   moved?: boolean;
+  flying?: boolean;
+  movePattern?: string;
 }
 
 export class Player extends Record({
   coords: new Coords(),
   currentFrame: 0,
-  direction: 0,
+  direction: new Coords(),
   fallSpeed: 1,
   falling: false,
   frames: 1,
@@ -37,15 +39,17 @@ export class Player extends Record({
   moveSpeed: 1,
   moved: false,
   multiplier: 1,
-  oldDirection: 0,
+  oldDirection: new Coords(),
   stop: false,
   title: "",
   type: "egg",
-  value: 1
+  value: 1,
+  flying: false,
+  movePattern: ""
 }) {
   public coords: Coords;
-  public direction: number;
-  public oldDirection: number;
+  public direction: Coords;
+  public oldDirection: Coords;
   public currentFrame: number;
   public id: number;
   public frames: number;
@@ -60,6 +64,8 @@ export class Player extends Record({
   public lastAction: string;
   public title: string;
   public moved: boolean;
+  public flying: boolean;
+  public movePattern: string;
 
   constructor(params?: IPlayerParams) {
     const superParams = params ? params : undefined;

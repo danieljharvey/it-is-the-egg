@@ -7,8 +7,7 @@ import { Editor } from "./Editor";
 import { GameState } from "./GameState";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
-import { Map } from "./Map";
-import { Movement } from "./Movement";
+import * as Map from "./Map";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
@@ -21,7 +20,7 @@ import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
-import * as Hammer from "hammerjs"
+import * as Hammer from "hammerjs";
 
 export class Jetpack {
   public animationHandle: number;
@@ -36,7 +35,6 @@ export class Jetpack {
 
   protected renderer: Renderer; // Renderer object
   protected levels: Levels; // Levels object
-  protected tileSet: TileSet; // TileSet object
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
   protected tileChooser: TileChooser;
@@ -61,7 +59,7 @@ export class Jetpack {
     // this.bootstrap();
     this.bindSizeHandler();
     this.bindKeyboardHandler();
-    this.bindSwipeHandler()
+    this.bindSwipeHandler();
 
     this.pauseRender();
     this.getTitleScreen(() => {
@@ -78,8 +76,6 @@ export class Jetpack {
 
   // load static stuff - map/renderer etc will be worked out later
   public bootstrap(callback) {
-    this.tileSet = new TileSet();
-
     const boardSize = new BoardSize(this.defaultBoardSize);
 
     this.canvas = new Canvas(boardSize);
@@ -112,7 +108,7 @@ export class Jetpack {
     playerTypes,
     type: string,
     coords: Coords,
-    direction: number
+    direction: Coords
   ): Player {
     const playerType = playerTypes[type];
     const params = JSON.parse(JSON.stringify(playerType));
@@ -175,16 +171,11 @@ export class Jetpack {
   }
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  protected createRenderer(
-    tileSet: TileSet,
-    boardSize: BoardSize,
-    completedCallback: () => any
-  ) {
+  protected createRenderer(boardSize: BoardSize, completedCallback: () => any) {
     this.canvas = new Canvas(boardSize);
-    this.tileSet = tileSet;
     this.boardSize = boardSize;
 
-    const tiles = this.tileSet.getTiles();
+    const tiles = TileSet.getTiles();
 
     return new Renderer(
       this,
@@ -296,8 +287,7 @@ export class Jetpack {
   }
 
   protected getBoardFromArray(boardArray): Board {
-    const map = new Map(this.tileSet);
-    return map.makeBoardFromArray(boardArray);
+    return Map.makeBoardFromArray(boardArray);
   }
 
   // create first "frame" of gameState from board
@@ -320,16 +310,19 @@ export class Jetpack {
     this.gameStates = [gameState];
   }
 
+  protected updateGameState(oldGameState: GameState, gameState: GameState) {
+    this.gameStates = [oldGameState, gameState];
+  }
+
   // do next move, plop new state on pile, return new state
   protected getNewGameState(
     gameState: GameState,
     action: string,
     timePassed: number
   ): GameState {
-    const map = new Map(this.tileSet);
-    const theEgg = new TheEgg(map, this.playerTypes);
+    const theEgg = new TheEgg(this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
-    this.gameStates.push(newGameState); // add to history
+    this.updateGameState(gameState, newGameState);
     return newGameState;
   }
 
@@ -473,7 +466,8 @@ export class Jetpack {
         x: tile.x,
         y: tile.y
       });
-      return this.createNewPlayer(playerTypes, type, coords, 1);
+      const direction = new Coords({ x: 1 });
+      return this.createNewPlayer(playerTypes, type, coords, direction);
     });
     return players;
   }
@@ -502,31 +496,22 @@ export class Jetpack {
     this.levels.loadLevel(
       levelID,
       (savedLevel: SavedLevel) => {
-        this.renderer = this.createRenderer(
-          this.tileSet,
-          savedLevel.boardSize,
-          () => {
-            const board = this.getBoardFromArray(savedLevel.board);
-            this.resetGameState(board);
-            const gameState = this.getCurrentGameState();
-            this.renderEverything(gameState);
-            callback();
-          }
-        );
+        this.renderer = this.createRenderer(savedLevel.boardSize, () => {
+          const board = this.getBoardFromArray(savedLevel.board);
+          this.resetGameState(board);
+          const gameState = this.getCurrentGameState();
+          this.renderEverything(gameState);
+          callback();
+        });
       },
       () => {
-        this.renderer = this.createRenderer(
-          this.tileSet,
-          this.boardSize,
-          () => {
-            const map = new Map(this.tileSet);
-            const board = map.generateRandomBoard(this.boardSize, this.tileSet);
-            this.resetGameState(board);
-            const gameState = this.getCurrentGameState();
-            this.renderEverything(gameState);
-            callback();
-          }
-        );
+        this.renderer = this.createRenderer(this.boardSize, () => {
+          const board = Map.generateRandomBoard(this.boardSize);
+          this.resetGameState(board);
+          const gameState = this.getCurrentGameState();
+          this.renderEverything(gameState);
+          callback();
+        });
       }
     );
   }
@@ -563,12 +548,12 @@ export class Jetpack {
   }
 
   protected bindSwipeHandler() {
-    const element = document.getElementById('wrapper')
+    const element = document.getElementById("wrapper");
     const hammertime = new Hammer(element, {});
-    hammertime.on('swipeleft', (ev) => {
+    hammertime.on("swipeleft", ev => {
       this.rotateBoard(false);
     });
-    hammertime.on('swiperight', (ev) => {
+    hammertime.on("swiperight", ev => {
       this.rotateBoard(true);
     });
   }

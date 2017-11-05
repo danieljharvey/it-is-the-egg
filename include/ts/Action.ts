@@ -1,17 +1,11 @@
 import { Board } from "./Board";
 import { GameState } from "./GameState";
-import { Map } from "./Map";
+import * as Map from "./Map";
 import { Player } from "./Player";
 
 // this concerns all the changes between player and board
 
 export class Action {
-  protected map: Map;
-
-  constructor(map: Map) {
-    this.map = map;
-  }
-
   // go through each player, check it's effect on board, score and outcome, return new gameState obj
   public checkAllPlayerTileActions(gameState: GameState): GameState {
     return gameState.players.reduce(
@@ -55,13 +49,13 @@ export class Action {
       };
     }
 
-    const coords = this.map.correctForOverflow(board, currentCoords);
+    const coords = Map.correctForOverflow(board, currentCoords);
 
     const tile = board.getTile(coords.x, coords.y);
 
     if (tile.collectable > 0) {
       const newScore = tile.collectable * player.multiplier;
-      const blankTile = this.map.cloneTile(1);
+      const blankTile = Map.cloneTile(1);
       const newTile = blankTile.modify({
         x: coords.x,
         y: coords.y
@@ -82,13 +76,13 @@ export class Action {
       };
     } else if (tile.action === "pink-switch") {
       return {
-        board: this.map.switchTiles(board, 15, 16),
+        board: Map.switchTiles(board, 15, 16),
         outcome,
         score
       };
     } else if (tile.action === "green-switch") {
       return {
-        board: this.map.switchTiles(board, 18, 19),
+        board: Map.switchTiles(board, 18, 19),
         outcome,
         score
       };
@@ -108,7 +102,7 @@ export class Action {
 
     const coords = player.coords;
 
-    const belowCoords = this.map.correctForOverflow(
+    const belowCoords = Map.correctForOverflow(
       board,
       coords.modify({ y: coords.y + 1 })
     );
@@ -117,7 +111,7 @@ export class Action {
 
     if (tile.get("breakable") === true) {
       // if tile below is breakable (and we are already falling and thus have momentum, smash it)
-      const newTile = this.map.cloneTile(1);
+      const newTile = Map.cloneTile(1);
       const newTileWithCoords = newTile.modify({
         x: belowCoords.x,
         y: belowCoords.y

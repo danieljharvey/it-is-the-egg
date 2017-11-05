@@ -5,8 +5,7 @@ import { Collisions } from "./Collisions";
 import { Coords } from "./Coords";
 import { Levels } from "./Levels";
 import { Loader } from "./Loader";
-import { Map } from "./Map";
-import { Movement } from "./Movement";
+import * as Map from "./Map";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Renderer } from "./Renderer";
@@ -21,10 +20,8 @@ export class Editor {
   protected levelID: number = 1;
   protected levelList: number[] = [];
 
-  protected map: Map; // Map object
   protected renderer: Renderer; // Renderer object
   protected levels: Levels; // Levels object
-  protected tileSet: TileSet; // TileSet object
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
   protected tileChooser: TileChooser;
@@ -42,24 +39,22 @@ export class Editor {
     this.bindClickHandler();
     this.bindMouseMoveHandler();
 
-    this.board = this.getBlankBoard(this.tileSet, this.boardSize);
+    this.board = this.getBlankBoard(this.boardSize);
 
     // reset undo
     this.clearBoardHistory(this.board);
 
-    this.renderer = this.createRenderer(this.tileSet, this.boardSize);
+    this.renderer = this.createRenderer(this.boardSize);
     window.setTimeout(() => {
       this.renderEverything(this.board);
     }, 1000);
 
-    this.tileChooser = new TileChooser(this.tileSet, this.renderer);
+    this.tileChooser = new TileChooser(this.renderer);
     this.tileChooser.render();
   }
 
   // load static stuff - map/renderer etc will be worked out later
   public bootstrap(callback) {
-    this.tileSet = new TileSet();
-
     this.boardSize = new BoardSize(this.defaultBoardSize);
 
     this.canvas = new Canvas(this.boardSize);
@@ -104,9 +99,7 @@ export class Editor {
   }
 
   public growBoard() {
-    const map = new Map(this.tileSet);
-
-    const newBoard = map.growBoard(this.board);
+    const newBoard = Map.growBoard(this.board);
     this.boardSize = new BoardSize(newBoard.getLength());
 
     this.sizeCanvas(this.boardSize);
@@ -116,9 +109,7 @@ export class Editor {
   }
 
   public shrinkBoard() {
-    const map = new Map(this.tileSet);
-
-    const newBoard = map.shrinkBoard(this.board);
+    const newBoard = Map.shrinkBoard(this.board);
     this.boardSize = new BoardSize(newBoard.getLength());
 
     this.sizeCanvas(this.boardSize);
@@ -144,18 +135,12 @@ export class Editor {
     this.board = board;
   }
 
-  protected getBlankBoard(tileSet: TileSet, boardSize: BoardSize): Board {
-    const map = new Map(tileSet);
-    return map.generateBlankBoard(boardSize);
+  protected getBlankBoard(boardSize: BoardSize): Board {
+    return Map.generateBlankBoard(boardSize);
   }
 
-  protected getLevelBoard(
-    boardArray,
-    tileSet: TileSet,
-    boardSize: BoardSize
-  ): Board {
-    const map = new Map(tileSet);
-    return map.makeBoardFromArray(boardArray);
+  protected getLevelBoard(boardArray, boardSize: BoardSize): Board {
+    return Map.makeBoardFromArray(boardArray);
   }
 
   protected clearBoardHistory(board: Board) {
@@ -184,12 +169,11 @@ export class Editor {
   }
 
   // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-  protected createRenderer(tileSet: TileSet, boardSize: BoardSize) {
+  protected createRenderer(boardSize: BoardSize) {
     this.canvas = new Canvas(boardSize);
-    this.tileSet = tileSet;
     this.boardSize = boardSize;
 
-    const tiles = this.tileSet.getTiles();
+    const tiles = TileSet.getTiles();
 
     return new Renderer(
       this,
@@ -242,17 +226,13 @@ export class Editor {
       (savedLevel: SavedLevel) => {
         const text = "Level " + savedLevel.levelID.toString() + " loaded!";
         this.showEditMessage(text);
-        this.board = this.getLevelBoard(
-          savedLevel.board,
-          this.tileSet,
-          savedLevel.boardSize
-        );
-        this.renderer = this.createRenderer(this.tileSet, savedLevel.boardSize);
+        this.board = this.getLevelBoard(savedLevel.board, savedLevel.boardSize);
+        this.renderer = this.createRenderer(savedLevel.boardSize);
         callback();
       },
       () => {
-        this.board = this.getBlankBoard(this.tileSet, this.boardSize);
-        this.renderer = this.createRenderer(this.tileSet, this.boardSize);
+        this.board = this.getBlankBoard(this.boardSize);
+        this.renderer = this.createRenderer(this.boardSize);
         callback();
       }
     );
@@ -300,8 +280,7 @@ export class Editor {
 
     const currentTile = this.board.getTile(coords.x, coords.y);
 
-    const map = new Map(this.tileSet);
-    const tile = map.cloneTile(tileID);
+    const tile = Map.cloneTile(tileID);
 
     const placedTile = tile.modify({
       x: coords.x,

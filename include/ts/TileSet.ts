@@ -1,8 +1,6 @@
 export class TileSet {
-  protected tiles: object = {};
-
-  public getTiles() {
-    this.tiles = {
+  public static getTiles() {
+    const tiles = {
       1: {
         background: true,
         id: 1,
@@ -156,14 +154,32 @@ export class TileSet {
         img: "silver-egg-cup.png",
         needsDraw: true,
         title: "Silver Egg Cup"
+      },
+      22: {
+        background: true,
+        createPlayer: "blade",
+        frontLayer: true,
+        id: 22,
+        img: "blade-egg-cup.png",
+        needsDraw: true,
+        title: "Blade egg cup"
+      },
+      23: {
+        background: true,
+        createPlayer: "find-blade",
+        frontLayer: true,
+        id: 23,
+        img: "find-blade-egg-cup.png",
+        needsDraw: true,
+        title: "Find-blade egg cup"
       }
     };
     // return a copy rather than letting this get messed with
-    return JSON.parse(JSON.stringify(this.tiles));
+    return JSON.parse(JSON.stringify(tiles));
   }
 
-  public getTile(id) {
-    const tiles = this.getTiles();
+  public static getTile(id) {
+    const tiles = TileSet.getTiles();
     if (tiles.hasOwnProperty(id)) {
       return tiles[id];
     }
