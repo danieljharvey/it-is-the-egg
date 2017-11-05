@@ -1679,7 +1679,9 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         });
     }; };
     var getAllCoords = function (players) {
-        return immutable_7.fromJS(players.map(function (player) {
+        return immutable_7.fromJS(players.filter(function (player) {
+            return (player.value > 1);
+        }).map(function (player) {
             return player.coords;
         }));
     };

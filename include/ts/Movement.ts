@@ -5,10 +5,10 @@ import { Coords } from "./Coords";
 import { GameState } from "./GameState";
 import { Jetpack } from "./Jetpack";
 import * as Map from "./Map";
-import * as PathFinder from "./PathFinder"
+import * as PathFinder from "./PathFinder";
 import { Player } from "./Player";
 import { Renderer } from "./Renderer";
-import { RenderMap } from "./RenderMap"
+import { RenderMap } from "./RenderMap";
 
 import { fromJS, is, List } from "immutable";
 
@@ -21,7 +21,11 @@ export const doCalcs = (
   gameState: GameState,
   timePassed: number
 ): GameState => {
-  const playerCalcs = doPlayerCalcs(gameState.board, timePassed, gameState.players);
+  const playerCalcs = doPlayerCalcs(
+    gameState.board,
+    timePassed,
+    gameState.players
+  );
   return gameState.modify({
     players: gameState.players.map(playerCalcs)
   });
@@ -86,7 +90,7 @@ export const checkFloorBelowPlayer = (board: Board, timePassed: number) => (
   if (player.flying === true) {
     return player.modify({
       falling: false
-    })
+    });
   }
 
   const coords = player.coords;
@@ -123,7 +127,12 @@ export const getCalcFunction = (
   players: Player[]
 ) => {
   // separated as not all functions will be the same for enemies
-  const playerSpecific = getPlayerSpecificMoves(oldPlayer, board, timePassed, players);
+  const playerSpecific = getPlayerSpecificMoves(
+    oldPlayer,
+    board,
+    timePassed,
+    players
+  );
 
   return _.compose(
     markPlayerAsMoved(oldPlayer),
@@ -134,66 +143,88 @@ export const getCalcFunction = (
   );
 };
 
-export const getPlayerSpecificMoves = (player: Player,
+export const getPlayerSpecificMoves = (
+  player: Player,
   board: Board,
-  timePassed: number, players: Player[]) => {
-    if (player.movePattern === "seek-egg") {
-      return getSeekEggMoves(player, board, timePassed, players)
-    }
-    return getEggMoves(player, board, timePassed)
+  timePassed: number,
+  players: Player[]
+) => {
+  if (player.movePattern === "seek-egg") {
+    return getSeekEggMoves(player, board, timePassed, players);
   }
+  return getEggMoves(player, board, timePassed);
+};
 
-export const getEggMoves = (oldPlayer: Player,
+export const getEggMoves = (
+  oldPlayer: Player,
   board: Board,
-  timePassed: number) => {
+  timePassed: number
+) => {
   return _.compose(
     incrementPlayerDirection(timePassed),
     checkPlayerDirection(board),
     checkFloorBelowPlayer(board, timePassed)
   );
-}
+};
 
-export const getSeekEggMoves = (oldPlayer: Player,
+export const getSeekEggMoves = (
+  oldPlayer: Player,
   board: Board,
-  timePassed: number, players: Player[]) => {
-    return _.compose(
-      incrementPlayerDirection(timePassed),
-      pathFinding(board, players)
-    );
-  }
+  timePassed: number,
+  players: Player[]
+) => {
+  return _.compose(
+    incrementPlayerDirection(timePassed),
+    pathFinding(board, players)
+  );
+};
 
 // decide on next direction to follow based on closest egg to chase
-export const pathFinding = (board: Board, players: Player[]) => (player: Player) => {
+export const pathFinding = (board: Board, players: Player[]) => (
+  player: Player
+) => {
   // only move when at actual place
   if (player.coords.offsetX !== 0 || player.coords.offsetY !== 0) {
-    return player
+    return player;
   }
-  const pathMap = RenderMap.createPathFindingMapFromBoard(board)
-  const maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players))
+  const pathMap = RenderMap.createPathFindingMapFromBoard(board);
+  const maybe = PathFinder.findClosestPath(pathMap)(player.coords)(
+    getAllCoords(players)
+  );
 
-  return maybe.map(PathFinder.findNextDirection)
-              .caseOf({
-                just: val => player.modify({
-                  direction: new Coords(val)
-                }),
-                nothing: () => player.modify({
-                  direction: new Coords({
-                    x:0,
-                    y:0
-                  })
-                })
-              })
-}
+  return maybe.map(PathFinder.findNextDirection).caseOf({
+    just: val =>
+      player.modify({
+        direction: new Coords(val)
+      }),
+    nothing: () =>
+      player.modify({
+        direction: new Coords({
+          x: 0,
+          y: 0
+        })
+      })
+  });
+};
 
-const getAllCoords = (players: Player[]) : List<Coords> => {
-  return fromJS(players.map(player => {
-    return player.coords
-  }))
-}
+const getAllCoords = (players: Player[]): List<Coords> => {
+  return fromJS(
+    players
+      .filter(player => {
+        return player.value > 1;
+      })
+      .map(player => {
+        return player.coords;
+      })
+  );
+};
 
-export const doPlayerCalcs = (board: Board, timePassed: number, players: Player[]) => (
-  player: Player
-): Player => getCalcFunction(player, board, timePassed, players)(player);
+export const doPlayerCalcs = (
+  board: Board,
+  timePassed: number,
+  players: Player[]
+) => (player: Player): Player =>
+  getCalcFunction(player, board, timePassed, players)(player);
 
 // work out whether player's location has moved since last go
 export const markPlayerAsMoved = (oldPlayer: Player) => (
@@ -264,7 +295,11 @@ export const incrementPlayerFrame = (player: Player): Player => {
     return player;
   }
 
-  if (player.direction.x === 0 && player.direction.y === 0 && player.currentFrame === 0) {
+  if (
+    player.direction.x === 0 &&
+    player.direction.y === 0 &&
+    player.currentFrame === 0
+  ) {
     // if we're still, and have returned to main frame, disregard old movement
     return player.modify({
       oldDirection: new Coords()
@@ -274,7 +309,12 @@ export const incrementPlayerFrame = (player: Player): Player => {
   let newFrame = player.currentFrame;
 
   // if going left, reduce frame
-  if (player.direction.x < 0 || player.oldDirection.x < 0 || player.direction.y < 0 || player.oldDirection.y < 0) {
+  if (
+    player.direction.x < 0 ||
+    player.oldDirection.x < 0 ||
+    player.direction.y < 0 ||
+    player.oldDirection.y < 0
+  ) {
     newFrame = player.currentFrame - 1;
     if (newFrame < 0) {
       newFrame = player.frames - 1;
@@ -282,7 +322,12 @@ export const incrementPlayerFrame = (player: Player): Player => {
   }
 
   // if going right, increase frame
-  if (player.direction.x > 0 || player.oldDirection.x > 0 || player.direction.y > 0 || player.oldDirection.y > 0) {
+  if (
+    player.direction.x > 0 ||
+    player.oldDirection.x > 0 ||
+    player.direction.y > 0 ||
+    player.oldDirection.y > 0
+  ) {
     newFrame = player.currentFrame + 1;
     if (newFrame >= player.frames) {
       newFrame = 0;
@@ -301,7 +346,7 @@ export const checkPlayerDirection = (board: Board) => (
   const coords = player.coords;
 
   if (player.direction.y < 0 && player.flying === true) {
-    if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1 )) {
+    if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1)) {
       // turn around
       return player.modify({
         coords: coords.modify({
@@ -316,7 +361,7 @@ export const checkPlayerDirection = (board: Board) => (
   }
 
   if (player.direction.y > 0 && player.flying === true) {
-    if (!Map.checkTileIsEmpty(board, coords.x, coords.y + 1 )) {
+    if (!Map.checkTileIsEmpty(board, coords.x, coords.y + 1)) {
       // turn around
       return player.modify({
         coords: coords.modify({
@@ -370,11 +415,6 @@ export const checkPlayerDirection = (board: Board) => (
       });
     }
   }
-
-
-  
-
- 
 
   return player.modify({
     stop: false

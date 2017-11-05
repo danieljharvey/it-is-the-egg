@@ -1,7 +1,7 @@
 import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
-import * as Map from "./Map"
+import * as Map from "./Map";
 import { Player } from "./Player";
 import { Utils } from "./Utils";
 
@@ -41,39 +41,40 @@ export class RenderMap {
     return newRenderMap;
   }
 
-  public static createMap = (board: Board, func) : boolean[][] => {
+  public static createMap = (board: Board, func): boolean[][] => {
     const boardArray = RenderMap.createRenderMap(board.getLength(), false);
     return boardArray.map((column, x) => {
       return column.map((tile, y) => {
-        return func(board, x, y)
-      })
-    })
-  }
+        return func(board, x, y);
+      });
+    });
+  };
 
   // takes oldBoard and newBoard and creates a map of changes between them
   public static createRenderMapFromBoards(
     oldBoard: Board,
     newBoard: Board
   ): boolean[][] {
-    const renderFunc = RenderMap.renderMapMaker(newBoard)
+    const renderFunc = RenderMap.renderMapMaker(newBoard);
     return RenderMap.createMap(oldBoard, renderFunc);
   }
 
   public static renderMapMaker(newBoard: Board) {
-    return (board: Board, x: number, y: number) : boolean => {
+    return (board: Board, x: number, y: number): boolean => {
       const oldTile = board.getTile(x, y);
       const newTile = newBoard.getTile(x, y);
-      return (!oldTile.equals(newTile))
-    }
+      return !oldTile.equals(newTile);
+    };
   }
 
   // returns map of boolean values for background or not for pathfinding
-  public static createPathFindingMapFromBoard(
-    board: Board
-  ): boolean[][] {
-    return RenderMap.createMap(board, (newBoard: Board, x: number, y: number ) => {
-      return !Map.checkTileIsEmpty(newBoard, x, y)
-    })
+  public static createPathFindingMapFromBoard(board: Board): boolean[][] {
+    return RenderMap.createMap(
+      board,
+      (newBoard: Board, x: number, y: number) => {
+        return !Map.checkTileIsEmpty(newBoard, x, y);
+      }
+    );
   }
 
   // combines any two renderMaps (using OR)

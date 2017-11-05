@@ -19,11 +19,11 @@ export class Board {
     return this.list.toJS();
   }
 
-  public getTile(x: number, y: number) : Tile {
+  public getTile(x: number, y: number): Tile {
     return this.list.getIn([x, y]);
   }
 
-  public modify(x: number, y: number, tile: any) : Board {
+  public modify(x: number, y: number, tile: any): Board {
     const updatedList = this.list.setIn([x, y], tile);
     return new Board(undefined, updatedList);
   }

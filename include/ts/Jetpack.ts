@@ -459,7 +459,7 @@ export class Jetpack {
         x: tile.x,
         y: tile.y
       });
-      const direction = new Coords({x:1})
+      const direction = new Coords({ x: 1 });
       return this.createNewPlayer(playerTypes, type, coords, direction);
     });
     return players;

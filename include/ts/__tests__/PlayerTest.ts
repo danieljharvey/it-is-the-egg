@@ -5,16 +5,16 @@ import { fromJS } from "immutable";
 
 test("Create a player and check defaults", () => {
   const player = new Player({});
-  expect(player.direction).toEqual(new Coords);
-  expect(player.oldDirection).toEqual(new Coords);
+  expect(player.direction).toEqual(new Coords());
+  expect(player.oldDirection).toEqual(new Coords());
   expect(player.currentFrame).toEqual(0);
 });
 
 test("Modify no coords", () => {
   const player = new Player({
     direction: new Coords({
-      x:1,
-      y:0
+      x: 1,
+      y: 0
     })
   });
 
