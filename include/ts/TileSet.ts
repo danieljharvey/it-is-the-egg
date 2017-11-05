@@ -163,6 +163,15 @@ export class TileSet {
         img: "blade-egg-cup.png",
         needsDraw: true,
         title: "Blade egg cup"
+      },
+      23: {
+        background: true,
+        createPlayer: "find-blade",
+        frontLayer: true,
+        id: 23,
+        img: "find-blade-egg-cup.png",
+        needsDraw: true,
+        title: "Find-blade egg cup"
       }
     };
     // return a copy rather than letting this get messed with

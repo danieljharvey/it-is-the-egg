@@ -112,11 +112,11 @@ export const changeTile = (board: Board, coords: Coords, tile: Tile): Board => {
   return board.modify(coords.x, coords.y, tile);
 };
 
-const getNewPlayerDirection = (direction, clockwise) => {
-  if (direction !== 0) {
+export const getNewPlayerDirection = (direction, clockwise) => {
+  if (direction.x !== 0 || direction.y !== 0) {
     return direction;
   }
-  return clockwise ? 1 : -1;
+  return clockwise ? new Coords({x:1}) : new Coords({x:-1})
 };
 
 export const rotatePlayer = (

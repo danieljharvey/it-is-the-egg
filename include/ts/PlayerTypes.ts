@@ -48,6 +48,14 @@ export class PlayerTypes {
       title: "It is the mean spirited blade",
       type: "blade",
       value: 0,
+      flying: true
+    },
+    "find-blade": {
+      frames: 18,
+      img: "find-blade-sprite.png",
+      title: "It is the mean spirited blade",
+      type: "find-blade",
+      value: 0,
       movePattern: "seek-egg",
       flying: true
     }

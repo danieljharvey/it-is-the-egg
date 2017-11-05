@@ -469,6 +469,15 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                     img: "blade-egg-cup.png",
                     needsDraw: true,
                     title: "Blade egg cup"
+                },
+                23: {
+                    background: true,
+                    createPlayer: "find-blade",
+                    frontLayer: true,
+                    id: 23,
+                    img: "find-blade-egg-cup.png",
+                    needsDraw: true,
+                    title: "Find-blade egg cup"
                 }
             };
             // return a copy rather than letting this get messed with
@@ -576,11 +585,11 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
     exports.changeTile = function (board, coords, tile) {
         return board.modify(coords.x, coords.y, tile);
     };
-    var getNewPlayerDirection = function (direction, clockwise) {
-        if (direction !== 0) {
+    exports.getNewPlayerDirection = function (direction, clockwise) {
+        if (direction.x !== 0 || direction.y !== 0) {
             return direction;
         }
-        return clockwise ? 1 : -1;
+        return clockwise ? new Coords_2.Coords({ x: 1 }) : new Coords_2.Coords({ x: -1 });
     };
     exports.rotatePlayer = function (boardSize, player, clockwise) {
         var newCoords = exports.translateRotation(boardSize, player.coords, clockwise);
@@ -589,7 +598,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
                 offsetX: 0,
                 offsetY: 0
             }),
-            direction: getNewPlayerDirection(player.direction, clockwise)
+            direction: exports.getNewPlayerDirection(player.direction, clockwise)
         });
     };
     exports.cloneTile = function (id) {
@@ -951,6 +960,14 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     img: "blade-sprite.png",
                     title: "It is the mean spirited blade",
                     type: "blade",
+                    value: 0,
+                    flying: true
+                },
+                "find-blade": {
+                    frames: 18,
+                    img: "find-blade-sprite.png",
+                    title: "It is the mean spirited blade",
+                    type: "find-blade",
                     value: 0,
                     movePattern: "seek-egg",
                     flying: true
@@ -1660,7 +1677,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.checkFloorBelowPlayer(board, timePassed));
     };
     exports.getSeekEggMoves = function (oldPlayer, board, timePassed, players) {
-        return _.compose(exports.incrementPlayerDirection(timePassed), exports.pathFinding(board, players));
+        return _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.pathFinding(board, players));
     };
     // decide on next direction to follow based on closest egg to chase
     exports.pathFinding = function (board, players) { return function (player) {
@@ -1676,14 +1693,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
                     direction: new Coords_5.Coords(val)
                 });
             },
-            nothing: function () {
-                return player.modify({
-                    direction: new Coords_5.Coords({
-                        x: 0,
-                        y: 0
-                    })
-                });
-            }
+            nothing: function () { return player; }
         });
     }; };
     var getAllCoords = function (players) {

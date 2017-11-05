@@ -175,6 +175,7 @@ export const getSeekEggMoves = (
 ) => {
   return _.compose(
     incrementPlayerDirection(timePassed),
+    checkPlayerDirection(board),
     pathFinding(board, players)
   );
 };
@@ -197,13 +198,7 @@ export const pathFinding = (board: Board, players: Player[]) => (
       player.modify({
         direction: new Coords(val)
       }),
-    nothing: () =>
-      player.modify({
-        direction: new Coords({
-          x: 0,
-          y: 0
-        })
-      })
+    nothing: () => player
   });
 };
 
