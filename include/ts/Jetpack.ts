@@ -59,6 +59,7 @@ export class Jetpack {
     // this.bootstrap();
     this.bindSizeHandler();
     this.bindKeyboardHandler();
+    this.bindSwipeHandler()
 
     this.pauseRender();
     this.getTitleScreen(() => {
@@ -556,6 +557,17 @@ export class Jetpack {
         // 'f'
         this.toggleFPS();
       }
+    });
+  }
+
+  protected bindSwipeHandler() {
+    const element = document.getElementById('wrapper')
+    const hammertime = new Hammer(element, {});
+    hammertime.on('swipeleft', (ev) => {
+      this.rotateBoard(false);
+    });
+    hammertime.on('swiperight', (ev) => {
+      this.rotateBoard(true);
     });
   }
 
