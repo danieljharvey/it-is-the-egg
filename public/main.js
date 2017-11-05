@@ -3,7 +3,8 @@
 requirejs.config({
     baseUrl: 'js',
     paths: {
-        'Jetpack':'./Jetpack'
+        'Jetpack':'./Jetpack',
+        'hammerjs':'./hammer'
     }
 });
 
