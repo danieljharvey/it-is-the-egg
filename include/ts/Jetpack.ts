@@ -21,6 +21,8 @@ import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 
+import * as Hammer from "hammerjs"
+
 export class Jetpack {
   public animationHandle: number;
   public moveSpeed: number = 10;

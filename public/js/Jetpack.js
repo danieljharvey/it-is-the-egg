@@ -1880,7 +1880,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils"], function (require, exports, BoardSize_6, Canvas_1, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map_2, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_1, TitleScreen_1, Utils_5) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_4, Editor_1, GameState_1, Levels_1, Loader_1, Map_2, Player_1, PlayerTypes_1, Renderer_1, RenderMap_1, TheEgg_1, TileSet_1, TitleScreen_1, Utils_5, Hammer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
