@@ -160,7 +160,18 @@ export const findNextDirection = (pointList: PointList) : Coords => {
 	const start = parts[0]
 	const end = parts[1]
 	return new Coords({
-		x: end.x - start.x,
-		y: end.y - start.y
+		x: calcDifference(start.x, end.x),
+		y: calcDifference(start.y, end.y)
 	})
+}
+
+const calcDifference = (start: number, end: number) : number => {
+	const diff = end - start;
+	if (diff < -1) {
+		return 1
+	}
+	if (diff > 1) {
+		return -1
+	}
+	return diff
 }

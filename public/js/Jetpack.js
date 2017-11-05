@@ -1471,7 +1471,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         });
         return (problems.length < 1);
     };
-    exports.pointMatch = function (matchPoint) { return function (point) { return (matchPoint.x == point.x && matchPoint.y == point.y); }; };
+    exports.pointMatch = function (matchPoint) { return function (point) { return (matchPoint.x === point.x && matchPoint.y === point.y); }; };
     exports.isInList = function (list, point) {
         var partialPointMatch = exports.pointMatch(point);
         return (list.filter(partialPointMatch).length > 0);
@@ -1545,9 +1545,19 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         var start = parts[0];
         var end = parts[1];
         return new Coords_4.Coords({
-            x: end.x - start.x,
-            y: end.y - start.y
+            x: calcDifference(start.x, end.x),
+            y: calcDifference(start.y, end.y)
         });
+    };
+    var calcDifference = function (start, end) {
+        var diff = end - start;
+        if (diff < -1) {
+            return 1;
+        }
+        if (diff > 1) {
+            return -1;
+        }
+        return diff;
     };
 });
 define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_5, Map, PathFinder, RenderMap_1, immutable_7) {

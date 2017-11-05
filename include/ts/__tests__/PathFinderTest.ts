@@ -509,6 +509,36 @@ it ("Takes path and works out next move", function() {
 	expect(actual).toEqual(expected)
 })
 
+it ("Takes path and works out X-axis move across edges", function() {
+
+	// this is jump from right to left
+	const pointList = [
+		new Coords({x:4, y:2}),
+		new Coords({x:0, y:2})
+	]
+
+	const expected = new Coords({x:1, y:0})
+
+	const actual = path.findNextDirection(pointList)
+
+	expect(actual).toEqual(expected)
+})
+
+it ("Takes path and works out Y-axis move across edges", function() {
+	
+		// this is jump from bottom to top
+		const pointList = [
+			new Coords({x:3, y:0}),
+			new Coords({x:3, y:4})
+		]
+	
+		const expected = new Coords({x:0, y:-1})
+	
+		const actual = path.findNextDirection(pointList)
+	
+		expect(actual).toEqual(expected)
+	})
+
 it ("Don't bother looking for itself", function() {
 
 	const map = [
