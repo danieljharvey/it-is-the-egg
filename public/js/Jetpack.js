@@ -832,7 +832,7 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     exports.Action = Action;
 });
 // responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
-define("Canvas", ["require", "exports", "Utils"], function (require, exports, Utils_2) {
+define("Canvas", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Canvas = (function () {
@@ -858,34 +858,34 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
         // takes BoardSize, returns size of each tile
         Canvas.prototype.sizeCanvas = function (boardSize) {
             var maxBoardSize = this.getMaxBoardSize(boardSize);
-            this.sizeControls(maxBoardSize);
             var tileSize = this.calcTileSize(boardSize);
             this.loadCanvas(boardSize, tileSize);
+            this.positionCanvas(maxBoardSize);
             this.boardSize = boardSize;
             return tileSize;
+        };
+        Canvas.prototype.positionCanvas = function (maxBoardSize) {
+            var windowHeight = window.innerHeight;
+            var canvasTop = this.getCanvasTop(windowHeight, maxBoardSize);
+            var wrapper = document.getElementById("wrapper");
+            if (wrapper) {
+                wrapper.style.paddingTop = canvasTop.toString() + "px";
+            }
+        };
+        Canvas.prototype.getCanvasTop = function (windowHeight, boardHeight) {
+            if (boardHeight < windowHeight) {
+                return (windowHeight - boardHeight) / 2;
+            }
+            return 0;
         };
         Canvas.prototype.calcTileSize = function (boardSize) {
             var maxBoardSize = this.getMaxBoardSize(this.boardSize);
             var tileSize = maxBoardSize / boardSize.width;
             return Math.floor(tileSize);
         };
-        Canvas.prototype.sizeControls = function (boardSize) {
-            var controlHeader = document.getElementById("controlHeader");
-            if (controlHeader) {
-                controlHeader.style.width = boardSize.toString() + "px";
-            }
-        };
         Canvas.prototype.getMaxBoardSize = function (boardSize) {
             var width = window.innerWidth;
             var height = window.innerHeight;
-            var wrapMargin = Utils_2.Utils.getControlStyle("wrapper", "margin");
-            var controlSpacing = Utils_2.Utils.getControlStyle("controlHeader", "marginTop");
-            var editSpacing = Utils_2.Utils.getControlStyle("editHeader", "marginTop");
-            var offsetHeight = Utils_2.Utils.getControlProperty("controlHeader", "offsetHeight");
-            height =
-                height - offsetHeight - 2 * wrapMargin - controlSpacing - editSpacing;
-            width =
-                width - offsetHeight - 2 * wrapMargin - controlSpacing - editSpacing;
             if (width > height) {
                 var difference = height % boardSize.width;
                 height = height - difference;
@@ -899,6 +899,9 @@ define("Canvas", ["require", "exports", "Utils"], function (require, exports, Ut
         };
         Canvas.prototype.loadCanvas = function (boardSize, tileSize) {
             this.canvas = document.getElementById("canvas");
+            if (!this.canvas) {
+                return;
+            }
             this.canvas.width = boardSize.width * tileSize;
             this.canvas.height = boardSize.height * tileSize;
             this.ctx = this.canvas.getContext("2d");
@@ -981,7 +984,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }());
     exports.PlayerTypes = PlayerTypes;
 });
-define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_3, _) {
+define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_2, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Collisions = (function () {
@@ -1025,8 +1028,8 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
         // returns all non-collided players
         // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
         Collisions.prototype.removeCollidedPlayers = function (collided, players) {
-            var collidedIDs = Utils_3.Utils.flattenArray(collided);
-            var uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
+            var collidedIDs = Utils_2.Utils.flattenArray(collided);
+            var uniqueIDs = Utils_2.Utils.removeDuplicates(collidedIDs);
             return players.filter(function (player) {
                 if (uniqueIDs.indexOf(player.id) === -1) {
                     return true;
@@ -1351,7 +1354,7 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
     }());
     exports.Levels = Levels;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_3, Map, Utils_4) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_3, Map, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1374,7 +1377,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
             for (var x = startX; x <= endX; x++) {
                 for (var y = startY; y <= endY; y++) {
                     var newCoords = new Coords_3.Coords({ x: x, y: y });
-                    var fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
+                    var fixedCoords = Utils_3.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
             }
@@ -1792,7 +1795,9 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         });
     };
     exports.checkPlayerDirection = function (board) { return function (player) {
-        return (player.flying === true) ? exports.checkFlyingPlayerDirection(board)(player) : exports.checkStandardPlayerDirection(board)(player);
+        return player.flying === true
+            ? exports.checkFlyingPlayerDirection(board)(player)
+            : exports.checkStandardPlayerDirection(board)(player);
     }; };
     exports.checkFlyingPlayerDirection = function (board) { return function (player) {
         var coords = player.coords;
@@ -2220,7 +2225,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_6, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, Hammer) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_6, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_4, Hammer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -2326,7 +2331,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_4.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -2626,12 +2631,12 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
         };
         Jetpack.prototype.bindSwipeHandler = function () {
             var _this = this;
-            var element = document.getElementById('wrapper');
+            var element = document.getElementById("wrapper");
             var hammertime = new Hammer(element, {});
-            hammertime.on('swipeleft', function (ev) {
+            hammertime.on("swipeleft", function (ev) {
                 _this.rotateBoard(false);
             });
-            hammertime.on('swiperight', function (ev) {
+            hammertime.on("swiperight", function (ev) {
                 _this.rotateBoard(true);
             });
         };
@@ -2942,7 +2947,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_7, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_7, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Editor = (function () {
@@ -3055,7 +3060,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
