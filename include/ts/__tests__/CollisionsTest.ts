@@ -435,38 +435,3 @@ test("Combine player lists", () => {
   expect(actual).toEqual(expected);
 });
 
-test("Get player by value", () => {
-  const playerTypes = {
-    madeUp: {
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 15
-    },
-    wrong: {
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 10
-    }
-  };
-
-  const expected = {
-    frames: 18,
-    img: "egg-sprite.png",
-    multiplier: 1,
-    title: "It is of course the egg",
-    type: "madeUp",
-    value: 15
-  };
-
-  const collisions = new Collisions(playerTypes);
-
-  const actual = collisions.getPlayerByValue(playerTypes, 15);
-
-  expect(actual).toEqual(expected);
-});

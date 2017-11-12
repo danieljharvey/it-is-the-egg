@@ -181,20 +181,11 @@ export class Collisions {
     }
   }
 
-  protected getPlayerByValue(playerTypes, value: number) {
-    for (const i in playerTypes) {
-      if (playerTypes[i].value === value) {
-        return playerTypes[i];
-      }
-    }
-    return false;
-  }
-
   protected combinePlayers(player1: Player, player2: Player): Player[] {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
+    const newPlayerType = Utils.getPlayerByValue(this.playerTypes, newValue);
 
     if (!newPlayerType) {
       return [player1, player2];
