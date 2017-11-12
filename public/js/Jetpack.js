@@ -228,6 +228,15 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
                 return self.indexOf(value) === index;
             });
         };
+        // todo : a Maybe?
+        Utils.getPlayerByValue = function (playerTypes, value) {
+            for (var i in playerTypes) {
+                if (playerTypes[i].value === value) {
+                    return playerTypes[i];
+                }
+            }
+            return false;
+        };
         return Utils;
     }());
     exports.Utils = Utils;
@@ -478,6 +487,15 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                     img: "find-blade-egg-cup.png",
                     needsDraw: true,
                     title: "Find-blade egg cup"
+                },
+                24: {
+                    background: true,
+                    id: 24,
+                    action: "split-eggs",
+                    needsDraw: true,
+                    frontLayer: true,
+                    img: "egg-splitter.png",
+                    title: "It is the egg splitter"
                 }
             };
             // return a copy rather than letting this get messed with
@@ -831,6 +849,165 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     }());
     exports.Action = Action;
 });
+define("PlayerTypes", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var PlayerTypes = (function () {
+        function PlayerTypes() {
+        }
+        PlayerTypes.prototype.getPlayerTypes = function () {
+            return {
+                "blue-egg": {
+                    frames: 18,
+                    img: "egg-sprite-blue.png",
+                    multiplier: 5,
+                    title: "It is of course the blue egg",
+                    type: "blue-egg",
+                    value: 3
+                },
+                egg: {
+                    frames: 18,
+                    img: "egg-sprite.png",
+                    multiplier: 1,
+                    title: "It is of course the egg",
+                    type: "egg",
+                    value: 1
+                },
+                "red-egg": {
+                    frames: 18,
+                    img: "egg-sprite-red.png",
+                    multiplier: 2,
+                    title: "It is of course the red egg",
+                    type: "red-egg",
+                    value: 2
+                },
+                "silver-egg": {
+                    fallSpeed: 20,
+                    frames: 1,
+                    img: "silver-egg.png",
+                    moveSpeed: 0,
+                    multiplier: 10,
+                    title: "It is of course the silver egg",
+                    type: "silver-egg",
+                    value: 0
+                },
+                "yellow-egg": {
+                    frames: 18,
+                    img: "egg-sprite-yellow.png",
+                    multiplier: 10,
+                    title: "It is of course the yellow egg",
+                    type: "yellow-egg",
+                    value: 4
+                },
+                blade: {
+                    frames: 18,
+                    img: "blade-sprite.png",
+                    title: "It is the mean spirited blade",
+                    type: "blade",
+                    value: 0,
+                    flying: true
+                },
+                "find-blade": {
+                    frames: 18,
+                    img: "find-blade-sprite.png",
+                    title: "It is the mean spirited blade",
+                    type: "find-blade",
+                    value: 0,
+                    movePattern: "seek-egg",
+                    flying: true
+                }
+            };
+        };
+        return PlayerTypes;
+    }());
+    exports.PlayerTypes = PlayerTypes;
+});
+define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], function (require, exports, Coords_3, Utils_2, _) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // Board Collide
+    // deals with egg splitting tiles
+    exports.checkBoardCollisions = function (board, playerTypes, players) {
+        return addIDsToPlayers(players.reduce(function (newPlayers, player) {
+            var checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player);
+            return newPlayers.concat(checkedPlayers);
+        }, []));
+    };
+    // players need different IDs to make sure they make sense
+    var addIDsToPlayers = function (players) {
+        return players.map(function (player, index) {
+            return player.modify({
+                id: index
+            });
+        });
+    };
+    var checkPlayerBoardCollision = function (board, playerTypes) { return function (player) {
+        return (isCollision(board)(player)) ? exports.splitPlayer(playerTypes)(player) : [player];
+    }; };
+    var isCollision = function (board) { return function (player) { return (isPlayerInTile(player) &&
+        isCollisionTile(board)(player) &&
+        isPlayerValueHighEnough(player)); }; };
+    var isPlayerInTile = function (player) { return (player.coords.offsetX === 0 && player.coords.offsetY === 0); };
+    var isCollisionTile = function (board) { return function (player) {
+        var collidedTiles = getCollidedTiles(board)(player);
+        return (collidedTiles.size > 0);
+    }; };
+    var isPlayerValueHighEnough = function (player) {
+        return player.value > 1;
+    };
+    var isSplitterTile = function (tile) { return (tile.get("action") === "split-eggs"); };
+    exports.getSplitterTiles = function (board) {
+        return board.getAllTiles()
+            .filter(isSplitterTile);
+    };
+    var getCollidedTiles = function (board) { return function (player) {
+        var isPlayerOnTileFunc = exports.isPlayerOnTile(player);
+        return exports.getSplitterTiles(board).filter(isPlayerOnTileFunc);
+    }; };
+    exports.isPlayerOnTile = function (player) { return function (tile) {
+        return (player.coords.x === tile.x && player.coords.y === tile.y);
+    }; };
+    // would be clevererer about this but we don't have many eggs
+    exports.newValues = function (value) {
+        if (value === 2) {
+            return [1, 1];
+        }
+        if (value === 3) {
+            return [2, 1];
+        }
+        if (value === 4) {
+            return [2, 2];
+        }
+        return [];
+    };
+    var combineDirectionsAndValues = function (x, y) {
+        return {
+            value: x,
+            direction: y
+        };
+    };
+    exports.getValuesAndDirections = function (value) {
+        var values = exports.newValues(value);
+        var directions = [-1, 1];
+        return _.zipWith(combineDirectionsAndValues, values, directions);
+    };
+    exports.splitPlayer = function (playerTypes) { return function (player) {
+        var items = exports.getValuesAndDirections(player.value);
+        var playerFromItemFunc = playerFromItem(playerTypes, player);
+        return items.map(playerFromItemFunc);
+    }; };
+    var playerFromItem = function (playerTypes, player) { return function (item) {
+        var newPlayerType = Utils_2.Utils.getPlayerByValue(playerTypes, item.value);
+        var newPlayerParams = Object.assign({}, newPlayerType, {
+            direction: new Coords_3.Coords({
+                x: item.direction
+            }),
+            value: item.value,
+            lastAction: "split"
+        });
+        return player.modify(newPlayerParams);
+    }; };
+});
 // responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
 define("Canvas", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -910,81 +1087,7 @@ define("Canvas", ["require", "exports"], function (require, exports) {
     }());
     exports.Canvas = Canvas;
 });
-define("PlayerTypes", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var PlayerTypes = (function () {
-        function PlayerTypes() {
-            this.playerTypes = {
-                "blue-egg": {
-                    frames: 18,
-                    img: "egg-sprite-blue.png",
-                    multiplier: 5,
-                    title: "It is of course the blue egg",
-                    type: "blue-egg",
-                    value: 3
-                },
-                egg: {
-                    frames: 18,
-                    img: "egg-sprite.png",
-                    multiplier: 1,
-                    title: "It is of course the egg",
-                    type: "egg",
-                    value: 1
-                },
-                "red-egg": {
-                    frames: 18,
-                    img: "egg-sprite-red.png",
-                    multiplier: 2,
-                    title: "It is of course the red egg",
-                    type: "red-egg",
-                    value: 2
-                },
-                "silver-egg": {
-                    fallSpeed: 20,
-                    frames: 1,
-                    img: "silver-egg.png",
-                    moveSpeed: 0,
-                    multiplier: 10,
-                    title: "It is of course the silver egg",
-                    type: "silver-egg",
-                    value: 0
-                },
-                "yellow-egg": {
-                    frames: 18,
-                    img: "egg-sprite-yellow.png",
-                    multiplier: 10,
-                    title: "It is of course the yellow egg",
-                    type: "yellow-egg",
-                    value: 4
-                },
-                blade: {
-                    frames: 18,
-                    img: "blade-sprite.png",
-                    title: "It is the mean spirited blade",
-                    type: "blade",
-                    value: 0,
-                    flying: true
-                },
-                "find-blade": {
-                    frames: 18,
-                    img: "find-blade-sprite.png",
-                    title: "It is the mean spirited blade",
-                    type: "find-blade",
-                    value: 0,
-                    movePattern: "seek-egg",
-                    flying: true
-                }
-            };
-        }
-        PlayerTypes.prototype.getPlayerTypes = function () {
-            return this.playerTypes;
-        };
-        return PlayerTypes;
-    }());
-    exports.PlayerTypes = PlayerTypes;
-});
-define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_2, _) {
+define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Collisions = (function () {
@@ -1028,8 +1131,8 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
         // returns all non-collided players
         // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
         Collisions.prototype.removeCollidedPlayers = function (collided, players) {
-            var collidedIDs = Utils_2.Utils.flattenArray(collided);
-            var uniqueIDs = Utils_2.Utils.removeDuplicates(collidedIDs);
+            var collidedIDs = Utils_3.Utils.flattenArray(collided);
+            var uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
             return players.filter(function (player) {
                 if (uniqueIDs.indexOf(player.id) === -1) {
                     return true;
@@ -1097,6 +1200,9 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
             if (player1.value === 0 || player2.value === 0) {
                 return false;
             }
+            if (player1.lastAction === "split" || player2.lastAction === "split") {
+                return false;
+            }
             var coords1 = player1.coords;
             var coords2 = player2.coords;
             if (coords1.y !== coords2.y) {
@@ -1123,18 +1229,10 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
                 return player1;
             }
         };
-        Collisions.prototype.getPlayerByValue = function (playerTypes, value) {
-            for (var i in playerTypes) {
-                if (playerTypes[i].value === value) {
-                    return playerTypes[i];
-                }
-            }
-            return false;
-        };
         Collisions.prototype.combinePlayers = function (player1, player2) {
             var newValue = player1.value + player2.value;
             var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            var newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
+            var newPlayerType = Utils_3.Utils.getPlayerByValue(this.playerTypes, newValue);
             if (!newPlayerType) {
                 return [player1, player2];
             }
@@ -1354,7 +1452,7 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
     }());
     exports.Levels = Levels;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_3, Map, Utils_3) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_4, Map, Utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1376,8 +1474,8 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
             var boardSize = new BoardSize_3.BoardSize(renderMap.length);
             for (var x = startX; x <= endX; x++) {
                 for (var y = startY; y <= endY; y++) {
-                    var newCoords = new Coords_3.Coords({ x: x, y: y });
-                    var fixedCoords = Utils_3.Utils.correctForOverflow(newCoords, boardSize);
+                    var newCoords = new Coords_4.Coords({ x: x, y: y });
+                    var fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
             }
@@ -1433,7 +1531,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
     }());
     exports.RenderMap = RenderMap;
 });
-define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_1, Coords_4) {
+define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_1, Coords_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getMapSize = function (map) {
@@ -1450,7 +1548,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     exports.wrapValue = function (map) { return function (x, y) {
         var mapSize = exports.getMapSize(map);
-        return new Coords_4.Coords({
+        return new Coords_5.Coords({
             x: overflow(x, mapSize.width),
             y: overflow(y, mapSize.height)
         });
@@ -1569,7 +1667,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         var parts = _.slice(pointList, 0, 2);
         var start = parts[0];
         var end = parts[1];
-        return new Coords_4.Coords({
+        return new Coords_5.Coords({
             x: calcDifference(start.x, end.x),
             y: calcDifference(start.y, end.y)
         });
@@ -1585,7 +1683,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return diff;
     };
 });
-define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_5, Map, PathFinder, RenderMap_1, immutable_7) {
+define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_7) {
     "use strict";
     var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1693,7 +1791,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return maybe.map(PathFinder.findNextDirection).caseOf({
             just: function (val) {
                 return player.modify({
-                    direction: new Coords_5.Coords(val)
+                    direction: new Coords_6.Coords(val)
                 });
             },
             nothing: function () { return player; }
@@ -1766,7 +1864,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             player.currentFrame === 0) {
             // if we're still, and have returned to main frame, disregard old movement
             return player.modify({
-                oldDirection: new Coords_5.Coords()
+                oldDirection: new Coords_6.Coords()
             });
         }
         var newFrame = player.currentFrame;
@@ -2031,7 +2129,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_4, Collisions_1, Map, Movement) {
+define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TheEgg = (function () {
@@ -2061,8 +2159,9 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Ma
             var newerGameState = action.checkAllPlayerTileActions(newGameState);
             var collisions = new Collisions_1.Collisions(this.playerTypes);
             var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
+            var splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
             return newerGameState.modify({
-                players: sortedPlayers
+                players: splitPlayers
             });
         };
         // this rotates board and players
@@ -2225,7 +2324,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     }());
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_6, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_4, Hammer) {
+define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, Hammer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Jetpack = (function () {
@@ -2331,7 +2430,7 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_4.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -2547,13 +2646,13 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             var filtered = this.filterCreateTiles(tiles);
             var players = filtered.map(function (tile) {
                 var type = tile.createPlayer;
-                var coords = new Coords_6.Coords({
+                var coords = new Coords_7.Coords({
                     offsetX: 0,
                     offsetY: 0,
                     x: tile.x,
                     y: tile.y
                 });
-                var direction = new Coords_6.Coords({ x: 1 });
+                var direction = new Coords_7.Coords({ x: 1 });
                 return _this.createNewPlayer(playerTypes, type, coords, direction);
             });
             return players;
@@ -2947,7 +3046,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }());
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_7, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_5) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Editor = (function () {
@@ -3060,7 +3159,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             var availableLevels = levelList.filter(function (level) {
                 return level.completed === false;
             });
-            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
+            var chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -3142,7 +3241,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         };
         Editor.prototype.handleDrawEvent = function (event) {
             var tileSize = this.canvas.calcTileSize(this.boardSize);
-            var coords = new Coords_7.Coords({
+            var coords = new Coords_8.Coords({
                 offsetX: event.offsetX % tileSize - tileSize / 2,
                 offsetY: event.offsetY % tileSize - tileSize / 2,
                 x: Math.floor(event.offsetX / tileSize),

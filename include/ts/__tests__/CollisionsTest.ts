@@ -122,6 +122,20 @@ test("Ignores collision with zero-value player", () => {
   expect(result).toEqual(false);
 });
 
+test("Ignores collision with just-split player", () => {
+  const player1 = new Player({
+    coords: new Coords({ x: 1, y: 1 }),
+    lastAction: "split"
+  });
+
+  const splitPlayer = player1.modify({ id: 100 });
+
+  const collisions = new Collisions(playerTypes);
+
+  const result = collisions.checkCollision(player1, splitPlayer);
+  expect(result).toEqual(false);
+});
+
 test("Removes correct players", () => {
   const player1 = new Player({
     id: 1
@@ -356,7 +370,7 @@ test("Create new players actually works", () => {
     })
   });
 
-  const playerTypes = {
+  const types = {
     madeUp: {
       frames: 18,
       img: "egg-sprite.png",
@@ -387,7 +401,7 @@ test("Create new players actually works", () => {
 
   const collided = [[1, 2], [4, 6]];
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions(types);
 
   const actual = collisions.createNewPlayers(collided, players);
 
@@ -431,42 +445,6 @@ test("Combine player lists", () => {
   const collisions = new Collisions(playerTypes);
 
   const actual = collisions.combinePlayerLists(list1, list2);
-
-  expect(actual).toEqual(expected);
-});
-
-test("Get player by value", () => {
-  const playerTypes = {
-    madeUp: {
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 15
-    },
-    wrong: {
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 10
-    }
-  };
-
-  const expected = {
-    frames: 18,
-    img: "egg-sprite.png",
-    multiplier: 1,
-    title: "It is of course the egg",
-    type: "madeUp",
-    value: 15
-  };
-
-  const collisions = new Collisions(playerTypes);
-
-  const actual = collisions.getPlayerByValue(playerTypes, 15);
 
   expect(actual).toEqual(expected);
 });

@@ -90,4 +90,14 @@ export class Utils {
       return self.indexOf(value) === index;
     });
   }
+
+  // todo : a Maybe?
+  public static getPlayerByValue(playerTypes, value: number) {
+    for (const i in playerTypes) {
+      if (playerTypes[i].value === value) {
+        return playerTypes[i];
+      }
+    }
+    return false;
+  }
 }

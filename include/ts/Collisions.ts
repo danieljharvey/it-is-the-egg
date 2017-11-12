@@ -9,8 +9,6 @@ import * as _ from "ramda";
 export class Collisions {
   protected playerTypes: object;
 
-  protected players: Player[];
-
   constructor(playerTypes: object) {
     this.playerTypes = playerTypes;
   }
@@ -150,6 +148,10 @@ export class Collisions {
       return false;
     }
 
+    if (player1.lastAction === "split" || player2.lastAction === "split") {
+      return false
+    }
+
     const coords1 = player1.coords;
     const coords2 = player2.coords;
 
@@ -183,20 +185,11 @@ export class Collisions {
     }
   }
 
-  protected getPlayerByValue(playerTypes, value: number) {
-    for (const i in playerTypes) {
-      if (playerTypes[i].value === value) {
-        return playerTypes[i];
-      }
-    }
-    return false;
-  }
-
   protected combinePlayers(player1: Player, player2: Player): Player[] {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    const newPlayerType = this.getPlayerByValue(this.playerTypes, newValue);
+    const newPlayerType = Utils.getPlayerByValue(this.playerTypes, newValue);
 
     if (!newPlayerType) {
       return [player1, player2];

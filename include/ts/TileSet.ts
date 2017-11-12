@@ -172,6 +172,15 @@ export class TileSet {
         img: "find-blade-egg-cup.png",
         needsDraw: true,
         title: "Find-blade egg cup"
+      },
+      24: {
+        background: true,
+        id: 24,
+        action: "split-eggs",
+        needsDraw: true,
+        frontLayer: true,
+        img: "egg-splitter.png",
+        title: "It is the egg splitter"
       }
     };
     // return a copy rather than letting this get messed with
