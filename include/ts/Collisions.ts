@@ -9,8 +9,6 @@ import * as _ from "ramda";
 export class Collisions {
   protected playerTypes: object;
 
-  protected players: Player[];
-
   constructor(playerTypes: object) {
     this.playerTypes = playerTypes;
   }
