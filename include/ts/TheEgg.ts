@@ -5,6 +5,7 @@
 
 import { Action } from "./Action";
 import { Board } from "./Board";
+import * as BoardCollisions from "./BoardCollisions"
 import { BoardSize } from "./BoardSize";
 import { Collisions } from "./Collisions";
 import { GameState } from "./GameState";
@@ -52,8 +53,10 @@ export class TheEgg {
     const collisions = new Collisions(this.playerTypes);
     const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
 
+    const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers)
+    
     return newerGameState.modify({
-      players: sortedPlayers
+      players: splitPlayers
     });
   }
 

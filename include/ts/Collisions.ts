@@ -148,6 +148,10 @@ export class Collisions {
       return false;
     }
 
+    if (player1.lastAction === "split" || player2.lastAction === "split") {
+      return false
+    }
+
     const coords1 = player1.coords;
     const coords2 = player2.coords;
 

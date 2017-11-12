@@ -179,7 +179,7 @@ export class TileSet {
         action: "split-eggs",
         needsDraw: true,
         frontLayer: true,
-        img: "find-blade-egg-cup.png",
+        img: "egg-splitter.png",
         title: "It is the egg splitter"
       }
     };

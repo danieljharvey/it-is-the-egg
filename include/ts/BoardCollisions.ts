@@ -17,10 +17,19 @@ interface ISplitItem {
 // deals with egg splitting tiles
 
 export const checkBoardCollisions = (board: Board, playerTypes, players: Player[]): Player[] => {
-    return players.reduce((newPlayers, player) => {
+    return addIDsToPlayers(players.reduce((newPlayers, player) => {
         const checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player)
         return [...newPlayers, ...checkedPlayers]
-    }, [])
+    }, []))
+}
+
+// players need different IDs to make sure they make sense
+const addIDsToPlayers = (players: Player[]): Player[] => {
+    return players.map((player, index) => {
+        return player.modify({
+            id: index
+        })
+    })
 }
 
 const checkPlayerBoardCollision = (board: Board, playerTypes) => (player: Player): Player[] => {
@@ -100,7 +109,8 @@ const playerFromItem = (playerTypes, player: Player) => (item: ISplitItem) : Pla
         direction: new Coords({
             x: item.direction
         }),
-        value: item.value
+        value: item.value,
+        lastAction: "split"
     });
     return player.modify(newPlayerParams);
 }

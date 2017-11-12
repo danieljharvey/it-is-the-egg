@@ -172,13 +172,15 @@ test("Split a 2-value egg", () => {
             direction: new Coords({
                 x: -1
             }),
-            value: 1
+            value: 1,
+            lastAction: "split"
         }),
         player.modify({
             direction: new Coords({
                 x: 1
             }),
-            value: 1
+            value: 1,
+            lastAction: "split"
         }),
     ]
 
@@ -216,13 +218,17 @@ test("Split a 3-value egg when the time is right", () => {
             direction: new Coords({
                 x: -1
             }),
-            value: 2
+            value: 2,
+            id: 0,
+            lastAction: "split"
         }),
         player1.modify({
             direction: new Coords({
                 x: 1
             }),
-            value: 1
+            value: 1,
+            id: 1,
+            lastAction: "split"
         }),
     ]
 

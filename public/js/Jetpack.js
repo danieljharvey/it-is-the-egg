@@ -494,7 +494,7 @@ define("TileSet", ["require", "exports"], function (require, exports) {
                     action: "split-eggs",
                     needsDraw: true,
                     frontLayer: true,
-                    img: "find-blade-egg-cup.png",
+                    img: "egg-splitter.png",
                     title: "It is the egg splitter"
                 }
             };
@@ -928,10 +928,18 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
     // Board Collide
     // deals with egg splitting tiles
     exports.checkBoardCollisions = function (board, playerTypes, players) {
-        return players.reduce(function (newPlayers, player) {
+        return addIDsToPlayers(players.reduce(function (newPlayers, player) {
             var checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player);
             return newPlayers.concat(checkedPlayers);
-        }, []);
+        }, []));
+    };
+    // players need different IDs to make sure they make sense
+    var addIDsToPlayers = function (players) {
+        return players.map(function (player, index) {
+            return player.modify({
+                id: index
+            });
+        });
     };
     var checkPlayerBoardCollision = function (board, playerTypes) { return function (player) {
         return (isCollision(board)(player)) ? exports.splitPlayer(playerTypes)(player) : [player];
@@ -994,7 +1002,8 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
             direction: new Coords_3.Coords({
                 x: item.direction
             }),
-            value: item.value
+            value: item.value,
+            lastAction: "split"
         });
         return player.modify(newPlayerParams);
     }; };
@@ -1186,6 +1195,9 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
                 return false;
             }
             if (player1.value === 0 || player2.value === 0) {
+                return false;
+            }
+            if (player1.lastAction === "split" || player2.lastAction === "split") {
                 return false;
             }
             var coords1 = player1.coords;
@@ -2114,7 +2126,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardSize_4, Collisions_1, Map, Movement) {
+define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var TheEgg = (function () {
@@ -2144,8 +2156,9 @@ define("TheEgg", ["require", "exports", "Action", "BoardSize", "Collisions", "Ma
             var newerGameState = action.checkAllPlayerTileActions(newGameState);
             var collisions = new Collisions_1.Collisions(this.playerTypes);
             var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
+            var splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
             return newerGameState.modify({
-                players: sortedPlayers
+                players: splitPlayers
             });
         };
         // this rotates board and players

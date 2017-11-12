@@ -122,6 +122,20 @@ test("Ignores collision with zero-value player", () => {
   expect(result).toEqual(false);
 });
 
+test("Ignores collision with just-split player", () => {
+  const player1 = new Player({
+    coords: new Coords({ x: 1, y: 1 }),
+    lastAction: "split"
+  });
+
+  const splitPlayer = player1.modify({ id: 100 });
+
+  const collisions = new Collisions(playerTypes);
+
+  const result = collisions.checkCollision(player1, splitPlayer);
+  expect(result).toEqual(false);
+});
+
 test("Removes correct players", () => {
   const player1 = new Player({
     id: 1
@@ -356,7 +370,7 @@ test("Create new players actually works", () => {
     })
   });
 
-  const playerTypes = {
+  const types = {
     madeUp: {
       frames: 18,
       img: "egg-sprite.png",
@@ -387,7 +401,7 @@ test("Create new players actually works", () => {
 
   const collided = [[1, 2], [4, 6]];
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions(types);
 
   const actual = collisions.createNewPlayers(collided, players);
 
@@ -434,4 +448,3 @@ test("Combine player lists", () => {
 
   expect(actual).toEqual(expected);
 });
-
