@@ -19,6 +19,7 @@ import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
+import { WebAudio } from "./WebAudio"
 
 import * as Hammer from "hammerjs";
 
@@ -38,6 +39,7 @@ export class Jetpack {
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
   protected tileChooser: TileChooser;
+  protected webAudio: WebAudio; // WebAudio object
 
   // big pile of moves
   protected gameStates: GameState[];
@@ -82,6 +84,9 @@ export class Jetpack {
 
     const playerTypes = new PlayerTypes();
     this.playerTypes = playerTypes.getPlayerTypes();
+
+    this.webAudio = new WebAudio()
+    this.webAudio.init(); // load web audio stuff
 
     const apiLocation = "http://" + window.location.hostname + "/levels/";
 
