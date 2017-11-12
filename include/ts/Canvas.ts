@@ -35,17 +35,37 @@ export class Canvas {
 
   // takes BoardSize, returns size of each tile
   public sizeCanvas(boardSize: BoardSize) {
+    
     const maxBoardSize = this.getMaxBoardSize(boardSize);
-
-    this.sizeControls(maxBoardSize);
 
     const tileSize = this.calcTileSize(boardSize);
 
     this.loadCanvas(boardSize, tileSize);
 
+    this.positionCanvas(maxBoardSize)
+
     this.boardSize = boardSize;
 
     return tileSize;
+  }
+
+  public positionCanvas(maxBoardSize: number) {
+    const windowHeight = window.innerHeight
+
+    const canvasTop = this.getCanvasTop(windowHeight, maxBoardSize)
+
+    const wrapper = document.getElementById("wrapper")
+    
+    if (wrapper) {
+      wrapper.style.paddingTop = canvasTop.toString() + "px"
+    }
+  }
+
+  public getCanvasTop(windowHeight, boardHeight) {
+    if (boardHeight < windowHeight) {
+      return (windowHeight - boardHeight) / 2
+    }
+    return 0
   }
 
   public calcTileSize(boardSize: BoardSize) {
@@ -54,31 +74,9 @@ export class Canvas {
     return Math.floor(tileSize);
   }
 
-  protected sizeControls(boardSize: number) {
-    const controlHeader = document.getElementById("controlHeader");
-    if (controlHeader) {
-      controlHeader.style.width = boardSize.toString() + "px";
-    }
-  }
-
   protected getMaxBoardSize(boardSize: BoardSize): number {
     let width = window.innerWidth;
     let height = window.innerHeight;
-
-    const wrapMargin = Utils.getControlStyle("wrapper", "margin");
-
-    const controlSpacing = Utils.getControlStyle("controlHeader", "marginTop");
-    const editSpacing = Utils.getControlStyle("editHeader", "marginTop");
-
-    const offsetHeight = Utils.getControlProperty(
-      "controlHeader",
-      "offsetHeight"
-    );
-
-    height =
-      height - offsetHeight - 2 * wrapMargin - controlSpacing - editSpacing;
-    width =
-      width - offsetHeight - 2 * wrapMargin - controlSpacing - editSpacing;
 
     if (width > height) {
       const difference = height % boardSize.width;
@@ -93,6 +91,9 @@ export class Canvas {
 
   protected loadCanvas(boardSize, tileSize): void {
     this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    if (!this.canvas) {
+      return
+    }
     this.canvas.width = boardSize.width * tileSize;
     this.canvas.height = boardSize.height * tileSize;
     this.ctx = this.canvas.getContext("2d");
