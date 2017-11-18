@@ -339,7 +339,9 @@ export class Jetpack {
   protected playSounds(oldState: GameState, newState: GameState) {
     _.map(sound => sound.caseOf({
         just: audio => this.webAudio.playSound(audio.name, audio.pan),
-        nothing: () => {}
+        nothing: () => {
+          // don't play a sound
+        }
     }), AudioTriggers.triggerSounds(oldState)(newState));
   }
 

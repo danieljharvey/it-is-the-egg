@@ -256,23 +256,24 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
     }
     exports.Player = Player;
 });
-define("GameState", ["require", "exports", "immutable"], function (require, exports, immutable_5) {
+define("GameState", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class GameState extends immutable_5.Record({
-        board: null,
-        outcome: "",
-        players: [],
-        rotateAngle: 0,
-        rotations: 0,
-        score: 0
-    }) {
-        constructor(params) {
-            const superParams = params ? params : undefined;
-            super(superParams);
+    class GameState {
+        constructor(params = {}) {
+            this.players = [];
+            this.board = null;
+            this.score = 0;
+            this.rotations = 0;
+            this.rotateAngle = 0;
+            this.outcome = "";
+            Object.entries(params).map(pair => {
+                const [key, value] = pair;
+                this[key] = value;
+            });
         }
-        modify(values) {
-            return this.merge(values);
+        modify(values = {}) {
+            return new GameState(Object.assign({}, this, values));
         }
     }
     exports.GameState = GameState;
@@ -854,6 +855,12 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
             'new': newItem
         };
     }, newList).toJS();
+    const getArrayDiff = (oldArray) => (newArray) => _.zipWith((oldItem, newItem) => {
+        return {
+            'old': oldItem,
+            'new': newItem
+        };
+    }, oldArray, newArray);
     const filterGotCoins = (tiles) => {
         return (tiles.old.collectable > tiles.new.collectable);
     };
@@ -865,7 +872,7 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     };
     exports.getPlayerSounds = (oldState) => (newState) => {
         const boardSize = newState.board.getLength();
-        const players = getListDiff(oldState.players)(newState.players);
+        const players = getArrayDiff(oldState.players)(newState.players);
         const thuds = players.filter(filterUnchanged).map(exports.playerHitsFloor(boardSize));
         return [...thuds];
     };
@@ -1122,7 +1129,7 @@ define("Canvas", ["require", "exports"], function (require, exports) {
     }
     exports.Canvas = Canvas;
 });
-define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_3, _) {
+define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_5, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Collisions {
@@ -1152,7 +1159,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
             newPlayers.map(player => {
                 allPlayers.push(player);
             });
-            return immutable_6.fromJS(allPlayers);
+            return immutable_5.fromJS(allPlayers);
         }
         // send an array of pairs of player ids, returns all that collide
         findCollisions(combinations, players) {
@@ -1211,7 +1218,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
         }
         // un-immutables values for sanity's sake
         cleanCombos(combo) {
-            if (immutable_6.List.isList(combo)) {
+            if (immutable_5.List.isList(combo)) {
                 return combo.toJS();
             }
             return combo;
@@ -1704,7 +1711,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return diff;
     };
 });
-define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_7) {
+define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const OFFSET_DIVIDE = 100;
@@ -1816,7 +1823,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         });
     };
     const getAllCoords = (players) => {
-        return immutable_7.fromJS(players
+        return immutable_6.fromJS(players
             .filter(player => {
             return player.value > 0;
         })
@@ -1834,7 +1841,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
     // works out whether Player has actually moved since last go
     // used to decide whether to do an action to stop static players hitting switches infinitely etc
     exports.playerHasMoved = (oldPlayer, newPlayer) => {
-        return !immutable_7.is(oldPlayer.coords, newPlayer.coords);
+        return !immutable_6.is(oldPlayer.coords, newPlayer.coords);
     };
     exports.checkForMovementTiles = (board) => (player) => {
         const currentCoords = player.coords;
@@ -2386,7 +2393,6 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             if (!this.audioReady) {
                 return false;
             }
-            console.log('playSound', soundName, pan);
             this.getAudioNode(soundName, pan).caseOf({
                 just: audioNode => audioNode.start(),
                 nothing: () => {
@@ -2676,7 +2682,9 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
         playSounds(oldState, newState) {
             _.map(sound => sound.caseOf({
                 just: audio => this.webAudio.playSound(audio.name, audio.pan),
-                nothing: () => { }
+                nothing: () => {
+                    // don't play a sound
+                }
             }), AudioTriggers.triggerSounds(oldState)(newState));
         }
         renderEverything(gameState) {

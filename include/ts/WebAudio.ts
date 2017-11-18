@@ -66,7 +66,6 @@ export class WebAudio {
         if (!this.audioReady) {
             return false;
         }
-        console.log('playSound', soundName, pan)
         this.getAudioNode(soundName, pan).caseOf({
             just: audioNode => audioNode.start(),
             nothing: () => {

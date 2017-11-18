@@ -83,6 +83,13 @@ const getListDiff = (oldList: List<any>) => (newList: List<any>) : any[] => oldL
     }
 }, newList).toJS()
 
+const getArrayDiff = (oldArray: any[]) => (newArray: any[]) : any[] => _.zipWith((oldItem: any, newItem: any) => {
+    return {
+        'old':oldItem,
+        'new':newItem
+    }
+}, oldArray, newArray)
+
 const filterGotCoins = (tiles: ICompareTiles) : boolean => {
     return (tiles.old.collectable > tiles.new.collectable)
 }
@@ -96,7 +103,7 @@ export const gotCoins = (boardSize: number) => (tiles: ICompareTiles) : Maybe<IA
 
 export const getPlayerSounds = (oldState: GameState) => (newState: GameState) => {
     const boardSize = newState.board.getLength();
-    const players: IComparePlayers[] = getListDiff(oldState.players)(newState.players)
+    const players: IComparePlayers[] = getArrayDiff(oldState.players)(newState.players)
     const thuds = players.filter(filterUnchanged).map(playerHitsFloor(boardSize))
     return [...thuds];
 }
