@@ -909,10 +909,11 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     };
     exports.getPlayerSounds = (oldState) => (newState) => {
         const boardSize = newState.board.getLength();
+        const combine = [playersCombine(oldState.players)(newState.players)];
         const players = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged);
         const thuds = players.map(exports.playerHitsFloor(boardSize));
         const teleports = players.map(exports.playerTeleported(boardSize));
-        return [...thuds, ...teleports];
+        return [...combine, ...thuds, ...teleports];
     };
     const filterPlayerHitsFloor = (players) => {
         return (players.old.falling === true && players.new.falling === false);
@@ -930,6 +931,15 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
         return (filterTeleported(players)) ? tsmonad_1.Maybe.just({
             name: "soft-bell",
             pan: calcPan(boardSize)(players.new.coords.x)
+        }) : tsmonad_1.Maybe.nothing();
+    };
+    const filterPlayersCombine = (oldPlayers) => (newPlayers) => {
+        return (oldPlayers.length > newPlayers.length);
+    };
+    const playersCombine = (oldPlayers) => (newPlayers) => {
+        return (filterPlayersCombine(oldPlayers)(newPlayers)) ? tsmonad_1.Maybe.just({
+            name: "power-up",
+            pan: 0
         }) : tsmonad_1.Maybe.nothing();
     };
     // super basic for now
@@ -2404,7 +2414,8 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                 "thud",
                 "woo",
                 "crate-smash",
-                "switch"
+                "switch",
+                "power-up"
             ];
         }
         init() {
@@ -2436,7 +2447,18 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             compressor.attack.value = 0;
             compressor.release.value = 0.25;
             compressor.connect(audioCtx.destination);
-            return compressor;
+            const merger = audioCtx.createChannelMerger(2);
+            merger.connect(compressor);
+            const gainNode = audioCtx.createGain();
+            gainNode.value = 0.2;
+            gainNode.connect(merger, 0, 1);
+            const delay = audioCtx.createDelay(0.2);
+            delay.connect(gainNode);
+            delay.delayTime.value = 0.1;
+            const splitter = audioCtx.createChannelSplitter(2);
+            splitter.connect(delay, 0);
+            splitter.connect(merger, 1, 0);
+            return splitter;
         }
         playSound(soundName, pan) {
             if (!this.audioReady) {

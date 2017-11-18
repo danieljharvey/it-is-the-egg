@@ -307,3 +307,51 @@ test("Switch is hit (only one sound please)", () => {
   })
   
 });
+
+test("Players have combined", () => {
+  
+  const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+  
+  const board = new Board(array);
+
+  const players = [
+    new Player({
+      value: 1
+    }),
+    new Player({
+      value: 2
+    })
+  ];
+
+  const oldGameState = new GameState({
+    board,
+    players
+  })
+
+  const newPlayers = [
+    new Player({
+      value: 3
+    })
+  ];
+
+  const newGameState = new GameState({
+    board,
+    players: newPlayers
+  })
+
+  const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
+  
+  expect(actual.length).toEqual(1)
+
+  actual.map(item => {
+    item.caseOf({
+      just: val => {
+        expect(val.name).toEqual('power-up')
+      },
+      nothing: () => {
+        expect(false).toEqual(true)
+      }
+    })
+  })
+  
+});

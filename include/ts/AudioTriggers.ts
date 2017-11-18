@@ -149,14 +149,15 @@ export const doorChange = (boardSize: number) => (tiles: ICompareTiles) : Maybe<
     }) : Maybe.nothing();
 }
 
-
-
 export const getPlayerSounds = (oldState: GameState) => (newState: GameState) => {
     const boardSize = newState.board.getLength();
+
+    const combine = [playersCombine(oldState.players)(newState.players)]
+
     const players: IComparePlayers[] = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged)
     const thuds = players.map(playerHitsFloor(boardSize))
     const teleports = players.map(playerTeleported(boardSize))
-    return [...thuds, ...teleports];
+    return [...combine, ...thuds, ...teleports];
 }
 
 const filterPlayerHitsFloor = (players: IComparePlayers): boolean => {
@@ -178,6 +179,17 @@ export const playerTeleported = (boardSize: number) => (players: IComparePlayers
     return (filterTeleported(players)) ? Maybe.just({
         name: "soft-bell",
         pan: calcPan(boardSize)(players.new.coords.x)
+    }) : Maybe.nothing();
+}
+
+const filterPlayersCombine = (oldPlayers: Player[]) => (newPlayers: Player[]) : boolean => {
+    return (oldPlayers.length > newPlayers.length)
+}
+
+const playersCombine = (oldPlayers: Player[]) => (newPlayers: Player[]): Maybe<IAudioTrigger> => {
+    return (filterPlayersCombine(oldPlayers)(newPlayers)) ? Maybe.just({
+        name: "power-up",
+        pan: 0
     }) : Maybe.nothing();
 }
 
