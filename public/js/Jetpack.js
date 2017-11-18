@@ -816,7 +816,13 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     exports.triggerSounds = (oldState) => (newState) => {
         const eatenSounds = getEatenSounds(oldState)(newState);
         const playerSounds = exports.getPlayerSounds(oldState)(newState);
-        return [...eatenSounds, ...playerSounds];
+        return [...eatenSounds, ...playerSounds].filter(isItNothing);
+    };
+    const isItNothing = (maybe) => {
+        return maybe.caseOf({
+            just: () => true,
+            nothing: () => false
+        });
     };
     const hasRotated = (oldGame, newGame) => (oldGame.rotateAngle === newGame.rotateAngle);
     const getEatenSounds = (oldState) => (newState) => {
@@ -838,9 +844,18 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
         const boardSize = board.getLength();
         const oldTiles = oldBoard.getAllTiles();
         const newTiles = board.getAllTiles();
-        const tiles = getListDiff(oldTiles)(newTiles);
-        const coinSounds = tiles.filter(filterUnchanged).map(exports.gotCoins(boardSize));
-        return [...coinSounds];
+        const tiles = getListDiff(oldTiles)(newTiles).filter(filterUnchanged);
+        const coinSounds = tiles.map(exports.gotCoins(boardSize));
+        const crateSounds = tiles.map(exports.crateSmash(boardSize));
+        const doorSounds = justOne(tiles.map(exports.doorChange(boardSize)));
+        return [...coinSounds, ...crateSounds, ...doorSounds];
+    };
+    const justOne = (arr) => {
+        const first = _.find(item => item !== undefined, arr);
+        if (first) {
+            return [first];
+        }
+        return [];
     };
     const filterUnchanged = (tiles) => _.not(megaEquals(tiles.new, tiles.old));
     const megaEquals = (x, y) => {
@@ -870,11 +885,34 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
             pan: calcPan(boardSize)(tiles.new.x)
         }) : tsmonad_1.Maybe.nothing();
     };
+    const filterCrateSmash = (tiles) => {
+        return (tiles.old.breakable === true && tiles.new.breakable === false);
+    };
+    exports.crateSmash = (boardSize) => (tiles) => {
+        return (filterCrateSmash(tiles)) ? tsmonad_1.Maybe.just({
+            name: "crate-smash",
+            pan: calcPan(boardSize)(tiles.new.x)
+        }) : tsmonad_1.Maybe.nothing();
+    };
+    const filterDoorChange = (tiles) => {
+        return ((tiles.old.background === true &&
+            tiles.old.frontLayer === true &&
+            tiles.new.background === false) || (tiles.new.background === true &&
+            tiles.new.frontLayer === true &&
+            tiles.old.background === false));
+    };
+    exports.doorChange = (boardSize) => (tiles) => {
+        return (filterDoorChange(tiles)) ? tsmonad_1.Maybe.just({
+            name: "switch",
+            pan: calcPan(boardSize)(tiles.new.x)
+        }) : tsmonad_1.Maybe.nothing();
+    };
     exports.getPlayerSounds = (oldState) => (newState) => {
         const boardSize = newState.board.getLength();
-        const players = getArrayDiff(oldState.players)(newState.players);
-        const thuds = players.filter(filterUnchanged).map(exports.playerHitsFloor(boardSize));
-        return [...thuds];
+        const players = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged);
+        const thuds = players.map(exports.playerHitsFloor(boardSize));
+        const teleports = players.map(exports.playerTeleported(boardSize));
+        return [...thuds, ...teleports];
     };
     const filterPlayerHitsFloor = (players) => {
         return (players.old.falling === true && players.new.falling === false);
@@ -882,6 +920,15 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     exports.playerHitsFloor = (boardSize) => (players) => {
         return (filterPlayerHitsFloor(players)) ? tsmonad_1.Maybe.just({
             name: "thud",
+            pan: calcPan(boardSize)(players.new.coords.x)
+        }) : tsmonad_1.Maybe.nothing();
+    };
+    const filterTeleported = (players) => {
+        return (players.old.lastAction === "" && players.new.lastAction === "teleport");
+    };
+    exports.playerTeleported = (boardSize) => (players) => {
+        return (filterTeleported(players)) ? tsmonad_1.Maybe.just({
+            name: "soft-bell",
             pan: calcPan(boardSize)(players.new.coords.x)
         }) : tsmonad_1.Maybe.nothing();
     };
@@ -2355,7 +2402,9 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                 "soft-bell",
                 "warp",
                 "thud",
-                "woo"
+                "woo",
+                "crate-smash",
+                "switch"
             ];
         }
         init() {

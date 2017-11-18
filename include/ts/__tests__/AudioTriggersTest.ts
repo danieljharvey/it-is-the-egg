@@ -44,11 +44,19 @@ test("Got a coin", () => {
 
   const board = new Board(array);
 
+  const gameState = new GameState({
+    board
+  })
+
   const changedArray = [[4, 5, new Tile({collectable: 0})], [7, 8, 9], [7, 8, 9]];
 
   const changedBoard = new Board(changedArray)
 
-  const actual = AudioTriggers.findEatenThings(board)(changedBoard)
+  const changedGameState = new GameState({
+    board: changedBoard
+  })
+
+  const actual = AudioTriggers.triggerSounds(gameState)(changedGameState)
   
   const expectedArray = [
     Maybe.just({
@@ -159,3 +167,143 @@ test("Player hits floor full function", () => {
     })
   })
 })
+
+test("Player teleports", () => {
+  
+  const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+  
+  const board = new Board(array);
+
+  const player = new Player({
+    lastAction: ""
+  })
+
+  const gameState = new GameState({
+    players: [player],
+    board
+  })
+
+  const newPlayer = new Player({
+    lastAction: "teleport"
+  })
+
+  const newGameState = new GameState({
+    players: [newPlayer],
+    board
+  })
+
+  const actual = AudioTriggers.triggerSounds(gameState)(newGameState)
+
+  expect(actual.length).toEqual(1)
+
+  actual.map(item => {
+    item.caseOf({
+      just: val => {
+        expect(val.name).toEqual('soft-bell')
+      },
+      nothing: () => {
+        expect(false).toEqual(true)
+      }
+    })
+  })
+})
+
+
+test("Smash a crate", () => {
+  
+  const array = [[new Tile({breakable: true})]];
+
+  const board = new Board(array);
+  const oldGameState = new GameState({
+    board
+  })
+
+  const newArray = [[new Tile({breakable: false})]];
+
+  const changedBoard = new Board(newArray)
+
+  const newGameState = new GameState({
+    board: changedBoard
+  })
+
+  const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
+  
+  expect(actual.length).toEqual(1)
+
+  actual.map(item => {
+    item.caseOf({
+      just: val => {
+        expect(val.name).toEqual('crate-smash')
+      },
+      nothing: () => {
+        expect(false).toEqual(true)
+      }
+    })
+  })
+  
+});
+
+test("Switch is hit (only one sound please)", () => {
+  
+  const array = [[
+    new Tile({
+      background: true,
+      frontLayer: true,
+    }),
+    new Tile({
+      background: true,
+      frontLayer: true,
+    })
+  ]];
+
+  const board = new Board(array);
+  const oldGameState = new GameState({
+    board
+  })
+
+  const newArray = [[
+    new Tile({
+      background: false,
+    }),
+    new Tile({
+      background: false,
+    })
+  ]];
+
+  const changedBoard = new Board(newArray)
+
+  const newGameState = new GameState({
+    board: changedBoard
+  })
+
+  const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
+  
+  expect(actual.length).toEqual(1)
+
+  actual.map(item => {
+    item.caseOf({
+      just: val => {
+        expect(val.name).toEqual('switch')
+      },
+      nothing: () => {
+        expect(false).toEqual(true)
+      }
+    })
+  })
+
+  const actualReverse = AudioTriggers.triggerSounds(newGameState)(oldGameState)
+  
+  expect(actualReverse.length).toEqual(1)
+
+  actualReverse.map(item => {
+    item.caseOf({
+      just: val => {
+        expect(val.name).toEqual('switch')
+      },
+      nothing: () => {
+        expect(false).toEqual(true)
+      }
+    })
+  })
+  
+});

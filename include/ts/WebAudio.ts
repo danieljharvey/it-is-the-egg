@@ -21,7 +21,9 @@ export class WebAudio {
         "soft-bell",
         "warp",
         "thud",
-        "woo"
+        "woo",
+        "crate-smash",
+        "switch"
     ]
 
     public init() {

@@ -15,7 +15,6 @@ interface IAudioTrigger {
     pan?: number
 }
 
-
 interface ICompare {
     old: any
     new: any
@@ -34,7 +33,14 @@ interface IComparePlayers {
 export const triggerSounds = (oldState: GameState) => (newState: GameState) => {
     const eatenSounds = getEatenSounds(oldState)(newState)
     const playerSounds = getPlayerSounds(oldState)(newState)
-    return [...eatenSounds, ...playerSounds]
+    return [...eatenSounds, ...playerSounds].filter(isItNothing)
+}
+
+const isItNothing = (maybe: Maybe<any>): boolean => {
+    return maybe.caseOf({
+        just: () => true,
+        nothing: () => false
+    })
 }
 
 const hasRotated = (oldGame: GameState, newGame: GameState) : boolean => (oldGame.rotateAngle === newGame.rotateAngle)
@@ -62,9 +68,19 @@ export const findEatenThings = (oldBoard: Board) => (board: Board): Array<Maybe<
     const oldTiles = oldBoard.getAllTiles()
     const newTiles = board.getAllTiles()
 
-    const tiles: ICompareTiles[] = getListDiff(oldTiles)(newTiles)
-    const coinSounds = tiles.filter(filterUnchanged).map(gotCoins(boardSize))
-    return [...coinSounds]
+    const tiles: ICompareTiles[] = getListDiff(oldTiles)(newTiles).filter(filterUnchanged)
+    const coinSounds = tiles.map(gotCoins(boardSize))
+    const crateSounds = tiles.map(crateSmash(boardSize))
+    const doorSounds = justOne(tiles.map(doorChange(boardSize)))
+    return [...coinSounds, ...crateSounds, ...doorSounds]
+}
+
+const justOne = (arr: any[]) : any[] => {
+    const first = _.find(item => item !== undefined, arr)
+    if (first) {
+        return [first]
+    }
+    return []
 }
 
 const filterUnchanged = (tiles: ICompare) => _.not(megaEquals(tiles.new, tiles.old))
@@ -101,11 +117,46 @@ export const gotCoins = (boardSize: number) => (tiles: ICompareTiles) : Maybe<IA
     }) : Maybe.nothing();
 }
 
+const filterCrateSmash = (tiles: ICompareTiles) : boolean => {
+    return (tiles.old.breakable === true && tiles.new.breakable === false)
+}
+
+export const crateSmash = (boardSize: number) => (tiles: ICompareTiles) : Maybe<IAudioTrigger> => {
+    return (filterCrateSmash(tiles)) ? Maybe.just({
+        name: "crate-smash",
+        pan: calcPan(boardSize)(tiles.new.x)
+    }) : Maybe.nothing();
+}
+
+const filterDoorChange = (tiles: ICompareTiles) : boolean => {
+    return (
+        (
+            tiles.old.background === true &&
+            tiles.old.frontLayer === true &&
+            tiles.new.background === false
+        ) || (
+            tiles.new.background === true &&
+            tiles.new.frontLayer === true &&
+            tiles.old.background === false
+        )
+    )
+}
+
+export const doorChange = (boardSize: number) => (tiles: ICompareTiles) : Maybe<IAudioTrigger> => {
+    return (filterDoorChange(tiles)) ? Maybe.just({
+        name: "switch",
+        pan: calcPan(boardSize)(tiles.new.x)
+    }) : Maybe.nothing();
+}
+
+
+
 export const getPlayerSounds = (oldState: GameState) => (newState: GameState) => {
     const boardSize = newState.board.getLength();
-    const players: IComparePlayers[] = getArrayDiff(oldState.players)(newState.players)
-    const thuds = players.filter(filterUnchanged).map(playerHitsFloor(boardSize))
-    return [...thuds];
+    const players: IComparePlayers[] = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged)
+    const thuds = players.map(playerHitsFloor(boardSize))
+    const teleports = players.map(playerTeleported(boardSize))
+    return [...thuds, ...teleports];
 }
 
 const filterPlayerHitsFloor = (players: IComparePlayers): boolean => {
@@ -115,6 +166,17 @@ const filterPlayerHitsFloor = (players: IComparePlayers): boolean => {
 export const playerHitsFloor = (boardSize: number) => (players: IComparePlayers): Maybe<IAudioTrigger> => {
     return (filterPlayerHitsFloor(players)) ? Maybe.just({
         name: "thud",
+        pan: calcPan(boardSize)(players.new.coords.x)
+    }) : Maybe.nothing();
+}
+
+const filterTeleported = (players: IComparePlayers): boolean => {
+    return (players.old.lastAction === "" && players.new.lastAction === "teleport")
+}
+
+export const playerTeleported = (boardSize: number) => (players: IComparePlayers): Maybe<IAudioTrigger> => {
+    return (filterTeleported(players)) ? Maybe.just({
+        name: "soft-bell",
         pan: calcPan(boardSize)(players.new.coords.x)
     }) : Maybe.nothing();
 }
