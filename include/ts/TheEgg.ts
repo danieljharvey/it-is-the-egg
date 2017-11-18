@@ -15,6 +15,7 @@ import * as Map from "./Map";
 import * as Movement from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
+import { Utils } from "./Utils"
 
 export class TheEgg {
   protected playerTypes: object; // used by Collisions
@@ -59,9 +60,29 @@ export class TheEgg {
       sortedPlayers
     );
 
-    return newerGameState.modify({
+    const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(newerGameState.modify({
       players: splitPlayers
+    }))
+
+    return newerGameState.modify({
+      players: colouredPlayers
     });
+  }
+
+  protected checkNearlyFinished = (playerTypes) => (gameState: GameState) : Player[] => {
+    if (Utils.checkLevelIsCompleted(gameState)) {
+      return gameState.players.map(player => {
+        if (player.value > 0) {
+          const newPlayer = Utils.getPlayerByType(playerTypes, "rainbow-egg")
+          return player.modify({
+            ...newPlayer,
+            value: player.value
+          })
+        }
+        return player
+      })
+    }
+    return gameState.players
   }
 
   // this rotates board and players

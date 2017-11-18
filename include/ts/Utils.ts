@@ -104,6 +104,15 @@ export class Utils {
     return false;
   }
 
+  public static getPlayerByType(playerTypes, type: string) {
+    for (const i in playerTypes) {
+      if (playerTypes[i].type === type) {
+        return playerTypes[i];
+      }
+    }
+    return false;
+  }
+
   // check leftovers on board and whether player is over finish tile
   public static checkLevelIsCompleted(gameState: GameState): boolean {
     const collectable = Utils.countCollectable(gameState.board);

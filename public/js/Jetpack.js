@@ -215,6 +215,14 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
             }
             return false;
         }
+        static getPlayerByType(playerTypes, type) {
+            for (const i in playerTypes) {
+                if (playerTypes[i].type === type) {
+                    return playerTypes[i];
+                }
+            }
+            return false;
+        }
         // check leftovers on board and whether player is over finish tile
         static checkLevelIsCompleted(gameState) {
             const collectable = Utils.countCollectable(gameState.board);
@@ -1064,6 +1072,14 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     title: "It is of course the yellow egg",
                     type: "yellow-egg",
                     value: 4
+                },
+                "rainbow-egg": {
+                    frames: 18,
+                    img: "egg-rainbow.png",
+                    multiplier: 1,
+                    title: "It goes without saying that this is the rainbow egg",
+                    type: "rainbow-egg",
+                    value: 1
                 },
                 blade: {
                     frames: 18,
@@ -2275,11 +2291,23 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement) {
+define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement", "Utils"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class TheEgg {
         constructor(playerTypes) {
+            this.checkNearlyFinished = (playerTypes) => (gameState) => {
+                if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
+                    return gameState.players.map(player => {
+                        if (player.value > 0) {
+                            const newPlayer = Utils_6.Utils.getPlayerByType(playerTypes, "rainbow-egg");
+                            return player.modify(Object.assign({}, newPlayer, { value: player.value }));
+                        }
+                        return player;
+                    });
+                }
+                return gameState.players;
+            };
             this.playerTypes = playerTypes;
         }
         doAction(gameState, action, timePassed) {
@@ -2306,8 +2334,11 @@ define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize"
             const collisions = new Collisions_1.Collisions(this.playerTypes);
             const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
             const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
-            return newerGameState.modify({
+            const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(newerGameState.modify({
                 players: splitPlayers
+            }));
+            return newerGameState.modify({
+                players: colouredPlayers
             });
         }
         // this rotates board and players
@@ -2568,7 +2599,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
     }
     exports.WebAudio = WebAudio;
 });
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_6, WebAudio_1) {
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_7, WebAudio_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Jetpack {
@@ -2673,7 +2704,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -3271,7 +3302,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_7) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_8) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Editor {
@@ -3379,7 +3410,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_8.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
