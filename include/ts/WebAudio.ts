@@ -67,12 +67,12 @@ export class WebAudio {
         merger.connect(compressor)
 
         const gainNode = audioCtx.createGain()
-        gainNode.value = 0.2
+        gainNode.value = 0.05
         gainNode.connect(merger,0,1)
 
-        const delay = audioCtx.createDelay(0.2);
+        const delay = audioCtx.createDelay(0.05);
         delay.connect(gainNode)
-        delay.delayTime.value = 0.1
+        delay.delayTime.value = 0.05
 
         const splitter = audioCtx.createChannelSplitter(2);
         splitter.connect(delay, 0)
