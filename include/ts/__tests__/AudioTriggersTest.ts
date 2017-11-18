@@ -5,6 +5,7 @@ import { Maybe } from 'tsmonad'
 import * as AudioTriggers  from "../AudioTriggers";
 import { Board } from "../Board"
 import { GameState } from "../GameState"
+import { Player } from "../Player"
 import { Tile } from "../Tile"
 
 test("No change, no sounds", () => {
@@ -96,5 +97,65 @@ test("Got a coin, but rotating", () => {
     })
   })
   
-  
 });
+
+
+test("Player hits floor", () => {
+  const player = new Player({
+    falling: true
+  })
+
+  const newPlayer = player.modify({
+    falling: false
+  })
+
+  const change = AudioTriggers.playerHitsFloor(1)({old: player, new: newPlayer})
+  change.caseOf({
+    just: val => {
+      expect(true).toEqual(true)
+    },
+    nothing: () => {
+      expect(true).toEqual(false)
+    }
+  })
+})
+
+test("Player hits floor full function", () => {
+  
+  const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+  
+  const board = new Board(array);
+
+  const player = new Player({
+    falling: true
+  })
+
+  const gameState = new GameState({
+    players: [player],
+    board
+  })
+
+  const newPlayer = new Player({
+    falling: false
+  })
+
+  const newGameState = new GameState({
+    players: [newPlayer],
+    board
+  })
+
+  const actual = AudioTriggers.triggerSounds(gameState)(newGameState)
+
+  expect(actual.length).toEqual(1)
+
+  actual.map(item => {
+    item.caseOf({
+      just: val => {
+        expect(val.name).toEqual('thud')
+      },
+      nothing: () => {
+        expect(false).toEqual(true)
+      }
+    })
+  })
+})

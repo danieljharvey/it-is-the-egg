@@ -1,4 +1,4 @@
-import { Record } from "immutable";
+import { Record, List } from "immutable";
 import { Board } from "./Board";
 import { Player } from "./Player";
 

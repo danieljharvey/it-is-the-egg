@@ -19,7 +19,9 @@ export class WebAudio {
         "bright-bell",
         "pop",
         "soft-bell",
-        "warp"
+        "warp",
+        "thud",
+        "woo"
     ]
 
     public init() {
@@ -64,6 +66,7 @@ export class WebAudio {
         if (!this.audioReady) {
             return false;
         }
+        console.log('playSound', soundName, pan)
         this.getAudioNode(soundName, pan).caseOf({
             just: audioNode => audioNode.start(),
             nothing: () => {
@@ -87,7 +90,6 @@ export class WebAudio {
     public createOutput(buffer: IAudioBuffer, pan: number) : AudioBufferSourceNode {
         const panner = this.audioContext.createStereoPanner();
         panner.connect(this.output)
-        console.log("create output", pan)
         panner.pan.value = pan
     
         const source = this.audioContext.createBufferSource()

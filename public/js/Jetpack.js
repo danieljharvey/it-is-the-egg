@@ -814,7 +814,8 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.triggerSounds = (oldState) => (newState) => {
         const eatenSounds = getEatenSounds(oldState)(newState);
-        return [...eatenSounds];
+        const playerSounds = exports.getPlayerSounds(oldState)(newState);
+        return [...eatenSounds, ...playerSounds];
     };
     const hasRotated = (oldGame, newGame) => (oldGame.rotateAngle === newGame.rotateAngle);
     const getEatenSounds = (oldState) => (newState) => {
@@ -836,9 +837,9 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
         const boardSize = board.getLength();
         const oldTiles = oldBoard.getAllTiles();
         const newTiles = board.getAllTiles();
-        const tiles = getDiffTiles(oldTiles)(newTiles);
-        const coins = tiles.filter(filterUnchanged).map(exports.gotCoins(boardSize));
-        return [...coins];
+        const tiles = getListDiff(oldTiles)(newTiles);
+        const coinSounds = tiles.filter(filterUnchanged).map(exports.gotCoins(boardSize));
+        return [...coinSounds];
     };
     const filterUnchanged = (tiles) => _.not(megaEquals(tiles.new, tiles.old));
     const megaEquals = (x, y) => {
@@ -847,12 +848,12 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
         }
         return x === y;
     };
-    const getDiffTiles = (oldTiles) => (newTiles) => oldTiles.zipWith((oldTile, tile) => {
+    const getListDiff = (oldList) => (newList) => oldList.zipWith((oldItem, newItem) => {
         return {
-            'old': oldTile,
-            'new': tile
+            'old': oldItem,
+            'new': newItem
         };
-    }, newTiles).toJS();
+    }, newList).toJS();
     const filterGotCoins = (tiles) => {
         return (tiles.old.collectable > tiles.new.collectable);
     };
@@ -862,10 +863,29 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
             pan: calcPan(boardSize)(tiles.new.x)
         }) : tsmonad_1.Maybe.nothing();
     };
+    exports.getPlayerSounds = (oldState) => (newState) => {
+        const boardSize = newState.board.getLength();
+        const players = getListDiff(oldState.players)(newState.players);
+        const thuds = players.filter(filterUnchanged).map(exports.playerHitsFloor(boardSize));
+        return [...thuds];
+    };
+    const filterPlayerHitsFloor = (players) => {
+        return (players.old.falling === true && players.new.falling === false);
+    };
+    exports.playerHitsFloor = (boardSize) => (players) => {
+        return (filterPlayerHitsFloor(players)) ? tsmonad_1.Maybe.just({
+            name: "thud",
+            pan: calcPan(boardSize)(players.new.coords.x)
+        }) : tsmonad_1.Maybe.nothing();
+    };
     // super basic for now
     const calcPan = (boardSize) => (x) => {
+        if (boardSize < 2) {
+            return 0;
+        }
         const ratio = x / (boardSize - 1);
-        return (ratio * 2) - 1;
+        const ans = (ratio * 2) - 1;
+        return ans;
     };
 });
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
@@ -2326,7 +2346,9 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                 "bright-bell",
                 "pop",
                 "soft-bell",
-                "warp"
+                "warp",
+                "thud",
+                "woo"
             ];
         }
         init() {
@@ -2364,6 +2386,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             if (!this.audioReady) {
                 return false;
             }
+            console.log('playSound', soundName, pan);
             this.getAudioNode(soundName, pan).caseOf({
                 just: audioNode => audioNode.start(),
                 nothing: () => {
@@ -2384,7 +2407,6 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
         createOutput(buffer, pan) {
             const panner = this.audioContext.createStereoPanner();
             panner.connect(this.output);
-            console.log("create output", pan);
             panner.pan.value = pan;
             const source = this.audioContext.createBufferSource();
             source.buffer = buffer.buffer;
