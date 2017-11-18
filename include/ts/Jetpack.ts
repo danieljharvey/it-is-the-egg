@@ -1,3 +1,7 @@
+import * as Hammer from "hammerjs";
+import * as _ from "ramda"
+
+import * as AudioTriggers from "./AudioTriggers"
 import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
@@ -20,8 +24,6 @@ import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
 import { WebAudio } from "./WebAudio"
-
-import * as Hammer from "hammerjs";
 
 export class Jetpack {
   public animationHandle: number;
@@ -328,7 +330,16 @@ export class Jetpack {
     const theEgg = new TheEgg(this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.updateGameState(gameState, newGameState);
+    this.playSounds(gameState, newGameState);
     return newGameState;
+  }
+
+  // check changes in board, get sounds, trigger them
+  protected playSounds(oldState: GameState, newState: GameState) {
+    _.map(sound => sound.caseOf({
+        just: audio => this.webAudio.playSound(audio.name),
+        nothing: () => {}
+    }), AudioTriggers.triggerSounds(oldState)(newState));
   }
 
   protected renderEverything(gameState: GameState) {

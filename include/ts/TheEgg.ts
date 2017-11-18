@@ -3,6 +3,8 @@
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
 
+import { is } from "immutable";
+
 import { Action } from "./Action";
 import { Board } from "./Board";
 import * as BoardCollisions from "./BoardCollisions"
@@ -13,8 +15,6 @@ import * as Map from "./Map";
 import * as Movement from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
-
-import { is } from "immutable";
 
 export class TheEgg {
   protected playerTypes: object; // used by Collisions

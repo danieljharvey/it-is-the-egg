@@ -52,7 +52,8 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
             return this.list.count();
         }
         getAllTiles() {
-            return this.list.flatten(1);
+            const flat = this.list.flatten(1);
+            return flat;
         }
     }
     exports.Board = Board;
@@ -808,14 +809,56 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     }
     exports.Action = Action;
 });
-// AudioTriggers
-// check old and new game state and trigger sounds from it
-define("AudioTriggers", ["require", "exports"], function (require, exports) {
+define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (require, exports, _, tsmonad_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    exports.triggerSounds = (oldState) => (newState) => {
+        const eatenSounds = getEatenSounds(oldState)(newState);
+        return [...eatenSounds];
+    };
+    const hasRotated = (oldGame, newGame) => (oldGame.rotateAngle === newGame.rotateAngle);
+    const getEatenSounds = (oldState) => (newState) => {
+        if (hasRotated(oldState, newState)) {
+            return exports.findEatenThings(oldState.board)(newState.board);
+        }
+        else {
+            return [rotateSound()];
+        }
+    };
+    const rotateSound = () => {
+        return tsmonad_1.Maybe.just({
+            name: "warp",
+            pan: 0
+        });
+    };
     // diffs board changes and outputs list of sounds to play
     exports.findEatenThings = (oldBoard) => (board) => {
-        return [];
+        const oldTiles = oldBoard.getAllTiles();
+        const newTiles = board.getAllTiles();
+        const tiles = getDiffTiles(oldTiles)(newTiles);
+        return tiles.filter(filterUnchanged).map(exports.gotCoins);
+    };
+    const filterUnchanged = (tiles) => _.not(megaEquals(tiles.new, tiles.old));
+    const megaEquals = (x, y) => {
+        if (typeof x.equals !== 'undefined') {
+            return x.equals(y);
+        }
+        return x === y;
+    };
+    const getDiffTiles = (oldTiles) => (newTiles) => oldTiles.zipWith((oldTile, tile) => {
+        return {
+            'old': oldTile,
+            'new': tile
+        };
+    }, newTiles).toJS();
+    const filterGotCoins = (tiles) => {
+        return (tiles.old.collectable > tiles.new.collectable);
+    };
+    exports.gotCoins = (tiles) => {
+        return (filterGotCoins(tiles)) ? tsmonad_1.Maybe.just({
+            name: "pop",
+            pan: 0
+        }) : tsmonad_1.Maybe.nothing();
     };
 });
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
@@ -1483,7 +1526,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
     };
     exports.RenderMap = RenderMap;
 });
-define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_1, Coords_5) {
+define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_2, Coords_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getMapSize = (map) => {
@@ -1508,7 +1551,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     exports.findAdjacent = (map) => (point) => {
         const wrappedPoint = exports.wrapValue(map)(point.x, point.y);
         const { x, y } = wrappedPoint;
-        return tsmonad_1.Maybe.just(map[x][y]);
+        return tsmonad_2.Maybe.just(map[x][y]);
     };
     exports.addToList = (list, point) => [
         point,
@@ -1568,20 +1611,20 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         const partialFindAnswer = exports.findAnswer(targetPoint);
         const found = _.find(list, partialFindAnswer);
         if (found) {
-            return tsmonad_1.Maybe.just(found);
+            return tsmonad_2.Maybe.just(found);
         }
-        return tsmonad_1.Maybe.nothing();
+        return tsmonad_2.Maybe.nothing();
     };
     exports.flipAnswer = (list) => _.reverse(list);
     exports.processMoveList = (map) => (lists) => (targetPoint) => {
         const moveOptions = exports.getMultipleMoveOptions(map)(lists);
         if (moveOptions.length === 0) {
-            return tsmonad_1.Maybe.nothing();
+            return tsmonad_2.Maybe.nothing();
         }
         const solution = exports.findAnswerInList(targetPoint)(moveOptions);
         return solution.caseOf({
             just: value => {
-                return tsmonad_1.Maybe.just(exports.flipAnswer(value));
+                return tsmonad_2.Maybe.just(exports.flipAnswer(value));
             },
             nothing: () => {
                 return exports.processMoveList(map)(moveOptions)(targetPoint);
@@ -1590,7 +1633,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     exports.findPath = (map) => (start) => (target) => {
         if (start.equals(target)) {
-            return tsmonad_1.Maybe.nothing();
+            return tsmonad_2.Maybe.nothing();
         }
         return exports.processMoveList(map)([[start]])(target);
     };
@@ -1611,7 +1654,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             .map(obj => obj.valueOr([]))
             .filter(arr => arr.length > 0)
             .sort(sortArray);
-        return paths.count() > 0 ? tsmonad_1.Maybe.just(paths.first()) : tsmonad_1.Maybe.nothing();
+        return paths.count() > 0 ? tsmonad_2.Maybe.just(paths.first()) : tsmonad_2.Maybe.nothing();
     };
     // work out what first move is according to directions
     exports.findNextDirection = (pointList) => {
@@ -2265,7 +2308,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
     exports.TitleScreen = TitleScreen;
 });
 // sets up Web Audio
-define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_2) {
+define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class WebAudio {
@@ -2314,30 +2357,33 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             if (!this.audioReady) {
                 return false;
             }
-            this.getBuffer(soundName).caseOf({
-                just: audioBuffer => audioBuffer.source.start(),
+            this.getAudioNode(soundName).caseOf({
+                just: audioNode => audioNode.start(),
                 nothing: () => {
                     // console.log("not found")
                 }
             });
         }
-        getBuffer(soundName) {
+        getAudioNode(soundName) {
             const audioBuffer = Object.values(this.audioBuffers).find(name => (name.name === soundName));
             if (audioBuffer) {
-                return tsmonad_2.Maybe.just(audioBuffer);
+                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer));
             }
-            return tsmonad_2.Maybe.nothing();
+            return tsmonad_3.Maybe.nothing();
         }
         getSoundPath(soundName) {
             return "/sounds/" + soundName + ".wav";
         }
-        finishedLoading(soundName, buffer) {
+        createOutput(buffer) {
             const source = this.audioContext.createBufferSource();
-            source.buffer = buffer;
+            source.buffer = buffer.buffer;
             source.connect(this.output);
+            return source;
+        }
+        storeBuffer(soundName, buffer) {
             const audioBuffer = {
                 name: soundName,
-                source
+                buffer
             };
             return this.audioBuffers[soundName] = audioBuffer;
         }
@@ -2351,8 +2397,8 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                         if (!buffer) {
                             reject("Buffer could not be read!");
                         }
-                        const audioBuffer = this.finishedLoading(soundName, buffer);
-                        resolve(audioBuffer);
+                        this.storeBuffer(soundName, buffer);
+                        resolve(buffer);
                     }, error => {
                         reject(error);
                     });
@@ -2366,7 +2412,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
     }
     exports.WebAudio = WebAudio;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, WebAudio_1, Hammer) {
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, WebAudio_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Jetpack {
@@ -2589,7 +2635,15 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             const theEgg = new TheEgg_1.TheEgg(this.playerTypes);
             const newGameState = theEgg.doAction(gameState, action, timePassed);
             this.updateGameState(gameState, newGameState);
+            this.playSounds(gameState, newGameState);
             return newGameState;
+        }
+        // check changes in board, get sounds, trigger them
+        playSounds(oldState, newState) {
+            _.map(sound => sound.caseOf({
+                just: audio => this.webAudio.playSound(audio.name),
+                nothing: () => { }
+            }), AudioTriggers.triggerSounds(oldState)(newState));
         }
         renderEverything(gameState) {
             const boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());

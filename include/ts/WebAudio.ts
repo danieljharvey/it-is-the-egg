@@ -4,7 +4,7 @@ import { Maybe } from "tsmonad";
 
 interface IAudioBuffer {
     name: string,
-    source: AudioBufferSourceNode
+    buffer: AudioBuffer
 }
 
 export class WebAudio {
@@ -34,7 +34,7 @@ export class WebAudio {
         })
     }
 
-    public fetchSounds(soundPaths: string[]) : Array<Promise<IAudioBuffer>> {
+    public fetchSounds(soundPaths: string[]) : Array<Promise<AudioBuffer>> {
         return soundPaths.map(soundName => {
             const path = this.getSoundPath(soundName)
             return this.loadBuffer(soundName, path)
@@ -64,18 +64,18 @@ export class WebAudio {
         if (!this.audioReady) {
             return false;
         }
-        this.getBuffer(soundName).caseOf({
-            just: audioBuffer => audioBuffer.source.start(),
+        this.getAudioNode(soundName).caseOf({
+            just: audioNode => audioNode.start(),
             nothing: () => {
                 // console.log("not found")
             }
         })
     }
 
-    public getBuffer(soundName: string): Maybe<IAudioBuffer> {
+    public getAudioNode(soundName: string): Maybe<AudioBufferSourceNode> {
         const audioBuffer = (Object as any).values(this.audioBuffers).find(name => (name.name === soundName))
         if (audioBuffer) {
-            return Maybe.just(audioBuffer)
+            return Maybe.just(this.createOutput(audioBuffer))
         }
         return Maybe.nothing()
     }
@@ -84,18 +84,22 @@ export class WebAudio {
         return "/sounds/" + soundName + ".wav"
     }
 
-    public finishedLoading(soundName: string, buffer) : IAudioBuffer {
+    public createOutput(buffer: IAudioBuffer) : AudioBufferSourceNode {
         const source = this.audioContext.createBufferSource()
-        source.buffer = buffer
+        source.buffer = buffer.buffer
         source.connect(this.output)
+        return source
+    }
+
+    public storeBuffer(soundName: string, buffer) : IAudioBuffer {
         const audioBuffer = {
             name: soundName,
-            source
+            buffer
         }
         return this.audioBuffers[soundName] = audioBuffer
     }
   
-    public loadBuffer(soundName: string, url: string) : Promise<IAudioBuffer> {
+    public loadBuffer(soundName: string, url: string) : Promise<AudioBuffer> {
         return new Promise((resolve, reject) => {
             const request = new XMLHttpRequest();
             request.open("GET", url, true);
@@ -108,8 +112,8 @@ export class WebAudio {
                         if (!buffer) {
                             reject("Buffer could not be read!")
                         }
-                        const audioBuffer = this.finishedLoading(soundName, buffer)
-                        resolve(audioBuffer)
+                        this.storeBuffer(soundName, buffer)
+                        resolve(buffer)
                     },
                     error => {
                         reject(error);
