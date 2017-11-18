@@ -60,11 +60,11 @@ export class WebAudio {
         return compressor
     }
 
-    public playSound(soundName) {
+    public playSound(soundName: string, pan: number) {
         if (!this.audioReady) {
             return false;
         }
-        this.getAudioNode(soundName).caseOf({
+        this.getAudioNode(soundName, pan).caseOf({
             just: audioNode => audioNode.start(),
             nothing: () => {
                 // console.log("not found")
@@ -72,10 +72,10 @@ export class WebAudio {
         })
     }
 
-    public getAudioNode(soundName: string): Maybe<AudioBufferSourceNode> {
+    public getAudioNode(soundName: string, pan: number): Maybe<AudioBufferSourceNode> {
         const audioBuffer = (Object as any).values(this.audioBuffers).find(name => (name.name === soundName))
         if (audioBuffer) {
-            return Maybe.just(this.createOutput(audioBuffer))
+            return Maybe.just(this.createOutput(audioBuffer, pan))
         }
         return Maybe.nothing()
     }
@@ -84,10 +84,16 @@ export class WebAudio {
         return "/sounds/" + soundName + ".wav"
     }
 
-    public createOutput(buffer: IAudioBuffer) : AudioBufferSourceNode {
+    public createOutput(buffer: IAudioBuffer, pan: number) : AudioBufferSourceNode {
+        const panner = this.audioContext.createStereoPanner();
+        panner.connect(this.output)
+        console.log("create output", pan)
+        panner.pan.value = pan
+    
         const source = this.audioContext.createBufferSource()
         source.buffer = buffer.buffer
-        source.connect(this.output)
+        source.connect(panner)
+
         return source
     }
 

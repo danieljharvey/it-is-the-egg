@@ -44,11 +44,15 @@ const rotateSound = () : Maybe<IAudioTrigger> => {
 
 // diffs board changes and outputs list of sounds to play
 export const findEatenThings = (oldBoard: Board) => (board: Board): Array<Maybe<IAudioTrigger>> => {
+    
+    const boardSize = board.getLength();
+
     const oldTiles = oldBoard.getAllTiles()
     const newTiles = board.getAllTiles()
 
     const tiles: ICompareTiles[] = getDiffTiles(oldTiles)(newTiles)
-    return tiles.filter(filterUnchanged).map(gotCoins)
+    const coins = tiles.filter(filterUnchanged).map(gotCoins(boardSize))
+    return [...coins]
 }
 
 const filterUnchanged = (tiles: ICompareTiles) => _.not(megaEquals(tiles.new, tiles.old))
@@ -71,9 +75,15 @@ const filterGotCoins = (tiles: ICompareTiles) : boolean => {
     return (tiles.old.collectable > tiles.new.collectable)
 }
 
-export const gotCoins = (tiles: ICompareTiles) : Maybe<IAudioTrigger> => {
+export const gotCoins = (boardSize: number) => (tiles: ICompareTiles) : Maybe<IAudioTrigger> => {
     return (filterGotCoins(tiles)) ? Maybe.just({
         name: "pop",
-        pan: 0
+        pan: calcPan(boardSize)(tiles.new.x)
     }) : Maybe.nothing();
+}
+
+// super basic for now
+const calcPan = (boardSize: number) => (x : number) : number => {
+    const ratio = x / (boardSize - 1);
+    return (ratio * 2) - 1
 }

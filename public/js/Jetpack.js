@@ -833,10 +833,12 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     };
     // diffs board changes and outputs list of sounds to play
     exports.findEatenThings = (oldBoard) => (board) => {
+        const boardSize = board.getLength();
         const oldTiles = oldBoard.getAllTiles();
         const newTiles = board.getAllTiles();
         const tiles = getDiffTiles(oldTiles)(newTiles);
-        return tiles.filter(filterUnchanged).map(exports.gotCoins);
+        const coins = tiles.filter(filterUnchanged).map(exports.gotCoins(boardSize));
+        return [...coins];
     };
     const filterUnchanged = (tiles) => _.not(megaEquals(tiles.new, tiles.old));
     const megaEquals = (x, y) => {
@@ -854,11 +856,16 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
     const filterGotCoins = (tiles) => {
         return (tiles.old.collectable > tiles.new.collectable);
     };
-    exports.gotCoins = (tiles) => {
+    exports.gotCoins = (boardSize) => (tiles) => {
         return (filterGotCoins(tiles)) ? tsmonad_1.Maybe.just({
             name: "pop",
-            pan: 0
+            pan: calcPan(boardSize)(tiles.new.x)
         }) : tsmonad_1.Maybe.nothing();
+    };
+    // super basic for now
+    const calcPan = (boardSize) => (x) => {
+        const ratio = x / (boardSize - 1);
+        return (ratio * 2) - 1;
     };
 });
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
@@ -2353,31 +2360,35 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             compressor.connect(audioCtx.destination);
             return compressor;
         }
-        playSound(soundName) {
+        playSound(soundName, pan) {
             if (!this.audioReady) {
                 return false;
             }
-            this.getAudioNode(soundName).caseOf({
+            this.getAudioNode(soundName, pan).caseOf({
                 just: audioNode => audioNode.start(),
                 nothing: () => {
                     // console.log("not found")
                 }
             });
         }
-        getAudioNode(soundName) {
+        getAudioNode(soundName, pan) {
             const audioBuffer = Object.values(this.audioBuffers).find(name => (name.name === soundName));
             if (audioBuffer) {
-                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer));
+                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer, pan));
             }
             return tsmonad_3.Maybe.nothing();
         }
         getSoundPath(soundName) {
             return "/sounds/" + soundName + ".wav";
         }
-        createOutput(buffer) {
+        createOutput(buffer, pan) {
+            const panner = this.audioContext.createStereoPanner();
+            panner.connect(this.output);
+            console.log("create output", pan);
+            panner.pan.value = pan;
             const source = this.audioContext.createBufferSource();
             source.buffer = buffer.buffer;
-            source.connect(this.output);
+            source.connect(panner);
             return source;
         }
         storeBuffer(soundName, buffer) {
@@ -2592,6 +2603,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
                 // egg is over cup - check whether we've completed
                 const completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
+                    this.webAudio.playSound('bright-bell', 0);
                     this.nextLevel(gameState.score, gameState.rotations);
                     return false;
                 }
@@ -2641,7 +2653,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
         // check changes in board, get sounds, trigger them
         playSounds(oldState, newState) {
             _.map(sound => sound.caseOf({
-                just: audio => this.webAudio.playSound(audio.name),
+                just: audio => this.webAudio.playSound(audio.name, audio.pan),
                 nothing: () => { }
             }), AudioTriggers.triggerSounds(oldState)(newState));
         }

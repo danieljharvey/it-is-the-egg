@@ -26,7 +26,7 @@ test("Notices a coin disappear", () => {
 
   })
 
-  const change = AudioTriggers.gotCoins({old: tile, new: newTile})
+  const change = AudioTriggers.gotCoins(1)({old: tile, new: newTile})
 
   change.caseOf({
     just: val => {
@@ -39,11 +39,11 @@ test("Notices a coin disappear", () => {
 })
 
 test("Got a coin", () => {
-  const array = [[4, 5, new Tile({collectable: 10})], [7, 8, 9]];
+  const array = [[4, 5, new Tile({collectable: 10})], [7, 8, 9], [7, 8, 9]];
 
   const board = new Board(array);
 
-  const changedArray = [[4, 5, new Tile({collectable: 0})], [7, 8, 9]];
+  const changedArray = [[4, 5, new Tile({collectable: 0})], [7, 8, 9], [7, 8, 9]];
 
   const changedBoard = new Board(changedArray)
 
@@ -52,7 +52,7 @@ test("Got a coin", () => {
   const expectedArray = [
     Maybe.just({
       name: "pop",
-      pan: 0
+      pan: -1 // left
     })
   ]
 
@@ -88,6 +88,7 @@ test("Got a coin, but rotating", () => {
     item.caseOf({
       just: val => {
         expect(val.name).toEqual('warp')
+        expect(val.pan).toEqual(0)
       },
       nothing: () => {
         expect(false).toEqual(true)

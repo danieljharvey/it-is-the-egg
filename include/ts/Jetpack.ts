@@ -274,6 +274,7 @@ export class Jetpack {
       // egg is over cup - check whether we've completed
       const completed = this.completeLevel(gameState.board, gameState.players);
       if (completed) {
+        this.webAudio.playSound('bright-bell',0);
         this.nextLevel(gameState.score, gameState.rotations);
         return false;
       }
@@ -337,7 +338,7 @@ export class Jetpack {
   // check changes in board, get sounds, trigger them
   protected playSounds(oldState: GameState, newState: GameState) {
     _.map(sound => sound.caseOf({
-        just: audio => this.webAudio.playSound(audio.name),
+        just: audio => this.webAudio.playSound(audio.name, audio.pan),
         nothing: () => {}
     }), AudioTriggers.triggerSounds(oldState)(newState));
   }
