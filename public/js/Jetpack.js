@@ -219,7 +219,7 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
         static checkLevelIsCompleted(gameState) {
             const collectable = Utils.countCollectable(gameState.board);
             const playerCount = Utils.countPlayers(gameState.players);
-            return (collectable < 1 && playerCount < 2);
+            return collectable < 1 && playerCount < 2;
         }
         static countPlayers(players) {
             const validPlayers = players.filter(player => {
@@ -848,7 +848,7 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
             nothing: () => false
         });
     };
-    const hasRotated = (oldGame, newGame) => (oldGame.rotateAngle === newGame.rotateAngle);
+    const hasRotated = (oldGame, newGame) => oldGame.rotateAngle === newGame.rotateAngle;
     const getEatenSounds = (oldState) => (newState) => {
         if (hasRotated(oldState, newState)) {
             return exports.findEatenThings(oldState.board)(newState.board);
@@ -883,53 +883,62 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
     };
     const filterUnchanged = (tiles) => _.not(megaEquals(tiles.new, tiles.old));
     const megaEquals = (x, y) => {
-        if (typeof x.equals !== 'undefined') {
+        if (typeof x.equals !== "undefined") {
             return x.equals(y);
         }
         return x === y;
     };
-    const getListDiff = (oldList) => (newList) => oldList.zipWith((oldItem, newItem) => {
+    const getListDiff = (oldList) => (newList) => oldList
+        .zipWith((oldItem, newItem) => {
         return {
-            'old': oldItem,
-            'new': newItem
+            old: oldItem,
+            new: newItem
         };
-    }, newList).toJS();
+    }, newList)
+        .toJS();
     const getArrayDiff = (oldArray) => (newArray) => _.zipWith((oldItem, newItem) => {
         return {
-            'old': oldItem,
-            'new': newItem
+            old: oldItem,
+            new: newItem
         };
     }, oldArray, newArray);
     const filterGotCoins = (tiles) => {
-        return (tiles.old.collectable > tiles.new.collectable);
+        return tiles.old.collectable > tiles.new.collectable;
     };
     exports.gotCoins = (boardSize) => (tiles) => {
-        return (filterGotCoins(tiles)) ? tsmonad_1.Maybe.just({
-            name: "pop",
-            pan: calcPan(boardSize)(tiles.new.x)
-        }) : tsmonad_1.Maybe.nothing();
+        return filterGotCoins(tiles)
+            ? tsmonad_1.Maybe.just({
+                name: "pop",
+                pan: calcPan(boardSize)(tiles.new.x)
+            })
+            : tsmonad_1.Maybe.nothing();
     };
     const filterCrateSmash = (tiles) => {
-        return (tiles.old.breakable === true && tiles.new.breakable === false);
+        return tiles.old.breakable === true && tiles.new.breakable === false;
     };
     exports.crateSmash = (boardSize) => (tiles) => {
-        return (filterCrateSmash(tiles)) ? tsmonad_1.Maybe.just({
-            name: "crate-smash",
-            pan: calcPan(boardSize)(tiles.new.x)
-        }) : tsmonad_1.Maybe.nothing();
+        return filterCrateSmash(tiles)
+            ? tsmonad_1.Maybe.just({
+                name: "crate-smash",
+                pan: calcPan(boardSize)(tiles.new.x)
+            })
+            : tsmonad_1.Maybe.nothing();
     };
     const filterDoorChange = (tiles) => {
         return ((tiles.old.background === true &&
             tiles.old.frontLayer === true &&
-            tiles.new.background === false) || (tiles.new.background === true &&
-            tiles.new.frontLayer === true &&
-            tiles.old.background === false));
+            tiles.new.background === false) ||
+            (tiles.new.background === true &&
+                tiles.new.frontLayer === true &&
+                tiles.old.background === false));
     };
     exports.doorChange = (boardSize) => (tiles) => {
-        return (filterDoorChange(tiles)) ? tsmonad_1.Maybe.just({
-            name: "switch",
-            pan: calcPan(boardSize)(tiles.new.x)
-        }) : tsmonad_1.Maybe.nothing();
+        return filterDoorChange(tiles)
+            ? tsmonad_1.Maybe.just({
+                name: "switch",
+                pan: calcPan(boardSize)(tiles.new.x)
+            })
+            : tsmonad_1.Maybe.nothing();
     };
     exports.getPlayerSounds = (oldState) => (newState) => {
         const boardSize = newState.board.getLength();
@@ -940,31 +949,37 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
         return [...combine, ...thuds, ...teleports];
     };
     const filterPlayerHitsFloor = (players) => {
-        return (players.old.falling === true && players.new.falling === false);
+        return players.old.falling === true && players.new.falling === false;
     };
     exports.playerHitsFloor = (boardSize) => (players) => {
-        return (filterPlayerHitsFloor(players)) ? tsmonad_1.Maybe.just({
-            name: "thud",
-            pan: calcPan(boardSize)(players.new.coords.x)
-        }) : tsmonad_1.Maybe.nothing();
+        return filterPlayerHitsFloor(players)
+            ? tsmonad_1.Maybe.just({
+                name: "thud",
+                pan: calcPan(boardSize)(players.new.coords.x)
+            })
+            : tsmonad_1.Maybe.nothing();
     };
     const filterTeleported = (players) => {
-        return (players.old.lastAction === "" && players.new.lastAction === "teleport");
+        return players.old.lastAction === "" && players.new.lastAction === "teleport";
     };
     exports.playerTeleported = (boardSize) => (players) => {
-        return (filterTeleported(players)) ? tsmonad_1.Maybe.just({
-            name: "soft-bell",
-            pan: calcPan(boardSize)(players.new.coords.x)
-        }) : tsmonad_1.Maybe.nothing();
+        return filterTeleported(players)
+            ? tsmonad_1.Maybe.just({
+                name: "soft-bell",
+                pan: calcPan(boardSize)(players.new.coords.x)
+            })
+            : tsmonad_1.Maybe.nothing();
     };
     const filterPlayersCombine = (oldPlayers) => (newPlayers) => {
-        return (oldPlayers.length > newPlayers.length);
+        return oldPlayers.length > newPlayers.length;
     };
     const playersCombine = (oldPlayers) => (newPlayers) => {
-        return (filterPlayersCombine(oldPlayers)(newPlayers)) ? tsmonad_1.Maybe.just({
-            name: "power-up",
-            pan: 0
-        }) : tsmonad_1.Maybe.nothing();
+        return filterPlayersCombine(oldPlayers)(newPlayers)
+            ? tsmonad_1.Maybe.just({
+                name: "power-up",
+                pan: 0
+            })
+            : tsmonad_1.Maybe.nothing();
     };
     // super basic for now
     const calcPan = (boardSize) => (x) => {
@@ -972,7 +987,7 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
             return 0;
         }
         const ratio = x / (boardSize - 1);
-        const ans = (ratio * 2) - 1;
+        const ans = ratio * 2 - 1;
         return ans;
     };
     const filterNearlyDone = (oldState) => (newState) => {
@@ -980,10 +995,12 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
             Utils_2.Utils.checkLevelIsCompleted(newState) === true);
     };
     const nearlyDone = (oldState) => (newState) => {
-        return (filterNearlyDone(oldState)(newState)) ? tsmonad_1.Maybe.just({
-            name: "woo",
-            pan: 0
-        }) : tsmonad_1.Maybe.nothing();
+        return filterNearlyDone(oldState)(newState)
+            ? tsmonad_1.Maybe.just({
+                name: "woo",
+                pan: 0
+            })
+            : tsmonad_1.Maybe.nothing();
     };
 });
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
@@ -1076,30 +1093,31 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
         });
     };
     const checkPlayerBoardCollision = (board, playerTypes) => (player) => {
-        return (isCollision(board)(player)) ? exports.splitPlayer(playerTypes)(player) : [player];
+        return isCollision(board)(player)
+            ? exports.splitPlayer(playerTypes)(player)
+            : [player];
     };
-    const isCollision = (board) => (player) => (isPlayerInTile(player) &&
+    const isCollision = (board) => (player) => isPlayerInTile(player) &&
         isCollisionTile(board)(player) &&
-        isPlayerValueHighEnough(player));
-    const isPlayerInTile = (player) => (player.coords.offsetX === 0 && player.coords.offsetY === 0);
+        isPlayerValueHighEnough(player);
+    const isPlayerInTile = (player) => player.coords.offsetX === 0 && player.coords.offsetY === 0;
     const isCollisionTile = (board) => (player) => {
         const collidedTiles = getCollidedTiles(board)(player);
-        return (collidedTiles.size > 0);
+        return collidedTiles.size > 0;
     };
     const isPlayerValueHighEnough = (player) => {
         return player.value > 1;
     };
-    const isSplitterTile = (tile) => (tile.get("action") === "split-eggs");
+    const isSplitterTile = (tile) => tile.get("action") === "split-eggs";
     exports.getSplitterTiles = (board) => {
-        return board.getAllTiles()
-            .filter(isSplitterTile);
+        return board.getAllTiles().filter(isSplitterTile);
     };
     const getCollidedTiles = (board) => (player) => {
         const isPlayerOnTileFunc = exports.isPlayerOnTile(player);
         return exports.getSplitterTiles(board).filter(isPlayerOnTileFunc);
     };
     exports.isPlayerOnTile = (player) => (tile) => {
-        return (player.coords.x === tile.x && player.coords.y === tile.y);
+        return player.coords.x === tile.x && player.coords.y === tile.y;
     };
     // would be clevererer about this but we don't have many eggs
     exports.newValues = (value) => {
@@ -1125,7 +1143,7 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
         const directions = [-1, 1];
         return _.zipWith(combineDirectionsAndValues, values, directions);
     };
-    exports.splitPlayer = (playerTypes) => (player) => {
+    exports.splitPlayer = playerTypes => (player) => {
         const items = exports.getValuesAndDirections(player.value);
         const playerFromItemFunc = playerFromItem(playerTypes, player);
         return items.map(playerFromItemFunc);
@@ -2445,7 +2463,8 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             if (this.audioContext) {
                 return this.audioContext;
             }
-            return new (window.AudioContext || window.webkitAudioContext)();
+            return new (window.AudioContext ||
+                window.webkitAudioContext)();
         }
         createLimiter(audioCtx) {
             // Create a compressor node
@@ -2481,7 +2500,9 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             });
         }
         getAudioNode(soundName, pan) {
-            const audioBuffer = Object.values(this.audioBuffers).find(name => (name.name === soundName));
+            const audioBuffer = Object
+                .values(this.audioBuffers)
+                .find(name => name.name === soundName);
             if (audioBuffer) {
                 return tsmonad_3.Maybe.just(this.createOutput(audioBuffer, pan));
             }
@@ -2504,7 +2525,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                 name: soundName,
                 buffer
             };
-            return this.audioBuffers[soundName] = audioBuffer;
+            return (this.audioBuffers[soundName] = audioBuffer);
         }
         loadBuffer(soundName, url) {
             return new Promise((resolve, reject) => {
@@ -2523,7 +2544,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                     });
                 };
                 request.onerror = () => {
-                    reject('BufferLoader: XHR error');
+                    reject("BufferLoader: XHR error");
                 };
                 request.send();
             });
@@ -2711,7 +2732,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
                 // egg is over cup - check whether we've completed
                 const completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
-                    this.webAudio.playSound('bright-bell', 0);
+                    this.webAudio.playSound("bright-bell", 0);
                     this.nextLevel(gameState.score, gameState.rotations);
                     return false;
                 }

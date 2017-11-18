@@ -1,7 +1,7 @@
 import * as Hammer from "hammerjs";
-import * as _ from "ramda"
+import * as _ from "ramda";
 
-import * as AudioTriggers from "./AudioTriggers"
+import * as AudioTriggers from "./AudioTriggers";
 import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
@@ -23,7 +23,7 @@ import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
-import { WebAudio } from "./WebAudio"
+import { WebAudio } from "./WebAudio";
 
 export class Jetpack {
   public animationHandle: number;
@@ -87,7 +87,7 @@ export class Jetpack {
     const playerTypes = new PlayerTypes();
     this.playerTypes = playerTypes.getPlayerTypes();
 
-    this.webAudio = new WebAudio()
+    this.webAudio = new WebAudio();
     this.webAudio.init(); // load web audio stuff
 
     const apiLocation = "http://" + window.location.hostname + "/levels/";
@@ -274,7 +274,7 @@ export class Jetpack {
       // egg is over cup - check whether we've completed
       const completed = this.completeLevel(gameState.board, gameState.players);
       if (completed) {
-        this.webAudio.playSound('bright-bell',0);
+        this.webAudio.playSound("bright-bell", 0);
         this.nextLevel(gameState.score, gameState.rotations);
         return false;
       }
@@ -337,12 +337,16 @@ export class Jetpack {
 
   // check changes in board, get sounds, trigger them
   protected playSounds(oldState: GameState, newState: GameState) {
-    _.map(sound => sound.caseOf({
-        just: audio => this.webAudio.playSound(audio.name, audio.pan),
-        nothing: () => {
-          // don't play a sound
-        }
-    }), AudioTriggers.triggerSounds(oldState)(newState));
+    _.map(
+      sound =>
+        sound.caseOf({
+          just: audio => this.webAudio.playSound(audio.name, audio.pan),
+          nothing: () => {
+            // don't play a sound
+          }
+        }),
+      AudioTriggers.triggerSounds(oldState)(newState)
+    );
   }
 
   protected renderEverything(gameState: GameState) {

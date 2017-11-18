@@ -5,7 +5,6 @@ import { Tile } from "./Tile";
 // all changes reuse the re-generated List object
 
 export class Board {
- 
   protected list: List<List<Tile>>;
 
   constructor(values: any[], list: List<List<Tile>> = null) {
@@ -33,9 +32,8 @@ export class Board {
     return this.list.count();
   }
 
-  public getAllTiles() : List<Tile> {
+  public getAllTiles(): List<Tile> {
     const flat = this.list.flatten(1);
-    return (flat as List<Tile>)
+    return flat as List<Tile>;
   }
 }
-

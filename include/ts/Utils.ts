@@ -1,9 +1,9 @@
 import * as _ from "ramda";
-import { Board } from "./Board"
+import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
-import { GameState } from "./GameState"
-import { Player } from "./Player"
+import { GameState } from "./GameState";
+import { Player } from "./Player";
 
 // wee lad full of reusable functions
 
@@ -108,7 +108,7 @@ export class Utils {
   public static checkLevelIsCompleted(gameState: GameState): boolean {
     const collectable = Utils.countCollectable(gameState.board);
     const playerCount: number = Utils.countPlayers(gameState.players);
-    return (collectable < 1 && playerCount < 2)
+    return collectable < 1 && playerCount < 2;
   }
 
   public static countPlayers(players: Player[]): number {
@@ -126,7 +126,7 @@ export class Utils {
       if (score > 0) {
         return collectable + score;
       }
-      return collectable
+      return collectable;
     }, 0);
   }
 }

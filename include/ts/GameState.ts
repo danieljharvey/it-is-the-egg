@@ -11,21 +11,21 @@ interface IGameState {
 }
 
 export class GameState {
-  public players: Player[] = []
-  public board: Board = null
-  public score: number = 0
-  public rotations: number = 0
-  public rotateAngle: number = 0
-  public outcome: string = ""
+  public players: Player[] = [];
+  public board: Board = null;
+  public score: number = 0;
+  public rotations: number = 0;
+  public rotateAngle: number = 0;
+  public outcome: string = "";
 
   constructor(params: IGameState = {}) {
     (Object as any).entries(params).map(pair => {
-      const [key,value] = pair;
+      const [key, value] = pair;
       this[key] = value;
-    })
+    });
   }
 
   public modify(values: IGameState = {}) {
-    return new GameState((Object as any).assign({}, this, values))
+    return new GameState((Object as any).assign({}, this, values));
   }
 }
