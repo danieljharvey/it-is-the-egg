@@ -8,6 +8,17 @@ import { GameState } from "../GameState"
 import { Player } from "../Player"
 import { Tile } from "../Tile"
 
+const getGeneratedSoundNames = (pile) => {
+  return pile.map(item => {
+    return item.caseOf({
+      just: val => {
+        return val.name
+      },
+      nothing: () => false
+    })
+  })
+}
+
 test("No change, no sounds", () => {
   const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
 
@@ -58,14 +69,7 @@ test("Got a coin", () => {
 
   const actual = AudioTriggers.triggerSounds(gameState)(changedGameState)
   
-  const expectedArray = [
-    Maybe.just({
-      name: "pop",
-      pan: -1 // left
-    })
-  ]
-
- expect(actual).toEqual(expectedArray)
+  expect(getGeneratedSoundNames(actual)).toContain('pop')
   
 });
 
@@ -91,19 +95,7 @@ test("Got a coin, but rotating", () => {
 
   const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
   
-  expect(actual.length).toEqual(1)
-
-  actual.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('warp')
-        expect(val.pan).toEqual(0)
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
-  })
+  expect(getGeneratedSoundNames(actual)).toContain('warp')
   
 });
 
@@ -154,18 +146,7 @@ test("Player hits floor full function", () => {
 
   const actual = AudioTriggers.triggerSounds(gameState)(newGameState)
 
-  expect(actual.length).toEqual(1)
-
-  actual.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('thud')
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
-  })
+  expect(getGeneratedSoundNames(actual)).toContain('thud')
 })
 
 test("Player teleports", () => {
@@ -194,18 +175,7 @@ test("Player teleports", () => {
 
   const actual = AudioTriggers.triggerSounds(gameState)(newGameState)
 
-  expect(actual.length).toEqual(1)
-
-  actual.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('soft-bell')
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
-  })
+  expect(getGeneratedSoundNames(actual)).toContain('soft-bell')
 })
 
 
@@ -228,18 +198,7 @@ test("Smash a crate", () => {
 
   const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
   
-  expect(actual.length).toEqual(1)
-
-  actual.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('crate-smash')
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
-  })
+  expect(getGeneratedSoundNames(actual)).toContain('crate-smash')
   
 });
 
@@ -278,33 +237,11 @@ test("Switch is hit (only one sound please)", () => {
 
   const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
   
-  expect(actual.length).toEqual(1)
-
-  actual.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('switch')
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
-  })
+  expect(getGeneratedSoundNames(actual)).toContain('switch')
 
   const actualReverse = AudioTriggers.triggerSounds(newGameState)(oldGameState)
-  
-  expect(actualReverse.length).toEqual(1)
 
-  actualReverse.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('switch')
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
-  })
+  expect(getGeneratedSoundNames(actualReverse)).toContain('switch')
   
 });
 
@@ -340,18 +277,52 @@ test("Players have combined", () => {
   })
 
   const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
-  
-  expect(actual.length).toEqual(1)
+   
+  expect(getGeneratedSoundNames(actual)).toContain('power-up')
+});
 
-  actual.map(item => {
-    item.caseOf({
-      just: val => {
-        expect(val.name).toEqual('power-up')
-      },
-      nothing: () => {
-        expect(false).toEqual(true)
-      }
-    })
+test("Ready to finish", () => {
+  
+  const array = [[
+    new Tile({collectable: 5})
+  ]];
+  
+  const board = new Board(array);
+
+  const players = [
+    new Player({
+      value: 100
+    }),
+    new Player({
+      value: 1
+    }),
+  ];
+
+  const oldGameState = new GameState({
+    board,
+    players
   })
+
+  const newPlayers = [
+    new Player({
+      value: 100
+    })
+  ]
+
+  const newArray = [[
+    new Tile({collectable:0})
+  ]]
+
+  const newBoard = new Board(newArray)
+
+  const newGameState = new GameState({
+    board: newBoard,
+    players: newPlayers
+  })  
+
+  const actual = AudioTriggers.triggerSounds(oldGameState)(newGameState)
+
+  const soundNames = getGeneratedSoundNames(actual)
+  expect(soundNames).toContain('woo')
   
 });

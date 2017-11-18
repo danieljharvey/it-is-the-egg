@@ -6,6 +6,7 @@ import { Board } from "./Board"
 import { GameState } from "./GameState"
 import { Player } from './Player';
 import { Tile } from "./Tile"
+import { Utils } from "./Utils"
 
 // AudioTriggers
 // check old and new game state and trigger sounds from it
@@ -31,9 +32,10 @@ interface IComparePlayers {
 }
 
 export const triggerSounds = (oldState: GameState) => (newState: GameState) => {
+    const nearlyDoneSounds  = [nearlyDone(oldState)(newState)]
     const eatenSounds = getEatenSounds(oldState)(newState)
     const playerSounds = getPlayerSounds(oldState)(newState)
-    return [...eatenSounds, ...playerSounds].filter(isItNothing)
+    return [...nearlyDoneSounds, ...eatenSounds, ...playerSounds].filter(isItNothing)
 }
 
 const isItNothing = (maybe: Maybe<any>): boolean => {
@@ -153,7 +155,7 @@ export const getPlayerSounds = (oldState: GameState) => (newState: GameState) =>
     const boardSize = newState.board.getLength();
 
     const combine = [playersCombine(oldState.players)(newState.players)]
-
+    
     const players: IComparePlayers[] = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged)
     const thuds = players.map(playerHitsFloor(boardSize))
     const teleports = players.map(playerTeleported(boardSize))
@@ -201,4 +203,18 @@ const calcPan = (boardSize: number) => (x : number) : number => {
     const ratio = x / (boardSize - 1);
     const ans = (ratio * 2) - 1
     return ans
+}
+
+const filterNearlyDone = (oldState: GameState) => (newState: GameState) : boolean => {
+    return (
+        Utils.checkLevelIsCompleted(oldState) === false &&
+        Utils.checkLevelIsCompleted(newState) === true
+    )
+}
+
+const nearlyDone = (oldState: GameState) => (newState: GameState) : Maybe<IAudioTrigger> => {
+    return (filterNearlyDone(oldState)(newState)) ? Maybe.just({
+        name: "woo",
+        pan: 0
+    }) : Maybe.nothing();
 }

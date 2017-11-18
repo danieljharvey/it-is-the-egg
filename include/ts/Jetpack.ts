@@ -275,7 +275,7 @@ export class Jetpack {
       const completed = this.completeLevel(gameState.board, gameState.players);
       if (completed) {
         this.webAudio.playSound('bright-bell',0);
-        this.nextLevel(gameState.score, gameState.rotations);
+        this.nextLevel(gameState.scoore, gameState.rotations);
         return false;
       }
     }

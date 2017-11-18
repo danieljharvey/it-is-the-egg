@@ -215,6 +215,29 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
             }
             return false;
         }
+        // check leftovers on board and whether player is over finish tile
+        static checkLevelIsCompleted(gameState) {
+            const collectable = Utils.countCollectable(gameState.board);
+            const playerCount = Utils.countPlayers(gameState.players);
+            return (collectable < 1 && playerCount < 2);
+        }
+        static countPlayers(players) {
+            const validPlayers = players.filter(player => {
+                return player && player.value > 0;
+            });
+            return validPlayers.length;
+        }
+        // get total outstanding points left to grab on board
+        static countCollectable(board) {
+            const tiles = board.getAllTiles();
+            return tiles.reduce((collectable, tile) => {
+                const score = tile.collectable;
+                if (score > 0) {
+                    return collectable + score;
+                }
+                return collectable;
+            }, 0);
+        }
     }
     exports.Utils = Utils;
 });
@@ -810,13 +833,14 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     }
     exports.Action = Action;
 });
-define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (require, exports, _, tsmonad_1) {
+define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], function (require, exports, _, tsmonad_1, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.triggerSounds = (oldState) => (newState) => {
+        const nearlyDoneSounds = [nearlyDone(oldState)(newState)];
         const eatenSounds = getEatenSounds(oldState)(newState);
         const playerSounds = exports.getPlayerSounds(oldState)(newState);
-        return [...eatenSounds, ...playerSounds].filter(isItNothing);
+        return [...nearlyDoneSounds, ...eatenSounds, ...playerSounds].filter(isItNothing);
     };
     const isItNothing = (maybe) => {
         return maybe.caseOf({
@@ -951,6 +975,16 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad"], function (re
         const ans = (ratio * 2) - 1;
         return ans;
     };
+    const filterNearlyDone = (oldState) => (newState) => {
+        return (Utils_2.Utils.checkLevelIsCompleted(oldState) === false &&
+            Utils_2.Utils.checkLevelIsCompleted(newState) === true);
+    };
+    const nearlyDone = (oldState) => (newState) => {
+        return (filterNearlyDone(oldState)(newState)) ? tsmonad_1.Maybe.just({
+            name: "woo",
+            pan: 0
+        }) : tsmonad_1.Maybe.nothing();
+    };
 });
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -1022,7 +1056,7 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
     }
     exports.PlayerTypes = PlayerTypes;
 });
-define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], function (require, exports, Coords_3, Utils_2, _) {
+define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], function (require, exports, Coords_3, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // Board Collide
@@ -1097,7 +1131,7 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
         return items.map(playerFromItemFunc);
     };
     const playerFromItem = (playerTypes, player) => (item) => {
-        const newPlayerType = Utils_2.Utils.getPlayerByValue(playerTypes, item.value);
+        const newPlayerType = Utils_3.Utils.getPlayerByValue(playerTypes, item.value);
         const newPlayerParams = Object.assign({}, newPlayerType, {
             direction: new Coords_3.Coords({
                 x: item.direction
@@ -1186,7 +1220,7 @@ define("Canvas", ["require", "exports"], function (require, exports) {
     }
     exports.Canvas = Canvas;
 });
-define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_5, Utils_3, _) {
+define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_5, Utils_4, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Collisions {
@@ -1229,8 +1263,8 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
         // returns all non-collided players
         // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
         removeCollidedPlayers(collided, players) {
-            const collidedIDs = Utils_3.Utils.flattenArray(collided);
-            const uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
+            const collidedIDs = Utils_4.Utils.flattenArray(collided);
+            const uniqueIDs = Utils_4.Utils.removeDuplicates(collidedIDs);
             return players.filter(player => {
                 if (uniqueIDs.indexOf(player.id) === -1) {
                     return true;
@@ -1328,7 +1362,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
         combinePlayers(player1, player2) {
             const newValue = player1.value + player2.value;
             const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            const newPlayerType = Utils_3.Utils.getPlayerByValue(this.playerTypes, newValue);
+            const newPlayerType = Utils_4.Utils.getPlayerByValue(this.playerTypes, newValue);
             if (!newPlayerType) {
                 return [player1, player2];
             }
@@ -1541,7 +1575,7 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
     }
     exports.Levels = Levels;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_4, Map, Utils_4) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_4, Map, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1562,7 +1596,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
             for (let x = startX; x <= endX; x++) {
                 for (let y = startY; y <= endY; y++) {
                     const newCoords = new Coords_4.Coords({ x, y });
-                    const fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
+                    const fixedCoords = Utils_5.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
             }
@@ -2261,31 +2295,6 @@ define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize"
                 rotations
             });
         }
-        // check leftovers on board and whether player is over finish tile
-        checkLevelIsCompleted(gameState) {
-            const collectable = this.getCollectable(gameState.board);
-            const playerCount = this.countPlayers(gameState.players);
-            if (collectable < 1 && playerCount < 2) {
-                // change gameState.outcome to "nextLevel" or something, I don't know
-            }
-            return gameState;
-        }
-        countPlayers(players) {
-            const validPlayers = players.filter(player => {
-                return player && player.value > 0;
-            });
-            return validPlayers.length;
-        }
-        // get total outstanding points left to grab on board
-        getCollectable(board) {
-            const tiles = board.getAllTiles();
-            return tiles.reduce((collectable, tile) => {
-                const score = tile.collectable;
-                if (score > 0) {
-                    return collectable + score;
-                }
-            }, 0);
-        }
     }
     exports.TheEgg = TheEgg;
 });
@@ -2522,7 +2531,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
     }
     exports.WebAudio = WebAudio;
 });
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, WebAudio_1) {
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_6, WebAudio_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Jetpack {
@@ -2627,7 +2636,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -2703,7 +2712,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
                 const completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
                     this.webAudio.playSound('bright-bell', 0);
-                    this.nextLevel(gameState.score, gameState.rotations);
+                    this.nextLevel(gameState.scoore, gameState.rotations);
                     return false;
                 }
             }
@@ -3225,7 +3234,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_7) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Editor {
@@ -3333,7 +3342,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }

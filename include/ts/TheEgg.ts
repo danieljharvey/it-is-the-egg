@@ -86,31 +86,4 @@ export class TheEgg {
     });
   }
 
-  // check leftovers on board and whether player is over finish tile
-  protected checkLevelIsCompleted(gameState: GameState): GameState {
-    const collectable = this.getCollectable(gameState.board);
-    const playerCount: number = this.countPlayers(gameState.players);
-    if (collectable < 1 && playerCount < 2) {
-      // change gameState.outcome to "nextLevel" or something, I don't know
-    }
-    return gameState;
-  }
-
-  protected countPlayers(players: Player[]): number {
-    const validPlayers = players.filter(player => {
-      return player && player.value > 0;
-    });
-    return validPlayers.length;
-  }
-
-  // get total outstanding points left to grab on board
-  protected getCollectable(board: Board): number {
-    const tiles = board.getAllTiles();
-    return tiles.reduce((collectable, tile) => {
-      const score = tile.collectable;
-      if (score > 0) {
-        return collectable + score;
-      }
-    }, 0);
-  }
 }
