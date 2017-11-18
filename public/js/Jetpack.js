@@ -946,7 +946,8 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
         const players = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged);
         const thuds = players.map(exports.playerHitsFloor(boardSize));
         const teleports = players.map(exports.playerTeleported(boardSize));
-        return [...combine, ...thuds, ...teleports];
+        const bounces = players.map(exports.playerHitsWall(boardSize));
+        return [...combine, ...thuds, ...teleports, ...bounces];
     };
     const filterPlayerHitsFloor = (players) => {
         return players.old.falling === true && players.new.falling === false;
@@ -955,6 +956,19 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
         return filterPlayerHitsFloor(players)
             ? tsmonad_1.Maybe.just({
                 name: "thud",
+                pan: calcPan(boardSize)(players.new.coords.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    const filterPlayerHitsWall = (players) => {
+        return (players.old.falling === false &&
+            players.new.falling === false &&
+            players.old.direction.x !== players.new.direction.x);
+    };
+    exports.playerHitsWall = (boardSize) => (players) => {
+        return filterPlayerHitsWall(players)
+            ? tsmonad_1.Maybe.just({
+                name: "bounce",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
             : tsmonad_1.Maybe.nothing();
@@ -2442,7 +2456,8 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
                 "woo",
                 "crate-smash",
                 "switch",
-                "power-up"
+                "power-up",
+                "bounce"
             ];
         }
         init() {
@@ -2489,6 +2504,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             return splitter;
         }
         playSound(soundName, pan) {
+            // console.log(soundName)
             if (!this.audioReady) {
                 return false;
             }

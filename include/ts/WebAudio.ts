@@ -23,7 +23,8 @@ export class WebAudio {
     "woo",
     "crate-smash",
     "switch",
-    "power-up"
+    "power-up",
+    "bounce"
   ];
 
   public init() {
@@ -80,6 +81,7 @@ export class WebAudio {
   }
 
   public playSound(soundName: string, pan: number) {
+    // console.log(soundName)
     if (!this.audioReady) {
       return false;
     }

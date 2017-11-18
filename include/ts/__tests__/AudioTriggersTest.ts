@@ -4,6 +4,7 @@ import { Maybe } from "tsmonad";
 
 import * as AudioTriggers from "../AudioTriggers";
 import { Board } from "../Board";
+import { Coords } from "../Coords";
 import { GameState } from "../GameState";
 import { Player } from "../Player";
 import { Tile } from "../Tile";
@@ -152,6 +153,38 @@ test("Player hits floor full function", () => {
   const actual = AudioTriggers.triggerSounds(gameState)(newGameState);
 
   expect(getGeneratedSoundNames(actual)).toContain("thud");
+});
+
+test("Player hits wall", () => {
+  const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+  const board = new Board(array);
+
+  const player = new Player({
+    direction: new Coords({
+      x: -1
+    })
+  });
+
+  const gameState = new GameState({
+    players: [player],
+    board
+  });
+
+  const newPlayer = new Player({
+    direction: new Coords({
+      x: 1
+    })
+  });
+
+  const newGameState = new GameState({
+    players: [newPlayer],
+    board
+  });
+
+  const actual = AudioTriggers.triggerSounds(gameState)(newGameState);
+
+  expect(getGeneratedSoundNames(actual)).toContain("bounce");
 });
 
 test("Player teleports", () => {

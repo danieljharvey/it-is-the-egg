@@ -189,7 +189,8 @@ export const getPlayerSounds = (oldState: GameState) => (
   ).filter(filterUnchanged);
   const thuds = players.map(playerHitsFloor(boardSize));
   const teleports = players.map(playerTeleported(boardSize));
-  return [...combine, ...thuds, ...teleports];
+  const bounces = players.map(playerHitsWall(boardSize));
+  return [...combine, ...thuds, ...teleports, ...bounces];
 };
 
 const filterPlayerHitsFloor = (players: IComparePlayers): boolean => {
@@ -202,6 +203,25 @@ export const playerHitsFloor = (boardSize: number) => (
   return filterPlayerHitsFloor(players)
     ? Maybe.just({
         name: "thud",
+        pan: calcPan(boardSize)(players.new.coords.x)
+      })
+    : Maybe.nothing();
+};
+
+const filterPlayerHitsWall = (players: IComparePlayers): boolean => {
+  return (
+    players.old.falling === false &&
+    players.new.falling === false &&
+    players.old.direction.x !== players.new.direction.x
+  );
+};
+
+export const playerHitsWall = (boardSize: number) => (
+  players: IComparePlayers
+): Maybe<IAudioTrigger> => {
+  return filterPlayerHitsWall(players)
+    ? Maybe.just({
+        name: "bounce",
         pan: calcPan(boardSize)(players.new.coords.x)
       })
     : Maybe.nothing();
