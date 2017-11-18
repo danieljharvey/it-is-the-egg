@@ -2712,7 +2712,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
                 const completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
                     this.webAudio.playSound('bright-bell', 0);
-                    this.nextLevel(gameState.scoore, gameState.rotations);
+                    this.nextLevel(gameState.score, gameState.rotations);
                     return false;
                 }
             }
