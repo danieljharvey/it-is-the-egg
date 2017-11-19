@@ -735,3 +735,45 @@ it("Deals with stuff from actual game", function() {
 
   expect(value.length).toEqual(11);
 });
+
+it("Uses a really big map and doesn't timeout", function(done) {
+  const map = [
+    [false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, true, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, true, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+    [false, false, true, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, false, false, true, false, false, false, false],
+  ]
+
+  const start = new Coords({x: 2, y: 2})
+
+  const targets = fromJS([
+    new Coords({x:9,y:6})
+  ])
+
+  const actual = path.findClosestPath(map)(start)(targets);
+
+  const value = actual.caseOf({
+    just: val => {
+      return val
+    },
+    nothing: () => false
+  });
+
+  expect(value.length).toEqual(12);
+
+  done()
+})

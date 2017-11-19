@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Tile = (function (_super) {
+    var Tile = /** @class */ (function (_super) {
         __extends(Tile, _super);
         function Tile(params) {
             var _this = this;
@@ -43,7 +43,7 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
     Object.defineProperty(exports, "__esModule", { value: true });
     // new board is built from JS array
     // all changes reuse the re-generated List object
-    var Board = (function () {
+    var Board = /** @class */ (function () {
         function Board(values, list) {
             if (list === void 0) { list = null; }
             if (values) {
@@ -78,7 +78,7 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
     Object.defineProperty(exports, "__esModule", { value: true });
     // import { Utils } from "./Utils";
     var OFFSET_DIVIDE = 100;
-    var Coords = (function (_super) {
+    var Coords = /** @class */ (function (_super) {
         __extends(Coords, _super);
         function Coords(params) {
             var _this = this;
@@ -104,7 +104,7 @@ define("Coords", ["require", "exports", "immutable"], function (require, exports
 define("BoardSize", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var BoardSize = (function () {
+    var BoardSize = /** @class */ (function () {
         function BoardSize(size) {
             this.minSize = 5;
             this.maxSize = 40;
@@ -148,7 +148,7 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // wee lad full of reusable functions
-    var Utils = (function () {
+    var Utils = /** @class */ (function () {
         function Utils() {
         }
         Utils.getRandomObjectKey = function (object) {
@@ -245,7 +245,7 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
-    var Player = (function (_super) {
+    var Player = /** @class */ (function (_super) {
         __extends(Player, _super);
         function Player(params) {
             var _this = this;
@@ -286,7 +286,7 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
 define("GameState", ["require", "exports", "immutable"], function (require, exports, immutable_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var GameState = (function (_super) {
+    var GameState = /** @class */ (function (_super) {
         __extends(GameState, _super);
         function GameState(params) {
             var _this = this;
@@ -311,7 +311,7 @@ define("GameState", ["require", "exports", "immutable"], function (require, expo
 define("TileSet", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TileSet = (function () {
+    var TileSet = /** @class */ (function () {
         function TileSet() {
         }
         TileSet.getTiles = function () {
@@ -757,7 +757,7 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this concerns all the changes between player and board
-    var Action = (function () {
+    var Action = /** @class */ (function () {
         function Action() {
         }
         // go through each player, check it's effect on board, score and outcome, return new gameState obj
@@ -852,7 +852,7 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var PlayerTypes = (function () {
+    var PlayerTypes = /** @class */ (function () {
         function PlayerTypes() {
         }
         PlayerTypes.prototype.getPlayerTypes = function () {
@@ -1012,7 +1012,7 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
 define("Canvas", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Canvas = (function () {
+    var Canvas = /** @class */ (function () {
         function Canvas(boardSize) {
             this.imagesFolder = "img/";
             this.boardSize = boardSize;
@@ -1090,7 +1090,7 @@ define("Canvas", ["require", "exports"], function (require, exports) {
 define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Collisions = (function () {
+    var Collisions = /** @class */ (function () {
         function Collisions(playerTypes) {
             this.playerTypes = playerTypes;
         }
@@ -1249,7 +1249,7 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
 define("Loader", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Loader = (function () {
+    var Loader = /** @class */ (function () {
         function Loader(apiLocation) {
             this.apiLocation = apiLocation;
         }
@@ -1318,7 +1318,7 @@ define("Loader", ["require", "exports"], function (require, exports) {
 define("SavedLevel", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SavedLevel = (function () {
+    var SavedLevel = /** @class */ (function () {
         function SavedLevel(boardSize, board, levelID) {
             this.boardSize = boardSize;
             this.board = board;
@@ -1342,7 +1342,7 @@ define("SavedLevel", ["require", "exports"], function (require, exports) {
 define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (require, exports, BoardSize_2, SavedLevel_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Levels = (function () {
+    var Levels = /** @class */ (function () {
         function Levels(loader) {
             this.levelID = 0;
             this.levels = {};
@@ -1456,7 +1456,7 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
-    var RenderMap = (function () {
+    var RenderMap = /** @class */ (function () {
         function RenderMap() {
         }
         // render map
@@ -1604,6 +1604,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return exports.squaresAround(map)(startPoint)
             .map(partialAddAdjacent)
             .filter(function (entry) { return entry.length > 0; })
+            .filter(function (entry) { return entry.length < 25; }) // this is stop it timing out by trying too hard
             .filter(exports.filterDuplicates);
     }; };
     // try out all possible and return new list of options
@@ -1654,6 +1655,10 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     // do findPath for each thing, return shortest
     exports.findClosestPath = function (map) { return function (start) { return function (targets) {
+        // return actualFindClosestPathMemo(map, start, targets)
+        return actualFindClosestPath(map, start, targets);
+    }; }; };
+    var actualFindClosestPath = function (map, start, targets) {
         var partialFindPath = exports.findPath(map)(start);
         var paths = targets
             .map(partialFindPath)
@@ -1661,7 +1666,23 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             .filter(function (arr) { return arr.length > 0; })
             .sort(sortArray);
         return paths.count() > 0 ? tsmonad_1.Maybe.just(paths.first()) : tsmonad_1.Maybe.nothing();
-    }; }; };
+    };
+    var memoize = function (fn) {
+        var cache = {};
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var json = JSON.stringify(args);
+            if (cache[json]) {
+                return cache[json];
+            }
+            cache[json] = fn.apply(void 0, args);
+            return cache[json];
+        };
+    };
+    var actualFindClosestPathMemo = memoize(actualFindClosestPath);
     // work out what first move is according to directions
     exports.findNextDirection = function (pointList) {
         var parts = _.slice(pointList, 0, 2);
@@ -2132,7 +2153,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
 define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TheEgg = (function () {
+    var TheEgg = /** @class */ (function () {
         function TheEgg(playerTypes) {
             this.playerTypes = playerTypes;
         }
@@ -2214,7 +2235,7 @@ define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (requ
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // used in editor, draws a bunch of 32x32 tiles for selecting
-    var TileChooser = (function () {
+    var TileChooser = /** @class */ (function () {
         function TileChooser(renderer) {
             this.chosenTileID = 0;
             this.renderer = renderer;
@@ -2269,7 +2290,7 @@ define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (requ
 define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TitleScreen = (function () {
+    var TitleScreen = /** @class */ (function () {
         function TitleScreen(jetpack, canvas, imagePath, width, height) {
             this.jetpack = jetpack;
             this.canvas = canvas;
@@ -2327,7 +2348,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
 define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, Hammer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Jetpack = (function () {
+    var Jetpack = /** @class */ (function () {
         function Jetpack() {
             this.moveSpeed = 10;
             this.paused = true;
@@ -2771,7 +2792,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var SPRITE_SIZE = 64;
     var OFFSET_DIVIDE = 100;
-    var Renderer = (function () {
+    var Renderer = /** @class */ (function () {
         function Renderer(jetpack, tiles, playerTypes, boardSize, canvas, loadCallback) {
             this.lampMode = false; // lamp mode only draws around the eggs
             this.checkResize = true;
@@ -3049,7 +3070,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
 define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Editor = (function () {
+    var Editor = /** @class */ (function () {
         function Editor() {
             this.levelID = 1;
             this.levelList = [];

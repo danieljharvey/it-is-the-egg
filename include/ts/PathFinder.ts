@@ -93,6 +93,7 @@ export const getMoveOptions = (map: Map) => (list: PointList): PointList[] => {
   return squaresAround(map)(startPoint)
     .map(partialAddAdjacent)
     .filter(entry => entry.length > 0)
+    .filter(entry => entry.length < 25) // this is stop it timing out by trying too hard
     .filter(filterDuplicates);
 };
 
@@ -165,6 +166,11 @@ const sortArray = (a: Coords[], b: Coords[]): number => {
 export const findClosestPath = (map: Map) => (start: Coords) => (
   targets: List<Coords>
 ): Maybe<PointList> => {
+  // return actualFindClosestPathMemo(map, start, targets)
+  return actualFindClosestPath(map, start, targets)
+};
+
+const actualFindClosestPath = (map: Map, start: Coords, targets: List<Coords>): Maybe<PointList> => {
   const partialFindPath = findPath(map)(start);
   const paths = targets
     .map(partialFindPath)
@@ -173,7 +179,21 @@ export const findClosestPath = (map: Map) => (start: Coords) => (
     .sort(sortArray);
 
   return paths.count() > 0 ? Maybe.just(paths.first()) : Maybe.nothing();
-};
+}
+
+const memoize = fn => {
+  const cache = {};
+  return (...args) => {
+    const json = JSON.stringify(args)
+    if (cache[json]) {
+      return cache[json]
+    }
+    cache[json] = fn(...args)
+    return cache[json]
+  }
+}
+
+const actualFindClosestPathMemo = memoize(actualFindClosestPath)
 
 // work out what first move is according to directions
 export const findNextDirection = (pointList: PointList): Coords => {
