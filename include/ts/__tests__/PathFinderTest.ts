@@ -173,7 +173,7 @@ test("Finds only option from starting point", function() {
 
   const expected = [[new Coords({ x: 1, y: 0 }), new Coords({ x: 0, y: 0 })]];
 
-  const actual = path.getMoveOptions(map)(list);
+  const actual = path.getMoveOptions(list)(map)(list);
 
   expect(actual).toEqual(expected);
 });
@@ -197,7 +197,7 @@ test("Doesn't go back on itself", function() {
     ]
   ];
 
-  const actual = path.getMoveOptions(map)(list);
+  const actual = path.getMoveOptions(list)(map)(list);
 
   expect(actual).toEqual(expected);
 });
@@ -212,7 +212,7 @@ test("Returns multiple options", function() {
     [new Coords({ x: 2, y: 0 }), new Coords({ x: 1, y: 0 })]
   ];
 
-  const actual = path.getMoveOptions(map)(list);
+  const actual = path.getMoveOptions(list)(map)(list);
 
   expect(actual).toEqual(expected);
 });
@@ -268,7 +268,7 @@ it("Very quickly fails", function() {
 
   const startList = [[start]];
 
-  const actual = path.processMoveList(map)(startList)(end);
+  const actual = path.processMoveList([])(map)(startList)(end);
 
   expect(actual).toEqual(expected);
 });
@@ -287,7 +287,7 @@ it("Very quickly wins", function() {
 
   const startList = [[start]];
 
-  const actual = path.processMoveList(map)(startList)(end);
+  const actual = path.processMoveList([])(map)(startList)(end);
 
   expect(actual).toEqual(expected);
 });
@@ -317,7 +317,7 @@ it("Wins I suppose", function() {
 
   const startList = [[start]];
 
-  const actual = path.processMoveList(map)(startList)(end);
+  const actual = path.processMoveList([])(map)(startList)(end);
 
   expect(actual).toEqual(expected);
 });
@@ -341,7 +341,7 @@ it("Wins another map", function() {
 
   const startList = [[start]];
 
-  const actual = path.processMoveList(map)(startList)(end);
+  const actual = path.processMoveList([])(map)(startList)(end);
 
   expect(actual).toEqual(expected);
 });
@@ -358,20 +358,18 @@ it("Wins a silly map", function() {
     [0, 1, 1, 1],
     [0, 1, 0, 1],
     [0, 0, 0, 1],
-    [0, 1, 0, 1],
-    [1, 1, 0, 0],
-    [1, 1, 1, 1]
+    [0, 1, 0, 1]
   ];
 
   const start = new Coords({ x: 0, y: 0 });
 
-  const end = new Coords({ x: 11, y: 3 });
+  const end = new Coords({ x: 10, y: 2 });
 
-  const expectedLength = 23;
+  const expectedLength = 4;
 
   const startList = [[start]];
 
-  const actual = path.processMoveList(map)(startList)(end);
+  const actual = path.processMoveList([])(map)(startList)(end);
 
   const value = actual.caseOf({
     just: val => val,
@@ -1044,4 +1042,489 @@ it("Uses a really big map and doesn't timeout", function(done) {
   expect(value.length).toEqual(12);
 
   done();
+});
+
+it("Doesn't go back where it has already looked", function() {
+  const map = [[false, false, false, false]];
+
+  const prevList = [new Coords({ x: 0, y: 0 })];
+
+  const pointList = [new Coords({ x: 0, y: 1 })];
+
+  const expected = [[new Coords({ x: 0, y: 2 }), new Coords({ x: 0, y: 1 })]];
+
+  const actual = path.getMoveOptions(prevList)(map)(pointList);
+
+  expect(actual).toEqual(expected);
+});
+
+it("Combines all the previous coords we've visited", function() {
+  const listOfLists = [
+    [new Coords({ x: 0, y: 2 }), new Coords({ x: 0, y: 1 })],
+    [new Coords({ x: 0, y: 2 }), new Coords({ x: 4, y: 1 })]
+  ];
+
+  const actual = path.combinePreviousPaths(listOfLists);
+
+  expect(actual.length).toEqual(3);
+});
+
+it("Sorts the stupid map", function() {
+  const map = [
+    [
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  ];
+
+  const start = new Coords({ x: 14, y: 8, offsetX: 0, offsetY: 0 });
+
+  const target = new Coords({ x: 8, y: 2, offsetX: 0, offsetY: 0 });
+
+  const actual = path.findPath(map)(start)(target);
+
+  const value = actual.caseOf({
+    just: val => {
+      return val;
+    },
+    nothing: () => false
+  });
+
+  expect(value).toEqual(false);
 });
