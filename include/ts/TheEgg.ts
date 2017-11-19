@@ -60,7 +60,11 @@ export class TheEgg {
       sortedPlayers
     );
 
+<<<<<<< HEAD
     const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(newerGameState.modify({
+=======
+    return newerGameState.modify({
+>>>>>>> master
       players: splitPlayers
     }))
 

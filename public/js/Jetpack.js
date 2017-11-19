@@ -1771,6 +1771,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return exports.squaresAround(map)(startPoint)
             .map(partialAddAdjacent)
             .filter(entry => entry.length > 0)
+            .filter(entry => entry.length < 25) // this is stop it timing out by trying too hard
             .filter(exports.filterDuplicates);
     };
     // try out all possible and return new list of options
@@ -1821,6 +1822,10 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     // do findPath for each thing, return shortest
     exports.findClosestPath = (map) => (start) => (targets) => {
+        // return actualFindClosestPathMemo(map, start, targets)
+        return actualFindClosestPath(map, start, targets);
+    };
+    const actualFindClosestPath = (map, start, targets) => {
         const partialFindPath = exports.findPath(map)(start);
         const paths = targets
             .map(partialFindPath)
@@ -1829,6 +1834,18 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             .sort(sortArray);
         return paths.count() > 0 ? tsmonad_2.Maybe.just(paths.first()) : tsmonad_2.Maybe.nothing();
     };
+    const memoize = fn => {
+        const cache = {};
+        return (...args) => {
+            const json = JSON.stringify(args);
+            if (cache[json]) {
+                return cache[json];
+            }
+            cache[json] = fn(...args);
+            return cache[json];
+        };
+    };
+    const actualFindClosestPathMemo = memoize(actualFindClosestPath);
     // work out what first move is according to directions
     exports.findNextDirection = (pointList) => {
         const parts = _.slice(pointList, 0, 2);
