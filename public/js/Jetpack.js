@@ -1837,12 +1837,10 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     function memoize(f) {
         return function () {
             const args = Array.prototype.slice.call(arguments);
-            //we've confirmed this isn't really influencing
-            //speed positively
             f.memoize = f.memoize || {};
-            //this is the section we're interested in
-            return (args in f.memoize) ? f.memo[args] :
-                f.memoize[args] = f.apply(this, args);
+            return args in f.memoize
+                ? f.memo[args]
+                : (f.memoize[args] = f.apply(this, args));
         };
     }
     const actualFindClosestPathMemo = memoize(actualFindClosestPath);
