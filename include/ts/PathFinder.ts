@@ -166,8 +166,8 @@ const sortArray = (a: Coords[], b: Coords[]): number => {
 export const findClosestPath = (map: Map) => (start: Coords) => (
   targets: List<Coords>
 ): Maybe<PointList> => {
-  // return actualFindClosestPathMemo(map, start, targets)
-  return actualFindClosestPath(map, start, targets);
+  return actualFindClosestPathMemo(map, start, targets)
+  // return actualFindClosestPath(map, start, targets);
 };
 
 const actualFindClosestPath = (
@@ -185,17 +185,19 @@ const actualFindClosestPath = (
   return paths.count() > 0 ? Maybe.just(paths.first()) : Maybe.nothing();
 };
 
-const memoize = fn => {
-  const cache = {};
-  return (...args) => {
-    const json = JSON.stringify(args);
-    if (cache[json]) {
-      return cache[json];
-    }
-    cache[json] = fn(...args);
-    return cache[json];
+function memoize( f ) {
+  return function () {
+      const args = Array.prototype.slice.call(arguments);
+
+      //we've confirmed this isn't really influencing
+      //speed positively
+      f.memoize = f.memoize || {};
+
+      //this is the section we're interested in
+      return (args in f.memoize)? f.memo[args] :
+                     f.memoize[args] = f.apply(this, args);
   };
-};
+}
 
 const actualFindClosestPathMemo = memoize(actualFindClosestPath);
 
