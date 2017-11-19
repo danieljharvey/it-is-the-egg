@@ -969,8 +969,7 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
             : tsmonad_1.Maybe.nothing();
     };
     const filterPlayerHitsWall = (players) => {
-        return (players.old.falling === false &&
-            players.new.falling === false &&
+        return (players.new.flying === false &&
             players.old.direction.x !== players.new.direction.x);
     };
     exports.playerHitsWall = (boardSize) => (players) => {
@@ -1822,8 +1821,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     // do findPath for each thing, return shortest
     exports.findClosestPath = (map) => (start) => (targets) => {
-        return actualFindClosestPathMemo(map, start, targets);
-        // return actualFindClosestPath(map, start, targets);
+        return actualFindClosestPath(map, start, targets);
     };
     const actualFindClosestPath = (map, start, targets) => {
         const partialFindPath = exports.findPath(map)(start);
@@ -1834,16 +1832,6 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             .sort(sortArray);
         return paths.count() > 0 ? tsmonad_2.Maybe.just(paths.first()) : tsmonad_2.Maybe.nothing();
     };
-    function memoize(f) {
-        return function () {
-            const args = Array.prototype.slice.call(arguments);
-            f.memoize = f.memoize || {};
-            return args in f.memoize
-                ? f.memo[args]
-                : (f.memoize[args] = f.apply(this, args));
-        };
-    }
-    const actualFindClosestPathMemo = memoize(actualFindClosestPath);
     // work out what first move is according to directions
     exports.findNextDirection = (pointList) => {
         const parts = _.slice(pointList, 0, 2);
@@ -2536,18 +2524,7 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             compressor.attack.value = 0;
             compressor.release.value = 0.25;
             compressor.connect(audioCtx.destination);
-            const merger = audioCtx.createChannelMerger(2);
-            merger.connect(compressor);
-            const gainNode = audioCtx.createGain();
-            gainNode.value = 0.05;
-            gainNode.connect(merger, 0, 1);
-            const delay = audioCtx.createDelay(0.05);
-            delay.connect(gainNode);
-            delay.delayTime.value = 0.05;
-            const splitter = audioCtx.createChannelSplitter(2);
-            splitter.connect(delay, 0);
-            splitter.connect(merger, 1, 0);
-            return splitter;
+            return compressor;
         }
         playSound(soundName, pan) {
             // console.log(soundName)

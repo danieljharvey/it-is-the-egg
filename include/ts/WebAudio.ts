@@ -63,21 +63,7 @@ export class WebAudio {
     compressor.release.value = 0.25;
     compressor.connect(audioCtx.destination);
 
-    const merger = audioCtx.createChannelMerger(2);
-    merger.connect(compressor);
-
-    const gainNode = audioCtx.createGain();
-    gainNode.value = 0.05;
-    gainNode.connect(merger, 0, 1);
-
-    const delay = audioCtx.createDelay(0.05);
-    delay.connect(gainNode);
-    delay.delayTime.value = 0.05;
-
-    const splitter = audioCtx.createChannelSplitter(2);
-    splitter.connect(delay, 0);
-    splitter.connect(merger, 1, 0);
-    return splitter;
+    return compressor;
   }
 
   public playSound(soundName: string, pan: number) {

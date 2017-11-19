@@ -187,6 +187,40 @@ test("Player hits wall", () => {
   expect(getGeneratedSoundNames(actual)).toContain("bounce");
 });
 
+test("Flying player hits wall", () => {
+  const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+  const board = new Board(array);
+
+  const player = new Player({
+    direction: new Coords({
+      x: -1
+    }),
+    flying: true
+  });
+
+  const gameState = new GameState({
+    players: [player],
+    board
+  });
+
+  const newPlayer = new Player({
+    direction: new Coords({
+      x: 1
+    }),
+    flying: true
+  });
+
+  const newGameState = new GameState({
+    players: [newPlayer],
+    board
+  });
+
+  const actual = AudioTriggers.triggerSounds(gameState)(newGameState);
+
+  expect(getGeneratedSoundNames(actual).indexOf("bounce")).toEqual(-1);
+});
+
 test("Player teleports", () => {
   const array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
 

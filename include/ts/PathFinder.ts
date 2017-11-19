@@ -166,8 +166,7 @@ const sortArray = (a: Coords[], b: Coords[]): number => {
 export const findClosestPath = (map: Map) => (start: Coords) => (
   targets: List<Coords>
 ): Maybe<PointList> => {
-  return actualFindClosestPathMemo(map, start, targets);
-  // return actualFindClosestPath(map, start, targets);
+  return actualFindClosestPath(map, start, targets);
 };
 
 const actualFindClosestPath = (
@@ -184,18 +183,6 @@ const actualFindClosestPath = (
 
   return paths.count() > 0 ? Maybe.just(paths.first()) : Maybe.nothing();
 };
-
-function memoize(f) {
-  return function() {
-    const args = Array.prototype.slice.call(arguments);
-    f.memoize = f.memoize || {};
-    return args in f.memoize
-      ? f.memo[args]
-      : (f.memoize[args] = f.apply(this, args));
-  };
-}
-
-const actualFindClosestPathMemo = memoize(actualFindClosestPath);
 
 // work out what first move is according to directions
 export const findNextDirection = (pointList: PointList): Coords => {
