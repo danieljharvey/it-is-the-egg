@@ -2313,7 +2313,7 @@ define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize"
     Object.defineProperty(exports, "__esModule", { value: true });
     class TheEgg {
         constructor(playerTypes) {
-            this.checkNearlyFinished = (playerTypes) => (gameState) => {
+            this.checkNearlyFinished = playerTypes => (gameState) => {
                 if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
                     return gameState.players.map(player => {
                         if (player.value > 0) {
