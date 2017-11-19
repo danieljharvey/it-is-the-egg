@@ -35,14 +35,13 @@ export class Canvas {
 
   // takes BoardSize, returns size of each tile
   public sizeCanvas(boardSize: BoardSize) {
-    
     const maxBoardSize = this.getMaxBoardSize(boardSize);
 
     const tileSize = this.calcTileSize(boardSize);
 
     this.loadCanvas(boardSize, tileSize);
 
-    this.positionCanvas(maxBoardSize)
+    this.positionCanvas(maxBoardSize);
 
     this.boardSize = boardSize;
 
@@ -50,22 +49,22 @@ export class Canvas {
   }
 
   public positionCanvas(maxBoardSize: number) {
-    const windowHeight = window.innerHeight
+    const windowHeight = window.innerHeight;
 
-    const canvasTop = this.getCanvasTop(windowHeight, maxBoardSize)
+    const canvasTop = this.getCanvasTop(windowHeight, maxBoardSize);
 
-    const wrapper = document.getElementById("wrapper")
-    
+    const wrapper = document.getElementById("wrapper");
+
     if (wrapper) {
-      wrapper.style.paddingTop = canvasTop.toString() + "px"
+      wrapper.style.paddingTop = canvasTop.toString() + "px";
     }
   }
 
   public getCanvasTop(windowHeight, boardHeight) {
     if (boardHeight < windowHeight) {
-      return (windowHeight - boardHeight) / 2
+      return (windowHeight - boardHeight) / 2;
     }
-    return 0
+    return 0;
   }
 
   public calcTileSize(boardSize: BoardSize) {
@@ -92,7 +91,7 @@ export class Canvas {
   protected loadCanvas(boardSize, tileSize): void {
     this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
     if (!this.canvas) {
-      return
+      return;
     }
     this.canvas.width = boardSize.width * tileSize;
     this.canvas.height = boardSize.height * tileSize;
