@@ -1,6 +1,9 @@
 import * as _ from "ramda";
+import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Coords } from "./Coords";
+import { GameState } from "./GameState";
+import { Player } from "./Player";
 
 // wee lad full of reusable functions
 
@@ -99,5 +102,40 @@ export class Utils {
       }
     }
     return false;
+  }
+
+  public static getPlayerByType(playerTypes, type: string) {
+    for (const i in playerTypes) {
+      if (playerTypes[i].type === type) {
+        return playerTypes[i];
+      }
+    }
+    return false;
+  }
+
+  // check leftovers on board and whether player is over finish tile
+  public static checkLevelIsCompleted(gameState: GameState): boolean {
+    const collectable = Utils.countCollectable(gameState.board);
+    const playerCount: number = Utils.countPlayers(gameState.players);
+    return collectable < 1 && playerCount < 2;
+  }
+
+  public static countPlayers(players: Player[]): number {
+    const validPlayers = players.filter(player => {
+      return player && player.value > 0;
+    });
+    return validPlayers.length;
+  }
+
+  // get total outstanding points left to grab on board
+  public static countCollectable(board: Board): number {
+    const tiles = board.getAllTiles();
+    return tiles.reduce((collectable, tile) => {
+      const score = tile.collectable;
+      if (score > 0) {
+        return collectable + score;
+      }
+      return collectable;
+    }, 0);
   }
 }

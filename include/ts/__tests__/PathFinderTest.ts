@@ -1,10 +1,10 @@
 /* tslint:disable: only-arrow-functions */
 
 import { Coords } from "../Coords";
-import { Maybe } from "tsmonad";
 import * as path from "../PathFinder";
 
 import { fromJS } from "immutable";
+import { Maybe } from "tsmonad";
 
 test("Map size", function() {
   const map = [[1, 2, 5], [3, 4, 8]];

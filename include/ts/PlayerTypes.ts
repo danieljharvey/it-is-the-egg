@@ -43,6 +43,14 @@ export class PlayerTypes {
         type: "yellow-egg",
         value: 4
       },
+      "rainbow-egg": {
+        frames: 18,
+        img: "egg-rainbow.png",
+        multiplier: 1,
+        title: "It goes without saying that this is the rainbow egg",
+        type: "rainbow-egg",
+        value: 1
+      },
       blade: {
         frames: 18,
         img: "blade-sprite.png",

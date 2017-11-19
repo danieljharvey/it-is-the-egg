@@ -1,29 +1,7 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Tile = /** @class */ (function (_super) {
-        __extends(Tile, _super);
-        function Tile(params) {
-            var _this = this;
-            var superParams = params ? params : undefined;
-            _this = _super.call(this, superParams) || this;
-            return _this;
-        }
-        Tile.prototype.modify = function (values) {
-            return this.merge(values);
-        };
-        return Tile;
-    }(immutable_1.Record({
+    class Tile extends immutable_1.Record({
         action: "",
         background: false,
         breakable: false,
@@ -35,7 +13,15 @@ define("Tile", ["require", "exports", "immutable"], function (require, exports, 
         title: "Title",
         x: 0,
         y: 0
-    })));
+    }) {
+        constructor(params) {
+            const superParams = params ? params : undefined;
+            super(superParams);
+        }
+        modify(values) {
+            return this.merge(values);
+        }
+    }
     exports.Tile = Tile;
 });
 define("Board", ["require", "exports", "immutable"], function (require, exports, immutable_2) {
@@ -43,9 +29,8 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
     Object.defineProperty(exports, "__esModule", { value: true });
     // new board is built from JS array
     // all changes reuse the re-generated List object
-    var Board = /** @class */ (function () {
-        function Board(values, list) {
-            if (list === void 0) { list = null; }
+    class Board {
+        constructor(values, list = null) {
             if (values) {
                 this.list = immutable_2.fromJS(values); // create new
             }
@@ -53,59 +38,55 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
                 this.list = list; // re-use old
             }
         }
-        Board.prototype.toJS = function () {
+        toJS() {
             return this.list.toJS();
-        };
-        Board.prototype.getTile = function (x, y) {
+        }
+        getTile(x, y) {
             return this.list.getIn([x, y]);
-        };
-        Board.prototype.modify = function (x, y, tile) {
-            var updatedList = this.list.setIn([x, y], tile);
+        }
+        modify(x, y, tile) {
+            const updatedList = this.list.setIn([x, y], tile);
             return new Board(undefined, updatedList);
-        };
-        Board.prototype.getLength = function () {
+        }
+        getLength() {
             return this.list.count();
-        };
-        Board.prototype.getAllTiles = function () {
-            return this.list.flatten(1);
-        };
-        return Board;
-    }());
+        }
+        getAllTiles() {
+            const flat = this.list.flatten(1);
+            return flat;
+        }
+    }
     exports.Board = Board;
 });
 define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // import { Utils } from "./Utils";
-    var OFFSET_DIVIDE = 100;
-    var Coords = /** @class */ (function (_super) {
-        __extends(Coords, _super);
-        function Coords(params) {
-            var _this = this;
-            var superParams = params ? params : undefined;
-            _this = _super.call(this, superParams) || this;
-            return _this;
+    const OFFSET_DIVIDE = 100;
+    class Coords extends immutable_3.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 }) {
+        constructor(params) {
+            const superParams = params ? params : undefined;
+            super(superParams);
         }
-        Coords.prototype.modify = function (values) {
+        modify(values) {
             return this.merge(values);
-        };
-        Coords.prototype.getActualPosition = function () {
-            var fullX = this.x * OFFSET_DIVIDE + this.offsetX;
-            var fullY = this.y * OFFSET_DIVIDE + this.offsetY;
+        }
+        getActualPosition() {
+            const fullX = this.x * OFFSET_DIVIDE + this.offsetX;
+            const fullY = this.y * OFFSET_DIVIDE + this.offsetY;
             return {
-                fullX: fullX,
-                fullY: fullY
+                fullX,
+                fullY
             };
-        };
-        return Coords;
-    }(immutable_3.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 })));
+        }
+    }
     exports.Coords = Coords;
 });
 define("BoardSize", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var BoardSize = /** @class */ (function () {
-        function BoardSize(size) {
+    class BoardSize {
+        constructor(size) {
             this.minSize = 5;
             this.maxSize = 40;
             if (size < this.minSize) {
@@ -116,7 +97,7 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
             }
             this.width = this.height = size;
         }
-        BoardSize.prototype.grow = function () {
+        grow() {
             if (this.width < this.maxSize) {
                 this.width++;
             }
@@ -124,8 +105,8 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
                 this.height++;
             }
             return new BoardSize(this.width);
-        };
-        BoardSize.prototype.shrink = function () {
+        }
+        shrink() {
             if (this.width > this.minSize) {
                 this.width--;
             }
@@ -133,73 +114,70 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
                 this.height--;
             }
             return new BoardSize(this.width);
-        };
-        BoardSize.prototype.getData = function () {
+        }
+        getData() {
             return {
                 height: this.height,
                 width: this.width
             };
-        };
-        return BoardSize;
-    }());
+        }
+    }
     exports.BoardSize = BoardSize;
 });
 define("Utils", ["require", "exports", "ramda"], function (require, exports, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // wee lad full of reusable functions
-    var Utils = /** @class */ (function () {
-        function Utils() {
+    class Utils {
+        static getRandomObjectKey(object) {
+            const keys = Object.keys(object);
+            return this.returnRandomKey(keys);
         }
-        Utils.getRandomObjectKey = function (object) {
-            var keys = Object.keys(object);
+        static getRandomArrayKey(array) {
+            const keys = _.keys(array);
             return this.returnRandomKey(keys);
-        };
-        Utils.getRandomArrayKey = function (array) {
-            var keys = _.keys(array);
-            return this.returnRandomKey(keys);
-        };
-        Utils.returnRandomKey = function (keys) {
+        }
+        static returnRandomKey(keys) {
             if (keys.length === 0) {
                 return false;
             }
             return keys[(keys.length * Math.random()) << 0];
-        };
-        Utils.getControlStyle = function (id, property) {
-            var controlHeader = document.getElementById(id);
+        }
+        static getControlStyle(id, property) {
+            const controlHeader = document.getElementById(id);
             if (!controlHeader) {
                 return 0;
             }
-            var style = window.getComputedStyle(controlHeader);
-            var value = style[property];
+            const style = window.getComputedStyle(controlHeader);
+            const value = style[property];
             if (isNaN(value)) {
                 return parseInt(value, 10);
             }
             return value;
-        };
-        Utils.getControlProperty = function (id, property) {
-            var controlHeader = document.getElementById(id);
+        }
+        static getControlProperty(id, property) {
+            const controlHeader = document.getElementById(id);
             if (!controlHeader) {
                 return 0;
             }
-            var value = controlHeader[property];
+            const value = controlHeader[property];
             if (isNaN(value)) {
                 return parseInt(value, 10);
             }
             return value;
-        };
-        Utils.removeParams = function (params, removeList) {
-            var goodParams = {};
-            for (var i in params) {
+        }
+        static removeParams(params, removeList) {
+            const goodParams = {};
+            for (const i in params) {
                 if (removeList.indexOf(i) === -1) {
                     goodParams[i] = params[i];
                 }
             }
             return goodParams;
-        };
-        Utils.correctForOverflow = function (coords, boardSize) {
-            var newX;
-            var newY;
+        }
+        static correctForOverflow(coords, boardSize) {
+            let newX;
+            let newY;
             if (coords.x < 0) {
                 newX = boardSize.width - 1;
             }
@@ -219,48 +197,63 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
                 newY = coords.y;
             }
             return coords.modify({ x: newX, y: newY });
-        };
-        Utils.flattenArray = function (arr) {
+        }
+        static flattenArray(arr) {
             return [].concat.apply([], arr);
-        };
-        Utils.removeDuplicates = function (arr) {
-            return arr.filter(function (value, index, self) {
+        }
+        static removeDuplicates(arr) {
+            return arr.filter((value, index, self) => {
                 return self.indexOf(value) === index;
             });
-        };
+        }
         // todo : a Maybe?
-        Utils.getPlayerByValue = function (playerTypes, value) {
-            for (var i in playerTypes) {
+        static getPlayerByValue(playerTypes, value) {
+            for (const i in playerTypes) {
                 if (playerTypes[i].value === value) {
                     return playerTypes[i];
                 }
             }
             return false;
-        };
-        return Utils;
-    }());
+        }
+        static getPlayerByType(playerTypes, type) {
+            for (const i in playerTypes) {
+                if (playerTypes[i].type === type) {
+                    return playerTypes[i];
+                }
+            }
+            return false;
+        }
+        // check leftovers on board and whether player is over finish tile
+        static checkLevelIsCompleted(gameState) {
+            const collectable = Utils.countCollectable(gameState.board);
+            const playerCount = Utils.countPlayers(gameState.players);
+            return collectable < 1 && playerCount < 2;
+        }
+        static countPlayers(players) {
+            const validPlayers = players.filter(player => {
+                return player && player.value > 0;
+            });
+            return validPlayers.length;
+        }
+        // get total outstanding points left to grab on board
+        static countCollectable(board) {
+            const tiles = board.getAllTiles();
+            return tiles.reduce((collectable, tile) => {
+                const score = tile.collectable;
+                if (score > 0) {
+                    return collectable + score;
+                }
+                return collectable;
+            }, 0);
+        }
+    }
     exports.Utils = Utils;
 });
 define("Player", ["require", "exports", "immutable", "Coords"], function (require, exports, immutable_4, Coords_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SPRITE_SIZE = 64;
-    var Player = /** @class */ (function (_super) {
-        __extends(Player, _super);
-        function Player(params) {
-            var _this = this;
-            var superParams = params ? params : undefined;
-            _this = _super.call(this, superParams) || this;
-            return _this;
-        }
-        Player.prototype.modify = function (values) {
-            return this.merge(values);
-        };
-        Player.prototype.first = function () {
-            return this.first();
-        };
-        return Player;
-    }(immutable_4.Record({
+    const SPRITE_SIZE = 64;
+    class Player extends immutable_4.Record({
         coords: new Coords_1.Coords(),
         currentFrame: 0,
         direction: new Coords_1.Coords(),
@@ -280,42 +273,48 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
         value: 1,
         flying: false,
         movePattern: ""
-    })));
+    }) {
+        constructor(params) {
+            const superParams = params ? params : undefined;
+            super(superParams);
+        }
+        modify(values) {
+            return this.merge(values);
+        }
+        first() {
+            return this.first();
+        }
+    }
     exports.Player = Player;
 });
-define("GameState", ["require", "exports", "immutable"], function (require, exports, immutable_5) {
+define("GameState", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var GameState = /** @class */ (function (_super) {
-        __extends(GameState, _super);
-        function GameState(params) {
-            var _this = this;
-            var superParams = params ? params : undefined;
-            _this = _super.call(this, superParams) || this;
-            return _this;
+    class GameState {
+        constructor(params = {}) {
+            this.players = [];
+            this.board = null;
+            this.score = 0;
+            this.rotations = 0;
+            this.rotateAngle = 0;
+            this.outcome = "";
+            Object.entries(params).map(pair => {
+                const [key, value] = pair;
+                this[key] = value;
+            });
         }
-        GameState.prototype.modify = function (values) {
-            return this.merge(values);
-        };
-        return GameState;
-    }(immutable_5.Record({
-        board: null,
-        outcome: "",
-        players: [],
-        rotateAngle: 0,
-        rotations: 0,
-        score: 0
-    })));
+        modify(values = {}) {
+            return new GameState(Object.assign({}, this, values));
+        }
+    }
     exports.GameState = GameState;
 });
 define("TileSet", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TileSet = /** @class */ (function () {
-        function TileSet() {
-        }
-        TileSet.getTiles = function () {
-            var tiles = {
+    class TileSet {
+        static getTiles() {
+            const tiles = {
                 1: {
                     background: true,
                     id: 1,
@@ -500,16 +499,15 @@ define("TileSet", ["require", "exports"], function (require, exports) {
             };
             // return a copy rather than letting this get messed with
             return JSON.parse(JSON.stringify(tiles));
-        };
-        TileSet.getTile = function (id) {
-            var tiles = TileSet.getTiles();
+        }
+        static getTile(id) {
+            const tiles = TileSet.getTiles();
             if (tiles.hasOwnProperty(id)) {
                 return tiles[id];
             }
             return false;
-        };
-        return TileSet;
-    }());
+        }
+    }
     exports.TileSet = TileSet;
 });
 define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "TileSet", "Utils"], function (require, exports, Board_1, BoardSize_1, Coords_2, Tile_1, TileSet_1, Utils_1) {
@@ -517,23 +515,23 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
     Object.defineProperty(exports, "__esModule", { value: true });
     // map is just a class full of functions that is created for manipulating the board
     // should not contain any meaningful state of it's own (currently does, but reducing this)
-    exports.calcBoardSize = function (board) {
+    exports.calcBoardSize = (board) => {
         return board.getLength();
     };
-    exports.correctForOverflow = function (board, coords) {
-        var boardSize = exports.calcBoardSize(board);
+    exports.correctForOverflow = (board, coords) => {
+        const boardSize = exports.calcBoardSize(board);
         return Utils_1.Utils.correctForOverflow(coords, new BoardSize_1.BoardSize(boardSize));
     };
     // is intended next tile empty / a wall?
     // need to make this wrap around the board
-    exports.checkTileIsEmpty = function (board, x, y) {
-        var tile = exports.getTile(board, x, y);
+    exports.checkTileIsEmpty = (board, x, y) => {
+        const tile = exports.getTile(board, x, y);
         return tile.background;
     };
     // find random tile of type that is NOT at currentCoords
-    exports.findTile = function (board, currentCoords, id) {
-        var tiles = board.getAllTiles();
-        var teleporters = tiles.filter(function (tile) {
+    exports.findTile = (board, currentCoords, id) => {
+        const tiles = board.getAllTiles();
+        const teleporters = tiles.filter(tile => {
             if (tile.x === currentCoords.x && tile.y === currentCoords.y) {
                 return false;
             }
@@ -542,75 +540,75 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         if (teleporters.size === 0) {
             return null;
         }
-        var chosenID = Math.floor(Math.random() * teleporters.size);
-        var newTile = teleporters.get(chosenID); // this is an Immutable list so needs to use their functions
+        const chosenID = Math.floor(Math.random() * teleporters.size);
+        const newTile = teleporters.get(chosenID); // this is an Immutable list so needs to use their functions
         return newTile;
     };
-    exports.shrinkBoard = function (board) {
-        var boardSize = new BoardSize_1.BoardSize(board.getLength());
-        var shrunkBoardSize = boardSize.shrink();
+    exports.shrinkBoard = (board) => {
+        const boardSize = new BoardSize_1.BoardSize(board.getLength());
+        const shrunkBoardSize = boardSize.shrink();
         return exports.correctBoardSizeChange(board, shrunkBoardSize);
     };
-    exports.growBoard = function (board) {
-        var boardSize = new BoardSize_1.BoardSize(board.getLength());
-        var grownBoardSize = boardSize.grow();
+    exports.growBoard = (board) => {
+        const boardSize = new BoardSize_1.BoardSize(board.getLength());
+        const grownBoardSize = boardSize.grow();
         return exports.correctBoardSizeChange(board, grownBoardSize);
     };
     // board is current board
     // boardSize is intended board size
     // returns new Board
-    exports.correctBoardSizeChange = function (board, boardSize) {
-        var newBoard = [];
-        var currentWidth = board.getLength();
-        var currentHeight = currentWidth;
-        for (var x = 0; x < boardSize.width; x++) {
+    exports.correctBoardSizeChange = (board, boardSize) => {
+        const newBoard = [];
+        const currentWidth = board.getLength();
+        const currentHeight = currentWidth;
+        for (let x = 0; x < boardSize.width; x++) {
             newBoard[x] = [];
-            for (var y = 0; y < boardSize.height; y++) {
+            for (let y = 0; y < boardSize.height; y++) {
                 if (x < currentWidth && y < currentHeight) {
                     // using current board
-                    var tile = board.getTile(x, y);
+                    const tile = board.getTile(x, y);
                     newBoard[x][y] = tile;
                 }
                 else {
                     // adding blank tiles
-                    var tile = exports.cloneTile(1);
+                    const tile = exports.cloneTile(1);
                     newBoard[x][y] = tile;
                 }
             }
         }
         return new Board_1.Board(newBoard);
     };
-    exports.generateBlankBoard = function (boardSize) {
-        var board = [];
-        for (var x = 0; x < boardSize.width; x++) {
+    exports.generateBlankBoard = (boardSize) => {
+        const board = [];
+        for (let x = 0; x < boardSize.width; x++) {
             board[x] = [];
-            for (var y = 0; y < boardSize.height; y++) {
-                var blankTile = exports.cloneTile(1);
-                var positionedTile = blankTile.modify({
-                    x: x,
-                    y: y
+            for (let y = 0; y < boardSize.height; y++) {
+                const blankTile = exports.cloneTile(1);
+                const positionedTile = blankTile.modify({
+                    x,
+                    y
                 });
                 board[x][y] = positionedTile;
             }
         }
         return new Board_1.Board(board);
     };
-    exports.getTileWithCoords = function (board, coords) {
-        var fixedCoords = exports.correctForOverflow(board, coords);
-        var x = fixedCoords.x, y = fixedCoords.y;
+    exports.getTileWithCoords = (board, coords) => {
+        const fixedCoords = exports.correctForOverflow(board, coords);
+        const { x, y } = fixedCoords;
         return board.getTile(x, y);
     };
-    exports.changeTile = function (board, coords, tile) {
+    exports.changeTile = (board, coords, tile) => {
         return board.modify(coords.x, coords.y, tile);
     };
-    exports.getNewPlayerDirection = function (direction, clockwise) {
+    exports.getNewPlayerDirection = (direction, clockwise) => {
         if (direction.x !== 0 || direction.y !== 0) {
             return direction;
         }
         return clockwise ? new Coords_2.Coords({ x: 1 }) : new Coords_2.Coords({ x: -1 });
     };
-    exports.rotatePlayer = function (boardSize, player, clockwise) {
-        var newCoords = exports.translateRotation(boardSize, player.coords, clockwise);
+    exports.rotatePlayer = (boardSize, player, clockwise) => {
+        const newCoords = exports.translateRotation(boardSize, player.coords, clockwise);
         return player.modify({
             coords: newCoords.modify({
                 offsetX: 0,
@@ -619,17 +617,16 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
             direction: exports.getNewPlayerDirection(player.direction, clockwise)
         });
     };
-    exports.cloneTile = function (id) {
-        var prototypeTile = exports.getPrototypeTile(id);
+    exports.cloneTile = (id) => {
+        const prototypeTile = exports.getPrototypeTile(id);
         return new Tile_1.Tile(prototypeTile); // create new Tile object with these
     };
-    exports.getRandomTile = function (tiles) {
-        var randomProperty = function (obj) {
-            var randomKey = Utils_1.Utils.getRandomObjectKey(obj);
+    exports.getRandomTile = (tiles) => {
+        const randomProperty = obj => {
+            const randomKey = Utils_1.Utils.getRandomObjectKey(obj);
             return exports.cloneTile(randomKey);
         };
-        Object.entries(tiles).filter(function (_a) {
-            var key = _a[0], tile = _a[1];
+        Object.entries(tiles).filter(([key, tile]) => {
             if (tile.dontAdd) {
                 delete tiles[key];
             }
@@ -638,20 +635,20 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         return randomProperty(tiles);
     };
     // swap two types of tiles on map (used by pink/green switching door things)
-    exports.switchTiles = function (board, id1, id2) {
-        var tiles = board.getAllTiles();
-        return tiles.reduce(function (currentBoard, tile) {
+    exports.switchTiles = (board, id1, id2) => {
+        const tiles = board.getAllTiles();
+        return tiles.reduce((currentBoard, tile) => {
             if (tile.id === id1) {
-                var newTile = exports.cloneTile(id2);
-                var positionTile = newTile.modify({
+                const newTile = exports.cloneTile(id2);
+                const positionTile = newTile.modify({
                     x: tile.x,
                     y: tile.y
                 });
                 return currentBoard.modify(tile.x, tile.y, positionTile);
             }
             else if (tile.id === id2) {
-                var newTile = exports.cloneTile(id1);
-                var positionTile = newTile.modify({
+                const newTile = exports.cloneTile(id1);
+                const positionTile = newTile.modify({
                     x: tile.x,
                     y: tile.y
                 });
@@ -662,15 +659,15 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
     };
     // rotates board, returns new board and new renderAngle
     // really should be two functions
-    exports.rotateBoard = function (board, clockwise) {
-        var tiles = board.getAllTiles();
-        var width = board.getLength() - 1;
-        var height = board.getLength() - 1;
-        var boardSize = new BoardSize_1.BoardSize(exports.calcBoardSize(board));
-        var rotatedBoard = tiles.reduce(function (currentBoard, tile) {
-            var coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
-            var newCoords = exports.translateRotation(boardSize, coords, clockwise);
-            var newTile = tile.modify({
+    exports.rotateBoard = (board, clockwise) => {
+        const tiles = board.getAllTiles();
+        const width = board.getLength() - 1;
+        const height = board.getLength() - 1;
+        const boardSize = new BoardSize_1.BoardSize(exports.calcBoardSize(board));
+        const rotatedBoard = tiles.reduce((currentBoard, tile) => {
+            const coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
+            const newCoords = exports.translateRotation(boardSize, coords, clockwise);
+            const newTile = tile.modify({
                 x: newCoords.x,
                 y: newCoords.y
             });
@@ -678,8 +675,8 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         }, board);
         return rotatedBoard;
     };
-    exports.changeRenderAngle = function (renderAngle, clockwise) {
-        var newRenderAngle;
+    exports.changeRenderAngle = (renderAngle, clockwise) => {
+        let newRenderAngle;
         if (clockwise) {
             newRenderAngle = renderAngle + 90;
             if (newRenderAngle > 360) {
@@ -693,11 +690,10 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         }
         return newRenderAngle;
     };
-    exports.makeBoardFromArray = function (boardArray) {
-        if (boardArray === void 0) { boardArray = []; }
-        var newBoard = boardArray.map(function (column, mapX) {
-            return column.map(function (item, mapY) {
-                var newTile = exports.cloneTile(item.id);
+    exports.makeBoardFromArray = (boardArray = []) => {
+        const newBoard = boardArray.map((column, mapX) => {
+            return column.map((item, mapY) => {
+                const newTile = exports.cloneTile(item.id);
                 return newTile.modify({
                     x: mapX,
                     y: mapY
@@ -706,31 +702,31 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         });
         return new Board_1.Board(newBoard);
     };
-    exports.generateRandomBoard = function (boardSize) {
-        var boardArray = [];
-        for (var x = 0; x < boardSize.width; x++) {
+    exports.generateRandomBoard = (boardSize) => {
+        const boardArray = [];
+        for (let x = 0; x < boardSize.width; x++) {
             boardArray[x] = [];
-            for (var y = 0; y < boardSize.height; y++) {
-                var blankTile = exports.getRandomTile(TileSet_1.TileSet.getTiles());
-                var positionedTile = blankTile.modify({
-                    x: x,
-                    y: y
+            for (let y = 0; y < boardSize.height; y++) {
+                const blankTile = exports.getRandomTile(TileSet_1.TileSet.getTiles());
+                const positionedTile = blankTile.modify({
+                    x,
+                    y
                 });
                 boardArray[x][y] = blankTile;
             }
         }
         return new Board_1.Board(boardArray);
     };
-    exports.getTile = function (board, x, y) {
-        var coords = new Coords_2.Coords({ x: x, y: y });
+    exports.getTile = (board, x, y) => {
+        const coords = new Coords_2.Coords({ x, y });
         return exports.getTileWithCoords(board, coords);
     };
-    exports.getPrototypeTile = function (id) {
+    exports.getPrototypeTile = (id) => {
         return TileSet_1.TileSet.getTile(id);
     };
-    exports.translateRotation = function (boardSize, coords, clockwise) {
-        var width = boardSize.width - 1;
-        var height = boardSize.height - 1;
+    exports.translateRotation = (boardSize, coords, clockwise) => {
+        const width = boardSize.width - 1;
+        const height = boardSize.height - 1;
         if (clockwise) {
             // 0,0 -> 9,0
             // 9,0 -> 9,9
@@ -757,105 +753,284 @@ define("Action", ["require", "exports", "Map"], function (require, exports, Map)
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this concerns all the changes between player and board
-    var Action = /** @class */ (function () {
-        function Action() {
-        }
+    class Action {
         // go through each player, check it's effect on board, score and outcome, return new gameState obj
-        Action.prototype.checkAllPlayerTileActions = function (gameState) {
-            var _this = this;
-            return gameState.players.reduce(function (currentGameState, player) {
-                var updated = _this.checkPlayerTileAction(player, currentGameState.board, currentGameState.score, currentGameState.outcome);
-                var postCrateBoard = _this.checkTileBelowPlayer(player, updated.board);
+        checkAllPlayerTileActions(gameState) {
+            return gameState.players.reduce((currentGameState, player) => {
+                const updated = this.checkPlayerTileAction(player, currentGameState.board, currentGameState.score, currentGameState.outcome);
+                const postCrateBoard = this.checkTileBelowPlayer(player, updated.board);
                 return gameState.modify({
                     board: postCrateBoard,
                     outcome: updated.outcome,
                     score: updated.score
                 });
             }, gameState);
-        };
-        Action.prototype.checkPlayerTileAction = function (player, board, score, outcome) {
-            var currentCoords = player.coords;
+        }
+        checkPlayerTileAction(player, board, score, outcome) {
+            const currentCoords = player.coords;
             if (currentCoords.offsetX !== 0 ||
                 currentCoords.offsetY !== 0 ||
                 player.moved === false) {
                 return {
-                    board: board,
-                    outcome: outcome,
-                    score: score
+                    board,
+                    outcome,
+                    score
                 };
             }
-            var coords = Map.correctForOverflow(board, currentCoords);
-            var tile = board.getTile(coords.x, coords.y);
+            const coords = Map.correctForOverflow(board, currentCoords);
+            const tile = board.getTile(coords.x, coords.y);
             if (tile.collectable > 0) {
-                var newScore = tile.collectable * player.multiplier;
-                var blankTile = Map.cloneTile(1);
-                var newTile = blankTile.modify({
+                const newScore = tile.collectable * player.multiplier;
+                const blankTile = Map.cloneTile(1);
+                const newTile = blankTile.modify({
                     x: coords.x,
                     y: coords.y
                 });
                 return {
                     board: board.modify(coords.x, coords.y, newTile),
-                    outcome: outcome,
+                    outcome,
                     score: score + newScore
                 };
             }
             if (tile.action === "completeLevel") {
                 return {
-                    board: board,
+                    board,
                     outcome: "completeLevel",
-                    score: score
+                    score
                 };
             }
             else if (tile.action === "pink-switch") {
                 return {
                     board: Map.switchTiles(board, 15, 16),
-                    outcome: outcome,
-                    score: score
+                    outcome,
+                    score
                 };
             }
             else if (tile.action === "green-switch") {
                 return {
                     board: Map.switchTiles(board, 18, 19),
-                    outcome: outcome,
-                    score: score
+                    outcome,
+                    score
                 };
             }
             return {
-                board: board,
-                outcome: outcome,
-                score: score
+                board,
+                outcome,
+                score
             };
-        };
+        }
         // basically, do we need to smash the block below?
-        Action.prototype.checkTileBelowPlayer = function (player, board) {
+        checkTileBelowPlayer(player, board) {
             if (player.falling === false) {
                 return board;
             }
-            var coords = player.coords;
-            var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
-            var tile = board.getTile(belowCoords.x, belowCoords.y);
+            const coords = player.coords;
+            const belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
+            const tile = board.getTile(belowCoords.x, belowCoords.y);
             if (tile.get("breakable") === true) {
                 // if tile below is breakable (and we are already falling and thus have momentum, smash it)
-                var newTile = Map.cloneTile(1);
-                var newTileWithCoords = newTile.modify({
+                const newTile = Map.cloneTile(1);
+                const newTileWithCoords = newTile.modify({
                     x: belowCoords.x,
                     y: belowCoords.y
                 });
                 return board.modify(belowCoords.x, belowCoords.y, newTileWithCoords);
             }
             return board;
-        };
-        return Action;
-    }());
+        }
+    }
     exports.Action = Action;
+});
+define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], function (require, exports, _, tsmonad_1, Utils_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.triggerSounds = (oldState) => (newState) => {
+        const nearlyDoneSounds = [nearlyDone(oldState)(newState)];
+        const eatenSounds = getEatenSounds(oldState)(newState);
+        const playerSounds = exports.getPlayerSounds(oldState)(newState);
+        return [...nearlyDoneSounds, ...eatenSounds, ...playerSounds].filter(isItNothing);
+    };
+    const isItNothing = (maybe) => {
+        return maybe.caseOf({
+            just: () => true,
+            nothing: () => false
+        });
+    };
+    const hasRotated = (oldGame, newGame) => oldGame.rotateAngle === newGame.rotateAngle;
+    const getEatenSounds = (oldState) => (newState) => {
+        if (hasRotated(oldState, newState)) {
+            return exports.findEatenThings(oldState.board)(newState.board);
+        }
+        else {
+            return [rotateSound()];
+        }
+    };
+    const rotateSound = () => {
+        return tsmonad_1.Maybe.just({
+            name: "warp",
+            pan: 0
+        });
+    };
+    // diffs board changes and outputs list of sounds to play
+    exports.findEatenThings = (oldBoard) => (board) => {
+        const boardSize = board.getLength();
+        const oldTiles = oldBoard.getAllTiles();
+        const newTiles = board.getAllTiles();
+        const tiles = getListDiff(oldTiles)(newTiles).filter(filterUnchanged);
+        const coinSounds = tiles.map(exports.gotCoins(boardSize));
+        const crateSounds = tiles.map(exports.crateSmash(boardSize));
+        const doorSounds = justOne(tiles.map(exports.doorChange(boardSize)));
+        return [...coinSounds, ...crateSounds, ...doorSounds];
+    };
+    const justOne = (arr) => {
+        const first = _.find(item => item !== undefined, arr);
+        if (first) {
+            return [first];
+        }
+        return [];
+    };
+    const filterUnchanged = (tiles) => _.not(megaEquals(tiles.new, tiles.old));
+    const megaEquals = (x, y) => {
+        if (typeof x.equals !== "undefined") {
+            return x.equals(y);
+        }
+        return x === y;
+    };
+    const getListDiff = (oldList) => (newList) => oldList
+        .zipWith((oldItem, newItem) => {
+        return {
+            old: oldItem,
+            new: newItem
+        };
+    }, newList)
+        .toJS();
+    const getArrayDiff = (oldArray) => (newArray) => _.zipWith((oldItem, newItem) => {
+        return {
+            old: oldItem,
+            new: newItem
+        };
+    }, oldArray, newArray);
+    const filterGotCoins = (tiles) => {
+        return tiles.old.collectable > tiles.new.collectable;
+    };
+    exports.gotCoins = (boardSize) => (tiles) => {
+        return filterGotCoins(tiles)
+            ? tsmonad_1.Maybe.just({
+                name: "pop",
+                pan: calcPan(boardSize)(tiles.new.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    const filterCrateSmash = (tiles) => {
+        return tiles.old.breakable === true && tiles.new.breakable === false;
+    };
+    exports.crateSmash = (boardSize) => (tiles) => {
+        return filterCrateSmash(tiles)
+            ? tsmonad_1.Maybe.just({
+                name: "crate-smash",
+                pan: calcPan(boardSize)(tiles.new.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    const filterDoorChange = (tiles) => {
+        return ((tiles.old.background === true &&
+            tiles.old.frontLayer === true &&
+            tiles.new.background === false) ||
+            (tiles.new.background === true &&
+                tiles.new.frontLayer === true &&
+                tiles.old.background === false));
+    };
+    exports.doorChange = (boardSize) => (tiles) => {
+        return filterDoorChange(tiles)
+            ? tsmonad_1.Maybe.just({
+                name: "switch",
+                pan: calcPan(boardSize)(tiles.new.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    exports.getPlayerSounds = (oldState) => (newState) => {
+        const boardSize = newState.board.getLength();
+        const combine = [playersCombine(oldState.players)(newState.players)];
+        const players = getArrayDiff(oldState.players)(newState.players).filter(filterUnchanged);
+        const thuds = players.map(exports.playerHitsFloor(boardSize));
+        const teleports = players.map(exports.playerTeleported(boardSize));
+        const bounces = players.map(exports.playerHitsWall(boardSize));
+        return [...combine, ...thuds, ...teleports, ...bounces];
+    };
+    const filterPlayerHitsFloor = (players) => {
+        return players.old.falling === true && players.new.falling === false;
+    };
+    exports.playerHitsFloor = (boardSize) => (players) => {
+        return filterPlayerHitsFloor(players)
+            ? tsmonad_1.Maybe.just({
+                name: "thud",
+                pan: calcPan(boardSize)(players.new.coords.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    const filterPlayerHitsWall = (players) => {
+        return (players.old.falling === false &&
+            players.new.falling === false &&
+            players.new.flying === false &&
+            players.old.direction.x !== players.new.direction.x);
+    };
+    exports.playerHitsWall = (boardSize) => (players) => {
+        return filterPlayerHitsWall(players)
+            ? tsmonad_1.Maybe.just({
+                name: "bounce",
+                pan: calcPan(boardSize)(players.new.coords.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    const filterTeleported = (players) => {
+        return players.old.lastAction === "" && players.new.lastAction === "teleport";
+    };
+    exports.playerTeleported = (boardSize) => (players) => {
+        return filterTeleported(players)
+            ? tsmonad_1.Maybe.just({
+                name: "soft-bell",
+                pan: calcPan(boardSize)(players.new.coords.x)
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    const filterPlayersCombine = (oldPlayers) => (newPlayers) => {
+        return oldPlayers.length > newPlayers.length;
+    };
+    const playersCombine = (oldPlayers) => (newPlayers) => {
+        return filterPlayersCombine(oldPlayers)(newPlayers)
+            ? tsmonad_1.Maybe.just({
+                name: "power-up",
+                pan: 0
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
+    // super basic for now
+    const calcPan = (boardSize) => (x) => {
+        if (boardSize < 2) {
+            return 0;
+        }
+        const ratio = x / (boardSize - 1);
+        const ans = ratio * 2 - 1;
+        return ans;
+    };
+    const filterNearlyDone = (oldState) => (newState) => {
+        return (Utils_2.Utils.checkLevelIsCompleted(oldState) === false &&
+            Utils_2.Utils.checkLevelIsCompleted(newState) === true);
+    };
+    const nearlyDone = (oldState) => (newState) => {
+        return filterNearlyDone(oldState)(newState)
+            ? tsmonad_1.Maybe.just({
+                name: "woo",
+                pan: 0
+            })
+            : tsmonad_1.Maybe.nothing();
+    };
 });
 define("PlayerTypes", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var PlayerTypes = /** @class */ (function () {
-        function PlayerTypes() {
-        }
-        PlayerTypes.prototype.getPlayerTypes = function () {
+    class PlayerTypes {
+        getPlayerTypes() {
             return {
                 "blue-egg": {
                     frames: 18,
@@ -899,6 +1074,14 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     type: "yellow-egg",
                     value: 4
                 },
+                "rainbow-egg": {
+                    frames: 18,
+                    img: "egg-rainbow.png",
+                    multiplier: 1,
+                    title: "It goes without saying that this is the rainbow egg",
+                    type: "rainbow-egg",
+                    value: 1
+                },
                 blade: {
                     frames: 18,
                     img: "blade-sprite.png",
@@ -917,63 +1100,58 @@ define("PlayerTypes", ["require", "exports"], function (require, exports) {
                     flying: true
                 }
             };
-        };
-        return PlayerTypes;
-    }());
+        }
+    }
     exports.PlayerTypes = PlayerTypes;
 });
-define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], function (require, exports, Coords_3, Utils_2, _) {
+define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], function (require, exports, Coords_3, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // Board Collide
     // deals with egg splitting tiles
-    exports.checkBoardCollisions = function (board, playerTypes, players) {
-        return addIDsToPlayers(players.reduce(function (newPlayers, player) {
-            var checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player);
-            return newPlayers.concat(checkedPlayers);
+    exports.checkBoardCollisions = (board, playerTypes, players) => {
+        return addIDsToPlayers(players.reduce((newPlayers, player) => {
+            const checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player);
+            return [...newPlayers, ...checkedPlayers];
         }, []));
     };
     // players need different IDs to make sure they make sense
-    var addIDsToPlayers = function (players) {
-        return players.map(function (player, index) {
+    const addIDsToPlayers = (players) => {
+        return players.map((player, index) => {
             return player.modify({
                 id: index
             });
         });
     };
-    var checkPlayerBoardCollision = function (board, playerTypes) { return function (player) {
+    const checkPlayerBoardCollision = (board, playerTypes) => (player) => {
         return isCollision(board)(player)
             ? exports.splitPlayer(playerTypes)(player)
             : [player];
-    }; };
-    var isCollision = function (board) { return function (player) {
-        return isPlayerInTile(player) &&
-            isCollisionTile(board)(player) &&
-            isPlayerValueHighEnough(player);
-    }; };
-    var isPlayerInTile = function (player) {
-        return player.coords.offsetX === 0 && player.coords.offsetY === 0;
     };
-    var isCollisionTile = function (board) { return function (player) {
-        var collidedTiles = getCollidedTiles(board)(player);
+    const isCollision = (board) => (player) => isPlayerInTile(player) &&
+        isCollisionTile(board)(player) &&
+        isPlayerValueHighEnough(player);
+    const isPlayerInTile = (player) => player.coords.offsetX === 0 && player.coords.offsetY === 0;
+    const isCollisionTile = (board) => (player) => {
+        const collidedTiles = getCollidedTiles(board)(player);
         return collidedTiles.size > 0;
-    }; };
-    var isPlayerValueHighEnough = function (player) {
+    };
+    const isPlayerValueHighEnough = (player) => {
         return player.value > 1;
     };
-    var isSplitterTile = function (tile) { return tile.get("action") === "split-eggs"; };
-    exports.getSplitterTiles = function (board) {
+    const isSplitterTile = (tile) => tile.get("action") === "split-eggs";
+    exports.getSplitterTiles = (board) => {
         return board.getAllTiles().filter(isSplitterTile);
     };
-    var getCollidedTiles = function (board) { return function (player) {
-        var isPlayerOnTileFunc = exports.isPlayerOnTile(player);
+    const getCollidedTiles = (board) => (player) => {
+        const isPlayerOnTileFunc = exports.isPlayerOnTile(player);
         return exports.getSplitterTiles(board).filter(isPlayerOnTileFunc);
-    }; };
-    exports.isPlayerOnTile = function (player) { return function (tile) {
+    };
+    exports.isPlayerOnTile = (player) => (tile) => {
         return player.coords.x === tile.x && player.coords.y === tile.y;
-    }; };
+    };
     // would be clevererer about this but we don't have many eggs
-    exports.newValues = function (value) {
+    exports.newValues = (value) => {
         if (value === 2) {
             return [1, 1];
         }
@@ -985,25 +1163,25 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
         }
         return [];
     };
-    var combineDirectionsAndValues = function (x, y) {
+    const combineDirectionsAndValues = (x, y) => {
         return {
             value: x,
             direction: y
         };
     };
-    exports.getValuesAndDirections = function (value) {
-        var values = exports.newValues(value);
-        var directions = [-1, 1];
+    exports.getValuesAndDirections = (value) => {
+        const values = exports.newValues(value);
+        const directions = [-1, 1];
         return _.zipWith(combineDirectionsAndValues, values, directions);
     };
-    exports.splitPlayer = function (playerTypes) { return function (player) {
-        var items = exports.getValuesAndDirections(player.value);
-        var playerFromItemFunc = playerFromItem(playerTypes, player);
+    exports.splitPlayer = playerTypes => (player) => {
+        const items = exports.getValuesAndDirections(player.value);
+        const playerFromItemFunc = playerFromItem(playerTypes, player);
         return items.map(playerFromItemFunc);
-    }; };
-    var playerFromItem = function (playerTypes, player) { return function (item) {
-        var newPlayerType = Utils_2.Utils.getPlayerByValue(playerTypes, item.value);
-        var newPlayerParams = Object.assign({}, newPlayerType, {
+    };
+    const playerFromItem = (playerTypes, player) => (item) => {
+        const newPlayerType = Utils_3.Utils.getPlayerByValue(playerTypes, item.value);
+        const newPlayerParams = Object.assign({}, newPlayerType, {
             direction: new Coords_3.Coords({
                 x: item.direction
             }),
@@ -1011,75 +1189,75 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
             lastAction: "split"
         });
         return player.modify(newPlayerParams);
-    }; };
+    };
 });
 // responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
 define("Canvas", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Canvas = /** @class */ (function () {
-        function Canvas(boardSize) {
+    class Canvas {
+        constructor(boardSize) {
             this.imagesFolder = "img/";
             this.boardSize = boardSize;
-            var tileSize = this.sizeCanvas(boardSize);
+            const tileSize = this.sizeCanvas(boardSize);
             this.loadCanvas(boardSize, tileSize);
         }
-        Canvas.prototype.getDrawingContext = function () {
+        getDrawingContext() {
             return this.ctx;
-        };
-        Canvas.prototype.getCanvas = function () {
+        }
+        getCanvas() {
             return this.canvas;
-        };
-        Canvas.prototype.getImagesFolder = function () {
+        }
+        getImagesFolder() {
             return this.imagesFolder;
-        };
-        Canvas.prototype.wipeCanvas = function (fillStyle) {
+        }
+        wipeCanvas(fillStyle) {
             this.ctx.fillStyle = fillStyle;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        };
+        }
         // takes BoardSize, returns size of each tile
-        Canvas.prototype.sizeCanvas = function (boardSize) {
-            var maxBoardSize = this.getMaxBoardSize(boardSize);
-            var tileSize = this.calcTileSize(boardSize);
+        sizeCanvas(boardSize) {
+            const maxBoardSize = this.getMaxBoardSize(boardSize);
+            const tileSize = this.calcTileSize(boardSize);
             this.loadCanvas(boardSize, tileSize);
             this.positionCanvas(maxBoardSize);
             this.boardSize = boardSize;
             return tileSize;
-        };
-        Canvas.prototype.positionCanvas = function (maxBoardSize) {
-            var windowHeight = window.innerHeight;
-            var canvasTop = this.getCanvasTop(windowHeight, maxBoardSize);
-            var wrapper = document.getElementById("wrapper");
+        }
+        positionCanvas(maxBoardSize) {
+            const windowHeight = window.innerHeight;
+            const canvasTop = this.getCanvasTop(windowHeight, maxBoardSize);
+            const wrapper = document.getElementById("wrapper");
             if (wrapper) {
                 wrapper.style.paddingTop = canvasTop.toString() + "px";
             }
-        };
-        Canvas.prototype.getCanvasTop = function (windowHeight, boardHeight) {
+        }
+        getCanvasTop(windowHeight, boardHeight) {
             if (boardHeight < windowHeight) {
                 return (windowHeight - boardHeight) / 2;
             }
             return 0;
-        };
-        Canvas.prototype.calcTileSize = function (boardSize) {
-            var maxBoardSize = this.getMaxBoardSize(this.boardSize);
-            var tileSize = maxBoardSize / boardSize.width;
+        }
+        calcTileSize(boardSize) {
+            const maxBoardSize = this.getMaxBoardSize(this.boardSize);
+            const tileSize = maxBoardSize / boardSize.width;
             return Math.floor(tileSize);
-        };
-        Canvas.prototype.getMaxBoardSize = function (boardSize) {
-            var width = window.innerWidth;
-            var height = window.innerHeight;
+        }
+        getMaxBoardSize(boardSize) {
+            let width = window.innerWidth;
+            let height = window.innerHeight;
             if (width > height) {
-                var difference = height % boardSize.width;
+                const difference = height % boardSize.width;
                 height = height - difference;
                 return height;
             }
             else {
-                var difference = width % boardSize.width;
+                const difference = width % boardSize.width;
                 width = width - difference;
                 return width;
             }
-        };
-        Canvas.prototype.loadCanvas = function (boardSize, tileSize) {
+        }
+        loadCanvas(boardSize, tileSize) {
             this.canvas = document.getElementById("canvas");
             if (!this.canvas) {
                 return;
@@ -1087,115 +1265,111 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             this.canvas.width = boardSize.width * tileSize;
             this.canvas.height = boardSize.height * tileSize;
             this.ctx = this.canvas.getContext("2d");
-        };
-        return Canvas;
-    }());
+        }
+    }
     exports.Canvas = Canvas;
 });
-define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_6, Utils_3, _) {
+define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_5, Utils_4, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Collisions = /** @class */ (function () {
-        function Collisions(playerTypes) {
+    class Collisions {
+        constructor(playerTypes) {
             this.playerTypes = playerTypes;
         }
-        Collisions.prototype.checkAllCollisions = function (players) {
-            var combinations = this.getAllPlayerCombinations(players);
+        checkAllCollisions(players) {
+            const combinations = this.getAllPlayerCombinations(players);
             // only one egg, do nothing
             if (combinations.length === 0) {
                 return players;
             }
-            var collided = this.findCollisions(combinations, players);
+            const collided = this.findCollisions(combinations, players);
             if (collided.length === 0) {
                 return players;
             }
-            var oldPlayers = this.removeCollidedPlayers(collided, players);
-            var newPlayers = this.createNewPlayers(collided, players);
-            var allPlayers = this.combinePlayerLists(oldPlayers, newPlayers);
+            const oldPlayers = this.removeCollidedPlayers(collided, players);
+            const newPlayers = this.createNewPlayers(collided, players);
+            const allPlayers = this.combinePlayerLists(oldPlayers, newPlayers);
             return allPlayers;
-        };
-        Collisions.prototype.combinePlayerLists = function (oldPlayers, newPlayers) {
-            var allPlayers = [];
-            oldPlayers.map(function (player) {
+        }
+        combinePlayerLists(oldPlayers, newPlayers) {
+            const allPlayers = [];
+            oldPlayers.map(player => {
                 allPlayers.push(player);
             });
-            newPlayers.map(function (player) {
+            newPlayers.map(player => {
                 allPlayers.push(player);
             });
-            return immutable_6.fromJS(allPlayers);
-        };
+            return immutable_5.fromJS(allPlayers);
+        }
         // send an array of pairs of player ids, returns all that collide
-        Collisions.prototype.findCollisions = function (combinations, players) {
-            var _this = this;
-            return combinations.filter(function (comb) {
-                var player1 = _this.fetchPlayerByID(players, comb[0]);
-                var player2 = _this.fetchPlayerByID(players, comb[1]);
-                return _this.checkCollision(player1, player2);
+        findCollisions(combinations, players) {
+            return combinations.filter(comb => {
+                const player1 = this.fetchPlayerByID(players, comb[0]);
+                const player2 = this.fetchPlayerByID(players, comb[1]);
+                return this.checkCollision(player1, player2);
             });
-        };
+        }
         // returns all non-collided players
         // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
-        Collisions.prototype.removeCollidedPlayers = function (collided, players) {
-            var collidedIDs = Utils_3.Utils.flattenArray(collided);
-            var uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
-            return players.filter(function (player) {
+        removeCollidedPlayers(collided, players) {
+            const collidedIDs = Utils_4.Utils.flattenArray(collided);
+            const uniqueIDs = Utils_4.Utils.removeDuplicates(collidedIDs);
+            return players.filter(player => {
                 if (uniqueIDs.indexOf(player.id) === -1) {
                     return true;
                 }
                 return false;
             });
-        };
+        }
         // go through each collided pair and combine the players to create new ones
-        Collisions.prototype.createNewPlayers = function (collided, players) {
-            var _this = this;
-            return collided.reduce(function (newPlayers, collidedIDs) {
-                var player1 = _this.fetchPlayerByID(players, collidedIDs[0]);
-                var player2 = _this.fetchPlayerByID(players, collidedIDs[1]);
+        createNewPlayers(collided, players) {
+            return collided.reduce((newPlayers, collidedIDs) => {
+                const player1 = this.fetchPlayerByID(players, collidedIDs[0]);
+                const player2 = this.fetchPlayerByID(players, collidedIDs[1]);
                 if (player1 === null || player2 === null) {
                     return newPlayers;
                 }
-                var newOnes = _this.combinePlayers(player1, player2);
+                const newOnes = this.combinePlayers(player1, player2);
                 return newPlayers.concat(newOnes);
             }, []);
-        };
-        Collisions.prototype.fetchPlayerByID = function (players, id) {
-            var matching = players.filter(function (player) {
+        }
+        fetchPlayerByID(players, id) {
+            const matching = players.filter(player => {
                 return player.id === id;
             });
             if (matching.length === 0) {
                 return null;
             }
             // we've found one then
-            return _.find(function (item) {
+            return _.find(item => {
                 return item !== undefined;
             }, matching);
-        };
-        Collisions.prototype.getAllPlayerCombinations = function (players) {
-            var _this = this;
-            return players.reduce(function (total, player) {
-                var otherPlayers = players.filter(function (otherPlayer) {
+        }
+        getAllPlayerCombinations(players) {
+            return players.reduce((total, player) => {
+                const otherPlayers = players.filter(otherPlayer => {
                     return player.id < otherPlayer.id;
                 });
-                var combos = otherPlayers.map(function (otherPlayer) {
+                const combos = otherPlayers.map(otherPlayer => {
                     return [player.id, otherPlayer.id];
                 });
-                return total.concat(_this.cleanCombos(combos));
+                return total.concat(this.cleanCombos(combos));
             }, []);
-        };
+        }
         // un-immutables values for sanity's sake
-        Collisions.prototype.cleanCombos = function (combo) {
-            if (immutable_6.List.isList(combo)) {
+        cleanCombos(combo) {
+            if (immutable_5.List.isList(combo)) {
                 return combo.toJS();
             }
             return combo;
-        };
-        Collisions.prototype.getAllPlayerIDs = function (players) {
-            return players.map(function (player) {
+        }
+        getAllPlayerIDs(players) {
+            return players.map(player => {
                 return player.id;
             });
-        };
+        }
         // only deal with horizontal collisions for now
-        Collisions.prototype.checkCollision = function (player1, player2) {
+        checkCollision(player1, player2) {
             if (!player1 || !player2) {
                 return false;
             }
@@ -1208,12 +1382,12 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
             if (player1.lastAction === "split" || player2.lastAction === "split") {
                 return false;
             }
-            var coords1 = player1.coords;
-            var coords2 = player2.coords;
+            const coords1 = player1.coords;
+            const coords2 = player2.coords;
             if (coords1.y !== coords2.y) {
                 return false;
             }
-            var distance = coords1.getActualPosition().fullX - coords2.getActualPosition().fullX;
+            let distance = coords1.getActualPosition().fullX - coords2.getActualPosition().fullX;
             if (distance < 0) {
                 distance = distance * -1;
             }
@@ -1222,8 +1396,8 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
             }
             // nothing changes
             return false;
-        };
-        Collisions.prototype.chooseHigherLevelPlayer = function (player1, player2) {
+        }
+        chooseHigherLevelPlayer(player1, player2) {
             if (player1.value > player2.value) {
                 return player1;
             }
@@ -1233,42 +1407,41 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
             if (player1.value === player2.value) {
                 return player1;
             }
-        };
-        Collisions.prototype.combinePlayers = function (player1, player2) {
-            var newValue = player1.value + player2.value;
-            var higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            var newPlayerType = Utils_3.Utils.getPlayerByValue(this.playerTypes, newValue);
+        }
+        combinePlayers(player1, player2) {
+            const newValue = player1.value + player2.value;
+            const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
+            const newPlayerType = Utils_4.Utils.getPlayerByValue(this.playerTypes, newValue);
             if (!newPlayerType) {
                 return [player1, player2];
             }
-            var newPlayerParams = Object.assign({}, newPlayerType, {
+            const newPlayerParams = Object.assign({}, newPlayerType, {
                 coords: higherPlayer.coords,
                 direction: higherPlayer.direction
             });
             return [player1.modify(newPlayerParams)];
-        };
-        return Collisions;
-    }());
+        }
+    }
     exports.Collisions = Collisions;
 });
 define("Loader", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Loader = /** @class */ (function () {
-        function Loader(apiLocation) {
+    class Loader {
+        constructor(apiLocation) {
             this.apiLocation = apiLocation;
         }
-        Loader.prototype.callServer = function (action, params, callback, failCallback) {
-            var xhr = new XMLHttpRequest();
+        callServer(action, params, callback, failCallback) {
+            const xhr = new XMLHttpRequest();
             params.action = action;
             xhr.open("POST", this.apiLocation, true);
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = function () {
-                var DONE = 4; // readyState 4 means the request is done.
-                var OK = 200; // status 200 is a successful return.
+            xhr.onreadystatechange = () => {
+                const DONE = 4; // readyState 4 means the request is done.
+                const OK = 200; // status 200 is a successful return.
                 if (xhr.readyState === DONE) {
                     if (xhr.status === OK) {
-                        var object = void 0;
+                        let object;
                         try {
                             object = JSON.parse(xhr.responseText);
                         }
@@ -1292,21 +1465,21 @@ define("Loader", ["require", "exports"], function (require, exports) {
                 }
             };
             // var formData = this.paramsToFormData(params);
-            var queryString = this.param(params);
+            const queryString = this.param(params);
             xhr.send(queryString);
-        };
-        Loader.prototype.paramsToFormData = function (params) {
-            var formData = new FormData();
-            for (var key in params) {
+        }
+        paramsToFormData(params) {
+            const formData = new FormData();
+            for (const key in params) {
                 if (params[key] !== undefined) {
                     formData.append(key, params[key]);
                 }
             }
             return formData;
-        };
-        Loader.prototype.param = function (object) {
-            var encodedString = "";
-            for (var prop in object) {
+        }
+        param(object) {
+            let encodedString = "";
+            for (const prop in object) {
                 if (object.hasOwnProperty(prop)) {
                     if (encodedString.length > 0) {
                         encodedString += "&";
@@ -1315,73 +1488,70 @@ define("Loader", ["require", "exports"], function (require, exports) {
                 }
             }
             return encodedString;
-        };
-        return Loader;
-    }());
+        }
+    }
     exports.Loader = Loader;
 });
 define("SavedLevel", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SavedLevel = /** @class */ (function () {
-        function SavedLevel(boardSize, board, levelID) {
+    class SavedLevel {
+        constructor(boardSize, board, levelID) {
             this.boardSize = boardSize;
             this.board = board;
             this.levelID = levelID;
         }
-        SavedLevel.prototype.toString = function () {
-            var data = this.getData();
+        toString() {
+            const data = this.getData();
             return JSON.stringify(data);
-        };
-        SavedLevel.prototype.getData = function () {
+        }
+        getData() {
             return {
                 board: this.board,
                 boardSize: this.boardSize.getData(),
                 levelID: this.levelID
             };
-        };
-        return SavedLevel;
-    }());
+        }
+    }
     exports.SavedLevel = SavedLevel;
 });
 define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (require, exports, BoardSize_2, SavedLevel_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Levels = /** @class */ (function () {
-        function Levels(loader) {
+    class Levels {
+        constructor(loader) {
             this.levelID = 0;
             this.levels = {};
             this.loader = loader;
         }
-        Levels.prototype.getLevelList = function (callback) {
-            var _this = this;
-            this.loader.callServer("getLevelsList", {}, function (data) {
-                var levelList = _this.cleanLevelList(data);
+        getLevelList(callback) {
+            this.loader.callServer("getLevelsList", {}, data => {
+                const levelList = this.cleanLevelList(data);
                 callback(levelList);
-            }, function () {
-                var levelList = _this.cleanLevelList([]);
+            }, () => {
+                const levelList = this.cleanLevelList([]);
                 callback(levelList);
             });
-        };
-        Levels.prototype.populateLevelsList = function (levelList) {
-            var select = document.getElementById("levelList");
+        }
+        populateLevelsList(levelList) {
+            const select = document.getElementById("levelList");
             if (!select) {
                 return;
             }
             while (select.firstChild) {
                 select.removeChild(select.firstChild);
             }
-            var nullEl = document.createElement("option");
+            const nullEl = document.createElement("option");
             nullEl.textContent = "New";
             nullEl.value = "";
             if (!this.levelID) {
                 nullEl.selected = true;
             }
             select.appendChild(nullEl);
-            for (var i in levelList) {
+            for (const i in levelList) {
                 if (levelList[i] !== undefined) {
-                    var levelID = parseInt(i, 10);
-                    var el = document.createElement("option");
+                    const levelID = parseInt(i, 10);
+                    const el = document.createElement("option");
                     el.textContent = levelID.toString();
                     el.value = levelID.toString();
                     if (levelID === this.levelID) {
@@ -1390,266 +1560,259 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
                     select.appendChild(el);
                 }
             }
-        };
-        Levels.prototype.saveLevel = function (board, boardSize, levelID, callback) {
-            var _this = this;
-            var saveData = new SavedLevel_1.SavedLevel(boardSize, board, levelID);
-            var saveString = saveData.toString();
-            var params = {
+        }
+        saveLevel(board, boardSize, levelID, callback) {
+            const saveData = new SavedLevel_1.SavedLevel(boardSize, board, levelID);
+            const saveString = saveData.toString();
+            const params = {
                 data: saveString,
                 levelID: 0
             };
             if (levelID) {
                 params.levelID = levelID;
             }
-            this.loader.callServer("saveLevel", params, function (savedLevelID) {
-                _this.levelID = savedLevelID;
+            this.loader.callServer("saveLevel", params, savedLevelID => {
+                this.levelID = savedLevelID;
                 callback(savedLevelID);
-            }, function (errorMsg) {
+            }, (errorMsg) => {
                 // console.log("ERROR: ", errorMsg);
             });
-        };
-        Levels.prototype.loadLevel = function (levelID, callback, failCallback) {
-            var _this = this;
-            this.getLevelList(function () {
+        }
+        loadLevel(levelID, callback, failCallback) {
+            this.getLevelList(() => {
                 // console.log("gotLevelList");
             });
-            var params = {
-                levelID: levelID
+            const params = {
+                levelID
             };
-            this.loader.callServer("getLevel", params, function (data) {
-                _this.levelID = levelID;
-                var boardSize = new BoardSize_2.BoardSize(data.boardSize.width);
-                var savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
+            this.loader.callServer("getLevel", params, data => {
+                this.levelID = levelID;
+                const boardSize = new BoardSize_2.BoardSize(data.boardSize.width);
+                const savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
                 callback(savedLevel);
-            }, function (errorMsg) {
+            }, (errorMsg) => {
                 // console.log("ERROR: ", errorMsg);
                 failCallback();
             });
-        };
-        Levels.prototype.saveData = function (levelID, rotationsUsed, score, callback) {
-            var params = {
-                levelID: levelID,
-                rotationsUsed: rotationsUsed,
-                score: score
+        }
+        saveData(levelID, rotationsUsed, score, callback) {
+            const params = {
+                levelID,
+                rotationsUsed,
+                score
             };
-            this.loader.callServer("saveScore", params, function (data) {
+            this.loader.callServer("saveScore", params, (data) => {
                 callback(data);
-            }, function () {
+            }, () => {
                 callback({ msg: "call failed" });
             });
-        };
+        }
         // turn array of numbers into list key'd by levelID with object of won/lost
-        Levels.prototype.cleanLevelList = function (list) {
-            var levelList = [];
-            for (var i in list) {
+        cleanLevelList(list) {
+            const levelList = [];
+            for (const i in list) {
                 if (list[i] !== undefined) {
-                    var levelID = parseInt(list[i], 10);
+                    const levelID = parseInt(list[i], 10);
                     levelList[levelID] = {
                         completed: false,
-                        levelID: levelID
+                        levelID
                     };
                 }
             }
             return levelList;
-        };
-        return Levels;
-    }());
+        }
+    }
     exports.Levels = Levels;
 });
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_4, Map, Utils_4) {
+define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_4, Map, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
-    var RenderMap = /** @class */ (function () {
-        function RenderMap() {
-        }
+    class RenderMap {
         // render map
-        RenderMap.copyRenderMap = function (renderMap) {
+        static copyRenderMap(renderMap) {
             return renderMap.slice(0);
-        };
+        }
         // add player to renderMap, returning new renderMap
-        RenderMap.addPlayerToRenderMap = function (player, renderMap) {
-            var coords = player.coords;
-            var startX = coords.x - 1;
-            var endX = coords.x + 1;
-            var startY = coords.y - 1;
-            var endY = coords.y + 1;
-            var newRenderMap = this.copyRenderMap(renderMap);
-            var boardSize = new BoardSize_3.BoardSize(renderMap.length);
-            for (var x = startX; x <= endX; x++) {
-                for (var y = startY; y <= endY; y++) {
-                    var newCoords = new Coords_4.Coords({ x: x, y: y });
-                    var fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
+        static addPlayerToRenderMap(player, renderMap) {
+            const coords = player.coords;
+            const startX = coords.x - 1;
+            const endX = coords.x + 1;
+            const startY = coords.y - 1;
+            const endY = coords.y + 1;
+            const newRenderMap = this.copyRenderMap(renderMap);
+            const boardSize = new BoardSize_3.BoardSize(renderMap.length);
+            for (let x = startX; x <= endX; x++) {
+                for (let y = startY; y <= endY; y++) {
+                    const newCoords = new Coords_4.Coords({ x, y });
+                    const fixedCoords = Utils_5.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
             }
             return newRenderMap;
-        };
+        }
         // takes oldBoard and newBoard and creates a map of changes between them
-        RenderMap.createRenderMapFromBoards = function (oldBoard, newBoard) {
-            var renderFunc = RenderMap.renderMapMaker(newBoard);
+        static createRenderMapFromBoards(oldBoard, newBoard) {
+            const renderFunc = RenderMap.renderMapMaker(newBoard);
             return RenderMap.createMap(oldBoard, renderFunc);
-        };
-        RenderMap.renderMapMaker = function (newBoard) {
-            return function (board, x, y) {
-                var oldTile = board.getTile(x, y);
-                var newTile = newBoard.getTile(x, y);
+        }
+        static renderMapMaker(newBoard) {
+            return (board, x, y) => {
+                const oldTile = board.getTile(x, y);
+                const newTile = newBoard.getTile(x, y);
                 return !oldTile.equals(newTile);
             };
-        };
+        }
         // returns map of boolean values for background or not for pathfinding
-        RenderMap.createPathFindingMapFromBoard = function (board) {
-            return RenderMap.createMap(board, function (newBoard, x, y) {
+        static createPathFindingMapFromBoard(board) {
+            return RenderMap.createMap(board, (newBoard, x, y) => {
                 return !Map.checkTileIsEmpty(newBoard, x, y);
             });
-        };
+        }
         // combines any two renderMaps (using OR)
         // assumes they are same size
-        RenderMap.combineRenderMaps = function (renderMap, newRenderMap) {
-            return renderMap.map(function (column, x) {
-                return column.map(function (entry, y) {
+        static combineRenderMaps(renderMap, newRenderMap) {
+            return renderMap.map((column, x) => {
+                return column.map((entry, y) => {
                     return entry || newRenderMap[x][y];
                 });
             });
-        };
+        }
         // create an empty render map
-        RenderMap.createRenderMap = function (size, value) {
-            var boardArray = [];
-            for (var x = 0; x < size; x++) {
+        static createRenderMap(size, value) {
+            const boardArray = [];
+            for (let x = 0; x < size; x++) {
                 boardArray[x] = [];
-                for (var y = 0; y < size; y++) {
+                for (let y = 0; y < size; y++) {
                     boardArray[x][y] = value;
                 }
             }
             return boardArray;
-        };
-        RenderMap.createMap = function (board, func) {
-            var boardArray = RenderMap.createRenderMap(board.getLength(), false);
-            return boardArray.map(function (column, x) {
-                return column.map(function (tile, y) {
-                    return func(board, x, y);
-                });
+        }
+    }
+    RenderMap.createMap = (board, func) => {
+        const boardArray = RenderMap.createRenderMap(board.getLength(), false);
+        return boardArray.map((column, x) => {
+            return column.map((tile, y) => {
+                return func(board, x, y);
             });
-        };
-        return RenderMap;
-    }());
+        });
+    };
     exports.RenderMap = RenderMap;
 });
-define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_1, Coords_5) {
+define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_2, Coords_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getMapSize = function (map) {
+    exports.getMapSize = (map) => {
         return {
             width: map.length,
             height: map[0].length
         };
     };
-    var overflow = function (num, max) {
+    const overflow = (num, max) => {
         if (num < 0) {
             return max + num;
         }
         return num < max ? num : num % max;
     };
-    exports.wrapValue = function (map) { return function (x, y) {
-        var mapSize = exports.getMapSize(map);
+    exports.wrapValue = (map) => (x, y) => {
+        const mapSize = exports.getMapSize(map);
         return new Coords_5.Coords({
             x: overflow(x, mapSize.width),
             y: overflow(y, mapSize.height)
         });
-    }; };
-    exports.findAdjacent = function (map) { return function (point) {
-        var wrappedPoint = exports.wrapValue(map)(point.x, point.y);
-        var x = wrappedPoint.x, y = wrappedPoint.y;
-        return tsmonad_1.Maybe.just(map[x][y]);
-    }; };
-    exports.addToList = function (list, point) { return [
-        point
-    ].concat(list); };
-    exports.squaresAround = function (map) { return function (point) {
-        var partialWrapValue = exports.wrapValue(map);
-        var x = point.x, y = point.y;
+    };
+    exports.findAdjacent = (map) => (point) => {
+        const wrappedPoint = exports.wrapValue(map)(point.x, point.y);
+        const { x, y } = wrappedPoint;
+        return tsmonad_2.Maybe.just(map[x][y]);
+    };
+    exports.addToList = (list, point) => [
+        point,
+        ...list
+    ];
+    exports.squaresAround = (map) => (point) => {
+        const partialWrapValue = exports.wrapValue(map);
+        const { x, y } = point;
         return [
             partialWrapValue(x - 1, y),
             partialWrapValue(x + 1, y),
             partialWrapValue(x, y - 1),
             partialWrapValue(x, y + 1)
         ];
-    }; };
-    exports.checkAnswer = function (list) { return function (point) { return function (tile) {
+    };
+    exports.checkAnswer = (list) => (point) => (tile) => {
         return tile ? [] : exports.addToList(list, point);
-    }; }; };
-    exports.addAdjacent = function (map) { return function (list) { return function (point) {
+    };
+    exports.addAdjacent = (map) => (list) => (point) => {
         return exports.findAdjacent(map)(point)
             .map(exports.checkAnswer(list)(point))
             .caseOf({
-            just: function (tile) { return tile; },
-            nothing: function () { return []; }
+            just: tile => tile,
+            nothing: () => []
         });
-    }; }; };
-    exports.filterDuplicates = function (arr) {
-        var problems = arr.filter(function (item) {
-            var matching = arr.filter(function (checkItem) {
+    };
+    exports.filterDuplicates = (arr) => {
+        const problems = arr.filter((item) => {
+            const matching = arr.filter((checkItem) => {
                 return exports.pointMatch(item)(checkItem);
             });
             return matching.length > 1;
         });
         return problems.length < 1;
     };
-    exports.pointMatch = function (matchPoint) { return function (point) {
-        return matchPoint.x === point.x && matchPoint.y === point.y;
-    }; };
-    exports.isInList = function (list, point) {
-        var partialPointMatch = exports.pointMatch(point);
+    exports.pointMatch = (matchPoint) => (point) => matchPoint.x === point.x && matchPoint.y === point.y;
+    exports.isInList = (list, point) => {
+        const partialPointMatch = exports.pointMatch(point);
         return list.filter(partialPointMatch).length > 0;
     };
-    exports.getMoveOptions = function (map) { return function (list) {
-        var startPoint = list[0];
-        var partialAddAdjacent = exports.addAdjacent(map)(list);
+    exports.getMoveOptions = (map) => (list) => {
+        const startPoint = list[0];
+        const partialAddAdjacent = exports.addAdjacent(map)(list);
         return exports.squaresAround(map)(startPoint)
             .map(partialAddAdjacent)
-            .filter(function (entry) { return entry.length > 0; })
-            .filter(function (entry) { return entry.length < 25; }) // this is stop it timing out by trying too hard
+            .filter(entry => entry.length > 0)
+            .filter(entry => entry.length < 25) // this is stop it timing out by trying too hard
             .filter(exports.filterDuplicates);
-    }; };
+    };
     // try out all possible and return new list of options
-    exports.getMultipleMoveOptions = function (map) { return function (lists) {
-        return _.flatMap(lists, function (list) {
+    exports.getMultipleMoveOptions = (map) => (lists) => {
+        return _.flatMap(lists, list => {
             return exports.getMoveOptions(map)(list);
         });
-    }; };
-    exports.findAnswer = function (targetPoint) { return function (potentialAnswer) { return exports.pointMatch(potentialAnswer[0])(targetPoint); }; };
-    exports.findAnswerInList = function (targetPoint) { return function (list) {
-        var partialFindAnswer = exports.findAnswer(targetPoint);
-        var found = _.find(list, partialFindAnswer);
+    };
+    exports.findAnswer = (targetPoint) => (potentialAnswer) => exports.pointMatch(potentialAnswer[0])(targetPoint);
+    exports.findAnswerInList = (targetPoint) => (list) => {
+        const partialFindAnswer = exports.findAnswer(targetPoint);
+        const found = _.find(list, partialFindAnswer);
         if (found) {
-            return tsmonad_1.Maybe.just(found);
+            return tsmonad_2.Maybe.just(found);
         }
-        return tsmonad_1.Maybe.nothing();
-    }; };
-    exports.flipAnswer = function (list) { return _.reverse(list); };
-    exports.processMoveList = function (map) { return function (lists) { return function (targetPoint) {
-        var moveOptions = exports.getMultipleMoveOptions(map)(lists);
+        return tsmonad_2.Maybe.nothing();
+    };
+    exports.flipAnswer = (list) => _.reverse(list);
+    exports.processMoveList = (map) => (lists) => (targetPoint) => {
+        const moveOptions = exports.getMultipleMoveOptions(map)(lists);
         if (moveOptions.length === 0) {
-            return tsmonad_1.Maybe.nothing();
+            return tsmonad_2.Maybe.nothing();
         }
-        var solution = exports.findAnswerInList(targetPoint)(moveOptions);
+        const solution = exports.findAnswerInList(targetPoint)(moveOptions);
         return solution.caseOf({
-            just: function (value) {
-                return tsmonad_1.Maybe.just(exports.flipAnswer(value));
+            just: value => {
+                return tsmonad_2.Maybe.just(exports.flipAnswer(value));
             },
-            nothing: function () {
+            nothing: () => {
                 return exports.processMoveList(map)(moveOptions)(targetPoint);
             }
         });
-    }; }; };
-    exports.findPath = function (map) { return function (start) { return function (target) {
+    };
+    exports.findPath = (map) => (start) => (target) => {
         if (start.equals(target)) {
-            return tsmonad_1.Maybe.nothing();
+            return tsmonad_2.Maybe.nothing();
         }
         return exports.processMoveList(map)([[start]])(target);
-    }; }; };
-    var sortArray = function (a, b) {
+    };
+    const sortArray = (a, b) => {
         if (b.length < a.length) {
             return -1;
         }
@@ -1659,47 +1822,30 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return 0;
     };
     // do findPath for each thing, return shortest
-    exports.findClosestPath = function (map) { return function (start) { return function (targets) {
-        // return actualFindClosestPathMemo(map, start, targets)
+    exports.findClosestPath = (map) => (start) => (targets) => {
         return actualFindClosestPath(map, start, targets);
-    }; }; };
-    var actualFindClosestPath = function (map, start, targets) {
-        var partialFindPath = exports.findPath(map)(start);
-        var paths = targets
+    };
+    const actualFindClosestPath = (map, start, targets) => {
+        const partialFindPath = exports.findPath(map)(start);
+        const paths = targets
             .map(partialFindPath)
-            .map(function (obj) { return obj.valueOr([]); })
-            .filter(function (arr) { return arr.length > 0; })
+            .map(obj => obj.valueOr([]))
+            .filter(arr => arr.length > 0)
             .sort(sortArray);
-        return paths.count() > 0 ? tsmonad_1.Maybe.just(paths.first()) : tsmonad_1.Maybe.nothing();
+        return paths.count() > 0 ? tsmonad_2.Maybe.just(paths.first()) : tsmonad_2.Maybe.nothing();
     };
-    var memoize = function (fn) {
-        var cache = {};
-        return function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            var json = JSON.stringify(args);
-            if (cache[json]) {
-                return cache[json];
-            }
-            cache[json] = fn.apply(void 0, args);
-            return cache[json];
-        };
-    };
-    var actualFindClosestPathMemo = memoize(actualFindClosestPath);
     // work out what first move is according to directions
-    exports.findNextDirection = function (pointList) {
-        var parts = _.slice(pointList, 0, 2);
-        var start = parts[0];
-        var end = parts[1];
+    exports.findNextDirection = (pointList) => {
+        const parts = _.slice(pointList, 0, 2);
+        const start = parts[0];
+        const end = parts[1];
         return new Coords_5.Coords({
             x: calcDifference(start.x, end.x),
             y: calcDifference(start.y, end.y)
         });
     };
-    var calcDifference = function (start, end) {
-        var diff = end - start;
+    const calcDifference = (start, end) => {
+        const diff = end - start;
         if (diff < -1) {
             return 1;
         }
@@ -1709,28 +1855,27 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return diff;
     };
 });
-define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_7) {
+define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_6) {
     "use strict";
-    var _this = this;
     Object.defineProperty(exports, "__esModule", { value: true });
-    var OFFSET_DIVIDE = 100;
+    const OFFSET_DIVIDE = 100;
     // doCalcs takes the current map, the current players, and returns new player objects
     // loop through passed players[] array, do changes, return new one
-    exports.doCalcs = function (gameState, timePassed) {
-        var playerCalcs = exports.doPlayerCalcs(gameState.board, timePassed, gameState.players);
+    exports.doCalcs = (gameState, timePassed) => {
+        const playerCalcs = exports.doPlayerCalcs(gameState.board, timePassed, gameState.players);
         return gameState.modify({
             players: gameState.players.map(playerCalcs)
         });
     };
-    exports.calcMoveAmount = function (moveSpeed, timePassed) {
-        var moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
-        var frameRateAdjusted = moveAmount * timePassed;
+    exports.calcMoveAmount = (moveSpeed, timePassed) => {
+        const moveAmount = 1 / OFFSET_DIVIDE * moveSpeed * 5;
+        const frameRateAdjusted = moveAmount * timePassed;
         if (isNaN(frameRateAdjusted)) {
             return 0;
         }
         return frameRateAdjusted;
     };
-    exports.correctTileOverflow = function (coords) {
+    exports.correctTileOverflow = (coords) => {
         if (coords.offsetX >= OFFSET_DIVIDE) {
             // move one tile to right
             return coords.modify({
@@ -1762,7 +1907,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return coords;
     };
     // only public so it can be tested, please don't use outside of here
-    exports.checkFloorBelowPlayer = function (board, timePassed) { return function (player) {
+    exports.checkFloorBelowPlayer = (board, timePassed) => (player) => {
         if (player.coords.offsetX !== 0) {
             return player;
         }
@@ -1771,9 +1916,9 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
                 falling: false
             });
         }
-        var coords = player.coords;
-        var belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
-        var tile = board.getTile(belowCoords.x, belowCoords.y);
+        const coords = player.coords;
+        const belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
+        const tile = board.getTile(belowCoords.x, belowCoords.y);
         if (tile.background) {
             // gap below, start falling down it
             return player.modify({
@@ -1787,84 +1932,80 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return player.modify({
             falling: false
         });
-    }; };
+    };
     // curry and compose together a nice pipeline function to transform old player state into new
-    exports.getCalcFunction = function (oldPlayer, board, timePassed, players) {
+    exports.getCalcFunction = (oldPlayer, board, timePassed, players) => {
         // separated as not all functions will be the same for enemies
-        var playerSpecific = exports.getPlayerSpecificMoves(oldPlayer, board, timePassed, players);
+        const playerSpecific = exports.getPlayerSpecificMoves(oldPlayer, board, timePassed, players);
         return _.compose(exports.markPlayerAsMoved(oldPlayer), exports.checkForMovementTiles(board), exports.correctPlayerOverflow(board), playerSpecific, exports.incrementPlayerFrame);
     };
-    exports.getPlayerSpecificMoves = function (player, board, timePassed, players) {
+    exports.getPlayerSpecificMoves = (player, board, timePassed, players) => {
         if (player.movePattern === "seek-egg") {
             return exports.getSeekEggMoves(player, board, timePassed, players);
         }
         return exports.getEggMoves(player, board, timePassed);
     };
-    exports.getEggMoves = function (oldPlayer, board, timePassed) {
+    exports.getEggMoves = (oldPlayer, board, timePassed) => {
         return _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.checkFloorBelowPlayer(board, timePassed));
     };
-    exports.getSeekEggMoves = function (oldPlayer, board, timePassed, players) {
+    exports.getSeekEggMoves = (oldPlayer, board, timePassed, players) => {
         return _.compose(exports.incrementPlayerDirection(timePassed), exports.checkPlayerDirection(board), exports.pathFinding(board, players));
     };
     // decide on next direction to follow based on closest egg to chase
-    exports.pathFinding = function (board, players) { return function (player) {
+    exports.pathFinding = (board, players) => (player) => {
         // only move when at actual place
         if (player.coords.offsetX !== 0 || player.coords.offsetY !== 0) {
             return player;
         }
-        var pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
-        var maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players));
+        const pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
+        const maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players));
         return maybe.map(PathFinder.findNextDirection).caseOf({
-            just: function (val) {
-                return player.modify({
-                    direction: new Coords_6.Coords(val)
-                });
-            },
-            nothing: function () { return player; }
+            just: val => player.modify({
+                direction: new Coords_6.Coords(val)
+            }),
+            nothing: () => player
         });
-    }; };
-    var getAllCoords = function (players) {
-        return immutable_7.fromJS(players
-            .filter(function (player) {
+    };
+    const getAllCoords = (players) => {
+        return immutable_6.fromJS(players
+            .filter(player => {
             return player.value > 0;
         })
-            .map(function (player) {
+            .map(player => {
             return player.coords;
         }));
     };
-    exports.doPlayerCalcs = function (board, timePassed, players) { return function (player) {
-        return exports.getCalcFunction(player, board, timePassed, players)(player);
-    }; };
+    exports.doPlayerCalcs = (board, timePassed, players) => (player) => exports.getCalcFunction(player, board, timePassed, players)(player);
     // work out whether player's location has moved since last go
-    exports.markPlayerAsMoved = function (oldPlayer) { return function (newPlayer) {
+    exports.markPlayerAsMoved = (oldPlayer) => (newPlayer) => {
         return newPlayer.modify({
             moved: exports.playerHasMoved(oldPlayer, newPlayer)
         });
-    }; };
+    };
     // works out whether Player has actually moved since last go
     // used to decide whether to do an action to stop static players hitting switches infinitely etc
-    exports.playerHasMoved = function (oldPlayer, newPlayer) {
-        return !immutable_7.is(oldPlayer.coords, newPlayer.coords);
+    exports.playerHasMoved = (oldPlayer, newPlayer) => {
+        return !immutable_6.is(oldPlayer.coords, newPlayer.coords);
     };
-    exports.checkForMovementTiles = function (board) { return function (player) {
-        var currentCoords = player.coords;
+    exports.checkForMovementTiles = (board) => (player) => {
+        const currentCoords = player.coords;
         if (currentCoords.offsetX !== 0 || currentCoords.offsetY !== 0) {
             return player;
         }
-        var coords = Map.correctForOverflow(board, currentCoords);
-        var tile = board.getTile(coords.x, coords.y);
+        const coords = Map.correctForOverflow(board, currentCoords);
+        const tile = board.getTile(coords.x, coords.y);
         if (tile.action === "teleport") {
             return exports.teleport(board)(player);
         }
         return player;
-    }; };
+    };
     // find another teleport and go to it
     // if no others, do nothing
-    exports.teleport = function (board) { return function (player) {
+    exports.teleport = (board) => (player) => {
         if (player.lastAction === "teleport") {
             return player;
         }
-        var newTile = Map.findTile(board, player.coords, 14);
+        const newTile = Map.findTile(board, player.coords, 14);
         if (newTile) {
             return player.modify({
                 coords: player.coords.modify({
@@ -1875,8 +2016,8 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             });
         }
         return player;
-    }; };
-    exports.incrementPlayerFrame = function (player) {
+    };
+    exports.incrementPlayerFrame = (player) => {
         if (player.direction.x === 0 &&
             player.oldDirection.x === 0 &&
             player.direction.y === 0 &&
@@ -1893,7 +2034,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
                 oldDirection: new Coords_6.Coords()
             });
         }
-        var newFrame = player.currentFrame;
+        let newFrame = player.currentFrame;
         // if going left, reduce frame
         if (player.direction.x < 0 ||
             player.oldDirection.x < 0 ||
@@ -1918,13 +2059,13 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             currentFrame: newFrame
         });
     };
-    exports.checkPlayerDirection = function (board) { return function (player) {
+    exports.checkPlayerDirection = (board) => (player) => {
         return player.flying === true
             ? exports.checkFlyingPlayerDirection(board)(player)
             : exports.checkStandardPlayerDirection(board)(player);
-    }; };
-    exports.checkFlyingPlayerDirection = function (board) { return function (player) {
-        var coords = player.coords;
+    };
+    exports.checkFlyingPlayerDirection = (board) => (player) => {
+        const coords = player.coords;
         if (player.direction.y < 0) {
             if (!Map.checkTileIsEmpty(board, coords.x, coords.y - 1)) {
                 // turn around
@@ -1988,10 +2129,10 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return player.modify({
             stop: false
         });
-    }; };
+    };
     // this checks whether the next place we intend to go is a goddamn trap, and changes direction if so
-    exports.checkStandardPlayerDirection = function (board) { return function (player) {
-        var coords = player.coords;
+    exports.checkStandardPlayerDirection = (board) => (player) => {
+        const coords = player.coords;
         if (player.direction.x !== 0 && player.falling === false) {
             if (!Map.checkTileIsEmpty(board, coords.x - 1, coords.y) &&
                 !Map.checkTileIsEmpty(board, coords.x + 1, coords.y)) {
@@ -2031,14 +2172,14 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return player.modify({
             stop: false
         });
-    }; };
+    };
     // this does the left/right moving, but does not care if walls are there as that is the responsibility of checkPlayerDirection
-    exports.incrementPlayerDirection = function (timePassed) { return function (player) {
+    exports.incrementPlayerDirection = (timePassed) => (player) => {
         // falling is priority - do this if a thing
         if (player.falling) {
-            var fallAmount = exports.calcMoveAmount(player.fallSpeed, timePassed);
-            var newOffsetY = player.coords.offsetX + fallAmount;
-            var newCoords = player.coords.modify({
+            const fallAmount = exports.calcMoveAmount(player.fallSpeed, timePassed);
+            const newOffsetY = player.coords.offsetX + fallAmount;
+            const newCoords = player.coords.modify({
                 offsetY: player.coords.offsetY + fallAmount
             });
             return player.modify({
@@ -2049,12 +2190,12 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             // we are still, no need for movement
             return player;
         }
-        var moveAmount = exports.calcMoveAmount(player.moveSpeed, timePassed);
-        var coords = player.coords;
+        const moveAmount = exports.calcMoveAmount(player.moveSpeed, timePassed);
+        const coords = player.coords;
         // X axis movement
         if (player.direction.x < 0) {
             // move left
-            var newOffsetX = coords.offsetX - moveAmount;
+            const newOffsetX = coords.offsetX - moveAmount;
             return player.modify({
                 coords: coords.modify({
                     offsetX: newOffsetX
@@ -2063,7 +2204,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         }
         else if (player.direction.x > 0) {
             // move right
-            var newOffsetX = coords.offsetX + moveAmount;
+            const newOffsetX = coords.offsetX + moveAmount;
             return player.modify({
                 coords: coords.modify({
                     offsetX: newOffsetX
@@ -2074,7 +2215,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         if (player.direction.x === 0) {
             if (coords.offsetX > 0) {
                 // shuffle left
-                var newOffsetX = coords.offsetX - moveAmount;
+                const newOffsetX = coords.offsetX - moveAmount;
                 return player.modify({
                     coords: coords.modify({
                         offsetX: newOffsetX
@@ -2083,7 +2224,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             }
             else if (coords.offsetX < 0) {
                 // shuffle right
-                var newOffsetX = coords.offsetX + moveAmount;
+                const newOffsetX = coords.offsetX + moveAmount;
                 return player.modify({
                     coords: coords.modify({
                         offsetX: newOffsetX
@@ -2094,7 +2235,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         // Y axis movement
         if (player.direction.y < 0) {
             // move up
-            var newOffsetY = coords.offsetY - moveAmount;
+            const newOffsetY = coords.offsetY - moveAmount;
             return player.modify({
                 coords: coords.modify({
                     offsetY: newOffsetY
@@ -2103,7 +2244,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         }
         else if (player.direction.y > 0) {
             // move down
-            var newOffsetY = coords.offsetY + moveAmount;
+            const newOffsetY = coords.offsetY + moveAmount;
             return player.modify({
                 coords: coords.modify({
                     offsetY: newOffsetY
@@ -2114,7 +2255,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         if (player.direction.y === 0) {
             if (coords.offsetY > 0) {
                 // shuffle up
-                var newOffsetY = coords.offsetY - moveAmount;
+                const newOffsetY = coords.offsetY - moveAmount;
                 return player.modify({
                     coords: coords.modify({
                         offsetY: newOffsetY
@@ -2123,7 +2264,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             }
             else if (coords.offsetY < 0) {
                 // shuffle down
-                var newOffsetY = coords.offsetY + moveAmount;
+                const newOffsetY = coords.offsetY + moveAmount;
                 return player.modify({
                     coords: coords.modify({
                         offsetY: newOffsetY
@@ -2133,10 +2274,10 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         }
         // do nothing, return same object
         return player;
-    }; };
-    exports.correctPlayerOverflow = function (board) { return function (player) {
-        var newCoords = _this.correctTileOverflow(player.coords);
-        var loopedCoords = Map.correctForOverflow(board, newCoords);
+    };
+    exports.correctPlayerOverflow = (board) => (player) => {
+        const newCoords = this.correctTileOverflow(player.coords);
+        const loopedCoords = Map.correctForOverflow(board, newCoords);
         if (loopedCoords.x !== player.coords.x ||
             loopedCoords.y !== player.coords.y) {
             // if we've actually moved, then
@@ -2149,20 +2290,32 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         return player.modify({
             coords: loopedCoords
         });
-    }; };
+    };
 });
 // this is the egg
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement) {
+define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement", "Utils"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement, Utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TheEgg = /** @class */ (function () {
-        function TheEgg(playerTypes) {
+    class TheEgg {
+        constructor(playerTypes) {
+            this.checkNearlyFinished = playerTypes => (gameState) => {
+                if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
+                    return gameState.players.map(player => {
+                        if (player.value > 0) {
+                            const newPlayer = Utils_6.Utils.getPlayerByType(playerTypes, "rainbow-egg");
+                            return player.modify(Object.assign({}, newPlayer, { value: player.value }));
+                        }
+                        return player;
+                    });
+                }
+                return gameState.players;
+            };
             this.playerTypes = playerTypes;
         }
-        TheEgg.prototype.doAction = function (gameState, action, timePassed) {
+        doAction(gameState, action, timePassed) {
             if (action === "rotateLeft") {
                 return this.doRotate(gameState, false);
             }
@@ -2173,88 +2326,65 @@ define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize"
                 return this.doGameMove(gameState, timePassed);
             }
             return gameState;
-        };
+        }
         // this is where we have to do a shitload of things
-        TheEgg.prototype.doGameMove = function (gameState, timePassed) {
+        doGameMove(gameState, timePassed) {
             // first get rid of old outcome
-            var startGameState = gameState.modify({
+            const startGameState = gameState.modify({
                 outcome: ""
             });
-            var newGameState = Movement.doCalcs(startGameState, timePassed);
-            var action = new Action_1.Action();
-            var newerGameState = action.checkAllPlayerTileActions(newGameState);
-            var collisions = new Collisions_1.Collisions(this.playerTypes);
-            var sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
-            var splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
-            return newerGameState.modify({
+            const newGameState = Movement.doCalcs(startGameState, timePassed);
+            const action = new Action_1.Action();
+            const newerGameState = action.checkAllPlayerTileActions(newGameState);
+            const collisions = new Collisions_1.Collisions(this.playerTypes);
+            const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
+            const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
+            const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(newerGameState.modify({
                 players: splitPlayers
+            }));
+            return newerGameState.modify({
+                players: colouredPlayers
             });
-        };
+        }
         // this rotates board and players
         // it DOES NOT do animation - not our problem
-        TheEgg.prototype.doRotate = function (gameState, clockwise) {
-            var rotations = gameState.rotations + 1;
-            var boardSize = new BoardSize_4.BoardSize(gameState.board.getLength());
-            var newBoard = Map.rotateBoard(gameState.board, clockwise);
-            var rotatedPlayers = gameState.players.map(function (player) {
+        doRotate(gameState, clockwise) {
+            const rotations = gameState.rotations + 1;
+            const boardSize = new BoardSize_4.BoardSize(gameState.board.getLength());
+            const newBoard = Map.rotateBoard(gameState.board, clockwise);
+            const rotatedPlayers = gameState.players.map(player => {
                 return Map.rotatePlayer(boardSize, player, clockwise);
             });
-            var rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
+            const rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
             return gameState.modify({
                 board: newBoard,
                 players: rotatedPlayers,
-                rotateAngle: rotateAngle,
-                rotations: rotations
+                rotateAngle,
+                rotations
             });
-        };
-        // check leftovers on board and whether player is over finish tile
-        TheEgg.prototype.checkLevelIsCompleted = function (gameState) {
-            var collectable = this.getCollectable(gameState.board);
-            var playerCount = this.countPlayers(gameState.players);
-            if (collectable < 1 && playerCount < 2) {
-                // change gameState.outcome to "nextLevel" or something, I don't know
-            }
-            return gameState;
-        };
-        TheEgg.prototype.countPlayers = function (players) {
-            var validPlayers = players.filter(function (player) {
-                return player && player.value > 0;
-            });
-            return validPlayers.length;
-        };
-        // get total outstanding points left to grab on board
-        TheEgg.prototype.getCollectable = function (board) {
-            var tiles = board.getAllTiles();
-            return tiles.reduce(function (collectable, tile) {
-                var score = tile.collectable;
-                if (score > 0) {
-                    return collectable + score;
-                }
-            }, 0);
-        };
-        return TheEgg;
-    }());
+        }
+    }
     exports.TheEgg = TheEgg;
 });
 define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (require, exports, TileSet_2, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // used in editor, draws a bunch of 32x32 tiles for selecting
-    var TileChooser = /** @class */ (function () {
-        function TileChooser(renderer) {
+    class TileChooser {
+        constructor(renderer) {
             this.chosenTileID = 0;
             this.renderer = renderer;
         }
-        TileChooser.prototype.chooseTile = function (id) {
+        chooseTile(id) {
             this.chosenTileID = id;
             this.highlightChosenTile(id);
-        };
-        TileChooser.prototype.highlightChosenTile = function (id) {
-            var tileChooser = document.getElementById("tileChooser");
-            var children = tileChooser.children;
-            var childrenArray = [].slice.call(children);
-            childrenArray.forEach(function (child) {
-                var className = child.getAttribute("class");
+        }
+        highlightChosenTile(id) {
+            const tileChooser = document.getElementById("tileChooser");
+            const children = tileChooser.children;
+            const childrenArray = [].slice.call(children);
+            childrenArray.forEach(child => {
+                const className = child.getAttribute("class");
                 if (className === "tile" + id) {
                     child.setAttribute("style", "border: 1px red solid;");
                 }
@@ -2262,63 +2392,59 @@ define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (requ
                     child.setAttribute("style", "border: 1px white solid;");
                 }
             });
-        };
-        TileChooser.prototype.makeTileImages = function (tiles) {
-            var _this = this;
-            return _.map(function (tile) {
-                var tileImage = document.createElement("img");
-                tileImage.setAttribute("src", _this.renderer.getTileImagePath(tile));
+        }
+        makeTileImages(tiles) {
+            return _.map(tile => {
+                const tileImage = document.createElement("img");
+                tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
                 tileImage.setAttribute("width", "32");
                 tileImage.setAttribute("height", "32");
                 tileImage.setAttribute("padding", "2px");
                 tileImage.setAttribute("alt", tile.title);
                 tileImage.setAttribute("style", "border: 1px white solid;");
                 tileImage.setAttribute("class", "tile" + tile.id);
-                tileImage.onclick = function () {
-                    _this.chooseTile(tile.id);
+                tileImage.onclick = () => {
+                    this.chooseTile(tile.id);
                 };
                 return tileImage;
             }, tiles);
-        };
-        TileChooser.prototype.render = function () {
-            var tiles = TileSet_2.TileSet.getTiles();
-            var images = this.makeTileImages(tiles);
-            var tileChooser = document.getElementById("tileChooser");
-            Object.values(images).forEach(function (image) {
+        }
+        render() {
+            const tiles = TileSet_2.TileSet.getTiles();
+            const images = this.makeTileImages(tiles);
+            const tileChooser = document.getElementById("tileChooser");
+            Object.values(images).forEach(image => {
                 tileChooser.appendChild(image);
             });
-        };
-        return TileChooser;
-    }());
+        }
+    }
     exports.TileChooser = TileChooser;
 });
 define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var TitleScreen = /** @class */ (function () {
-        function TitleScreen(jetpack, canvas, imagePath, width, height) {
+    class TitleScreen {
+        constructor(jetpack, canvas, imagePath, width, height) {
             this.jetpack = jetpack;
             this.canvas = canvas;
             this.imagePath = this.canvas.getImagesFolder() + imagePath;
             this.width = width;
             this.height = height;
         }
-        TitleScreen.prototype.render = function (callback) {
-            var _this = this;
-            var boardSize = new BoardSize_5.BoardSize(10);
+        render(callback) {
+            const boardSize = new BoardSize_5.BoardSize(10);
             this.canvas.sizeCanvas(boardSize);
-            var titleImage = document.createElement("img");
-            titleImage.addEventListener("load", function () {
-                _this.drawTheBigEgg(titleImage, 0.02, true, callback);
+            const titleImage = document.createElement("img");
+            titleImage.addEventListener("load", () => {
+                this.drawTheBigEgg(titleImage, 0.02, true, callback);
             }, false);
             titleImage.setAttribute("src", this.imagePath);
             titleImage.setAttribute("width", this.width.toString());
             titleImage.setAttribute("height", this.height.toString());
-        };
-        TitleScreen.prototype.drawTheBigEgg = function (titleImage, opacity, show, callback) {
-            var _this = this;
-            var ctx = this.canvas.getDrawingContext();
-            var canvas = this.canvas.getCanvas();
+        }
+        drawTheBigEgg(titleImage, opacity, show, callback) {
+            const ctx = this.canvas.getDrawingContext();
+            const canvas = this.canvas.getCanvas();
             ctx.globalAlpha = 1;
             this.canvas.wipeCanvas("rgb(0,0,0)");
             ctx.globalAlpha = opacity;
@@ -2327,9 +2453,9 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
                 opacity += 0.01;
                 if (opacity >= 1) {
                     // wait, fade the egg
-                    var v = setTimeout(function () {
+                    const v = setTimeout(() => {
                         // and start fading!
-                        _this.drawTheBigEgg(titleImage, opacity, false, callback);
+                        this.drawTheBigEgg(titleImage, opacity, false, callback);
                     }, 1000);
                     return false;
                 }
@@ -2342,19 +2468,136 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
                     return false;
                 }
             }
-            this.jetpack.animationHandle = window.requestAnimationFrame(function () {
-                _this.drawTheBigEgg(titleImage, opacity, show, callback);
+            this.jetpack.animationHandle = window.requestAnimationFrame(() => {
+                this.drawTheBigEgg(titleImage, opacity, show, callback);
             });
-        };
-        return TitleScreen;
-    }());
+        }
+    }
     exports.TitleScreen = TitleScreen;
 });
-define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "hammerjs"], function (require, exports, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_5, Hammer) {
+// sets up Web Audio
+define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Jetpack = /** @class */ (function () {
-        function Jetpack() {
+    class WebAudio {
+        constructor() {
+            this.audioReady = false;
+            this.audioBuffers = {}; // object containing a buffer for each game sound
+            this.soundPaths = [
+                "bright-bell",
+                "pop",
+                "soft-bell",
+                "warp",
+                "thud",
+                "woo",
+                "crate-smash",
+                "switch",
+                "power-up",
+                "bounce"
+            ];
+        }
+        init() {
+            this.audioContext = this.createAudioContext(); // create audioContext
+            this.output = this.createLimiter(this.audioContext); // create limiter and link up
+            const promises = this.fetchSounds(this.soundPaths);
+            Promise.all(promises).then(buffers => {
+                this.audioReady = true;
+            });
+        }
+        fetchSounds(soundPaths) {
+            return soundPaths.map(soundName => {
+                const path = this.getSoundPath(soundName);
+                return this.loadBuffer(soundName, path);
+            });
+        }
+        createAudioContext() {
+            if (this.audioContext) {
+                return this.audioContext;
+            }
+            return new (window.AudioContext ||
+                window.webkitAudioContext)();
+        }
+        createLimiter(audioCtx) {
+            // Create a compressor node
+            const compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.value = -1;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0;
+            compressor.release.value = 0.25;
+            compressor.connect(audioCtx.destination);
+            return compressor;
+        }
+        playSound(soundName, pan) {
+            // console.log(soundName)
+            if (!this.audioReady) {
+                return false;
+            }
+            this.getAudioNode(soundName, pan).caseOf({
+                just: audioNode => audioNode.start(),
+                nothing: () => {
+                    // console.log("not found")
+                }
+            });
+        }
+        getAudioNode(soundName, pan) {
+            const audioBuffer = Object
+                .values(this.audioBuffers)
+                .find(name => name.name === soundName);
+            if (audioBuffer) {
+                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer, pan));
+            }
+            return tsmonad_3.Maybe.nothing();
+        }
+        getSoundPath(soundName) {
+            return "/sounds/" + soundName + ".wav";
+        }
+        createOutput(buffer, pan) {
+            const panner = this.audioContext.createStereoPanner();
+            panner.connect(this.output);
+            panner.pan.value = pan;
+            const source = this.audioContext.createBufferSource();
+            source.buffer = buffer.buffer;
+            source.connect(panner);
+            return source;
+        }
+        storeBuffer(soundName, buffer) {
+            const audioBuffer = {
+                name: soundName,
+                buffer
+            };
+            return (this.audioBuffers[soundName] = audioBuffer);
+        }
+        loadBuffer(soundName, url) {
+            return new Promise((resolve, reject) => {
+                const request = new XMLHttpRequest();
+                request.open("GET", url, true);
+                request.responseType = "arraybuffer";
+                request.onload = () => {
+                    this.audioContext.decodeAudioData(request.response, buffer => {
+                        if (!buffer) {
+                            reject("Buffer could not be read!");
+                        }
+                        this.storeBuffer(soundName, buffer);
+                        resolve(buffer);
+                    }, error => {
+                        reject(error);
+                    });
+                };
+                request.onerror = () => {
+                    reject("BufferLoader: XHR error");
+                };
+                request.send();
+            });
+        }
+    }
+    exports.WebAudio = WebAudio;
+});
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_7, WebAudio_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Jetpack {
+        constructor() {
             this.moveSpeed = 10;
             this.paused = true;
             this.editMode = false;
@@ -2369,55 +2612,55 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             this.checkResize = false;
             this.isCalculating = false;
             this.action = "";
-            this.filterCreateTiles = function (tiles) {
-                return tiles.filter(function (tile) {
+            this.filterCreateTiles = tiles => {
+                return tiles.filter(tile => {
                     return tile.createPlayer !== "";
                 });
             };
         }
-        Jetpack.prototype.go = function (levelID) {
-            var _this = this;
+        go(levelID) {
             // this.bootstrap();
             this.bindSizeHandler();
             this.bindKeyboardHandler();
             this.bindSwipeHandler();
             this.pauseRender();
-            this.getTitleScreen(function () {
-                _this.loadLevel(levelID, function () {
-                    _this.setNextAction("");
-                    _this.startRender();
+            this.getTitleScreen(() => {
+                this.loadLevel(levelID, () => {
+                    this.setNextAction("");
+                    this.startRender();
                 });
             });
-        };
-        Jetpack.prototype.getEditor = function () {
+        }
+        getEditor() {
             return new Editor_1.Editor();
-        };
+        }
         // load static stuff - map/renderer etc will be worked out later
-        Jetpack.prototype.bootstrap = function (callback) {
-            var _this = this;
-            var boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
+        bootstrap(callback) {
+            const boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_1.Canvas(boardSize);
-            var playerTypes = new PlayerTypes_1.PlayerTypes();
+            const playerTypes = new PlayerTypes_1.PlayerTypes();
             this.playerTypes = playerTypes.getPlayerTypes();
-            var apiLocation = "http://" + window.location.hostname + "/levels/";
-            var loader = new Loader_1.Loader(apiLocation);
+            this.webAudio = new WebAudio_1.WebAudio();
+            this.webAudio.init(); // load web audio stuff
+            const apiLocation = "http://" + window.location.hostname + "/levels/";
+            const loader = new Loader_1.Loader(apiLocation);
             this.levels = new Levels_1.Levels(loader);
-            this.getLevelList(function (levelList) {
-                var levelID = _this.chooseLevelID(levelList);
-                _this.levelID = levelID;
+            this.getLevelList(levelList => {
+                const levelID = this.chooseLevelID(levelList);
+                this.levelID = levelID;
                 callback(levelID);
             });
-        };
-        Jetpack.prototype.displayScore = function (score) {
-            var scoreElement = document.getElementById("score");
+        }
+        displayScore(score) {
+            const scoreElement = document.getElementById("score");
             if (scoreElement) {
                 scoreElement.innerHTML = score.toString();
             }
-        };
+        }
         // create player
-        Jetpack.prototype.createNewPlayer = function (playerTypes, type, coords, direction) {
-            var playerType = playerTypes[type];
-            var params = JSON.parse(JSON.stringify(playerType));
+        createNewPlayer(playerTypes, type, coords, direction) {
+            const playerType = playerTypes[type];
+            const params = JSON.parse(JSON.stringify(playerType));
             params.id = this.nextPlayerID++;
             params.coords = coords;
             params.direction = direction;
@@ -2425,93 +2668,86 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
                 params.moveSpeed = this.moveSpeed;
                 params.fallSpeed = this.moveSpeed * 1.2;
             }
-            var player = new Player_1.Player(params);
+            const player = new Player_1.Player(params);
             return player;
-        };
+        }
         // make this actually fucking rotate, and choose direction, and do the visual effect thing
-        Jetpack.prototype.rotateBoard = function (clockwise) {
+        rotateBoard(clockwise) {
             if (clockwise) {
                 this.setNextAction("rotateRight");
             }
             else {
                 this.setNextAction("rotateLeft");
             }
-        };
-        Jetpack.prototype.getTitleScreen = function (callback) {
-            var imageSize = { width: 1024, height: 1024 };
-            var imagePath = "large/the-egg.png";
-            var titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
+        }
+        getTitleScreen(callback) {
+            const imageSize = { width: 1024, height: 1024 };
+            const imagePath = "large/the-egg.png";
+            const titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
             titleScreen.render(callback);
-        };
-        Jetpack.prototype.getLevelList = function (callback) {
-            var _this = this;
-            this.levels.getLevelList(function (levelList) {
-                _this.levelList = levelList;
+        }
+        getLevelList(callback) {
+            this.levels.getLevelList(levelList => {
+                this.levelList = levelList;
                 callback(levelList);
             });
-        };
+        }
         // select a random level that has not been completed yet
         // a return of false means none available (generate a random one)
-        Jetpack.prototype.chooseLevelID = function (levelList) {
-            var availableLevels = levelList.filter(function (level) {
+        chooseLevelID(levelList) {
+            const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            var chosenKey = Utils_5.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
-            var levelID = availableLevels[chosenKey].levelID;
+            const levelID = availableLevels[chosenKey].levelID;
             return levelID;
-        };
-        Jetpack.prototype.setNextAction = function (action) {
+        }
+        setNextAction(action) {
             this.action = action;
-        };
+        }
         // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-        Jetpack.prototype.createRenderer = function (boardSize, completedCallback) {
+        createRenderer(boardSize, completedCallback) {
             this.canvas = new Canvas_1.Canvas(boardSize);
             this.boardSize = boardSize;
-            var tiles = TileSet_3.TileSet.getTiles();
-            return new Renderer_1.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, function () { return completedCallback(); });
-        };
-        Jetpack.prototype.startRender = function () {
-            var _this = this;
+            const tiles = TileSet_3.TileSet.getTiles();
+            return new Renderer_1.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, () => completedCallback());
+        }
+        startRender() {
             window.cancelAnimationFrame(this.animationHandle);
             this.showControls();
-            this.animationHandle = window.requestAnimationFrame(function (time) {
-                return _this.eventLoop(time, 0);
-            });
-        };
-        Jetpack.prototype.getNextAction = function () {
-            var action = this.action;
+            this.animationHandle = window.requestAnimationFrame(time => this.eventLoop(time, 0));
+        }
+        getNextAction() {
+            const action = this.action;
             // this.action = "";
             return action;
-        };
+        }
         // change of heart - this runs all the time and requests various things do stuff
         // if we are paused, it is nothing, but the loop runs all the same
         // we are separating one frame ==== one turn
         // as this does not work for things like rotation
         // which is one 'turn' but many frames
-        Jetpack.prototype.eventLoop = function (time, lastTime) {
-            var _this = this;
-            this.animationHandle = window.requestAnimationFrame(function (newTime) {
-                return _this.eventLoop(newTime, time);
-            });
-            var timePassed = this.calcTimePassed(time, lastTime);
+        eventLoop(time, lastTime) {
+            this.animationHandle = window.requestAnimationFrame(newTime => this.eventLoop(newTime, time));
+            const timePassed = this.calcTimePassed(time, lastTime);
             this.displayFrameRate(timePassed);
-            var action = this.getNextAction();
+            const action = this.getNextAction();
             this.gameCycle(timePassed, action);
-        };
+        }
         // this does one step of the game
-        Jetpack.prototype.gameCycle = function (timePassed, action) {
-            var oldGameState = this.getCurrentGameState();
+        gameCycle(timePassed, action) {
+            const oldGameState = this.getCurrentGameState();
             if (action === "rotateLeft") {
-                var rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
+                const rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
                 this.doBoardRotation(false, rotatedLeftState);
                 this.setNextAction("rotatingLeft");
                 return false;
             }
             else if (action === "rotateRight") {
-                var rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
+                const rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
                 this.doBoardRotation(true, rotatedRightState);
                 this.setNextAction("rotatingRight");
                 return false;
@@ -2520,143 +2756,153 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
                 return false;
             }
             if (oldGameState.outcome.length > 0) {
-                var continueGame = this.checkOutcome(oldGameState);
+                const continueGame = this.checkOutcome(oldGameState);
                 if (continueGame === false) {
                     this.setNextAction("stop");
                 }
             }
-            var newGameState = this.getNewGameState(oldGameState, action, timePassed);
+            const newGameState = this.getNewGameState(oldGameState, action, timePassed);
             if (oldGameState.score !== newGameState.score) {
                 this.displayScore(newGameState.score);
             }
             this.renderChanges(oldGameState, newGameState);
-        };
+        }
         // return true for continue play, false for stop
-        Jetpack.prototype.checkOutcome = function (gameState) {
+        checkOutcome(gameState) {
             if (gameState.outcome === "completeLevel") {
                 // egg is over cup - check whether we've completed
-                var completed = this.completeLevel(gameState.board, gameState.players);
+                const completed = this.completeLevel(gameState.board, gameState.players);
                 if (completed) {
+                    this.webAudio.playSound("bright-bell", 0);
                     this.nextLevel(gameState.score, gameState.rotations);
                     return false;
                 }
             }
             return true;
-        };
+        }
         // or at least try
-        Jetpack.prototype.completeLevel = function (board, players) {
-            var collectable = this.getCollectable(board);
-            var playerCount = this.countPlayers(players);
+        completeLevel(board, players) {
+            const collectable = this.getCollectable(board);
+            const playerCount = this.countPlayers(players);
             if (collectable < 1 && playerCount < 2) {
                 return true;
             }
             return false;
-        };
-        Jetpack.prototype.getBoardFromArray = function (boardArray) {
+        }
+        getBoardFromArray(boardArray) {
             return Map.makeBoardFromArray(boardArray);
-        };
+        }
         // create first "frame" of gameState from board
         // create players etc
-        Jetpack.prototype.getBlankGameState = function (board) {
-            var players = this.createPlayers(this.playerTypes, board);
+        getBlankGameState(board) {
+            const players = this.createPlayers(this.playerTypes, board);
             return new GameState_1.GameState({
-                board: board,
-                players: players
+                board,
+                players
             });
-        };
+        }
         // current game state from array
-        Jetpack.prototype.getCurrentGameState = function () {
+        getCurrentGameState() {
             return this.gameStates.slice(-1)[0]; // set to new last item
-        };
-        Jetpack.prototype.resetGameState = function (board) {
-            var gameState = this.getBlankGameState(board);
+        }
+        resetGameState(board) {
+            const gameState = this.getBlankGameState(board);
             this.gameStates = [gameState];
-        };
-        Jetpack.prototype.updateGameState = function (oldGameState, gameState) {
+        }
+        updateGameState(oldGameState, gameState) {
             this.gameStates = [oldGameState, gameState];
-        };
+        }
         // do next move, plop new state on pile, return new state
-        Jetpack.prototype.getNewGameState = function (gameState, action, timePassed) {
-            var theEgg = new TheEgg_1.TheEgg(this.playerTypes);
-            var newGameState = theEgg.doAction(gameState, action, timePassed);
+        getNewGameState(gameState, action, timePassed) {
+            const theEgg = new TheEgg_1.TheEgg(this.playerTypes);
+            const newGameState = theEgg.doAction(gameState, action, timePassed);
             this.updateGameState(gameState, newGameState);
+            this.playSounds(gameState, newGameState);
             return newGameState;
-        };
-        Jetpack.prototype.renderEverything = function (gameState) {
-            var boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
-            var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
+        }
+        // check changes in board, get sounds, trigger them
+        playSounds(oldState, newState) {
+            _.map(sound => sound.caseOf({
+                just: audio => this.webAudio.playSound(audio.name, audio.pan),
+                nothing: () => {
+                    // don't play a sound
+                }
+            }), AudioTriggers.triggerSounds(oldState)(newState));
+        }
+        renderEverything(gameState) {
+            const boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
+            const blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
-        };
-        Jetpack.prototype.renderChanges = function (oldGameState, newGameState) {
-            var boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
+        }
+        renderChanges(oldGameState, newGameState) {
+            const boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
             // if rotated everything changes anyway
             if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
                 return this.renderEverything(newGameState);
             }
             // player map is covering old shit up
-            var playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
+            const playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
             // render changes
-            var boardRenderMap = RenderMap_2.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
-            var finalRenderMap = RenderMap_2.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+            const boardRenderMap = RenderMap_2.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
+            const finalRenderMap = RenderMap_2.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
             this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
-        };
-        Jetpack.prototype.sizeCanvas = function (boardSize) {
+        }
+        sizeCanvas(boardSize) {
             if (!this.checkResize) {
                 return false;
             }
             this.renderer.resize(boardSize);
             this.checkResize = false;
-        };
+        }
         // create empty renderMap based on boardSize, and then apply each player's position to it
-        Jetpack.prototype.createRenderMapFromPlayers = function (players, boardSize) {
-            var blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, false);
-            return players.reduce(function (map, player) {
+        createRenderMapFromPlayers(players, boardSize) {
+            const blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, false);
+            return players.reduce((map, player) => {
                 return RenderMap_2.RenderMap.addPlayerToRenderMap(player, map);
             }, blankMap);
-        };
-        Jetpack.prototype.calcTimePassed = function (time, lastTime) {
-            var difference = Math.min(time - lastTime, 20);
+        }
+        calcTimePassed(time, lastTime) {
+            const difference = Math.min(time - lastTime, 20);
             return difference;
-        };
-        Jetpack.prototype.displayFrameRate = function (timePassed) {
-            var frameRate = Math.floor(1000 / timePassed);
-            var fps = document.getElementById("fps");
+        }
+        displayFrameRate(timePassed) {
+            const frameRate = Math.floor(1000 / timePassed);
+            const fps = document.getElementById("fps");
             if (fps) {
                 fps.innerHTML = frameRate.toFixed(3) + "fps";
             }
-        };
-        Jetpack.prototype.nextLevel = function (score, rotations) {
-            var _this = this;
+        }
+        nextLevel(score, rotations) {
             this.pauseRender();
-            this.levels.saveData(this.levelID, rotations, score, function (data) {
-                _this.levelList = _this.markLevelAsCompleted(_this.levelList, _this.levelID);
-                _this.levelID = _this.chooseLevelID(_this.levelList);
-                _this.go(_this.levelID);
+            this.levels.saveData(this.levelID, rotations, score, data => {
+                this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
+                this.levelID = this.chooseLevelID(this.levelList);
+                this.go(this.levelID);
             });
-        };
-        Jetpack.prototype.markLevelAsCompleted = function (levelList, levelID) {
+        }
+        markLevelAsCompleted(levelList, levelID) {
             levelList[levelID].completed = true;
             return levelList;
-        };
-        Jetpack.prototype.pauseRender = function () {
+        }
+        pauseRender() {
             this.paused = true;
             this.hideControls();
             window.cancelAnimationFrame(this.animationHandle);
-        };
-        Jetpack.prototype.showControls = function () {
-            var controlHeader = document.getElementById("controlHeader");
+        }
+        showControls() {
+            const controlHeader = document.getElementById("controlHeader");
             if (controlHeader && controlHeader.classList.contains("hidden")) {
                 controlHeader.classList.remove("hidden");
             }
-        };
-        Jetpack.prototype.hideControls = function () {
-            var controlHeader = document.getElementById("controlHeader");
+        }
+        hideControls() {
+            const controlHeader = document.getElementById("controlHeader");
             if (controlHeader && !controlHeader.classList.contains("hidden")) {
                 controlHeader.classList.add("hidden");
             }
-        };
-        Jetpack.prototype.countPlayers = function (players) {
-            return players.reduce(function (total, player) {
+        }
+        countPlayers(players) {
+            return players.reduce((total, player) => {
                 if (player && player.value > 0) {
                     return total + 1;
                 }
@@ -2664,30 +2910,29 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
                     return total;
                 }
             }, 0);
-        };
+        }
         // cycle through all map tiles, find egg cups etc and create players
-        Jetpack.prototype.createPlayers = function (playerTypes, board) {
-            var _this = this;
-            var tiles = board.getAllTiles();
-            var filtered = this.filterCreateTiles(tiles);
-            var players = filtered.map(function (tile) {
-                var type = tile.createPlayer;
-                var coords = new Coords_7.Coords({
+        createPlayers(playerTypes, board) {
+            const tiles = board.getAllTiles();
+            const filtered = this.filterCreateTiles(tiles);
+            const players = filtered.map((tile) => {
+                const type = tile.createPlayer;
+                const coords = new Coords_7.Coords({
                     offsetX: 0,
                     offsetY: 0,
                     x: tile.x,
                     y: tile.y
                 });
-                var direction = new Coords_7.Coords({ x: 1 });
-                return _this.createNewPlayer(playerTypes, type, coords, direction);
+                const direction = new Coords_7.Coords({ x: 1 });
+                return this.createNewPlayer(playerTypes, type, coords, direction);
             });
             return players;
-        };
+        }
         // get total outstanding points left to grab on board
-        Jetpack.prototype.getCollectable = function (board) {
-            var tiles = board.getAllTiles();
-            return tiles.reduce(function (collectable, tile) {
-                var score = tile.get("collectable");
+        getCollectable(board) {
+            const tiles = board.getAllTiles();
+            return tiles.reduce((collectable, tile) => {
+                const score = tile.get("collectable");
                 if (score > 0) {
                     return collectable + score;
                 }
@@ -2695,78 +2940,73 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
                     return collectable;
                 }
             }, 0);
-        };
-        Jetpack.prototype.doBoardRotation = function (clockwise, gameState) {
-            var _this = this;
-            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, function () {
-                _this.renderEverything(gameState);
-                _this.setNextAction(""); // continue playing the game
+        }
+        doBoardRotation(clockwise, gameState) {
+            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
+                this.renderEverything(gameState);
+                this.setNextAction(""); // continue playing the game
             });
-        };
-        Jetpack.prototype.loadLevel = function (levelID, callback) {
-            var _this = this;
-            this.levels.loadLevel(levelID, function (savedLevel) {
-                _this.renderer = _this.createRenderer(savedLevel.boardSize, function () {
-                    var board = _this.getBoardFromArray(savedLevel.board);
-                    _this.resetGameState(board);
-                    var gameState = _this.getCurrentGameState();
-                    _this.renderEverything(gameState);
+        }
+        loadLevel(levelID, callback) {
+            this.levels.loadLevel(levelID, (savedLevel) => {
+                this.renderer = this.createRenderer(savedLevel.boardSize, () => {
+                    const board = this.getBoardFromArray(savedLevel.board);
+                    this.resetGameState(board);
+                    const gameState = this.getCurrentGameState();
+                    this.renderEverything(gameState);
                     callback();
                 });
-            }, function () {
-                _this.renderer = _this.createRenderer(_this.boardSize, function () {
-                    var board = Map.generateRandomBoard(_this.boardSize);
-                    _this.resetGameState(board);
-                    var gameState = _this.getCurrentGameState();
-                    _this.renderEverything(gameState);
+            }, () => {
+                this.renderer = this.createRenderer(this.boardSize, () => {
+                    const board = Map.generateRandomBoard(this.boardSize);
+                    this.resetGameState(board);
+                    const gameState = this.getCurrentGameState();
+                    this.renderEverything(gameState);
                     callback();
                 });
             });
-        };
-        Jetpack.prototype.bindSizeHandler = function () {
-            var _this = this;
-            window.addEventListener("resize", function () {
-                _this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+        }
+        bindSizeHandler() {
+            window.addEventListener("resize", () => {
+                this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
             });
-        };
-        Jetpack.prototype.bindKeyboardHandler = function () {
-            var _this = this;
-            window.addEventListener("keydown", function (event) {
+        }
+        bindKeyboardHandler() {
+            window.addEventListener("keydown", event => {
                 if (event.keyCode === 37) {
                     // left arrow
-                    _this.rotateBoard(false);
+                    this.rotateBoard(false);
                 }
                 if (event.keyCode === 39) {
                     // right arrow
-                    _this.rotateBoard(true);
+                    this.rotateBoard(true);
                 }
                 if (event.keyCode === 80) {
                     // 'p'
-                    _this.togglePaused();
+                    this.togglePaused();
                 }
                 if (event.keyCode === 83) {
                     // 's'
-                    _this.doStep();
+                    this.doStep();
                 }
                 if (event.keyCode === 70) {
                     // 'f'
-                    _this.toggleFPS();
+                    this.toggleFPS();
                 }
             });
-        };
-        Jetpack.prototype.bindSwipeHandler = function () {
-            var _this = this;
-            var element = document.getElementById("wrapper");
-            var hammertime = new Hammer(element, {});
-            hammertime.on("swipeleft", function (ev) {
-                _this.rotateBoard(false);
+        }
+        bindSwipeHandler() {
+            const element = document.getElementById("wrapper");
+            const hammertime = new Hammer(element, {});
+            hammertime.on("swipeleft", ev => {
+                this.rotateBoard(false);
             });
-            hammertime.on("swiperight", function (ev) {
-                _this.rotateBoard(true);
+            hammertime.on("swiperight", ev => {
+                this.rotateBoard(true);
             });
-        };
-        Jetpack.prototype.toggleFPS = function () {
-            var fps = document.getElementById("fps");
+        }
+        toggleFPS() {
+            const fps = document.getElementById("fps");
             if (!fps) {
                 return false;
             }
@@ -2776,29 +3016,28 @@ define("Jetpack", ["require", "exports", "BoardSize", "Canvas", "Coords", "Edito
             else {
                 fps.style.display = "none";
             }
-        };
-        Jetpack.prototype.togglePaused = function () {
+        }
+        togglePaused() {
             if (this.paused) {
                 this.startRender();
             }
             else {
                 this.pauseRender();
             }
-        };
-        Jetpack.prototype.doStep = function () {
+        }
+        doStep() {
             this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
-        };
-        return Jetpack;
-    }());
+        }
+    }
     exports.Jetpack = Jetpack;
 });
 define("Renderer", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var SPRITE_SIZE = 64;
-    var OFFSET_DIVIDE = 100;
-    var Renderer = /** @class */ (function () {
-        function Renderer(jetpack, tiles, playerTypes, boardSize, canvas, loadCallback) {
+    const SPRITE_SIZE = 64;
+    const OFFSET_DIVIDE = 100;
+    class Renderer {
+        constructor(jetpack, tiles, playerTypes, boardSize, canvas, loadCallback) {
             this.lampMode = false; // lamp mode only draws around the eggs
             this.checkResize = true;
             this.tileImages = {}; // image elements of tiles
@@ -2806,21 +3045,21 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.totalTiles = 0;
             this.tilesLoaded = 0;
             this.renderTile = function (x, y, tile, renderAngle) {
-                var ctx = this.canvas.getDrawingContext();
-                var tileSize = this.tileSize;
-                var img = this.getTileImage(tile);
+                const ctx = this.canvas.getDrawingContext();
+                const tileSize = this.tileSize;
+                const img = this.getTileImage(tile);
                 if (!img) {
                     // console.log("Could not find tile image for id " + tile.id);
                     return false;
                 }
-                var left = Math.floor(x * tileSize);
-                var top = Math.floor(y * tileSize);
+                let left = Math.floor(x * tileSize);
+                let top = Math.floor(y * tileSize);
                 if (renderAngle === 0) {
                     ctx.drawImage(img, left, top, tileSize, tileSize);
                 }
                 else {
-                    var angleInRad = renderAngle * (Math.PI / 180);
-                    var offset = Math.floor(tileSize / 2);
+                    const angleInRad = renderAngle * (Math.PI / 180);
+                    const offset = Math.floor(tileSize / 2);
                     left = Math.floor(left + offset);
                     top = Math.floor(top + offset);
                     ctx.translate(left, top);
@@ -2840,24 +3079,24 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.loadTilePalette(tiles);
             this.loadPlayerPalette();
         }
-        Renderer.prototype.render = function (board, renderMap, players, renderAngle) {
+        render(board, renderMap, players, renderAngle) {
             // console.log("Renderer->render",board, renderMap, renderAngle);
             this.tileSize = this.canvas.calcTileSize(this.boardSize);
             this.renderBoard(board, renderMap, renderAngle);
             this.renderPlayers(players);
             this.renderFrontLayerBoard(board, renderMap, renderAngle);
-        };
-        Renderer.prototype.resize = function (boardSize) {
+        }
+        resize(boardSize) {
             this.boardSize = boardSize;
             this.tileSize = this.canvas.sizeCanvas(boardSize);
-        };
-        Renderer.prototype.drawRotatingBoard = function (clockwise, moveSpeed, completed) {
+        }
+        drawRotatingBoard(clockwise, moveSpeed, completed) {
             if (this.rotating === true) {
                 // already
                 return false;
             }
-            var canvas = this.canvas.getCanvas();
-            var savedData = this.getImageData(canvas);
+            const canvas = this.canvas.getCanvas();
+            const savedData = this.getImageData(canvas);
             this.rotating = true;
             if (clockwise) {
                 this.drawRotated(savedData, 1, 0, 90, moveSpeed, completed);
@@ -2865,155 +3104,142 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             else {
                 this.drawRotated(savedData, -1, 0, -90, moveSpeed, completed);
             }
-        };
-        Renderer.prototype.getTileImagePath = function (tile) {
+        }
+        getTileImagePath(tile) {
             return this.canvas.imagesFolder + tile.img;
-        };
-        Renderer.prototype.getImageData = function (canvas) {
-            var cw = canvas.width;
-            var ch = canvas.height;
-            var savedData = new Image();
+        }
+        getImageData(canvas) {
+            const cw = canvas.width;
+            const ch = canvas.height;
+            const savedData = new Image();
             savedData.src = canvas.toDataURL("image/png");
             return savedData;
-        };
-        Renderer.prototype.loadTilePalette = function (tiles) {
-            var _this = this;
+        }
+        loadTilePalette(tiles) {
             this.totalTiles = this.tilesLoaded = 0;
-            var _loop_1 = function (i) {
+            for (const i in tiles) {
                 if (tiles[i] !== undefined) {
-                    this_1.totalTiles++;
-                    var thisTile_1 = tiles[i];
-                    var tileImage = document.createElement("img");
-                    tileImage.setAttribute("src", this_1.getTileImagePath(thisTile_1));
+                    this.totalTiles++;
+                    const thisTile = tiles[i];
+                    const tileImage = document.createElement("img");
+                    tileImage.setAttribute("src", this.getTileImagePath(thisTile));
                     tileImage.setAttribute("width", SPRITE_SIZE.toString());
                     tileImage.setAttribute("height", SPRITE_SIZE.toString());
-                    tileImage.addEventListener("load", function () {
-                        _this.markTileImageAsLoaded(thisTile_1.id);
+                    tileImage.addEventListener("load", () => {
+                        this.markTileImageAsLoaded(thisTile.id);
                     }, false);
-                    this_1.tileImages[thisTile_1.id] = {
+                    this.tileImages[thisTile.id] = {
                         image: tileImage,
                         ready: false
                     };
                 }
-            };
-            var this_1 = this;
-            for (var i in tiles) {
-                _loop_1(i);
             }
-        };
-        Renderer.prototype.loadPlayerPalette = function () {
-            var _this = this;
-            var _loop_2 = function (i) {
-                if (this_2.playerTypes[i] !== undefined) {
-                    var playerType_1 = this_2.playerTypes[i];
-                    var playerImage = document.createElement("img");
-                    playerImage.setAttribute("src", this_2.getTileImagePath(playerType_1));
-                    playerImage.addEventListener("load", function () {
-                        _this.markPlayerImageAsLoaded(playerType_1.img);
+        }
+        loadPlayerPalette() {
+            for (const i in this.playerTypes) {
+                if (this.playerTypes[i] !== undefined) {
+                    const playerType = this.playerTypes[i];
+                    const playerImage = document.createElement("img");
+                    playerImage.setAttribute("src", this.getTileImagePath(playerType));
+                    playerImage.addEventListener("load", () => {
+                        this.markPlayerImageAsLoaded(playerType.img);
                     }, false);
-                    this_2.playerImages[playerType_1.img] = {
+                    this.playerImages[playerType.img] = {
                         image: playerImage,
                         ready: false
                     };
                 }
-            };
-            var this_2 = this;
-            for (var i in this.playerTypes) {
-                _loop_2(i);
             }
-        };
-        Renderer.prototype.markPlayerImageAsLoaded = function (img) {
+        }
+        markPlayerImageAsLoaded(img) {
             this.playerImages[img].ready = true;
-        };
-        Renderer.prototype.markTileImageAsLoaded = function (id) {
+        }
+        markTileImageAsLoaded(id) {
             this.tilesLoaded++;
             this.tileImages[id].ready = true;
             if (this.tilesLoaded === this.totalTiles) {
                 this.loadCallback(); // we are ready to fucking party
             }
-        };
-        Renderer.prototype.renderBoard = function (board, renderMap, renderAngle) {
-            var _this = this;
-            var ctx = this.canvas.getDrawingContext();
+        }
+        renderBoard(board, renderMap, renderAngle) {
+            const ctx = this.canvas.getDrawingContext();
             ctx.globalAlpha = 1;
-            var tiles = board.getAllTiles();
-            tiles.map(function (tile) {
-                var needsDraw = renderMap[tile.x][tile.y];
+            const tiles = board.getAllTiles();
+            tiles.map(tile => {
+                const needsDraw = renderMap[tile.x][tile.y];
                 if (needsDraw === false) {
-                    _this.showUnrenderedTile(tile.x, tile.y);
+                    this.showUnrenderedTile(tile.x, tile.y);
                     return;
                 }
                 if (!tile.frontLayer) {
-                    _this.renderTile(tile.x, tile.y, tile, renderAngle);
+                    this.renderTile(tile.x, tile.y, tile, renderAngle);
                 }
                 else {
                     // render sky behind see through tiles
-                    _this.drawSkyTile(tile, tile.x, tile.y, renderAngle);
+                    this.drawSkyTile(tile, tile.x, tile.y, renderAngle);
                 }
             });
-        };
-        Renderer.prototype.drawSkyTile = function (tile, x, y, renderAngle) {
-            var skyTile = this.tiles[1];
+        }
+        drawSkyTile(tile, x, y, renderAngle) {
+            const skyTile = this.tiles[1];
             this.renderTile(x, y, skyTile, renderAngle);
-        };
+        }
         // just go over and draw the over-the-top stuff
-        Renderer.prototype.renderFrontLayerBoard = function (board, renderMap, renderAngle) {
-            var _this = this;
-            var tiles = board.getAllTiles();
-            tiles.map(function (tile) {
-                var needsDraw = renderMap[tile.x][tile.y];
+        renderFrontLayerBoard(board, renderMap, renderAngle) {
+            const tiles = board.getAllTiles();
+            tiles.map(tile => {
+                const needsDraw = renderMap[tile.x][tile.y];
                 if (needsDraw === false) {
                     return;
                 }
                 if (tile.frontLayer) {
-                    _this.renderTile(tile.x, tile.y, tile, renderAngle);
+                    this.renderTile(tile.x, tile.y, tile, renderAngle);
                 }
             });
-        };
+        }
         // debugging tools
-        Renderer.prototype.showUnrenderedTile = function (x, y) {
+        showUnrenderedTile(x, y) {
             if (!this.lampMode) {
                 return false;
             }
-            var tileSize = Math.floor(this.tileSize);
-            var ctx = this.canvas.getDrawingContext();
+            const tileSize = Math.floor(this.tileSize);
+            const ctx = this.canvas.getDrawingContext();
             ctx.fillStyle = "rgba(0,0,0,0.1)";
             ctx.fillRect(Math.floor(x * tileSize), Math.floor(y * tileSize), tileSize, tileSize);
-        };
-        Renderer.prototype.renderPlayers = function (players) {
-            var _this = this;
-            players.map(function (player) {
-                return _this.renderPlayer(player);
+        }
+        renderPlayers(players) {
+            players.map(player => {
+                return this.renderPlayer(player);
             });
-        };
-        Renderer.prototype.getTileImage = function (tile) {
+        }
+        getTileImage(tile) {
             if (tile.id < 1) {
                 // console.log("invalid tile requested", tile.id, tile);
                 return false;
             }
-            var tileImage = this.tileImages[tile.id];
+            const tileImage = this.tileImages[tile.id];
             if (tileImage.ready) {
                 return tileImage.image;
             }
             return false;
-        };
-        Renderer.prototype.getPlayerImage = function (img) {
-            var playerImage = this.playerImages[img];
+        }
+        getPlayerImage(img) {
+            const playerImage = this.playerImages[img];
             if (playerImage.ready) {
                 return playerImage.image;
             }
             return false;
-        };
-        Renderer.prototype.renderPlayer = function (player) {
-            var ctx = this.canvas.getDrawingContext();
-            var tileSize = this.tileSize;
-            var offsetRatio = tileSize / OFFSET_DIVIDE;
-            var coords = player.coords;
-            var left = Math.floor(coords.x * tileSize + coords.offsetX * offsetRatio);
-            var top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
-            var clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
-            var clipTop = 0;
-            var image = this.getPlayerImage(player.img);
+        }
+        renderPlayer(player) {
+            const ctx = this.canvas.getDrawingContext();
+            const tileSize = this.tileSize;
+            const offsetRatio = tileSize / OFFSET_DIVIDE;
+            const coords = player.coords;
+            const left = Math.floor(coords.x * tileSize + coords.offsetX * offsetRatio);
+            const top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
+            const clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
+            const clipTop = 0;
+            const image = this.getPlayerImage(player.img);
             if (!image) {
                 // console.log('player image not loaded', player.img);
                 return false;
@@ -3021,23 +3247,22 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
             if (left < 0) {
                 // also draw on right
-                var secondLeft = left + tileSize * this.boardSize.width;
+                const secondLeft = left + tileSize * this.boardSize.width;
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
             }
             if (left + tileSize > tileSize * this.boardSize.width) {
                 // also draw on left
-                var secondLeft = left - tileSize * this.boardSize.width;
+                const secondLeft = left - tileSize * this.boardSize.width;
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
             }
             if (top + tileSize > tileSize * this.boardSize.height) {
                 // also draw on top
-                var secondTop = top - tileSize * this.boardSize.height;
+                const secondTop = top - tileSize * this.boardSize.height;
                 ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
             }
-        };
-        Renderer.prototype.drawRotated = function (savedData, direction, angle, targetAngle, moveSpeed, completed) {
-            var _this = this;
-            var canvas = this.canvas.getCanvas();
+        }
+        drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed) {
+            const canvas = this.canvas.getCanvas();
             if (direction > 0) {
                 if (angle >= targetAngle) {
                     completed();
@@ -3052,11 +3277,11 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                     return false;
                 }
             }
-            var angleInRad = angle * (Math.PI / 180);
-            var offset = canvas.width / 2;
-            var ctx = this.canvas.getDrawingContext();
-            var left = offset;
-            var top = offset;
+            const angleInRad = angle * (Math.PI / 180);
+            const offset = canvas.width / 2;
+            const ctx = this.canvas.getDrawingContext();
+            const left = offset;
+            const top = offset;
             this.canvas.wipeCanvas("rgba(0,0,0,0.1)");
             ctx.translate(left, top);
             ctx.rotate(angleInRad);
@@ -3064,27 +3289,25 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             ctx.rotate(-angleInRad);
             ctx.translate(-left, -top);
             angle += direction * (moveSpeed / 2);
-            this.animationHandle = window.requestAnimationFrame(function () {
-                _this.drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed);
+            this.animationHandle = window.requestAnimationFrame(() => {
+                this.drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed);
             });
-        };
-        return Renderer;
-    }());
+        }
+    }
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_6) {
+define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_8) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Editor = /** @class */ (function () {
-        function Editor() {
+    class Editor {
+        constructor() {
             this.levelID = 1;
             this.levelList = [];
             this.boardHistory = [];
             this.defaultBoardSize = 20;
         }
         // go function but for edit mode
-        Editor.prototype.edit = function () {
-            var _this = this;
+        edit() {
             this.levels.populateLevelsList(this.levelList);
             this.bindSizeHandler();
             this.bindClickHandler();
@@ -3093,62 +3316,59 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             // reset undo
             this.clearBoardHistory(this.board);
             this.renderer = this.createRenderer(this.boardSize);
-            window.setTimeout(function () {
-                _this.renderEverything(_this.board);
+            window.setTimeout(() => {
+                this.renderEverything(this.board);
             }, 1000);
             this.tileChooser = new TileChooser_1.TileChooser(this.renderer);
             this.tileChooser.render();
-        };
+        }
         // load static stuff - map/renderer etc will be worked out later
-        Editor.prototype.bootstrap = function (callback) {
-            var _this = this;
+        bootstrap(callback) {
             this.boardSize = new BoardSize_7.BoardSize(this.defaultBoardSize);
             this.canvas = new Canvas_2.Canvas(this.boardSize);
-            var apiLocation = "http://" + window.location.hostname + "/levels/";
-            var loader = new Loader_2.Loader(apiLocation);
+            const apiLocation = "http://" + window.location.hostname + "/levels/";
+            const loader = new Loader_2.Loader(apiLocation);
             this.levels = new Levels_2.Levels(loader);
-            this.getLevelList(function (levelList) {
-                var levelID = _this.chooseLevelID(levelList);
-                _this.levelID = levelID;
+            this.getLevelList(levelList => {
+                const levelID = this.chooseLevelID(levelList);
+                this.levelID = levelID;
                 callback(levelID);
             });
-        };
-        Editor.prototype.saveLevel = function () {
-            var _this = this;
-            this.levels.saveLevel(this.board.toJS(), this.boardSize, this.levels.levelID, function (levelID) {
-                var text = "Level " + levelID + " saved";
-                _this.showEditMessage(text);
+        }
+        saveLevel() {
+            this.levels.saveLevel(this.board.toJS(), this.boardSize, this.levels.levelID, levelID => {
+                const text = "Level " + levelID + " saved";
+                this.showEditMessage(text);
             });
-        };
-        Editor.prototype.loadLevelFromList = function () {
-            var _this = this;
-            var select = document.getElementById("levelList");
-            var index = select.selectedIndex;
-            var levelID = select.options[index].value;
-            this.loadLevel(levelID, function () {
+        }
+        loadLevelFromList() {
+            const select = document.getElementById("levelList");
+            const index = select.selectedIndex;
+            const levelID = select.options[index].value;
+            this.loadLevel(levelID, () => {
                 // reset undo
-                _this.clearBoardHistory(_this.board);
+                this.clearBoardHistory(this.board);
                 // render everything (give sprites a second to load)
-                window.setTimeout(function () {
-                    _this.renderEverything(_this.board);
+                window.setTimeout(() => {
+                    this.renderEverything(this.board);
                 }, 1000);
             });
-        };
-        Editor.prototype.growBoard = function () {
-            var newBoard = Map.growBoard(this.board);
+        }
+        growBoard() {
+            const newBoard = Map.growBoard(this.board);
             this.boardSize = new BoardSize_7.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.updateBoard(newBoard);
             this.renderEverything(newBoard);
-        };
-        Editor.prototype.shrinkBoard = function () {
-            var newBoard = Map.shrinkBoard(this.board);
+        }
+        shrinkBoard() {
+            const newBoard = Map.shrinkBoard(this.board);
             this.boardSize = new BoardSize_7.BoardSize(newBoard.getLength());
             this.sizeCanvas(this.boardSize);
             this.updateBoard(newBoard);
             this.renderEverything(newBoard);
-        };
-        Editor.prototype.undo = function () {
+        }
+        undo() {
             if (this.boardHistory.length === 1) {
                 return false;
             }
@@ -3156,134 +3376,129 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             this.board = this.boardHistory.slice(-1)[0]; // set to new last item
             this.boardSize = new BoardSize_7.BoardSize(this.board.getLength());
             this.renderEverything(this.board);
-        };
+        }
         // replaces this.board with board
         // places old this.board in history
-        Editor.prototype.updateBoard = function (board) {
+        updateBoard(board) {
             this.boardHistory.push(board); // current state is always at top
             this.board = board;
-        };
-        Editor.prototype.getBlankBoard = function (boardSize) {
+        }
+        getBlankBoard(boardSize) {
             return Map.generateBlankBoard(boardSize);
-        };
-        Editor.prototype.getLevelBoard = function (boardArray, boardSize) {
+        }
+        getLevelBoard(boardArray, boardSize) {
             return Map.makeBoardFromArray(boardArray);
-        };
-        Editor.prototype.clearBoardHistory = function (board) {
+        }
+        clearBoardHistory(board) {
             this.boardHistory = [board]; // reset to single state
-        };
-        Editor.prototype.getLevelList = function (callback) {
-            var _this = this;
-            this.levels.getLevelList(function (levelList) {
-                _this.levelList = levelList;
+        }
+        getLevelList(callback) {
+            this.levels.getLevelList(levelList => {
+                this.levelList = levelList;
                 callback(levelList);
             });
-        };
+        }
         // select a random level that has not been completed yet
         // a return of false means none available (generate a random one)
-        Editor.prototype.chooseLevelID = function (levelList) {
-            var availableLevels = levelList.filter(function (level) {
+        chooseLevelID(levelList) {
+            const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            var chosenKey = Utils_6.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_8.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
-            var levelID = availableLevels[chosenKey].levelID;
+            const levelID = availableLevels[chosenKey].levelID;
             return levelID;
-        };
+        }
         // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-        Editor.prototype.createRenderer = function (boardSize) {
+        createRenderer(boardSize) {
             this.canvas = new Canvas_2.Canvas(boardSize);
             this.boardSize = boardSize;
-            var tiles = TileSet_4.TileSet.getTiles();
+            const tiles = TileSet_4.TileSet.getTiles();
             return new Renderer_2.Renderer(this, tiles, [], // no players in edit mode
-            this.boardSize, this.canvas, function () {
+            this.boardSize, this.canvas, () => {
                 // console.log("yes")
             });
-        };
-        Editor.prototype.renderEverything = function (board) {
-            var boardSize = new BoardSize_7.BoardSize(board.getLength());
-            var blankMap = RenderMap_3.RenderMap.createRenderMap(boardSize.width, true);
+        }
+        renderEverything(board) {
+            const boardSize = new BoardSize_7.BoardSize(board.getLength());
+            const blankMap = RenderMap_3.RenderMap.createRenderMap(boardSize.width, true);
             this.renderer.render(board, blankMap, [], 0);
-        };
-        Editor.prototype.renderSelected = function (board, renderMap) {
+        }
+        renderSelected(board, renderMap) {
             this.renderer.render(board, renderMap, [], 0);
-        };
-        Editor.prototype.renderFromBoards = function (oldBoard, newBoard) {
-            var renderMap = RenderMap_3.RenderMap.createRenderMapFromBoards(oldBoard, newBoard);
+        }
+        renderFromBoards(oldBoard, newBoard) {
+            const renderMap = RenderMap_3.RenderMap.createRenderMapFromBoards(oldBoard, newBoard);
             this.renderSelected(newBoard, renderMap);
-        };
-        Editor.prototype.sizeCanvas = function (boardSize) {
+        }
+        sizeCanvas(boardSize) {
             this.renderer.resize(boardSize);
             this.renderEverything(this.board);
-        };
-        Editor.prototype.revertEditMessage = function () {
-            var s = setTimeout(function () {
-                var message = document.getElementById("message");
+        }
+        revertEditMessage() {
+            const s = setTimeout(() => {
+                const message = document.getElementById("message");
                 message.innerHTML = "EDIT MODE";
             }, 3000);
-        };
-        Editor.prototype.showEditMessage = function (text) {
-            var message = document.getElementById("message");
+        }
+        showEditMessage(text) {
+            const message = document.getElementById("message");
             message.innerHTML = text;
             this.revertEditMessage();
-        };
-        Editor.prototype.loadLevel = function (levelID, callback) {
-            var _this = this;
-            this.levels.loadLevel(levelID, function (savedLevel) {
-                var text = "Level " + savedLevel.levelID.toString() + " loaded!";
-                _this.showEditMessage(text);
-                _this.board = _this.getLevelBoard(savedLevel.board, savedLevel.boardSize);
-                _this.renderer = _this.createRenderer(savedLevel.boardSize);
+        }
+        loadLevel(levelID, callback) {
+            this.levels.loadLevel(levelID, (savedLevel) => {
+                const text = "Level " + savedLevel.levelID.toString() + " loaded!";
+                this.showEditMessage(text);
+                this.board = this.getLevelBoard(savedLevel.board, savedLevel.boardSize);
+                this.renderer = this.createRenderer(savedLevel.boardSize);
                 callback();
-            }, function () {
-                _this.board = _this.getBlankBoard(_this.boardSize);
-                _this.renderer = _this.createRenderer(_this.boardSize);
+            }, () => {
+                this.board = this.getBlankBoard(this.boardSize);
+                this.renderer = this.createRenderer(this.boardSize);
                 callback();
             });
-        };
-        Editor.prototype.bindSizeHandler = function () {
-            var _this = this;
-            window.addEventListener("resize", function () {
-                _this.sizeCanvas(_this.boardSize);
+        }
+        bindSizeHandler() {
+            window.addEventListener("resize", () => {
+                this.sizeCanvas(this.boardSize);
             });
-        };
-        Editor.prototype.bindClickHandler = function () {
-            var _this = this;
-            var canvas = document.getElementById("canvas");
-            canvas.addEventListener("click", function (event) {
-                _this.handleDrawEvent(event);
+        }
+        bindClickHandler() {
+            const canvas = document.getElementById("canvas");
+            canvas.addEventListener("click", event => {
+                this.handleDrawEvent(event);
             });
-        };
-        Editor.prototype.bindMouseMoveHandler = function () {
-            var _this = this;
-            var canvas = document.getElementById("canvas");
-            canvas.addEventListener("mousemove", function (event) {
+        }
+        bindMouseMoveHandler() {
+            const canvas = document.getElementById("canvas");
+            canvas.addEventListener("mousemove", event => {
                 if (event.button > 0 || event.buttons > 0) {
-                    _this.handleDrawEvent(event);
+                    this.handleDrawEvent(event);
                 }
             });
-        };
-        Editor.prototype.handleDrawEvent = function (event) {
-            var tileSize = this.canvas.calcTileSize(this.boardSize);
-            var coords = new Coords_8.Coords({
+        }
+        handleDrawEvent(event) {
+            const tileSize = this.canvas.calcTileSize(this.boardSize);
+            const coords = new Coords_8.Coords({
                 offsetX: event.offsetX % tileSize - tileSize / 2,
                 offsetY: event.offsetY % tileSize - tileSize / 2,
                 x: Math.floor(event.offsetX / tileSize),
                 y: Math.floor(event.offsetY / tileSize)
             });
             this.drawCurrentTile(coords);
-        };
+        }
         // coords is always x,y,offsetX, offsetY
-        Editor.prototype.drawCurrentTile = function (coords) {
-            var tileID = this.tileChooser.chosenTileID;
+        drawCurrentTile(coords) {
+            const tileID = this.tileChooser.chosenTileID;
             if (tileID < 1) {
                 return false;
             }
-            var currentTile = this.board.getTile(coords.x, coords.y);
-            var tile = Map.cloneTile(tileID);
-            var placedTile = tile.modify({
+            const currentTile = this.board.getTile(coords.x, coords.y);
+            const tile = Map.cloneTile(tileID);
+            const placedTile = tile.modify({
                 x: coords.x,
                 y: coords.y
             });
@@ -3292,13 +3507,12 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
                 // don't fill the undo with crap
                 return false;
             }
-            var oldBoard = this.board;
-            var newBoard = oldBoard.modify(coords.x, coords.y, placedTile);
+            const oldBoard = this.board;
+            const newBoard = oldBoard.modify(coords.x, coords.y, placedTile);
             this.renderFromBoards(oldBoard, newBoard);
             this.updateBoard(newBoard);
-        };
-        return Editor;
-    }());
+        }
+    }
     exports.Editor = Editor;
 });
 //# sourceMappingURL=Jetpack.js.map

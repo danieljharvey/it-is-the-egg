@@ -32,7 +32,8 @@ export class Board {
     return this.list.count();
   }
 
-  public getAllTiles() {
-    return this.list.flatten(1);
+  public getAllTiles(): List<Tile> {
+    const flat = this.list.flatten(1);
+    return flat as List<Tile>;
   }
 }

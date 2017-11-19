@@ -3,6 +3,8 @@
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
 
+import { is } from "immutable";
+
 import { Action } from "./Action";
 import { Board } from "./Board";
 import * as BoardCollisions from "./BoardCollisions";
@@ -13,8 +15,7 @@ import * as Map from "./Map";
 import * as Movement from "./Movement";
 import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
-
-import { is } from "immutable";
+import { Utils } from "./Utils";
 
 export class TheEgg {
   protected playerTypes: object; // used by Collisions
@@ -59,10 +60,34 @@ export class TheEgg {
       sortedPlayers
     );
 
+    const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(
+      newerGameState.modify({
+        players: splitPlayers
+      })
+    );
+
     return newerGameState.modify({
-      players: splitPlayers
+      players: colouredPlayers
     });
   }
+
+  protected checkNearlyFinished = playerTypes => (
+    gameState: GameState
+  ): Player[] => {
+    if (Utils.checkLevelIsCompleted(gameState)) {
+      return gameState.players.map(player => {
+        if (player.value > 0) {
+          const newPlayer = Utils.getPlayerByType(playerTypes, "rainbow-egg");
+          return player.modify({
+            ...newPlayer,
+            value: player.value
+          });
+        }
+        return player;
+      });
+    }
+    return gameState.players;
+  };
 
   // this rotates board and players
   // it DOES NOT do animation - not our problem
@@ -88,33 +113,5 @@ export class TheEgg {
       rotateAngle,
       rotations
     });
-  }
-
-  // check leftovers on board and whether player is over finish tile
-  protected checkLevelIsCompleted(gameState: GameState): GameState {
-    const collectable = this.getCollectable(gameState.board);
-    const playerCount: number = this.countPlayers(gameState.players);
-    if (collectable < 1 && playerCount < 2) {
-      // change gameState.outcome to "nextLevel" or something, I don't know
-    }
-    return gameState;
-  }
-
-  protected countPlayers(players: Player[]): number {
-    const validPlayers = players.filter(player => {
-      return player && player.value > 0;
-    });
-    return validPlayers.length;
-  }
-
-  // get total outstanding points left to grab on board
-  protected getCollectable(board: Board): number {
-    const tiles = board.getAllTiles();
-    return tiles.reduce((collectable, tile) => {
-      const score = tile.collectable;
-      if (score > 0) {
-        return collectable + score;
-      }
-    }, 0);
   }
 }

@@ -1,3 +1,7 @@
+import * as Hammer from "hammerjs";
+import * as _ from "ramda";
+
+import * as AudioTriggers from "./AudioTriggers";
 import { Board } from "./Board";
 import { BoardSize } from "./BoardSize";
 import { Canvas } from "./Canvas";
@@ -19,8 +23,7 @@ import { TileChooser } from "./TileChooser";
 import { TileSet } from "./TileSet";
 import { TitleScreen } from "./TitleScreen";
 import { Utils } from "./Utils";
-
-import * as Hammer from "hammerjs";
+import { WebAudio } from "./WebAudio";
 
 export class Jetpack {
   public animationHandle: number;
@@ -38,6 +41,7 @@ export class Jetpack {
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
   protected tileChooser: TileChooser;
+  protected webAudio: WebAudio; // WebAudio object
 
   // big pile of moves
   protected gameStates: GameState[];
@@ -82,6 +86,9 @@ export class Jetpack {
 
     const playerTypes = new PlayerTypes();
     this.playerTypes = playerTypes.getPlayerTypes();
+
+    this.webAudio = new WebAudio();
+    this.webAudio.init(); // load web audio stuff
 
     const apiLocation = "http://" + window.location.hostname + "/levels/";
 
@@ -267,6 +274,7 @@ export class Jetpack {
       // egg is over cup - check whether we've completed
       const completed = this.completeLevel(gameState.board, gameState.players);
       if (completed) {
+        this.webAudio.playSound("bright-bell", 0);
         this.nextLevel(gameState.score, gameState.rotations);
         return false;
       }
@@ -323,7 +331,22 @@ export class Jetpack {
     const theEgg = new TheEgg(this.playerTypes);
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.updateGameState(gameState, newGameState);
+    this.playSounds(gameState, newGameState);
     return newGameState;
+  }
+
+  // check changes in board, get sounds, trigger them
+  protected playSounds(oldState: GameState, newState: GameState) {
+    _.map(
+      sound =>
+        sound.caseOf({
+          just: audio => this.webAudio.playSound(audio.name, audio.pan),
+          nothing: () => {
+            // don't play a sound
+          }
+        }),
+      AudioTriggers.triggerSounds(oldState)(newState)
+    );
   }
 
   protected renderEverything(gameState: GameState) {

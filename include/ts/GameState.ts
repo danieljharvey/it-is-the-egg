@@ -1,4 +1,3 @@
-import { Record } from "immutable";
 import { Board } from "./Board";
 import { Player } from "./Player";
 
@@ -11,27 +10,22 @@ interface IGameState {
   outcome?: string;
 }
 
-export class GameState extends Record({
-  board: null,
-  outcome: "",
-  players: [],
-  rotateAngle: 0,
-  rotations: 0,
-  score: 0
-}) {
-  public players: Player[];
-  public board: Board;
-  public score: number;
-  public rotations: number;
-  public rotateAngle: number;
-  public outcome: string; // this may be 'level complete' or some other shit, who knows
+export class GameState {
+  public players: Player[] = [];
+  public board: Board = null;
+  public score: number = 0;
+  public rotations: number = 0;
+  public rotateAngle: number = 0;
+  public outcome: string = "";
 
-  constructor(params?: IGameState) {
-    const superParams = params ? params : undefined;
-    super(superParams);
+  constructor(params: IGameState = {}) {
+    (Object as any).entries(params).map(pair => {
+      const [key, value] = pair;
+      this[key] = value;
+    });
   }
 
-  public modify(values: IGameState) {
-    return this.merge(values) as this;
+  public modify(values: IGameState = {}) {
+    return new GameState((Object as any).assign({}, this, values));
   }
 }
