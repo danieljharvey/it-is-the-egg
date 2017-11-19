@@ -942,30 +942,35 @@ define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], fu
         });
     };
     var checkPlayerBoardCollision = function (board, playerTypes) { return function (player) {
-        return (isCollision(board)(player)) ? exports.splitPlayer(playerTypes)(player) : [player];
+        return isCollision(board)(player)
+            ? exports.splitPlayer(playerTypes)(player)
+            : [player];
     }; };
-    var isCollision = function (board) { return function (player) { return (isPlayerInTile(player) &&
-        isCollisionTile(board)(player) &&
-        isPlayerValueHighEnough(player)); }; };
-    var isPlayerInTile = function (player) { return (player.coords.offsetX === 0 && player.coords.offsetY === 0); };
+    var isCollision = function (board) { return function (player) {
+        return isPlayerInTile(player) &&
+            isCollisionTile(board)(player) &&
+            isPlayerValueHighEnough(player);
+    }; };
+    var isPlayerInTile = function (player) {
+        return player.coords.offsetX === 0 && player.coords.offsetY === 0;
+    };
     var isCollisionTile = function (board) { return function (player) {
         var collidedTiles = getCollidedTiles(board)(player);
-        return (collidedTiles.size > 0);
+        return collidedTiles.size > 0;
     }; };
     var isPlayerValueHighEnough = function (player) {
         return player.value > 1;
     };
-    var isSplitterTile = function (tile) { return (tile.get("action") === "split-eggs"); };
+    var isSplitterTile = function (tile) { return tile.get("action") === "split-eggs"; };
     exports.getSplitterTiles = function (board) {
-        return board.getAllTiles()
-            .filter(isSplitterTile);
+        return board.getAllTiles().filter(isSplitterTile);
     };
     var getCollidedTiles = function (board) { return function (player) {
         var isPlayerOnTileFunc = exports.isPlayerOnTile(player);
         return exports.getSplitterTiles(board).filter(isPlayerOnTileFunc);
     }; };
     exports.isPlayerOnTile = function (player) { return function (tile) {
-        return (player.coords.x === tile.x && player.coords.y === tile.y);
+        return player.coords.x === tile.x && player.coords.y === tile.y;
     }; };
     // would be clevererer about this but we don't have many eggs
     exports.newValues = function (value) {

@@ -20,7 +20,6 @@ test("Removes duplicates", () => {
   expect(actual).toEqual(expected);
 });
 
-
 test("Get player by value", () => {
   const playerTypes = {
     madeUp: {
