@@ -210,6 +210,8 @@ export const playerHitsFloor = (boardSize: number) => (
 
 const filterPlayerHitsWall = (players: IComparePlayers): boolean => {
   return (
+    players.old.falling === false &&
+    players.new.falling === false &&
     players.new.flying === false &&
     players.old.direction.x !== players.new.direction.x
   );

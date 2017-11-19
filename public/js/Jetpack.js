@@ -969,7 +969,9 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
             : tsmonad_1.Maybe.nothing();
     };
     const filterPlayerHitsWall = (players) => {
-        return (players.new.flying === false &&
+        return (players.old.falling === false &&
+            players.new.falling === false &&
+            players.new.flying === false &&
             players.old.direction.x !== players.new.direction.x);
     };
     exports.playerHitsWall = (boardSize) => (players) => {
