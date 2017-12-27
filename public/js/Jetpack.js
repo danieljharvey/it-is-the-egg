@@ -1767,7 +1767,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return list.filter(partialPointMatch).length > 0;
     };
     const filterInPrevList = (prevList) => (pointList) => {
-        return (!exports.isInList(prevList, pointList[0]));
+        return !exports.isInList(prevList, pointList[0]);
     };
     exports.getMoveOptions = (prevList) => (map) => (list) => {
         const startPoint = list[0];
@@ -1860,12 +1860,12 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         }
         return diff;
     };
-    // collect all paths and gets the coords used so we don't go there again and end 
+    // collect all paths and gets the coords used so we don't go there again and end
     // up in a big stupid loop for no reason
     exports.combinePreviousPaths = (pointLists) => {
         return pointLists.reduce((allPoints, pointList) => {
             const newPoints = pointList.filter(point => {
-                return (!exports.isInList(allPoints, point));
+                return !exports.isInList(allPoints, point);
             });
             return [...pointList, ...newPoints];
         }, []);
