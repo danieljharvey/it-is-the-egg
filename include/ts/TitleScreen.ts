@@ -26,6 +26,7 @@ export class TitleScreen {
   public render(callback) {
     const boardSize = new BoardSize(10);
     this.canvas.sizeCanvas(boardSize);
+    this.canvas.darkBackground()
 
     const titleImage: HTMLElement = document.createElement("img");
     titleImage.addEventListener(
@@ -48,10 +49,13 @@ export class TitleScreen {
     callback
   ) {
     const ctx = this.canvas.getDrawingContext();
+
     const canvas = this.canvas.getCanvas();
+    this.canvas.darkBackground()
 
     ctx.globalAlpha = 1;
-    this.canvas.wipeCanvas("rgb(0,0,0)");
+    ctx.globalCompositeOperation = "lighten"
+    // this.canvas.wipeCanvas("rgb(0,0,0)");
 
     ctx.globalAlpha = opacity;
 
@@ -79,6 +83,7 @@ export class TitleScreen {
     } else {
       opacity = opacity - 0.03;
       if (opacity <= 0) {
+        this.canvas.gradientBackground()
         callback();
         titleImage = null;
         return false;

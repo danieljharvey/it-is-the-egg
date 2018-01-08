@@ -73,6 +73,26 @@ export class Canvas {
     return Math.floor(tileSize);
   }
 
+  public darkBackground(): void {
+    const background = document.getElementById("background") as HTMLDivElement
+    if (!background) {
+      return;
+    }
+   if (!background.classList.contains('dark')) {
+     background.classList.add('dark')
+   }
+  }
+
+  public gradientBackground(): void {
+    const background = document.getElementById("background") as HTMLDivElement
+    if (!background) {
+      return;
+    }
+    if (background.classList.contains('dark')) {
+      background.classList.remove('dark')
+    }
+  }
+
   protected getMaxBoardSize(boardSize: BoardSize): number {
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -96,5 +116,19 @@ export class Canvas {
     this.canvas.width = boardSize.width * tileSize;
     this.canvas.height = boardSize.height * tileSize;
     this.ctx = this.canvas.getContext("2d");
+    this.sizeBackground(boardSize, tileSize)
   }
+
+  protected sizeBackground(boardSize, tileSize): void {
+    const background = document.getElementById("background") as HTMLDivElement
+    if (!background) {
+      return;
+    }
+    background.style.width = String(boardSize.width * tileSize) + "px"
+    background.style.height = String(boardSize.height * tileSize) + "px"
+    background.style.opacity = "1.0"
+    
+  }
+
+
 }
