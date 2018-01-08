@@ -96,5 +96,17 @@ export class Canvas {
     this.canvas.width = boardSize.width * tileSize;
     this.canvas.height = boardSize.height * tileSize;
     this.ctx = this.canvas.getContext("2d");
+    this.sizeBackground(boardSize, tileSize)
+  }
+
+  protected sizeBackground(boardSize, tileSize): void {
+    const background = document.getElementById("background") as HTMLDivElement
+    if (!background) {
+      return;
+    }
+    console.log("size")
+    background.style.width = String(boardSize.width * tileSize) + "px"
+    background.style.height = String(boardSize.height * tileSize) + "px"
+    background.style.opacity = "1.0"
   }
 }

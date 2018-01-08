@@ -1265,6 +1265,17 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             this.canvas.width = boardSize.width * tileSize;
             this.canvas.height = boardSize.height * tileSize;
             this.ctx = this.canvas.getContext("2d");
+            this.sizeBackground(boardSize, tileSize);
+        }
+        sizeBackground(boardSize, tileSize) {
+            const background = document.getElementById("background");
+            if (!background) {
+                return;
+            }
+            console.log("size");
+            background.style.width = String(boardSize.width * tileSize) + "px";
+            background.style.height = String(boardSize.height * tileSize) + "px";
+            background.style.opacity = "1.0";
         }
     }
     exports.Canvas = Canvas;
@@ -2446,7 +2457,8 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
             const ctx = this.canvas.getDrawingContext();
             const canvas = this.canvas.getCanvas();
             ctx.globalAlpha = 1;
-            this.canvas.wipeCanvas("rgb(0,0,0)");
+            ctx.globalCompositeOperation = "lighten";
+            // this.canvas.wipeCanvas("rgb(0,0,0)");
             ctx.globalAlpha = opacity;
             ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
             if (show) {
@@ -3084,7 +3096,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.tileSize = this.canvas.calcTileSize(this.boardSize);
             this.renderBoard(board, renderMap, renderAngle);
             this.renderPlayers(players);
-            this.renderFrontLayerBoard(board, renderMap, renderAngle);
         }
         resize(boardSize) {
             this.boardSize = boardSize;
@@ -3163,49 +3174,29 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         }
         renderBoard(board, renderMap, renderAngle) {
             const ctx = this.canvas.getDrawingContext();
+            ctx.globalCompositeOperation = "source-over";
             ctx.globalAlpha = 1;
             const tiles = board.getAllTiles();
-            tiles.map(tile => {
-                const needsDraw = renderMap[tile.x][tile.y];
-                if (needsDraw === false) {
-                    this.showUnrenderedTile(tile.x, tile.y);
-                    return;
-                }
-                if (!tile.frontLayer) {
-                    this.renderTile(tile.x, tile.y, tile, renderAngle);
-                }
-                else {
-                    // render sky behind see through tiles
-                    this.drawSkyTile(tile, tile.x, tile.y, renderAngle);
-                }
+            const drawable = tiles.filter(tile => renderMap[tile.x][tile.y]);
+            drawable.filter(tile => tile.frontLayer || tile.id === 1)
+                .map(tile => {
+                this.clearTile(ctx, tile.x, tile.y);
+                return tile;
             });
+            drawable.filter(tile => tile.id > 1)
+                .map(tile => {
+                this.renderTile(tile.x, tile.y, tile, renderAngle);
+            });
+        }
+        clearTile(ctx, x, y) {
+            const tileSize = this.tileSize;
+            const left = Math.floor(x * tileSize);
+            const top = Math.floor(y * tileSize);
+            ctx.clearRect(left, top, tileSize, tileSize);
         }
         drawSkyTile(tile, x, y, renderAngle) {
             const skyTile = this.tiles[1];
             this.renderTile(x, y, skyTile, renderAngle);
-        }
-        // just go over and draw the over-the-top stuff
-        renderFrontLayerBoard(board, renderMap, renderAngle) {
-            const tiles = board.getAllTiles();
-            tiles.map(tile => {
-                const needsDraw = renderMap[tile.x][tile.y];
-                if (needsDraw === false) {
-                    return;
-                }
-                if (tile.frontLayer) {
-                    this.renderTile(tile.x, tile.y, tile, renderAngle);
-                }
-            });
-        }
-        // debugging tools
-        showUnrenderedTile(x, y) {
-            if (!this.lampMode) {
-                return false;
-            }
-            const tileSize = Math.floor(this.tileSize);
-            const ctx = this.canvas.getDrawingContext();
-            ctx.fillStyle = "rgba(0,0,0,0.1)";
-            ctx.fillRect(Math.floor(x * tileSize), Math.floor(y * tileSize), tileSize, tileSize);
         }
         renderPlayers(players) {
             players.map(player => {
@@ -3282,7 +3273,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             const ctx = this.canvas.getDrawingContext();
             const left = offset;
             const top = offset;
-            this.canvas.wipeCanvas("rgba(0,0,0,0.1)");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.translate(left, top);
             ctx.rotate(angleInRad);
             ctx.drawImage(savedData, -offset, -offset);

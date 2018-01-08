@@ -48,10 +48,12 @@ export class TitleScreen {
     callback
   ) {
     const ctx = this.canvas.getDrawingContext();
+
     const canvas = this.canvas.getCanvas();
 
     ctx.globalAlpha = 1;
-    this.canvas.wipeCanvas("rgb(0,0,0)");
+    ctx.globalCompositeOperation = "lighten"
+    // this.canvas.wipeCanvas("rgb(0,0,0)");
 
     ctx.globalAlpha = opacity;
 
