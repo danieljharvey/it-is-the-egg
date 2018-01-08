@@ -1243,6 +1243,24 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             const tileSize = maxBoardSize / boardSize.width;
             return Math.floor(tileSize);
         }
+        darkBackground() {
+            const background = document.getElementById("background");
+            if (!background) {
+                return;
+            }
+            if (!background.classList.contains('dark')) {
+                background.classList.add('dark');
+            }
+        }
+        gradientBackground() {
+            const background = document.getElementById("background");
+            if (!background) {
+                return;
+            }
+            if (background.classList.contains('dark')) {
+                background.classList.remove('dark');
+            }
+        }
         getMaxBoardSize(boardSize) {
             let width = window.innerWidth;
             let height = window.innerHeight;
@@ -1272,7 +1290,6 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             if (!background) {
                 return;
             }
-            console.log("size");
             background.style.width = String(boardSize.width * tileSize) + "px";
             background.style.height = String(boardSize.height * tileSize) + "px";
             background.style.opacity = "1.0";
@@ -2445,6 +2462,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
         render(callback) {
             const boardSize = new BoardSize_5.BoardSize(10);
             this.canvas.sizeCanvas(boardSize);
+            this.canvas.darkBackground();
             const titleImage = document.createElement("img");
             titleImage.addEventListener("load", () => {
                 this.drawTheBigEgg(titleImage, 0.02, true, callback);
@@ -2456,6 +2474,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
         drawTheBigEgg(titleImage, opacity, show, callback) {
             const ctx = this.canvas.getDrawingContext();
             const canvas = this.canvas.getCanvas();
+            this.canvas.darkBackground();
             ctx.globalAlpha = 1;
             ctx.globalCompositeOperation = "lighten";
             // this.canvas.wipeCanvas("rgb(0,0,0)");
@@ -2475,6 +2494,7 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
             else {
                 opacity = opacity - 0.03;
                 if (opacity <= 0) {
+                    this.canvas.gradientBackground();
                     callback();
                     titleImage = null;
                     return false;

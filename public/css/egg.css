@@ -46,6 +46,10 @@ html,
         }
 	}
 
+	#background.dark {
+		background: black
+	}
+
 	#controlHeader {
 		height: 25px;
 		width: 100%;
