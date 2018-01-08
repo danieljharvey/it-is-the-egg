@@ -2494,7 +2494,6 @@ define("TitleScreen", ["require", "exports", "BoardSize"], function (require, ex
             else {
                 opacity = opacity - 0.03;
                 if (opacity <= 0) {
-                    this.canvas.gradientBackground();
                     callback();
                     titleImage = null;
                     return false;
@@ -2659,6 +2658,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "
             this.getTitleScreen(() => {
                 this.loadLevel(levelID, () => {
                     this.setNextAction("");
+                    this.canvas.gradientBackground();
                     this.startRender();
                 });
             });

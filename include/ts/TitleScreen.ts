@@ -83,7 +83,6 @@ export class TitleScreen {
     } else {
       opacity = opacity - 0.03;
       if (opacity <= 0) {
-        this.canvas.gradientBackground()
         callback();
         titleImage = null;
         return false;

@@ -69,6 +69,7 @@ export class Jetpack {
     this.getTitleScreen(() => {
       this.loadLevel(levelID, () => {
         this.setNextAction("");
+        this.canvas.gradientBackground()
         this.startRender();
       });
     });
