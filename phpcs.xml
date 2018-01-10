@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="PupilAsset">
- <description>A suggested coding standard for PupilAsset</description>
+<ruleset name="DanielJHarvey">
+ <description>A PHP standard that is good but not too good</description>
 
  <file>autoload.php</file>
  <file>bin</file>
@@ -20,7 +20,6 @@
  <arg value="p"/>
  <arg value="q"/>
  <config name="installed_paths" value="../../slevomat/coding-standard"/>
- <!--<rule ref="./include/libs/composer/vendor/slevomat/coding-standard/SlevomatCodingStandard/ruleset.xml" />-->
   <rule ref="Generic.ControlStructures.InlineControlStructure"/>
   <rule ref="Generic.Files.LineLength">
       <properties>
