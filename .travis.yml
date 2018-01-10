@@ -12,6 +12,7 @@ before_script:
 
 script:
  - phpunit include/modules/tests/*.php
+ - ./validate.sh
  - npm install yarn
  - yarn install
  - yarn test
