@@ -37,6 +37,7 @@
   <rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
   <rule ref="Generic.PHP.DeprecatedFunctions"/>
   <rule ref="Generic.PHP.DisallowShortOpenTag"/>
+  
   <rule ref="Squiz.WhiteSpace.OperatorSpacing">
 		<properties>
 			<property name="ignoreNewlines" value="true" />
@@ -61,6 +62,7 @@
 		<exclude name="SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingPropertyTypeHint"/>
         <exclude name="SlevomatCodingStandard.Namespaces.FullyQualifiedClassNameAfterKeyword.NonFullyQualifiedExtends"/>
 		<exclude name="SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing"/>
+		<exclude name="SlevomatCodingStandard.Namespaces.UseOnlyWhitelistedNamespaces"/>
     </rule>
 
 	<rule ref="Generic.Commenting.Todo"/>
