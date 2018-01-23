@@ -1794,19 +1794,23 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         const partialPointMatch = exports.pointMatch(point);
         return list.filter(partialPointMatch).length > 0;
     };
-    exports.getMoveOptions = (map) => (list) => {
+    const filterInPrevList = (prevList) => (pointList) => {
+        return !exports.isInList(prevList, pointList[0]);
+    };
+    exports.getMoveOptions = (prevList) => (map) => (list) => {
         const startPoint = list[0];
         const partialAddAdjacent = exports.addAdjacent(map)(list);
         return exports.squaresAround(map)(startPoint)
             .map(partialAddAdjacent)
             .filter(entry => entry.length > 0)
-            .filter(entry => entry.length < 25) // this is stop it timing out by trying too hard
-            .filter(exports.filterDuplicates);
+            .filter(entry => entry.length < 13) // this is stop it timing out by trying too hard
+            .filter(exports.filterDuplicates)
+            .filter(filterInPrevList(prevList));
     };
     // try out all possible and return new list of options
-    exports.getMultipleMoveOptions = (map) => (lists) => {
+    exports.getMultipleMoveOptions = (prevList) => (map) => (lists) => {
         return _.flatMap(lists, list => {
-            return exports.getMoveOptions(map)(list);
+            return exports.getMoveOptions(prevList)(map)(list);
         });
     };
     exports.findAnswer = (targetPoint) => (potentialAnswer) => exports.pointMatch(potentialAnswer[0])(targetPoint);
@@ -1819,8 +1823,10 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return tsmonad_2.Maybe.nothing();
     };
     exports.flipAnswer = (list) => _.reverse(list);
-    exports.processMoveList = (map) => (lists) => (targetPoint) => {
-        const moveOptions = exports.getMultipleMoveOptions(map)(lists);
+    exports.processMoveList = (prevList) => (map) => (lists) => (targetPoint) => {
+        // combine all nodes we've tried already
+        const allPrevious = exports.combinePreviousPaths([prevList, ...lists]);
+        const moveOptions = exports.getMultipleMoveOptions(allPrevious)(map)(lists);
         if (moveOptions.length === 0) {
             return tsmonad_2.Maybe.nothing();
         }
@@ -1830,7 +1836,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
                 return tsmonad_2.Maybe.just(exports.flipAnswer(value));
             },
             nothing: () => {
-                return exports.processMoveList(map)(moveOptions)(targetPoint);
+                return exports.processMoveList(allPrevious)(map)(moveOptions)(targetPoint);
             }
         });
     };
@@ -1838,7 +1844,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         if (start.equals(target)) {
             return tsmonad_2.Maybe.nothing();
         }
-        return exports.processMoveList(map)([[start]])(target);
+        return exports.processMoveList([start])(map)([[start]])(target);
     };
     const sortArray = (a, b) => {
         if (b.length < a.length) {
@@ -1881,6 +1887,16 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             return -1;
         }
         return diff;
+    };
+    // collect all paths and gets the coords used so we don't go there again and end
+    // up in a big stupid loop for no reason
+    exports.combinePreviousPaths = (pointLists) => {
+        return pointLists.reduce((allPoints, pointList) => {
+            const newPoints = pointList.filter(point => {
+                return !exports.isInList(allPoints, point);
+            });
+            return [...pointList, ...newPoints];
+        }, []);
     };
 });
 define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_6) {

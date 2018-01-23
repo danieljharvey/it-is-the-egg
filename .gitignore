@@ -9,3 +9,7 @@ include/vendor/
 
 # OSX nonsense
 .DS_Store
+
+# output
+public/js/Jetpack.js
+public/js/Jetpack.js.map

@@ -87,22 +87,31 @@ export const isInList = (list: PointList, point: Coords): boolean => {
   return list.filter(partialPointMatch).length > 0;
 };
 
-export const getMoveOptions = (map: Map) => (list: PointList): PointList[] => {
+const filterInPrevList = (prevList: PointList) => (
+  pointList: PointList
+): boolean => {
+  return !isInList(prevList, pointList[0]);
+};
+
+export const getMoveOptions = (prevList: PointList) => (map: Map) => (
+  list: PointList
+): PointList[] => {
   const startPoint = list[0];
   const partialAddAdjacent = addAdjacent(map)(list);
   return squaresAround(map)(startPoint)
     .map(partialAddAdjacent)
     .filter(entry => entry.length > 0)
-    .filter(entry => entry.length < 25) // this is stop it timing out by trying too hard
-    .filter(filterDuplicates);
+    .filter(entry => entry.length < 13) // this is stop it timing out by trying too hard
+    .filter(filterDuplicates)
+    .filter(filterInPrevList(prevList));
 };
 
 // try out all possible and return new list of options
-export const getMultipleMoveOptions = (map: Map) => (
+export const getMultipleMoveOptions = (prevList: PointList) => (map: Map) => (
   lists: PointList[]
 ): PointList[] => {
   return _.flatMap(lists, list => {
-    return getMoveOptions(map)(list);
+    return getMoveOptions(prevList)(map)(list);
   });
 };
 
@@ -123,10 +132,13 @@ export const findAnswerInList = (targetPoint: Coords) => (
 
 export const flipAnswer = (list: PointList) => _.reverse(list);
 
-export const processMoveList = (map: Map) => (lists: PointList[]) => (
-  targetPoint: Coords
-): Maybe<PointList> => {
-  const moveOptions = getMultipleMoveOptions(map)(lists);
+export const processMoveList = (prevList: PointList) => (map: Map) => (
+  lists: PointList[]
+) => (targetPoint: Coords): Maybe<PointList> => {
+  // combine all nodes we've tried already
+  const allPrevious = combinePreviousPaths([prevList, ...lists]);
+  const moveOptions = getMultipleMoveOptions(allPrevious)(map)(lists);
+
   if (moveOptions.length === 0) {
     return Maybe.nothing();
   }
@@ -138,7 +150,7 @@ export const processMoveList = (map: Map) => (lists: PointList[]) => (
       return Maybe.just(flipAnswer(value));
     },
     nothing: () => {
-      return processMoveList(map)(moveOptions)(targetPoint);
+      return processMoveList(allPrevious)(map)(moveOptions)(targetPoint);
     }
   });
 };
@@ -149,7 +161,7 @@ export const findPath = (map: Map) => (start: Coords) => (
   if (start.equals(target)) {
     return Maybe.nothing();
   }
-  return processMoveList(map)([[start]])(target);
+  return processMoveList([start])(map)([[start]])(target);
 };
 
 const sortArray = (a: Coords[], b: Coords[]): number => {
@@ -204,4 +216,15 @@ const calcDifference = (start: number, end: number): number => {
     return -1;
   }
   return diff;
+};
+
+// collect all paths and gets the coords used so we don't go there again and end
+// up in a big stupid loop for no reason
+export const combinePreviousPaths = (pointLists: PointList[]): PointList => {
+  return pointLists.reduce((allPoints, pointList) => {
+    const newPoints = pointList.filter(point => {
+      return !isInList(allPoints, point);
+    });
+    return [...pointList, ...newPoints];
+  }, []);
 };
