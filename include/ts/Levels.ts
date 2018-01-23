@@ -12,18 +12,16 @@ export class Levels {
   }
 
   public getLevelList(callback) {
-    this.loader.callServer(
-      "getLevelsList",
-      {},
-      data => {
+    this.loader
+      .callServer("getLevelsList", {})
+      .then(data => {
         const levelList = this.cleanLevelList(data);
         callback(levelList);
-      },
-      () => {
+      })
+      .catch((err) => {
         const levelList = this.cleanLevelList([]);
         callback(levelList);
-      }
-    );
+      });
   }
 
   public populateLevelsList(levelList): void {
@@ -73,17 +71,15 @@ export class Levels {
     if (levelID) {
       params.levelID = levelID;
     }
-    this.loader.callServer(
-      "saveLevel",
-      params,
-      savedLevelID => {
+    this.loader
+      .callServer("saveLevel", params)
+      .then(savedLevelID => {
         this.levelID = savedLevelID;
         callback(savedLevelID);
-      },
-      (errorMsg: string) => {
+      })
+      .catch((errorMsg: string) => {
         // console.log("ERROR: ", errorMsg);
-      }
-    );
+      });
   }
 
   public loadLevel(
@@ -97,20 +93,18 @@ export class Levels {
     const params = {
       levelID
     };
-    this.loader.callServer(
-      "getLevel",
-      params,
-      data => {
+    this.loader
+      .callServer("getLevel", params)
+      .then(data => {
         this.levelID = levelID;
         const boardSize = new BoardSize(data.boardSize.width);
         const savedLevel = new SavedLevel(boardSize, data.board, levelID);
         callback(savedLevel);
-      },
-      (errorMsg: string) => {
+      })
+      .catch((errorMsg: string) => {
         // console.log("ERROR: ", errorMsg);
         failCallback();
-      }
-    );
+      });
   }
 
   public saveData(
@@ -124,16 +118,14 @@ export class Levels {
       rotationsUsed,
       score
     };
-    this.loader.callServer(
-      "saveScore",
-      params,
-      (data: object) => {
+    this.loader
+      .callServer("saveScore", params)
+      .then((data: object) => {
         callback(data);
-      },
-      () => {
+      })
+      .catch(() => {
         callback({ msg: "call failed" });
-      }
-    );
+      });
   }
 
   // turn array of numbers into list key'd by levelID with object of won/lost
@@ -148,6 +140,7 @@ export class Levels {
         };
       }
     }
+
     return levelList;
   }
 }

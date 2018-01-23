@@ -62,7 +62,6 @@ export class Renderer {
     players: Player[],
     renderAngle: number
   ) {
-    // console.log("Renderer->render",board, renderMap, renderAngle);
     this.tileSize = this.canvas.calcTileSize(this.boardSize);
     this.renderBoard(board, renderMap, renderAngle);
     this.renderPlayers(players);
@@ -171,28 +170,25 @@ export class Renderer {
     renderMap: boolean[][],
     renderAngle: number
   ): void {
-    
     const ctx = this.canvas.getDrawingContext();
-    ctx.globalCompositeOperation = "source-over"
+    ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
     const tiles = board.getAllTiles();
-    const drawable = tiles.filter(tile => renderMap[tile.x][tile.y])
-    drawable.filter(tile => tile.frontLayer || tile.id === 1)
-      .map(tile => {
-        this.clearTile(ctx, tile.x,tile.y)
-        return tile;
-      })
-    drawable.filter(tile => tile.id > 1)
-      .map(tile => {
-        this.renderTile(tile.x, tile.y, tile, renderAngle);
-      })
+    const drawable = tiles.filter(tile => renderMap[tile.x][tile.y]);
+    drawable.filter(tile => tile.frontLayer || tile.id === 1).map(tile => {
+      this.clearTile(ctx, tile.x, tile.y);
+      return tile;
+    });
+    drawable.filter(tile => tile.id > 1).map(tile => {
+      this.renderTile(tile.x, tile.y, tile, renderAngle);
+    });
   }
 
   protected clearTile(ctx, x: number, y: number) {
     const tileSize = this.tileSize;
     const left = Math.floor(x * tileSize);
     const top = Math.floor(y * tileSize);
-    ctx.clearRect(left,top, tileSize, tileSize);
+    ctx.clearRect(left, top, tileSize, tileSize);
   }
 
   protected drawSkyTile(tile: Tile, x: number, y: number, renderAngle: number) {
@@ -208,7 +204,7 @@ export class Renderer {
 
   protected getTileImage(tile: Tile) {
     if (tile.id < 1) {
-      // console.log("invalid tile requested", tile.id, tile);
+      // 
       return false;
     }
     const tileImage = this.tileImages[tile.id];
@@ -231,7 +227,7 @@ export class Renderer {
     const img = this.getTileImage(tile);
 
     if (!img) {
-      // console.log("Could not find tile image for id " + tile.id);
+      // 
       return false;
     }
 
@@ -284,7 +280,7 @@ export class Renderer {
 
     const image = this.getPlayerImage(player.img);
     if (!image) {
-      // console.log('player image not loaded', player.img);
+      // 
       return false;
     }
 
@@ -382,7 +378,7 @@ export class Renderer {
     const left = offset;
     const top = offset;
 
-    ctx.clearRect(0,0,canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.translate(left, top);
     ctx.rotate(angleInRad);

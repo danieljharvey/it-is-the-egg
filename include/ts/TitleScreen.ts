@@ -26,7 +26,7 @@ export class TitleScreen {
   public render(callback) {
     const boardSize = new BoardSize(10);
     this.canvas.sizeCanvas(boardSize);
-    this.canvas.darkBackground()
+    this.canvas.darkBackground();
 
     const titleImage: HTMLElement = document.createElement("img");
     titleImage.addEventListener(
@@ -51,10 +51,10 @@ export class TitleScreen {
     const ctx = this.canvas.getDrawingContext();
 
     const canvas = this.canvas.getCanvas();
-    this.canvas.darkBackground()
+    this.canvas.darkBackground();
 
     ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "lighten"
+    ctx.globalCompositeOperation = "lighten";
     // this.canvas.wipeCanvas("rgb(0,0,0)");
 
     ctx.globalAlpha = opacity;

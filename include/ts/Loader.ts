@@ -1,3 +1,6 @@
+const DONE: number = 4; // readyState 4 means the request is done.
+const OK: number = 200; // status 200 is a successful return.
+
 export class Loader {
   protected apiLocation: string;
 
@@ -5,47 +8,38 @@ export class Loader {
     this.apiLocation = apiLocation;
   }
 
-  public callServer(
-    action: string,
-    params: any,
-    callback: (object) => any,
-    failCallback: (str) => any
-  ) {
-    const xhr = new XMLHttpRequest();
+  public callServer(action: string, params: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
 
-    params.action = action;
+      params.action = action;
 
-    xhr.open("POST", this.apiLocation, true);
-    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhr.open("POST", this.apiLocation, true);
+      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-    xhr.onreadystatechange = () => {
-      const DONE: number = 4; // readyState 4 means the request is done.
-      const OK: number = 200; // status 200 is a successful return.
-      if (xhr.readyState === DONE) {
-        if (xhr.status === OK) {
-          let object;
-          try {
-            object = JSON.parse(xhr.responseText);
-          } catch (e) {
-            failCallback("Could not decode this JSON: " + xhr.responseText);
-            return;
-          }
-          if (object.rc > 0) {
-            failCallback(object.msg);
-            return false;
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === DONE) {
+          if (xhr.status === OK) {
+            let object;
+            try {
+              object = JSON.parse(xhr.responseText);
+            } catch (e) {
+              return reject("Could not decode this JSON: " + xhr.responseText);
+            }
+            if (object.rc > 0) {
+              return reject(object.msg);
+            } else {
+              return resolve(object.data);
+            }
           } else {
-            callback(object.data);
-            return true;
+            return reject("Error: " + xhr.status);
           }
-        } else {
-          failCallback("Error: " + xhr.status);
-          return false;
         }
-      }
-    };
-    // var formData = this.paramsToFormData(params);
-    const queryString = this.param(params);
-    xhr.send(queryString);
+      };
+      // var formData = this.paramsToFormData(params);
+      const queryString = this.param(params);
+      xhr.send(queryString);
+    });
   }
 
   protected paramsToFormData(params: object): FormData {

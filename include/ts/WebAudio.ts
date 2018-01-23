@@ -67,14 +67,13 @@ export class WebAudio {
   }
 
   public playSound(soundName: string, pan: number) {
-    // console.log(soundName)
     if (!this.audioReady) {
       return false;
     }
     this.getAudioNode(soundName, pan).caseOf({
       just: audioNode => audioNode.start(),
       nothing: () => {
-        // console.log("not found")
+        // 
       }
     });
   }

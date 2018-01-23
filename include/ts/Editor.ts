@@ -182,7 +182,7 @@ export class Editor {
       this.boardSize,
       this.canvas,
       () => {
-        // console.log("yes")
+        // 
       }
     );
   }

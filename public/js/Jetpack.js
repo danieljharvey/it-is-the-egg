@@ -1248,8 +1248,8 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             if (!background) {
                 return;
             }
-            if (!background.classList.contains('dark')) {
-                background.classList.add('dark');
+            if (!background.classList.contains("dark")) {
+                background.classList.add("dark");
             }
         }
         gradientBackground() {
@@ -1257,8 +1257,8 @@ define("Canvas", ["require", "exports"], function (require, exports) {
             if (!background) {
                 return;
             }
-            if (background.classList.contains('dark')) {
-                background.classList.remove('dark');
+            if (background.classList.contains("dark")) {
+                background.classList.remove("dark");
             }
         }
         getMaxBoardSize(boardSize) {
@@ -1455,46 +1455,44 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
 define("Loader", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    const DONE = 4; // readyState 4 means the request is done.
+    const OK = 200; // status 200 is a successful return.
     class Loader {
         constructor(apiLocation) {
             this.apiLocation = apiLocation;
         }
-        callServer(action, params, callback, failCallback) {
-            const xhr = new XMLHttpRequest();
-            params.action = action;
-            xhr.open("POST", this.apiLocation, true);
-            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = () => {
-                const DONE = 4; // readyState 4 means the request is done.
-                const OK = 200; // status 200 is a successful return.
-                if (xhr.readyState === DONE) {
-                    if (xhr.status === OK) {
-                        let object;
-                        try {
-                            object = JSON.parse(xhr.responseText);
-                        }
-                        catch (e) {
-                            failCallback("Could not decode this JSON: " + xhr.responseText);
-                            return;
-                        }
-                        if (object.rc > 0) {
-                            failCallback(object.msg);
-                            return false;
+        callServer(action, params) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                params.action = action;
+                xhr.open("POST", this.apiLocation, true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === DONE) {
+                        if (xhr.status === OK) {
+                            let object;
+                            try {
+                                object = JSON.parse(xhr.responseText);
+                            }
+                            catch (e) {
+                                return reject("Could not decode this JSON: " + xhr.responseText);
+                            }
+                            if (object.rc > 0) {
+                                return reject(object.msg);
+                            }
+                            else {
+                                return resolve(object.data);
+                            }
                         }
                         else {
-                            callback(object.data);
-                            return true;
+                            return reject("Error: " + xhr.status);
                         }
                     }
-                    else {
-                        failCallback("Error: " + xhr.status);
-                        return false;
-                    }
-                }
-            };
-            // var formData = this.paramsToFormData(params);
-            const queryString = this.param(params);
-            xhr.send(queryString);
+                };
+                // var formData = this.paramsToFormData(params);
+                const queryString = this.param(params);
+                xhr.send(queryString);
+            });
         }
         paramsToFormData(params) {
             const formData = new FormData();
@@ -1553,10 +1551,13 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
             this.loader = loader;
         }
         getLevelList(callback) {
-            this.loader.callServer("getLevelsList", {}, data => {
+            this.loader
+                .callServer("getLevelsList", {})
+                .then(data => {
                 const levelList = this.cleanLevelList(data);
                 callback(levelList);
-            }, () => {
+            })
+                .catch((err) => {
                 const levelList = this.cleanLevelList([]);
                 callback(levelList);
             });
@@ -1599,10 +1600,13 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
             if (levelID) {
                 params.levelID = levelID;
             }
-            this.loader.callServer("saveLevel", params, savedLevelID => {
+            this.loader
+                .callServer("saveLevel", params)
+                .then(savedLevelID => {
                 this.levelID = savedLevelID;
                 callback(savedLevelID);
-            }, (errorMsg) => {
+            })
+                .catch((errorMsg) => {
                 // console.log("ERROR: ", errorMsg);
             });
         }
@@ -1613,12 +1617,15 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
             const params = {
                 levelID
             };
-            this.loader.callServer("getLevel", params, data => {
+            this.loader
+                .callServer("getLevel", params)
+                .then(data => {
                 this.levelID = levelID;
                 const boardSize = new BoardSize_2.BoardSize(data.boardSize.width);
                 const savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
                 callback(savedLevel);
-            }, (errorMsg) => {
+            })
+                .catch((errorMsg) => {
                 // console.log("ERROR: ", errorMsg);
                 failCallback();
             });
@@ -1629,9 +1636,12 @@ define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (re
                 rotationsUsed,
                 score
             };
-            this.loader.callServer("saveScore", params, (data) => {
+            this.loader
+                .callServer("saveScore", params)
+                .then((data) => {
                 callback(data);
-            }, () => {
+            })
+                .catch(() => {
                 callback({ msg: "call failed" });
             });
         }
@@ -2560,14 +2570,13 @@ define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports
             return compressor;
         }
         playSound(soundName, pan) {
-            // console.log(soundName)
             if (!this.audioReady) {
                 return false;
             }
             this.getAudioNode(soundName, pan).caseOf({
                 just: audioNode => audioNode.start(),
                 nothing: () => {
-                    // console.log("not found")
+                    // 
                 }
             });
         }
@@ -3081,7 +3090,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 const tileSize = this.tileSize;
                 const img = this.getTileImage(tile);
                 if (!img) {
-                    // console.log("Could not find tile image for id " + tile.id);
+                    // 
                     return false;
                 }
                 let left = Math.floor(x * tileSize);
@@ -3112,7 +3121,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             this.loadPlayerPalette();
         }
         render(board, renderMap, players, renderAngle) {
-            // console.log("Renderer->render",board, renderMap, renderAngle);
             this.tileSize = this.canvas.calcTileSize(this.boardSize);
             this.renderBoard(board, renderMap, renderAngle);
             this.renderPlayers(players);
@@ -3198,13 +3206,11 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             ctx.globalAlpha = 1;
             const tiles = board.getAllTiles();
             const drawable = tiles.filter(tile => renderMap[tile.x][tile.y]);
-            drawable.filter(tile => tile.frontLayer || tile.id === 1)
-                .map(tile => {
+            drawable.filter(tile => tile.frontLayer || tile.id === 1).map(tile => {
                 this.clearTile(ctx, tile.x, tile.y);
                 return tile;
             });
-            drawable.filter(tile => tile.id > 1)
-                .map(tile => {
+            drawable.filter(tile => tile.id > 1).map(tile => {
                 this.renderTile(tile.x, tile.y, tile, renderAngle);
             });
         }
@@ -3225,7 +3231,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
         }
         getTileImage(tile) {
             if (tile.id < 1) {
-                // console.log("invalid tile requested", tile.id, tile);
+                // 
                 return false;
             }
             const tileImage = this.tileImages[tile.id];
@@ -3252,7 +3258,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             const clipTop = 0;
             const image = this.getPlayerImage(player.img);
             if (!image) {
-                // console.log('player image not loaded', player.img);
+                // 
                 return false;
             }
             ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
@@ -3429,7 +3435,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             const tiles = TileSet_4.TileSet.getTiles();
             return new Renderer_2.Renderer(this, tiles, [], // no players in edit mode
             this.boardSize, this.canvas, () => {
-                // console.log("yes")
+                // 
             });
         }
         renderEverything(board) {
