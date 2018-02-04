@@ -1,8 +1,9 @@
-import { Board } from "../Board";
-import { Coords } from "../Coords";
 import { Jetpack } from "../Jetpack";
-import { Player } from "../Player";
-import { Tile } from "../Tile";
+
+import { Board } from "../objects/Board";
+import { Coords } from "../objects/Coords";
+import { Player } from "../objects/Player";
+import { Tile } from "../objects/Tile";
 
 // create a board with 4 tiles, one of which will create a player
 const createPlayerBoard = () => {

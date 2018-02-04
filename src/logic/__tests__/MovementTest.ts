@@ -1,9 +1,10 @@
-import { Board } from "../Board";
-import { Coords } from "../Coords";
+import { Board } from "../../objects/Board";
+import { Coords } from "../../objects/Coords";
+import { Player } from "../../objects/Player";
+import { Tile } from "../../objects/Tile";
+
 import * as Map from "../Map";
 import * as Movement from "../Movement";
-import { Player } from "../Player";
-import { Tile } from "../Tile";
 
 test("Stay still when not moving", () => {
   const player = new Player();

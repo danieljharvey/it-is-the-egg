@@ -1,9 +1,9 @@
 import * as _ from "ramda";
-import { Board } from "./Board";
-import { BoardSize } from "./BoardSize";
-import { Coords } from "./Coords";
-import { GameState } from "./GameState";
-import { Player } from "./Player";
+import { Board } from "../objects/Board";
+import { BoardSize } from "../objects/BoardSize";
+import { Coords } from "../objects/Coords";
+import { GameState } from "../objects/GameState";
+import { Player } from "../objects/Player";
 
 // wee lad full of reusable functions
 

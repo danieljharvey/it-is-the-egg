@@ -6,16 +6,17 @@
 import { is } from "immutable";
 
 import { Action } from "./Action";
-import { Board } from "./Board";
 import * as BoardCollisions from "./BoardCollisions";
-import { BoardSize } from "./BoardSize";
 import { Collisions } from "./Collisions";
-import { GameState } from "./GameState";
 import * as Map from "./Map";
 import * as Movement from "./Movement";
-import { Player } from "./Player";
 import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
+
+import { Board } from "../objects/Board";
+import { BoardSize } from "../objects/BoardSize";
+import { GameState } from "../objects/GameState";
+import { Player } from "../objects/Player";
 
 export class TheEgg {
   protected playerTypes: object; // used by Collisions

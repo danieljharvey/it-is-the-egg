@@ -2,11 +2,12 @@ import { List } from "immutable";
 import * as _ from "ramda";
 import { Maybe } from "tsmonad";
 
-import { Board } from "./Board";
-import { GameState } from "./GameState";
-import { Player } from "./Player";
-import { Tile } from "./Tile";
-import { Utils } from "./Utils";
+import { Board } from "../objects/Board";
+import { GameState } from "../objects/GameState";
+import { Player } from "../objects/Player";
+import { Tile } from "../objects/Tile";
+
+import { Utils } from "../logic/Utils";
 
 // AudioTriggers
 // check old and new game state and trigger sounds from it

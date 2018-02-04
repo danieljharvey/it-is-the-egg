@@ -1,13 +1,16 @@
-import { Board } from "./Board";
-import { BoardSize } from "./BoardSize";
+import { Board } from "../objects/Board";
+import { BoardSize } from "../objects/BoardSize";
+import { Coords } from "../objects/Coords";
+import { Player } from "../objects/Player";
+import { Tile } from "../objects/Tile";
+
+import * as Map from "../logic/Map";
+import { Utils } from "../logic/Utils";
+
 import { Canvas } from "./Canvas";
-import { Coords } from "./Coords";
-import { Editor } from "./Editor";
-import { Jetpack } from "./Jetpack";
-import * as Map from "./Map";
-import { Player } from "./Player";
-import { Tile } from "./Tile";
-import { Utils } from "./Utils";
+
+import { Editor } from "../Editor";
+import { Jetpack } from "../Jetpack";
 
 const SPRITE_SIZE: number = 64;
 const OFFSET_DIVIDE: number = 100;

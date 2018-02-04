@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "test:watch":"jest --watch",
+    "test:watch": "jest --watch",
     "lint": "tslint src/*.ts --exclude src/*.d.ts",
     "prettier": "prettier --write 'src/**/*.ts'",
     "build": "tsc",
-    "tsc:watch": "tsc -w"
+    "tsc:watch": "tsc -w --pretty"
   },
   "repository": {
     "type": "git",
@@ -51,6 +51,6 @@
     "ts-jest": "^20.0.7",
     "tslint": "^5.8.0",
     "tslint-config-prettier": "^1.5.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.7.0"
   }
 }

@@ -1,6 +1,7 @@
 import { Record } from "immutable";
 import { Coords } from "./Coords";
-import { Utils } from "./Utils";
+
+import { Utils } from "../logic/Utils";
 
 const SPRITE_SIZE: number = 64;
 

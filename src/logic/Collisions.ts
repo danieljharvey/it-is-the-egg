@@ -1,6 +1,8 @@
 import { fromJS, List } from "immutable";
-import { Coords } from "./Coords";
-import { Player } from "./Player";
+
+import { Coords } from "../objects/Coords";
+import { Player } from "../objects/Player";
+
 import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
 

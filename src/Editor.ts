@@ -1,20 +1,22 @@
-import { Board } from "./Board";
-import { BoardSize } from "./BoardSize";
-import { Canvas } from "./Canvas";
-import { Collisions } from "./Collisions";
-import { Coords } from "./Coords";
-import { Levels } from "./Levels";
-import { Loader } from "./Loader";
-import * as Map from "./Map";
-import { Player } from "./Player";
-import { PlayerTypes } from "./PlayerTypes";
-import { Renderer } from "./Renderer";
-import { RenderMap } from "./RenderMap";
-import { SavedLevel } from "./SavedLevel";
-import { TileChooser } from "./TileChooser";
-import { TileSet } from "./TileSet";
-import { TitleScreen } from "./TitleScreen";
-import { Utils } from "./Utils";
+import { Board } from "./objects/Board";
+import { BoardSize } from "./objects/BoardSize";
+import { Coords } from "./objects/Coords";
+import { Player } from "./objects/Player";
+
+import { Canvas } from "./dom/Canvas";
+import { Levels } from "./dom/Levels";
+import { Loader } from "./dom/Loader";
+import { Renderer } from "./dom/Renderer";
+import { TileChooser } from "./dom/TileChooser";
+import { TitleScreen } from "./dom/TitleScreen";
+
+import { Collisions } from "./logic/Collisions";
+import * as Map from "./logic/Map";
+import { PlayerTypes } from "./logic/PlayerTypes";
+import { RenderMap } from "./logic/RenderMap";
+import { SavedLevel } from "./logic/SavedLevel";
+import { TileSet } from "./logic/TileSet";
+import { Utils } from "./logic/Utils";
 
 export class Editor {
   protected levelID: number = 1;

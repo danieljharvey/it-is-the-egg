@@ -1,6 +1,6 @@
-import { BoardSize } from "./BoardSize";
+import { Jetpack } from "../Jetpack";
+import { BoardSize } from "../objects/BoardSize";
 import { Canvas } from "./Canvas";
-import { Jetpack } from "./Jetpack";
 
 export class TitleScreen {
   protected jetpack: Jetpack;

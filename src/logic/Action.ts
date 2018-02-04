@@ -1,7 +1,7 @@
-import { Board } from "./Board";
-import { GameState } from "./GameState";
+import { Board } from "../objects/Board";
+import { GameState } from "../objects/GameState";
+import { Player } from "../objects/Player";
 import * as Map from "./Map";
-import { Player } from "./Player";
 
 // this concerns all the changes between player and board
 

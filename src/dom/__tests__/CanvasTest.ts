@@ -1,4 +1,4 @@
-import { BoardSize } from "../BoardSize";
+import { BoardSize } from "../../objects/BoardSize";
 import { Canvas } from "../Canvas";
 
 test("Get top of canvas to vertically center", () => {

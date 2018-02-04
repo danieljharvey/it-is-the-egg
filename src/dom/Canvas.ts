@@ -1,7 +1,8 @@
 // responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
 
-import { BoardSize } from "./BoardSize";
-import { Utils } from "./Utils";
+import { BoardSize } from "../objects/BoardSize";
+
+import { Utils } from "../logic/Utils";
 
 export class Canvas {
   public imagesFolder: string = "img/";

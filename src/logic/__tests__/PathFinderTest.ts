@@ -1,6 +1,6 @@
 /* tslint:disable: only-arrow-functions */
 
-import { Coords } from "../Coords";
+import { Coords } from "../../objects/Coords";
 import * as path from "../PathFinder";
 
 import { fromJS } from "immutable";

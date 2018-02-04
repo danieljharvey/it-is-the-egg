@@ -1,4 +1,4 @@
-import { BoardSize } from "./BoardSize";
+import { BoardSize } from "../objects/BoardSize";
 
 export class SavedLevel {
   public board: any;

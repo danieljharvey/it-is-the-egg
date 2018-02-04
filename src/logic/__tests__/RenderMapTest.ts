@@ -1,8 +1,9 @@
-import { Board } from "../Board";
-import { BoardSize } from "../BoardSize";
-import { Coords } from "../Coords";
+import { Board } from "../../objects/Board";
+import { BoardSize } from "../../objects/BoardSize";
+import { Coords } from "../../objects/Coords";
+import { Player } from "../../objects/Player";
+
 import * as Map from "../Map";
-import { Player } from "../Player";
 import { RenderMap } from "../RenderMap";
 import { TileSet } from "../TileSet";
 

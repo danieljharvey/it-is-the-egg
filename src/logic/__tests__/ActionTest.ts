@@ -1,10 +1,12 @@
+import { Board } from "../../objects/Board";
+import { BoardSize } from "../../objects/BoardSize";
+import { Coords } from "../../objects/Coords";
+import { Player } from "../../objects/Player";
+import { Tile } from "../../objects/Tile";
+
 import { Action } from "../Action";
-import { Board } from "../Board";
-import { BoardSize } from "../BoardSize";
-import { Coords } from "../Coords";
 import * as Map from "../Map";
-import { Player } from "../Player";
-import { Tile } from "../Tile";
+
 import { TileSet } from "../TileSet";
 
 import { is } from "immutable"; // comparison func

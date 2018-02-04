@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { Maybe } from "tsmonad";
-import { Coords } from "./Coords";
+import { Coords } from "../objects/Coords";
 
 import { List } from "immutable";
 

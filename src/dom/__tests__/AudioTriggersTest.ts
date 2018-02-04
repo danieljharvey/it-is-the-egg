@@ -3,11 +3,12 @@ import * as _ from "ramda";
 import { Maybe } from "tsmonad";
 
 import * as AudioTriggers from "../AudioTriggers";
-import { Board } from "../Board";
-import { Coords } from "../Coords";
-import { GameState } from "../GameState";
-import { Player } from "../Player";
-import { Tile } from "../Tile";
+
+import { Board } from "../../objects/Board";
+import { Coords } from "../../objects/Coords";
+import { GameState } from "../../objects/GameState";
+import { Player } from "../../objects/Player";
+import { Tile } from "../../objects/Tile";
 
 const getGeneratedSoundNames = pile => {
   return pile.map(item => {

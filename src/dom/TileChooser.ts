@@ -1,5 +1,5 @@
+import { TileSet } from "../logic/TileSet";
 import { Renderer } from "./Renderer";
-import { TileSet } from "./TileSet";
 
 import * as _ from "ramda";
 

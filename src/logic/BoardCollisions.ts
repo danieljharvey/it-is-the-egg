@@ -1,9 +1,12 @@
 import { fromJS, List } from "immutable";
-import { Board } from "./Board";
-import { Coords } from "./Coords";
-import { Player } from "./Player";
+
+import { Board } from "../objects/Board";
+import { Coords } from "../objects/Coords";
+import { Player } from "../objects/Player";
+import { Tile } from "../objects/Tile";
+
 import { PlayerTypes } from "./PlayerTypes";
-import { Tile } from "./Tile";
+
 import { Utils } from "./Utils";
 
 import * as _ from "ramda";

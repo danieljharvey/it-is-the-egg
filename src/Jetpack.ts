@@ -1,29 +1,29 @@
 import * as Hammer from "hammerjs";
 import * as _ from "ramda";
 
-import * as AudioTriggers from "./AudioTriggers";
-import { Board } from "./Board";
-import { BoardSize } from "./BoardSize";
-import { Canvas } from "./Canvas";
-import { Collisions } from "./Collisions";
-import { Coords } from "./Coords";
-import { Editor } from "./Editor";
-import { GameState } from "./GameState";
-import { Levels } from "./Levels";
-import { Loader } from "./Loader";
-import * as Map from "./Map";
-import { Player } from "./Player";
-import { PlayerTypes } from "./PlayerTypes";
-import { Renderer } from "./Renderer";
-import { RenderMap } from "./RenderMap";
-import { SavedLevel } from "./SavedLevel";
-import { TheEgg } from "./TheEgg";
-import { Tile } from "./Tile";
-import { TileChooser } from "./TileChooser";
-import { TileSet } from "./TileSet";
-import { TitleScreen } from "./TitleScreen";
-import { Utils } from "./Utils";
-import { WebAudio } from "./WebAudio";
+import { Board } from "./objects/Board";
+import { BoardSize } from "./objects/BoardSize";
+import { Coords } from "./objects/Coords";
+import { GameState } from "./objects/GameState";
+import { Player } from "./objects/Player";
+import { Tile } from "./objects/Tile";
+
+import * as AudioTriggers from "./dom/AudioTriggers";
+import { Canvas } from "./dom/Canvas";
+import { Levels } from "./dom/Levels";
+import { Loader } from "./dom/Loader";
+import { Renderer } from "./dom/Renderer";
+import { TitleScreen } from "./dom/TitleScreen";
+import { WebAudio } from "./dom/WebAudio";
+
+import { Collisions } from "./logic/Collisions";
+import * as Map from "./logic/Map";
+import { PlayerTypes } from "./logic/PlayerTypes";
+import { RenderMap } from "./logic/RenderMap";
+import { SavedLevel } from "./logic/SavedLevel";
+import { TheEgg } from "./logic/TheEgg";
+import { TileSet } from "./logic/TileSet";
+import { Utils } from "./logic/Utils";
 
 export class Jetpack {
   public animationHandle: number;
@@ -40,7 +40,6 @@ export class Jetpack {
   protected levels: Levels; // Levels object
   protected boardSize: BoardSize; // BoardSize object
   protected canvas: Canvas; // Canvas object
-  protected tileChooser: TileChooser;
   protected webAudio: WebAudio; // WebAudio object
 
   // big pile of moves
@@ -73,10 +72,6 @@ export class Jetpack {
         this.startRender();
       });
     });
-  }
-
-  public getEditor() {
-    return new Editor();
   }
 
   // load static stuff - map/renderer etc will be worked out later

@@ -1,6 +1,6 @@
-import { BoardSize } from "./BoardSize";
+import { SavedLevel } from "../logic/SavedLevel";
+import { BoardSize } from "../objects/BoardSize";
 import { Loader } from "./Loader";
-import { SavedLevel } from "./SavedLevel";
 
 export class Levels {
   public levelID: number = 0;
