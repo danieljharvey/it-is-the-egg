@@ -1,8 +1,9 @@
-import { Board } from "../Board";
+import { Board } from "../../objects/Board";
+import { Coords } from "../../objects/Coords";
+import { Player } from "../../objects/Player";
+import { Tile } from "../../objects/Tile";
+
 import * as BoardCollisions from "../BoardCollisions";
-import { Coords } from "../Coords";
-import { Player } from "../Player";
-import { Tile } from "../Tile";
 
 const playerTypes = {
   egg: {

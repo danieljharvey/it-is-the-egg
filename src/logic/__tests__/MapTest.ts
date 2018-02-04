@@ -1,8 +1,9 @@
-import { Board } from "../Board";
-import { BoardSize } from "../BoardSize";
-import { Coords } from "../Coords";
-import * as Map from "../Map";
-import { TileSet } from "../TileSet";
+import { Board } from "../../objects/Board";
+import { BoardSize } from "../../objects/BoardSize";
+import { Coords } from "../../objects/Coords";
+
+import * as Map from "../../logic/Map";
+import { TileSet } from "../../logic/TileSet";
 
 test("Translate rotation", () => {
   const rotateData = [

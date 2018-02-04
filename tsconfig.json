@@ -1,23 +1,15 @@
 {
-    "compilerOptions": {
-        "experimentalDecorators":true,
-		"emitDecoratorMetadata": true,
-        "module": "amd",
-        "target": "es2015",
-        "moduleResolution": "node",
-        "outFile": "public/js/Jetpack.js",
-        "rootDir": "include/ts/",
-        "sourceMap": true,
-        "types": []
-    },
-    "include": [
-        "include/ts/*"
-    ],
-	"lib":[
-        "es2015",
-        "es2016",
-		"es2017.object",
-        "dom",
-        "hammerjs"
-	]
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "amd",
+    "target": "es2015",
+    "moduleResolution": "node",
+    "outFile": "public/js/Jetpack.js",
+    "rootDir": "src/",
+    "sourceMap": true,
+    "types": []
+  },
+  "include": ["src/*"],
+  "lib": ["es2015", "es2016", "es2017.object", "dom", "hammerjs"]
 }

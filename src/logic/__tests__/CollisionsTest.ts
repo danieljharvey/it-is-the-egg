@@ -1,6 +1,8 @@
 import { Collisions } from "../Collisions";
-import { Coords } from "../Coords";
-import { Player } from "../Player";
+
+import { Coords } from "../../objects/Coords";
+import { Player } from "../../objects/Player";
+
 import { fromJS, List } from "immutable";
 
 const playerTypes = {
