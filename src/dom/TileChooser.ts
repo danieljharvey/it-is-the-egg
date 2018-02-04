@@ -1,5 +1,7 @@
-import { TileSet } from "../logic/TileSet";
+import { tiles } from "../data/TileSet";
 import { Renderer } from "./Renderer";
+
+import { Tile } from "../objects/Tile"
 
 import * as _ from "ramda";
 
@@ -32,8 +34,10 @@ export class TileChooser {
     });
   }
 
-  public makeTileImages(tiles) {
-    return _.map(tile => {
+  public makeTileImages() {
+    return _.map(tileOriginal => {
+      return new Tile(tileOriginal)
+    }, tiles).map(tile => {
       const tileImage = document.createElement("img");
       tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
       tileImage.setAttribute("width", "32");
@@ -46,12 +50,11 @@ export class TileChooser {
         this.chooseTile(tile.id);
       };
       return tileImage;
-    }, tiles);
+    });
   }
 
   public render() {
-    const tiles = TileSet.getTiles();
-    const images = this.makeTileImages(tiles);
+    const images = this.makeTileImages();
     const tileChooser = document.getElementById("tileChooser");
     (Object as any).values(images).forEach(image => {
       tileChooser.appendChild(image);

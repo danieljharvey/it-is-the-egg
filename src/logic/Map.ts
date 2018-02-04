@@ -3,8 +3,9 @@ import { BoardSize } from "../objects/BoardSize";
 import { Coords } from "../objects/Coords";
 import { Player } from "../objects/Player";
 import { Tile } from "../objects/Tile";
-import { TileSet } from "./TileSet";
 import { Utils } from "./Utils";
+
+import { getTile as getOriginalTile, tiles as allTiles } from "../data/TileSet";
 
 // map is just a class full of functions that is created for manipulating the board
 // should not contain any meaningful state of it's own (currently does, but reducing this)
@@ -237,7 +238,7 @@ export const generateRandomBoard = (boardSize: BoardSize): Board => {
   for (let x = 0; x < boardSize.width; x++) {
     boardArray[x] = [];
     for (let y = 0; y < boardSize.height; y++) {
-      const blankTile = getRandomTile(TileSet.getTiles());
+      const blankTile = getRandomTile(allTiles);
       const positionedTile = blankTile.modify({
         x,
         y
@@ -254,7 +255,7 @@ export const getTile = (board: Board, x: number, y: number) => {
 };
 
 export const getPrototypeTile = (id: number): object => {
-  return TileSet.getTile(id);
+  return getOriginalTile(id);
 };
 
 export const translateRotation = (

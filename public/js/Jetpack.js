@@ -309,6 +309,198 @@ define("objects/Player", ["require", "exports", "immutable", "objects/Coords"], 
     }
     exports.Player = Player;
 });
+define("data/TileSet", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.tiles = [
+        {
+            background: true,
+            id: 1,
+            img: "sky.png",
+            needsDraw: true,
+            title: "Sky"
+        },
+        {
+            background: false,
+            id: 2,
+            img: "fabric.png",
+            needsDraw: true,
+            title: "Fabric"
+        },
+        {
+            background: true,
+            collectable: 1,
+            frontLayer: true,
+            id: 3,
+            img: "cacti.png",
+            needsDraw: true,
+            title: "Cacti"
+        },
+        {
+            background: true,
+            collectable: 10,
+            frontLayer: true,
+            id: 4,
+            img: "plant.png",
+            needsDraw: true,
+            title: "Plant"
+        },
+        {
+            background: false,
+            breakable: true,
+            id: 5,
+            img: "crate.png",
+            needsDraw: true,
+            title: "Crate"
+        },
+        {
+            background: false,
+            id: 8,
+            img: "work-surface-2.png",
+            needsDraw: true,
+            title: "Work surface 2"
+        },
+        {
+            background: false,
+            id: 9,
+            img: "work-surface-3.png",
+            needsDraw: true,
+            title: "Work surface 3"
+        },
+        {
+            background: false,
+            id: 10,
+            img: "work-surface-4.png",
+            needsDraw: true,
+            title: "Work surface 4"
+        },
+        {
+            background: false,
+            id: 11,
+            img: "tile.png",
+            needsDraw: true,
+            title: "Tiles"
+        },
+        {
+            action: "completeLevel",
+            background: true,
+            createPlayer: "egg",
+            frontLayer: true,
+            id: 12,
+            img: "egg-cup.png",
+            needsDraw: true,
+            title: "Egg Cup"
+        },
+        {
+            background: true,
+            collectable: 100,
+            dontAdd: true,
+            frontLayer: true,
+            id: 13,
+            img: "toast.png",
+            needsDraw: true,
+            title: "Toast"
+        },
+        {
+            action: "teleport",
+            background: true,
+            frontLayer: true,
+            id: 14,
+            img: "door.png",
+            needsDraw: true,
+            title: "Door"
+        },
+        {
+            background: true,
+            frontLayer: true,
+            id: 15,
+            img: "pink-door-open.png",
+            needsDraw: true,
+            title: "Pink door open"
+        },
+        {
+            background: false,
+            id: 16,
+            img: "pink-door.png",
+            needsDraw: true,
+            title: "Pink door closed"
+        },
+        {
+            action: "pink-switch",
+            background: true,
+            frontLayer: true,
+            id: 17,
+            img: "pink-switch.png",
+            needsDraw: true,
+            title: "Pink door switch"
+        },
+        {
+            background: true,
+            frontLayer: true,
+            id: 18,
+            img: "green-door-open.png",
+            needsDraw: true,
+            title: "Green door open"
+        },
+        {
+            background: false,
+            id: 19,
+            img: "green-door.png",
+            needsDraw: true,
+            title: "Green door closed"
+        },
+        {
+            action: "green-switch",
+            background: true,
+            frontLayer: true,
+            id: 20,
+            img: "green-switch.png",
+            needsDraw: true,
+            title: "Green door switch"
+        },
+        {
+            background: true,
+            createPlayer: "silver-egg",
+            frontLayer: true,
+            id: 21,
+            img: "silver-egg-cup.png",
+            needsDraw: true,
+            title: "Silver Egg Cup"
+        },
+        {
+            background: true,
+            createPlayer: "blade",
+            frontLayer: true,
+            id: 22,
+            img: "blade-egg-cup.png",
+            needsDraw: true,
+            title: "Blade egg cup"
+        },
+        {
+            background: true,
+            createPlayer: "find-blade",
+            frontLayer: true,
+            id: 23,
+            img: "find-blade-egg-cup.png",
+            needsDraw: true,
+            title: "Find-blade egg cup"
+        },
+        {
+            background: true,
+            id: 24,
+            action: "split-eggs",
+            needsDraw: true,
+            frontLayer: true,
+            img: "egg-splitter.png",
+            title: "It is the egg splitter"
+        }
+    ];
+    exports.getTile = id => {
+        return exports.tiles.find(tile => {
+            return tile.id === id;
+        });
+    };
+});
 // responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
 define("dom/Canvas", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -625,208 +817,80 @@ define("dom/Levels", ["require", "exports", "logic/SavedLevel", "objects/BoardSi
     }
     exports.Levels = Levels;
 });
-define("logic/TileSet", ["require", "exports"], function (require, exports) {
+define("data/PlayerTypes", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class TileSet {
-        static getTiles() {
-            const tiles = {
-                1: {
-                    background: true,
-                    id: 1,
-                    img: "sky.png",
-                    needsDraw: true,
-                    title: "Sky"
-                },
-                2: {
-                    background: false,
-                    id: 2,
-                    img: "fabric.png",
-                    needsDraw: true,
-                    title: "Fabric"
-                },
-                3: {
-                    background: true,
-                    collectable: 1,
-                    frontLayer: true,
-                    id: 3,
-                    img: "cacti.png",
-                    needsDraw: true,
-                    title: "Cacti"
-                },
-                4: {
-                    background: true,
-                    collectable: 10,
-                    frontLayer: true,
-                    id: 4,
-                    img: "plant.png",
-                    needsDraw: true,
-                    title: "Plant"
-                },
-                5: {
-                    background: false,
-                    breakable: true,
-                    id: 5,
-                    img: "crate.png",
-                    needsDraw: true,
-                    title: "Crate"
-                },
-                8: {
-                    background: false,
-                    id: 8,
-                    img: "work-surface-2.png",
-                    needsDraw: true,
-                    title: "Work surface 2"
-                },
-                9: {
-                    background: false,
-                    id: 9,
-                    img: "work-surface-3.png",
-                    needsDraw: true,
-                    title: "Work surface 3"
-                },
-                10: {
-                    background: false,
-                    id: 10,
-                    img: "work-surface-4.png",
-                    needsDraw: true,
-                    title: "Work surface 4"
-                },
-                11: {
-                    background: false,
-                    id: 11,
-                    img: "tile.png",
-                    needsDraw: true,
-                    title: "Tiles"
-                },
-                12: {
-                    action: "completeLevel",
-                    background: true,
-                    createPlayer: "egg",
-                    frontLayer: true,
-                    id: 12,
-                    img: "egg-cup.png",
-                    needsDraw: true,
-                    title: "Egg Cup"
-                },
-                13: {
-                    background: true,
-                    collectable: 100,
-                    dontAdd: true,
-                    frontLayer: true,
-                    id: 13,
-                    img: "toast.png",
-                    needsDraw: true,
-                    title: "Toast"
-                },
-                14: {
-                    action: "teleport",
-                    background: true,
-                    frontLayer: true,
-                    id: 14,
-                    img: "door.png",
-                    needsDraw: true,
-                    title: "Door"
-                },
-                15: {
-                    background: true,
-                    frontLayer: true,
-                    id: 15,
-                    img: "pink-door-open.png",
-                    needsDraw: true,
-                    title: "Pink door open"
-                },
-                16: {
-                    background: false,
-                    id: 16,
-                    img: "pink-door.png",
-                    needsDraw: true,
-                    title: "Pink door closed"
-                },
-                17: {
-                    action: "pink-switch",
-                    background: true,
-                    frontLayer: true,
-                    id: 17,
-                    img: "pink-switch.png",
-                    needsDraw: true,
-                    title: "Pink door switch"
-                },
-                18: {
-                    background: true,
-                    frontLayer: true,
-                    id: 18,
-                    img: "green-door-open.png",
-                    needsDraw: true,
-                    title: "Green door open"
-                },
-                19: {
-                    background: false,
-                    id: 19,
-                    img: "green-door.png",
-                    needsDraw: true,
-                    title: "Green door closed"
-                },
-                20: {
-                    action: "green-switch",
-                    background: true,
-                    frontLayer: true,
-                    id: 20,
-                    img: "green-switch.png",
-                    needsDraw: true,
-                    title: "Green door switch"
-                },
-                21: {
-                    background: true,
-                    createPlayer: "silver-egg",
-                    frontLayer: true,
-                    id: 21,
-                    img: "silver-egg-cup.png",
-                    needsDraw: true,
-                    title: "Silver Egg Cup"
-                },
-                22: {
-                    background: true,
-                    createPlayer: "blade",
-                    frontLayer: true,
-                    id: 22,
-                    img: "blade-egg-cup.png",
-                    needsDraw: true,
-                    title: "Blade egg cup"
-                },
-                23: {
-                    background: true,
-                    createPlayer: "find-blade",
-                    frontLayer: true,
-                    id: 23,
-                    img: "find-blade-egg-cup.png",
-                    needsDraw: true,
-                    title: "Find-blade egg cup"
-                },
-                24: {
-                    background: true,
-                    id: 24,
-                    action: "split-eggs",
-                    needsDraw: true,
-                    frontLayer: true,
-                    img: "egg-splitter.png",
-                    title: "It is the egg splitter"
-                }
-            };
-            // return a copy rather than letting this get messed with
-            return JSON.parse(JSON.stringify(tiles));
+    exports.playerTypes = [
+        {
+            frames: 18,
+            img: "egg-sprite-blue.png",
+            multiplier: 5,
+            title: "It is of course the blue egg",
+            type: "blue-egg",
+            value: 3
+        },
+        {
+            frames: 18,
+            img: "egg-sprite.png",
+            multiplier: 1,
+            title: "It is of course the egg",
+            type: "egg",
+            value: 1
+        },
+        {
+            frames: 18,
+            img: "egg-sprite-red.png",
+            multiplier: 2,
+            title: "It is of course the red egg",
+            type: "red-egg",
+            value: 2
+        },
+        {
+            fallSpeed: 20,
+            frames: 1,
+            img: "silver-egg.png",
+            moveSpeed: 0,
+            multiplier: 10,
+            title: "It is of course the silver egg",
+            type: "silver-egg",
+            value: 0
+        },
+        {
+            frames: 18,
+            img: "egg-sprite-yellow.png",
+            multiplier: 10,
+            title: "It is of course the yellow egg",
+            type: "yellow-egg",
+            value: 4
+        },
+        {
+            frames: 18,
+            img: "egg-rainbow.png",
+            multiplier: 1,
+            title: "It goes without saying that this is the rainbow egg",
+            type: "rainbow-egg",
+            value: 1
+        },
+        {
+            frames: 18,
+            img: "blade-sprite.png",
+            title: "It is the mean spirited blade",
+            type: "blade",
+            value: 0,
+            flying: true
+        },
+        {
+            frames: 18,
+            img: "find-blade-sprite.png",
+            title: "It is the mean spirited blade",
+            type: "find-blade",
+            value: 0,
+            movePattern: "seek-egg",
+            flying: true
         }
-        static getTile(id) {
-            const tiles = TileSet.getTiles();
-            if (tiles.hasOwnProperty(id)) {
-                return tiles[id];
-            }
-            return false;
-        }
-    }
-    exports.TileSet = TileSet;
+    ];
 });
-define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize", "objects/Coords", "objects/Tile", "logic/TileSet", "logic/Utils"], function (require, exports, Board_1, BoardSize_2, Coords_2, Tile_1, TileSet_1, Utils_1) {
+define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize", "objects/Coords", "objects/Tile", "logic/Utils", "data/TileSet"], function (require, exports, Board_1, BoardSize_2, Coords_2, Tile_1, Utils_1, TileSet_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // map is just a class full of functions that is created for manipulating the board
@@ -1023,7 +1087,7 @@ define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize",
         for (let x = 0; x < boardSize.width; x++) {
             boardArray[x] = [];
             for (let y = 0; y < boardSize.height; y++) {
-                const blankTile = exports.getRandomTile(TileSet_1.TileSet.getTiles());
+                const blankTile = exports.getRandomTile(TileSet_1.tiles);
                 const positionedTile = blankTile.modify({
                     x,
                     y
@@ -1038,7 +1102,7 @@ define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize",
         return exports.getTileWithCoords(board, coords);
     };
     exports.getPrototypeTile = (id) => {
-        return TileSet_1.TileSet.getTile(id);
+        return TileSet_1.getTile(id);
     };
     exports.translateRotation = (boardSize, coords, clockwise) => {
         const width = boardSize.width - 1;
@@ -1425,91 +1489,10 @@ define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exp
     }
     exports.WebAudio = WebAudio;
 });
-define("logic/PlayerTypes", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class PlayerTypes {
-        getPlayerTypes() {
-            return {
-                "blue-egg": {
-                    frames: 18,
-                    img: "egg-sprite-blue.png",
-                    multiplier: 5,
-                    title: "It is of course the blue egg",
-                    type: "blue-egg",
-                    value: 3
-                },
-                egg: {
-                    frames: 18,
-                    img: "egg-sprite.png",
-                    multiplier: 1,
-                    title: "It is of course the egg",
-                    type: "egg",
-                    value: 1
-                },
-                "red-egg": {
-                    frames: 18,
-                    img: "egg-sprite-red.png",
-                    multiplier: 2,
-                    title: "It is of course the red egg",
-                    type: "red-egg",
-                    value: 2
-                },
-                "silver-egg": {
-                    fallSpeed: 20,
-                    frames: 1,
-                    img: "silver-egg.png",
-                    moveSpeed: 0,
-                    multiplier: 10,
-                    title: "It is of course the silver egg",
-                    type: "silver-egg",
-                    value: 0
-                },
-                "yellow-egg": {
-                    frames: 18,
-                    img: "egg-sprite-yellow.png",
-                    multiplier: 10,
-                    title: "It is of course the yellow egg",
-                    type: "yellow-egg",
-                    value: 4
-                },
-                "rainbow-egg": {
-                    frames: 18,
-                    img: "egg-rainbow.png",
-                    multiplier: 1,
-                    title: "It goes without saying that this is the rainbow egg",
-                    type: "rainbow-egg",
-                    value: 1
-                },
-                blade: {
-                    frames: 18,
-                    img: "blade-sprite.png",
-                    title: "It is the mean spirited blade",
-                    type: "blade",
-                    value: 0,
-                    flying: true
-                },
-                "find-blade": {
-                    frames: 18,
-                    img: "find-blade-sprite.png",
-                    title: "It is the mean spirited blade",
-                    type: "find-blade",
-                    value: 0,
-                    movePattern: "seek-egg",
-                    flying: true
-                }
-            };
-        }
-    }
-    exports.PlayerTypes = PlayerTypes;
-});
-define("logic/Collisions", ["require", "exports", "immutable", "logic/Utils", "ramda"], function (require, exports, immutable_5, Utils_3, _) {
+define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, immutable_5, PlayerTypes_1, Utils_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Collisions {
-        constructor(playerTypes) {
-            this.playerTypes = playerTypes;
-        }
         checkAllCollisions(players) {
             const combinations = this.getAllPlayerCombinations(players);
             // only one egg, do nothing
@@ -1645,7 +1628,7 @@ define("logic/Collisions", ["require", "exports", "immutable", "logic/Utils", "r
         combinePlayers(player1, player2) {
             const newValue = player1.value + player2.value;
             const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            const newPlayerType = Utils_3.Utils.getPlayerByValue(this.playerTypes, newValue);
+            const newPlayerType = Utils_3.Utils.getPlayerByValue(PlayerTypes_1.playerTypes, newValue);
             if (!newPlayerType) {
                 return [player1, player2];
             }
@@ -1826,14 +1809,14 @@ define("logic/Action", ["require", "exports", "logic/Map"], function (require, e
     }
     exports.Action = Action;
 });
-define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "logic/Utils", "ramda"], function (require, exports, Coords_4, Utils_5, _) {
+define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, Coords_4, PlayerTypes_2, Utils_5, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // Board Collide
     // deals with egg splitting tiles
-    exports.checkBoardCollisions = (board, playerTypes, players) => {
+    exports.checkBoardCollisions = (board, players) => {
         return addIDsToPlayers(players.reduce((newPlayers, player) => {
-            const checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player);
+            const checkedPlayers = checkPlayerBoardCollision(board)(player);
             return [...newPlayers, ...checkedPlayers];
         }, []));
     };
@@ -1845,9 +1828,9 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "logic/
             });
         });
     };
-    const checkPlayerBoardCollision = (board, playerTypes) => (player) => {
+    const checkPlayerBoardCollision = (board) => (player) => {
         return isCollision(board)(player)
-            ? exports.splitPlayer(playerTypes)(player)
+            ? exports.splitPlayer(player)
             : [player];
     };
     const isCollision = (board) => (player) => isPlayerInTile(player) &&
@@ -1896,13 +1879,13 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "logic/
         const directions = [-1, 1];
         return _.zipWith(combineDirectionsAndValues, values, directions);
     };
-    exports.splitPlayer = playerTypes => (player) => {
+    exports.splitPlayer = (player) => {
         const items = exports.getValuesAndDirections(player.value);
-        const playerFromItemFunc = playerFromItem(playerTypes, player);
+        const playerFromItemFunc = playerFromItem(player);
         return items.map(playerFromItemFunc);
     };
-    const playerFromItem = (playerTypes, player) => (item) => {
-        const newPlayerType = Utils_5.Utils.getPlayerByValue(playerTypes, item.value);
+    const playerFromItem = (player) => (item) => {
+        const newPlayerType = Utils_5.Utils.getPlayerByValue(PlayerTypes_2.playerTypes, item.value);
         const newPlayerParams = Object.assign({}, newPlayerType, {
             direction: new Coords_4.Coords({
                 x: item.direction
@@ -1913,7 +1896,512 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "logic/
         return player.modify(newPlayerParams);
     };
 });
-define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/Coords"], function (require, exports, _, tsmonad_3, Coords_5) {
+// this is the egg
+// it accepts a GameState and an Action
+// and returns a new GameState
+// totally fucking stateless and burnable in itself
+define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "data/PlayerTypes", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_6, PlayerTypes_3, BoardSize_5) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class TheEgg {
+        constructor() {
+            this.checkNearlyFinished = (gameState) => {
+                if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
+                    return gameState.players.map(player => {
+                        if (player.value > 0) {
+                            const newPlayer = Utils_6.Utils.getPlayerByType(PlayerTypes_3.playerTypes, "rainbow-egg");
+                            return player.modify(Object.assign({}, newPlayer, { value: player.value }));
+                        }
+                        return player;
+                    });
+                }
+                return gameState.players;
+            };
+        }
+        doAction(gameState, action, timePassed) {
+            if (action === "rotateLeft") {
+                return this.doRotate(gameState, false);
+            }
+            else if (action === "rotateRight") {
+                return this.doRotate(gameState, true);
+            }
+            else if (action === "") {
+                return this.doGameMove(gameState, timePassed);
+            }
+            return gameState;
+        }
+        // this is where we have to do a shitload of things
+        doGameMove(gameState, timePassed) {
+            // first get rid of old outcome
+            const startGameState = gameState.modify({
+                outcome: ""
+            });
+            const newGameState = Movement.doCalcs(startGameState, timePassed);
+            const action = new Action_1.Action();
+            const newerGameState = action.checkAllPlayerTileActions(newGameState);
+            const collisions = new Collisions_1.Collisions();
+            const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
+            const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, sortedPlayers);
+            const colouredPlayers = this.checkNearlyFinished(newerGameState.modify({
+                players: splitPlayers
+            }));
+            return newerGameState.modify({
+                players: colouredPlayers
+            });
+        }
+        // this rotates board and players
+        // it DOES NOT do animation - not our problem
+        doRotate(gameState, clockwise) {
+            const rotations = gameState.rotations + 1;
+            const boardSize = new BoardSize_5.BoardSize(gameState.board.getLength());
+            const newBoard = Map.rotateBoard(gameState.board, clockwise);
+            const rotatedPlayers = gameState.players.map(player => {
+                return Map.rotatePlayer(boardSize, player, clockwise);
+            });
+            const rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
+            return gameState.modify({
+                board: newBoard,
+                players: rotatedPlayers,
+                rotateAngle,
+                rotations
+            });
+        }
+    }
+    exports.TheEgg = TheEgg;
+});
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "objects/Player", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils", "data/PlayerTypes"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, Player_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_7, PlayerTypes_4) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Jetpack {
+        constructor() {
+            this.moveSpeed = 10;
+            this.paused = true;
+            this.editMode = false;
+            this.levelID = 1;
+            this.levelList = [];
+            this.nextPlayerID = 1;
+            this.score = 0;
+            this.rotationsUsed = 0;
+            this.collectable = 0; // total points on screen
+            this.defaultBoardSize = 20;
+            this.checkResize = false;
+            this.isCalculating = false;
+            this.action = "";
+            this.filterCreateTiles = tiles => {
+                return tiles.filter(tile => {
+                    return tile.createPlayer !== "";
+                });
+            };
+        }
+        go(levelID) {
+            // this.bootstrap();
+            this.bindSizeHandler();
+            this.bindKeyboardHandler();
+            this.bindSwipeHandler();
+            this.pauseRender();
+            this.getTitleScreen(() => {
+                this.loadLevel(levelID, () => {
+                    this.setNextAction("");
+                    this.canvas.gradientBackground();
+                    this.startRender();
+                });
+            });
+        }
+        // load static stuff - map/renderer etc will be worked out later
+        bootstrap(callback) {
+            const boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
+            this.canvas = new Canvas_1.Canvas(boardSize);
+            this.webAudio = new WebAudio_1.WebAudio();
+            this.webAudio.init(); // load web audio stuff
+            const apiLocation = "http://" + window.location.hostname + "/levels/";
+            const loader = new Loader_1.Loader(apiLocation);
+            this.levels = new Levels_1.Levels(loader);
+            this.getLevelList(levelList => {
+                const levelID = this.chooseLevelID(levelList);
+                this.levelID = levelID;
+                callback(levelID);
+            });
+        }
+        displayScore(score) {
+            const scoreElement = document.getElementById("score");
+            if (scoreElement) {
+                scoreElement.innerHTML = score.toString();
+            }
+        }
+        // create player
+        createNewPlayer(type, coords, direction) {
+            const playerType = PlayerTypes_4.playerTypes[type];
+            const params = JSON.parse(JSON.stringify(playerType));
+            params.id = this.nextPlayerID++;
+            params.coords = coords;
+            params.direction = direction;
+            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
+                params.moveSpeed = this.moveSpeed;
+                params.fallSpeed = this.moveSpeed * 1.2;
+            }
+            const player = new Player_1.Player(params);
+            return player;
+        }
+        // make this actually fucking rotate, and choose direction, and do the visual effect thing
+        rotateBoard(clockwise) {
+            if (clockwise) {
+                this.setNextAction("rotateRight");
+            }
+            else {
+                this.setNextAction("rotateLeft");
+            }
+        }
+        getTitleScreen(callback) {
+            const imageSize = { width: 1024, height: 1024 };
+            const imagePath = "large/the-egg.png";
+            const titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
+            titleScreen.render(callback);
+        }
+        getLevelList(callback) {
+            this.levels.getLevelList(levelList => {
+                this.levelList = levelList;
+                callback(levelList);
+            });
+        }
+        // select a random level that has not been completed yet
+        // a return of false means none available (generate a random one)
+        chooseLevelID(levelList) {
+            const availableLevels = levelList.filter(level => {
+                return level.completed === false;
+            });
+            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
+            if (!chosenKey) {
+                return false;
+            }
+            const levelID = availableLevels[chosenKey].levelID;
+            return levelID;
+        }
+        setNextAction(action) {
+            this.action = action;
+        }
+        // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+        createRenderer(boardSize, completedCallback) {
+            this.canvas = new Canvas_1.Canvas(boardSize);
+            this.boardSize = boardSize;
+            return new Renderer_1.Renderer(this.boardSize, this.canvas, () => completedCallback());
+        }
+        startRender() {
+            window.cancelAnimationFrame(this.animationHandle);
+            this.showControls();
+            this.animationHandle = window.requestAnimationFrame(time => this.eventLoop(time, 0));
+        }
+        getNextAction() {
+            const action = this.action;
+            // this.action = "";
+            return action;
+        }
+        // change of heart - this runs all the time and requests various things do stuff
+        // if we are paused, it is nothing, but the loop runs all the same
+        // we are separating one frame ==== one turn
+        // as this does not work for things like rotation
+        // which is one 'turn' but many frames
+        eventLoop(time, lastTime) {
+            this.animationHandle = window.requestAnimationFrame(newTime => this.eventLoop(newTime, time));
+            const timePassed = this.calcTimePassed(time, lastTime);
+            this.displayFrameRate(timePassed);
+            const action = this.getNextAction();
+            this.gameCycle(timePassed, action);
+        }
+        // this does one step of the game
+        gameCycle(timePassed, action) {
+            const oldGameState = this.getCurrentGameState();
+            if (action === "rotateLeft") {
+                const rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
+                this.doBoardRotation(false, rotatedLeftState);
+                this.setNextAction("rotatingLeft");
+                return false;
+            }
+            else if (action === "rotateRight") {
+                const rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
+                this.doBoardRotation(true, rotatedRightState);
+                this.setNextAction("rotatingRight");
+                return false;
+            }
+            else if (action.length > 0) {
+                return false;
+            }
+            if (oldGameState.outcome.length > 0) {
+                const continueGame = this.checkOutcome(oldGameState);
+                if (continueGame === false) {
+                    this.setNextAction("stop");
+                }
+            }
+            const newGameState = this.getNewGameState(oldGameState, action, timePassed);
+            if (oldGameState.score !== newGameState.score) {
+                this.displayScore(newGameState.score);
+            }
+            this.renderChanges(oldGameState, newGameState);
+        }
+        // return true for continue play, false for stop
+        checkOutcome(gameState) {
+            if (gameState.outcome === "completeLevel") {
+                // egg is over cup - check whether we've completed
+                const completed = this.completeLevel(gameState.board, gameState.players);
+                if (completed) {
+                    this.webAudio.playSound("bright-bell", 0);
+                    this.nextLevel(gameState.score, gameState.rotations);
+                    return false;
+                }
+            }
+            return true;
+        }
+        // or at least try
+        completeLevel(board, players) {
+            const collectable = this.getCollectable(board);
+            const playerCount = this.countPlayers(players);
+            if (collectable < 1 && playerCount < 2) {
+                return true;
+            }
+            return false;
+        }
+        getBoardFromArray(boardArray) {
+            return Map.makeBoardFromArray(boardArray);
+        }
+        // create first "frame" of gameState from board
+        // create players etc
+        getBlankGameState(board) {
+            const players = this.createPlayers(board);
+            return new GameState_1.GameState({
+                board,
+                players
+            });
+        }
+        // current game state from array
+        getCurrentGameState() {
+            return this.gameStates.slice(-1)[0]; // set to new last item
+        }
+        resetGameState(board) {
+            const gameState = this.getBlankGameState(board);
+            this.gameStates = [gameState];
+        }
+        updateGameState(oldGameState, gameState) {
+            this.gameStates = [oldGameState, gameState];
+        }
+        // do next move, plop new state on pile, return new state
+        getNewGameState(gameState, action, timePassed) {
+            const theEgg = new TheEgg_1.TheEgg();
+            const newGameState = theEgg.doAction(gameState, action, timePassed);
+            this.updateGameState(gameState, newGameState);
+            this.playSounds(gameState, newGameState);
+            return newGameState;
+        }
+        // check changes in board, get sounds, trigger them
+        playSounds(oldState, newState) {
+            _.map(sound => sound.caseOf({
+                just: audio => this.webAudio.playSound(audio.name, audio.pan),
+                nothing: () => {
+                    // don't play a sound
+                }
+            }), AudioTriggers.triggerSounds(oldState)(newState));
+        }
+        renderEverything(gameState) {
+            const boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
+            const blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
+            this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
+        }
+        renderChanges(oldGameState, newGameState) {
+            const boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
+            // if rotated everything changes anyway
+            if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
+                return this.renderEverything(newGameState);
+            }
+            // player map is covering old shit up
+            const playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
+            // render changes
+            const boardRenderMap = RenderMap_1.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
+            const finalRenderMap = RenderMap_1.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+            this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
+        }
+        sizeCanvas(boardSize) {
+            if (!this.checkResize) {
+                return false;
+            }
+            this.renderer.resize(boardSize);
+            this.checkResize = false;
+        }
+        // create empty renderMap based on boardSize, and then apply each player's position to it
+        createRenderMapFromPlayers(players, boardSize) {
+            const blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, false);
+            return players.reduce((map, player) => {
+                return RenderMap_1.RenderMap.addPlayerToRenderMap(player, map);
+            }, blankMap);
+        }
+        calcTimePassed(time, lastTime) {
+            const difference = Math.min(time - lastTime, 20);
+            return difference;
+        }
+        displayFrameRate(timePassed) {
+            const frameRate = Math.floor(1000 / timePassed);
+            const fps = document.getElementById("fps");
+            if (fps) {
+                fps.innerHTML = frameRate.toFixed(3) + "fps";
+            }
+        }
+        nextLevel(score, rotations) {
+            this.pauseRender();
+            this.levels.saveData(this.levelID, rotations, score, data => {
+                this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
+                this.levelID = this.chooseLevelID(this.levelList);
+                this.go(this.levelID);
+            });
+        }
+        markLevelAsCompleted(levelList, levelID) {
+            levelList[levelID].completed = true;
+            return levelList;
+        }
+        pauseRender() {
+            this.paused = true;
+            this.hideControls();
+            window.cancelAnimationFrame(this.animationHandle);
+        }
+        showControls() {
+            const controlHeader = document.getElementById("controlHeader");
+            if (controlHeader && controlHeader.classList.contains("hidden")) {
+                controlHeader.classList.remove("hidden");
+            }
+        }
+        hideControls() {
+            const controlHeader = document.getElementById("controlHeader");
+            if (controlHeader && !controlHeader.classList.contains("hidden")) {
+                controlHeader.classList.add("hidden");
+            }
+        }
+        countPlayers(players) {
+            return players.reduce((total, player) => {
+                if (player && player.value > 0) {
+                    return total + 1;
+                }
+                else {
+                    return total;
+                }
+            }, 0);
+        }
+        // cycle through all map tiles, find egg cups etc and create players
+        createPlayers(board) {
+            const tiles = board.getAllTiles();
+            const filtered = this.filterCreateTiles(tiles);
+            const players = filtered.map((tile) => {
+                const type = tile.createPlayer;
+                const coords = new Coords_5.Coords({
+                    offsetX: 0,
+                    offsetY: 0,
+                    x: tile.x,
+                    y: tile.y
+                });
+                const direction = new Coords_5.Coords({ x: 1 });
+                return this.createNewPlayer(type, coords, direction);
+            });
+            return players;
+        }
+        // get total outstanding points left to grab on board
+        getCollectable(board) {
+            const tiles = board.getAllTiles();
+            return tiles.reduce((collectable, tile) => {
+                const score = tile.get("collectable");
+                if (score > 0) {
+                    return collectable + score;
+                }
+                else {
+                    return collectable;
+                }
+            }, 0);
+        }
+        doBoardRotation(clockwise, gameState) {
+            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
+                this.renderEverything(gameState);
+                this.setNextAction(""); // continue playing the game
+            });
+        }
+        loadLevel(levelID, callback) {
+            this.levels.loadLevel(levelID, (savedLevel) => {
+                this.renderer = this.createRenderer(savedLevel.boardSize, () => {
+                    const board = this.getBoardFromArray(savedLevel.board);
+                    this.resetGameState(board);
+                    const gameState = this.getCurrentGameState();
+                    this.renderEverything(gameState);
+                    callback();
+                });
+            }, () => {
+                this.renderer = this.createRenderer(this.boardSize, () => {
+                    const board = Map.generateRandomBoard(this.boardSize);
+                    this.resetGameState(board);
+                    const gameState = this.getCurrentGameState();
+                    this.renderEverything(gameState);
+                    callback();
+                });
+            });
+        }
+        bindSizeHandler() {
+            window.addEventListener("resize", () => {
+                this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+            });
+        }
+        bindKeyboardHandler() {
+            window.addEventListener("keydown", event => {
+                if (event.keyCode === 37) {
+                    // left arrow
+                    this.rotateBoard(false);
+                }
+                if (event.keyCode === 39) {
+                    // right arrow
+                    this.rotateBoard(true);
+                }
+                if (event.keyCode === 80) {
+                    // 'p'
+                    this.togglePaused();
+                }
+                if (event.keyCode === 83) {
+                    // 's'
+                    this.doStep();
+                }
+                if (event.keyCode === 70) {
+                    // 'f'
+                    this.toggleFPS();
+                }
+            });
+        }
+        bindSwipeHandler() {
+            const element = document.getElementById("wrapper");
+            const hammertime = new Hammer(element, {});
+            hammertime.on("swipeleft", ev => {
+                this.rotateBoard(false);
+            });
+            hammertime.on("swiperight", ev => {
+                this.rotateBoard(true);
+            });
+        }
+        toggleFPS() {
+            const fps = document.getElementById("fps");
+            if (!fps) {
+                return false;
+            }
+            if (fps.style.display !== "block") {
+                fps.style.display = "block";
+            }
+            else {
+                fps.style.display = "none";
+            }
+        }
+        togglePaused() {
+            if (this.paused) {
+                this.startRender();
+            }
+            else {
+                this.pauseRender();
+            }
+        }
+        doStep() {
+            this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
+        }
+    }
+    exports.Jetpack = Jetpack;
+});
+define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/Coords"], function (require, exports, _, tsmonad_3, Coords_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getMapSize = (map) => {
@@ -1930,7 +2418,7 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
     };
     exports.wrapValue = (map) => (x, y) => {
         const mapSize = exports.getMapSize(map);
-        return new Coords_5.Coords({
+        return new Coords_6.Coords({
             x: overflow(x, mapSize.width),
             y: overflow(y, mapSize.height)
         });
@@ -2052,7 +2540,7 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
         const parts = _.slice(pointList, 0, 2);
         const start = parts[0];
         const end = parts[1];
-        return new Coords_5.Coords({
+        return new Coords_6.Coords({
             x: calcDifference(start.x, end.x),
             y: calcDifference(start.y, end.y)
         });
@@ -2068,7 +2556,7 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
         return diff;
     };
 });
-define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logic/Map", "logic/PathFinder", "logic/RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_6) {
+define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logic/Map", "logic/PathFinder", "logic/RenderMap", "immutable"], function (require, exports, _, Coords_7, Map, PathFinder, RenderMap_2, immutable_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const OFFSET_DIVIDE = 100;
@@ -2170,11 +2658,11 @@ define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logi
         if (player.coords.offsetX !== 0 || player.coords.offsetY !== 0) {
             return player;
         }
-        const pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
+        const pathMap = RenderMap_2.RenderMap.createPathFindingMapFromBoard(board);
         const maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players));
         return maybe.map(PathFinder.findNextDirection).caseOf({
             just: val => player.modify({
-                direction: new Coords_6.Coords(val)
+                direction: new Coords_7.Coords(val)
             }),
             nothing: () => player
         });
@@ -2244,7 +2732,7 @@ define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logi
             player.currentFrame === 0) {
             // if we're still, and have returned to main frame, disregard old movement
             return player.modify({
-                oldDirection: new Coords_6.Coords()
+                oldDirection: new Coords_7.Coords()
             });
         }
         let newFrame = player.currentFrame;
@@ -2505,529 +2993,18 @@ define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logi
         });
     };
 });
-// this is the egg
-// it accepts a GameState and an Action
-// and returns a new GameState
-// totally fucking stateless and burnable in itself
-define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_6, BoardSize_5) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class TheEgg {
-        constructor(playerTypes) {
-            this.checkNearlyFinished = playerTypes => (gameState) => {
-                if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
-                    return gameState.players.map(player => {
-                        if (player.value > 0) {
-                            const newPlayer = Utils_6.Utils.getPlayerByType(playerTypes, "rainbow-egg");
-                            return player.modify(Object.assign({}, newPlayer, { value: player.value }));
-                        }
-                        return player;
-                    });
-                }
-                return gameState.players;
-            };
-            this.playerTypes = playerTypes;
-        }
-        doAction(gameState, action, timePassed) {
-            if (action === "rotateLeft") {
-                return this.doRotate(gameState, false);
-            }
-            else if (action === "rotateRight") {
-                return this.doRotate(gameState, true);
-            }
-            else if (action === "") {
-                return this.doGameMove(gameState, timePassed);
-            }
-            return gameState;
-        }
-        // this is where we have to do a shitload of things
-        doGameMove(gameState, timePassed) {
-            // first get rid of old outcome
-            const startGameState = gameState.modify({
-                outcome: ""
-            });
-            const newGameState = Movement.doCalcs(startGameState, timePassed);
-            const action = new Action_1.Action();
-            const newerGameState = action.checkAllPlayerTileActions(newGameState);
-            const collisions = new Collisions_1.Collisions(this.playerTypes);
-            const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
-            const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
-            const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(newerGameState.modify({
-                players: splitPlayers
-            }));
-            return newerGameState.modify({
-                players: colouredPlayers
-            });
-        }
-        // this rotates board and players
-        // it DOES NOT do animation - not our problem
-        doRotate(gameState, clockwise) {
-            const rotations = gameState.rotations + 1;
-            const boardSize = new BoardSize_5.BoardSize(gameState.board.getLength());
-            const newBoard = Map.rotateBoard(gameState.board, clockwise);
-            const rotatedPlayers = gameState.players.map(player => {
-                return Map.rotatePlayer(boardSize, player, clockwise);
-            });
-            const rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
-            return gameState.modify({
-                board: newBoard,
-                players: rotatedPlayers,
-                rotateAngle,
-                rotations
-            });
-        }
-    }
-    exports.TheEgg = TheEgg;
-});
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "objects/Player", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/PlayerTypes", "logic/RenderMap", "logic/TheEgg", "logic/TileSet", "logic/Utils"], function (require, exports, Hammer, _, BoardSize_6, Coords_7, GameState_1, Player_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, PlayerTypes_1, RenderMap_2, TheEgg_1, TileSet_2, Utils_7) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Jetpack {
-        constructor() {
-            this.moveSpeed = 10;
-            this.paused = true;
-            this.editMode = false;
-            this.levelID = 1;
-            this.levelList = [];
-            this.nextPlayerID = 1;
-            this.score = 0;
-            this.rotationsUsed = 0;
-            this.collectable = 0; // total points on screen
-            this.playerTypes = {};
-            this.defaultBoardSize = 20;
-            this.checkResize = false;
-            this.isCalculating = false;
-            this.action = "";
-            this.filterCreateTiles = tiles => {
-                return tiles.filter(tile => {
-                    return tile.createPlayer !== "";
-                });
-            };
-        }
-        go(levelID) {
-            // this.bootstrap();
-            this.bindSizeHandler();
-            this.bindKeyboardHandler();
-            this.bindSwipeHandler();
-            this.pauseRender();
-            this.getTitleScreen(() => {
-                this.loadLevel(levelID, () => {
-                    this.setNextAction("");
-                    this.canvas.gradientBackground();
-                    this.startRender();
-                });
-            });
-        }
-        // load static stuff - map/renderer etc will be worked out later
-        bootstrap(callback) {
-            const boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
-            this.canvas = new Canvas_1.Canvas(boardSize);
-            const playerTypes = new PlayerTypes_1.PlayerTypes();
-            this.playerTypes = playerTypes.getPlayerTypes();
-            this.webAudio = new WebAudio_1.WebAudio();
-            this.webAudio.init(); // load web audio stuff
-            const apiLocation = "http://" + window.location.hostname + "/levels/";
-            const loader = new Loader_1.Loader(apiLocation);
-            this.levels = new Levels_1.Levels(loader);
-            this.getLevelList(levelList => {
-                const levelID = this.chooseLevelID(levelList);
-                this.levelID = levelID;
-                callback(levelID);
-            });
-        }
-        displayScore(score) {
-            const scoreElement = document.getElementById("score");
-            if (scoreElement) {
-                scoreElement.innerHTML = score.toString();
-            }
-        }
-        // create player
-        createNewPlayer(playerTypes, type, coords, direction) {
-            const playerType = playerTypes[type];
-            const params = JSON.parse(JSON.stringify(playerType));
-            params.id = this.nextPlayerID++;
-            params.coords = coords;
-            params.direction = direction;
-            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
-                params.moveSpeed = this.moveSpeed;
-                params.fallSpeed = this.moveSpeed * 1.2;
-            }
-            const player = new Player_1.Player(params);
-            return player;
-        }
-        // make this actually fucking rotate, and choose direction, and do the visual effect thing
-        rotateBoard(clockwise) {
-            if (clockwise) {
-                this.setNextAction("rotateRight");
-            }
-            else {
-                this.setNextAction("rotateLeft");
-            }
-        }
-        getTitleScreen(callback) {
-            const imageSize = { width: 1024, height: 1024 };
-            const imagePath = "large/the-egg.png";
-            const titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
-            titleScreen.render(callback);
-        }
-        getLevelList(callback) {
-            this.levels.getLevelList(levelList => {
-                this.levelList = levelList;
-                callback(levelList);
-            });
-        }
-        // select a random level that has not been completed yet
-        // a return of false means none available (generate a random one)
-        chooseLevelID(levelList) {
-            const availableLevels = levelList.filter(level => {
-                return level.completed === false;
-            });
-            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
-            if (!chosenKey) {
-                return false;
-            }
-            const levelID = availableLevels[chosenKey].levelID;
-            return levelID;
-        }
-        setNextAction(action) {
-            this.action = action;
-        }
-        // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-        createRenderer(boardSize, completedCallback) {
-            this.canvas = new Canvas_1.Canvas(boardSize);
-            this.boardSize = boardSize;
-            const tiles = TileSet_2.TileSet.getTiles();
-            return new Renderer_1.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, () => completedCallback());
-        }
-        startRender() {
-            window.cancelAnimationFrame(this.animationHandle);
-            this.showControls();
-            this.animationHandle = window.requestAnimationFrame(time => this.eventLoop(time, 0));
-        }
-        getNextAction() {
-            const action = this.action;
-            // this.action = "";
-            return action;
-        }
-        // change of heart - this runs all the time and requests various things do stuff
-        // if we are paused, it is nothing, but the loop runs all the same
-        // we are separating one frame ==== one turn
-        // as this does not work for things like rotation
-        // which is one 'turn' but many frames
-        eventLoop(time, lastTime) {
-            this.animationHandle = window.requestAnimationFrame(newTime => this.eventLoop(newTime, time));
-            const timePassed = this.calcTimePassed(time, lastTime);
-            this.displayFrameRate(timePassed);
-            const action = this.getNextAction();
-            this.gameCycle(timePassed, action);
-        }
-        // this does one step of the game
-        gameCycle(timePassed, action) {
-            const oldGameState = this.getCurrentGameState();
-            if (action === "rotateLeft") {
-                const rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
-                this.doBoardRotation(false, rotatedLeftState);
-                this.setNextAction("rotatingLeft");
-                return false;
-            }
-            else if (action === "rotateRight") {
-                const rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
-                this.doBoardRotation(true, rotatedRightState);
-                this.setNextAction("rotatingRight");
-                return false;
-            }
-            else if (action.length > 0) {
-                return false;
-            }
-            if (oldGameState.outcome.length > 0) {
-                const continueGame = this.checkOutcome(oldGameState);
-                if (continueGame === false) {
-                    this.setNextAction("stop");
-                }
-            }
-            const newGameState = this.getNewGameState(oldGameState, action, timePassed);
-            if (oldGameState.score !== newGameState.score) {
-                this.displayScore(newGameState.score);
-            }
-            this.renderChanges(oldGameState, newGameState);
-        }
-        // return true for continue play, false for stop
-        checkOutcome(gameState) {
-            if (gameState.outcome === "completeLevel") {
-                // egg is over cup - check whether we've completed
-                const completed = this.completeLevel(gameState.board, gameState.players);
-                if (completed) {
-                    this.webAudio.playSound("bright-bell", 0);
-                    this.nextLevel(gameState.score, gameState.rotations);
-                    return false;
-                }
-            }
-            return true;
-        }
-        // or at least try
-        completeLevel(board, players) {
-            const collectable = this.getCollectable(board);
-            const playerCount = this.countPlayers(players);
-            if (collectable < 1 && playerCount < 2) {
-                return true;
-            }
-            return false;
-        }
-        getBoardFromArray(boardArray) {
-            return Map.makeBoardFromArray(boardArray);
-        }
-        // create first "frame" of gameState from board
-        // create players etc
-        getBlankGameState(board) {
-            const players = this.createPlayers(this.playerTypes, board);
-            return new GameState_1.GameState({
-                board,
-                players
-            });
-        }
-        // current game state from array
-        getCurrentGameState() {
-            return this.gameStates.slice(-1)[0]; // set to new last item
-        }
-        resetGameState(board) {
-            const gameState = this.getBlankGameState(board);
-            this.gameStates = [gameState];
-        }
-        updateGameState(oldGameState, gameState) {
-            this.gameStates = [oldGameState, gameState];
-        }
-        // do next move, plop new state on pile, return new state
-        getNewGameState(gameState, action, timePassed) {
-            const theEgg = new TheEgg_1.TheEgg(this.playerTypes);
-            const newGameState = theEgg.doAction(gameState, action, timePassed);
-            this.updateGameState(gameState, newGameState);
-            this.playSounds(gameState, newGameState);
-            return newGameState;
-        }
-        // check changes in board, get sounds, trigger them
-        playSounds(oldState, newState) {
-            _.map(sound => sound.caseOf({
-                just: audio => this.webAudio.playSound(audio.name, audio.pan),
-                nothing: () => {
-                    // don't play a sound
-                }
-            }), AudioTriggers.triggerSounds(oldState)(newState));
-        }
-        renderEverything(gameState) {
-            const boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
-            const blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
-            this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
-        }
-        renderChanges(oldGameState, newGameState) {
-            const boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
-            // if rotated everything changes anyway
-            if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
-                return this.renderEverything(newGameState);
-            }
-            // player map is covering old shit up
-            const playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
-            // render changes
-            const boardRenderMap = RenderMap_2.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
-            const finalRenderMap = RenderMap_2.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
-            this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
-        }
-        sizeCanvas(boardSize) {
-            if (!this.checkResize) {
-                return false;
-            }
-            this.renderer.resize(boardSize);
-            this.checkResize = false;
-        }
-        // create empty renderMap based on boardSize, and then apply each player's position to it
-        createRenderMapFromPlayers(players, boardSize) {
-            const blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, false);
-            return players.reduce((map, player) => {
-                return RenderMap_2.RenderMap.addPlayerToRenderMap(player, map);
-            }, blankMap);
-        }
-        calcTimePassed(time, lastTime) {
-            const difference = Math.min(time - lastTime, 20);
-            return difference;
-        }
-        displayFrameRate(timePassed) {
-            const frameRate = Math.floor(1000 / timePassed);
-            const fps = document.getElementById("fps");
-            if (fps) {
-                fps.innerHTML = frameRate.toFixed(3) + "fps";
-            }
-        }
-        nextLevel(score, rotations) {
-            this.pauseRender();
-            this.levels.saveData(this.levelID, rotations, score, data => {
-                this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
-                this.levelID = this.chooseLevelID(this.levelList);
-                this.go(this.levelID);
-            });
-        }
-        markLevelAsCompleted(levelList, levelID) {
-            levelList[levelID].completed = true;
-            return levelList;
-        }
-        pauseRender() {
-            this.paused = true;
-            this.hideControls();
-            window.cancelAnimationFrame(this.animationHandle);
-        }
-        showControls() {
-            const controlHeader = document.getElementById("controlHeader");
-            if (controlHeader && controlHeader.classList.contains("hidden")) {
-                controlHeader.classList.remove("hidden");
-            }
-        }
-        hideControls() {
-            const controlHeader = document.getElementById("controlHeader");
-            if (controlHeader && !controlHeader.classList.contains("hidden")) {
-                controlHeader.classList.add("hidden");
-            }
-        }
-        countPlayers(players) {
-            return players.reduce((total, player) => {
-                if (player && player.value > 0) {
-                    return total + 1;
-                }
-                else {
-                    return total;
-                }
-            }, 0);
-        }
-        // cycle through all map tiles, find egg cups etc and create players
-        createPlayers(playerTypes, board) {
-            const tiles = board.getAllTiles();
-            const filtered = this.filterCreateTiles(tiles);
-            const players = filtered.map((tile) => {
-                const type = tile.createPlayer;
-                const coords = new Coords_7.Coords({
-                    offsetX: 0,
-                    offsetY: 0,
-                    x: tile.x,
-                    y: tile.y
-                });
-                const direction = new Coords_7.Coords({ x: 1 });
-                return this.createNewPlayer(playerTypes, type, coords, direction);
-            });
-            return players;
-        }
-        // get total outstanding points left to grab on board
-        getCollectable(board) {
-            const tiles = board.getAllTiles();
-            return tiles.reduce((collectable, tile) => {
-                const score = tile.get("collectable");
-                if (score > 0) {
-                    return collectable + score;
-                }
-                else {
-                    return collectable;
-                }
-            }, 0);
-        }
-        doBoardRotation(clockwise, gameState) {
-            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
-                this.renderEverything(gameState);
-                this.setNextAction(""); // continue playing the game
-            });
-        }
-        loadLevel(levelID, callback) {
-            this.levels.loadLevel(levelID, (savedLevel) => {
-                this.renderer = this.createRenderer(savedLevel.boardSize, () => {
-                    const board = this.getBoardFromArray(savedLevel.board);
-                    this.resetGameState(board);
-                    const gameState = this.getCurrentGameState();
-                    this.renderEverything(gameState);
-                    callback();
-                });
-            }, () => {
-                this.renderer = this.createRenderer(this.boardSize, () => {
-                    const board = Map.generateRandomBoard(this.boardSize);
-                    this.resetGameState(board);
-                    const gameState = this.getCurrentGameState();
-                    this.renderEverything(gameState);
-                    callback();
-                });
-            });
-        }
-        bindSizeHandler() {
-            window.addEventListener("resize", () => {
-                this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
-            });
-        }
-        bindKeyboardHandler() {
-            window.addEventListener("keydown", event => {
-                if (event.keyCode === 37) {
-                    // left arrow
-                    this.rotateBoard(false);
-                }
-                if (event.keyCode === 39) {
-                    // right arrow
-                    this.rotateBoard(true);
-                }
-                if (event.keyCode === 80) {
-                    // 'p'
-                    this.togglePaused();
-                }
-                if (event.keyCode === 83) {
-                    // 's'
-                    this.doStep();
-                }
-                if (event.keyCode === 70) {
-                    // 'f'
-                    this.toggleFPS();
-                }
-            });
-        }
-        bindSwipeHandler() {
-            const element = document.getElementById("wrapper");
-            const hammertime = new Hammer(element, {});
-            hammertime.on("swipeleft", ev => {
-                this.rotateBoard(false);
-            });
-            hammertime.on("swiperight", ev => {
-                this.rotateBoard(true);
-            });
-        }
-        toggleFPS() {
-            const fps = document.getElementById("fps");
-            if (!fps) {
-                return false;
-            }
-            if (fps.style.display !== "block") {
-                fps.style.display = "block";
-            }
-            else {
-                fps.style.display = "none";
-            }
-        }
-        togglePaused() {
-            if (this.paused) {
-                this.startRender();
-            }
-            else {
-                this.pauseRender();
-            }
-        }
-        doStep() {
-            this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
-        }
-    }
-    exports.Jetpack = Jetpack;
-});
-define("dom/Renderer", ["require", "exports"], function (require, exports) {
+define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"], function (require, exports, PlayerTypes_5, TileSet_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const SPRITE_SIZE = 64;
     const OFFSET_DIVIDE = 100;
     class Renderer {
-        constructor(jetpack, tiles, playerTypes, boardSize, canvas, loadCallback) {
-            this.lampMode = false; // lamp mode only draws around the eggs
+        constructor(boardSize, canvas, loadCallback) {
             this.checkResize = true;
             this.tileImages = {}; // image elements of tiles
             this.playerImages = {}; // image element of players
-            this.totalTiles = 0;
-            this.tilesLoaded = 0;
+            this.playersLoaded = false;
+            this.tilesLoaded = false;
             this.renderTile = function (x, y, tile, renderAngle) {
                 const ctx = this.canvas.getDrawingContext();
                 const tileSize = this.tileSize;
@@ -3054,13 +3031,10 @@ define("dom/Renderer", ["require", "exports"], function (require, exports) {
                 }
                 return true;
             };
-            this.jetpack = jetpack;
-            this.tiles = tiles;
-            this.playerTypes = playerTypes;
             this.boardSize = boardSize;
             this.canvas = canvas;
             this.loadCallback = loadCallback;
-            this.loadTilePalette(tiles);
+            this.loadTilePalette(TileSet_2.tiles);
             this.loadPlayerPalette();
         }
         render(board, renderMap, players, renderAngle) {
@@ -3098,50 +3072,70 @@ define("dom/Renderer", ["require", "exports"], function (require, exports) {
             return savedData;
         }
         loadTilePalette(tiles) {
-            this.totalTiles = this.tilesLoaded = 0;
-            for (const i in tiles) {
-                if (tiles[i] !== undefined) {
-                    this.totalTiles++;
-                    const thisTile = tiles[i];
-                    const tileImage = document.createElement("img");
-                    tileImage.setAttribute("src", this.getTileImagePath(thisTile));
-                    tileImage.setAttribute("width", SPRITE_SIZE.toString());
-                    tileImage.setAttribute("height", SPRITE_SIZE.toString());
-                    tileImage.addEventListener("load", () => {
-                        this.markTileImageAsLoaded(thisTile.id);
-                    }, false);
-                    this.tileImages[thisTile.id] = {
-                        image: tileImage,
-                        ready: false
-                    };
+            const tilePromises = tiles.map(this.loadTileImage);
+            Promise.all(tilePromises).then(data => {
+                // all players loaded
+                this.tilesLoaded = true;
+                data.map(item => {
+                    this.tileImages[item.title] = item;
+                });
+                if (this.playersLoaded) {
+                    this.loadCallback();
                 }
-            }
+            }).catch(() => {
+                this.tilesLoaded = false;
+                this.tileImages = {};
+            });
+        }
+        loadTileImage(tile) {
+            return new Promise((resolve, reject) => {
+                const tileImage = document.createElement("img");
+                tileImage.setAttribute("src", this.getTileImagePath(tile));
+                tileImage.setAttribute("width", SPRITE_SIZE.toString());
+                tileImage.setAttribute("height", SPRITE_SIZE.toString());
+                tileImage.addEventListener("load", () => {
+                    return resolve({
+                        title: tile.img,
+                        image: tileImage,
+                        ready: true
+                    });
+                }, false);
+                tileImage.addEventListener("onerror", () => {
+                    return reject("Could not load tile image");
+                }, false);
+            });
         }
         loadPlayerPalette() {
-            for (const i in this.playerTypes) {
-                if (this.playerTypes[i] !== undefined) {
-                    const playerType = this.playerTypes[i];
-                    const playerImage = document.createElement("img");
-                    playerImage.setAttribute("src", this.getTileImagePath(playerType));
-                    playerImage.addEventListener("load", () => {
-                        this.markPlayerImageAsLoaded(playerType.img);
-                    }, false);
-                    this.playerImages[playerType.img] = {
-                        image: playerImage,
-                        ready: false
-                    };
+            const playerPromises = PlayerTypes_5.playerTypes.map(this.loadPlayerImage);
+            Promise.all(playerPromises).then(data => {
+                // all players loaded
+                this.playersLoaded = true;
+                data.map(item => {
+                    this.playerImages[item.title] = item;
+                });
+                if (this.tilesLoaded) {
+                    this.loadCallback();
                 }
-            }
+            }).catch(() => {
+                this.playersLoaded = false;
+                this.playerImages = {};
+            });
         }
-        markPlayerImageAsLoaded(img) {
-            this.playerImages[img].ready = true;
-        }
-        markTileImageAsLoaded(id) {
-            this.tilesLoaded++;
-            this.tileImages[id].ready = true;
-            if (this.tilesLoaded === this.totalTiles) {
-                this.loadCallback(); // we are ready to fucking party
-            }
+        loadPlayerImage(playerType) {
+            return new Promise((resolve, reject) => {
+                const playerImage = document.createElement("img");
+                playerImage.setAttribute("src", this.getTileImagePath(playerType));
+                playerImage.addEventListener("load", () => {
+                    return resolve({
+                        title: playerType.img,
+                        image: playerImage,
+                        ready: true
+                    });
+                }, false);
+                playerImage.addEventListener("onerror", () => {
+                    return reject("Could not load player image");
+                }, false);
+            });
         }
         renderBoard(board, renderMap, renderAngle) {
             const ctx = this.canvas.getDrawingContext();
@@ -3164,7 +3158,7 @@ define("dom/Renderer", ["require", "exports"], function (require, exports) {
             ctx.clearRect(left, top, tileSize, tileSize);
         }
         drawSkyTile(tile, x, y, renderAngle) {
-            const skyTile = this.tiles[1];
+            const skyTile = TileSet_2.getTile(1);
             this.renderTile(x, y, skyTile, renderAngle);
         }
         renderPlayers(players) {
@@ -3256,7 +3250,7 @@ define("dom/Renderer", ["require", "exports"], function (require, exports) {
     }
     exports.Renderer = Renderer;
 });
-define("dom/TileChooser", ["require", "exports", "logic/TileSet", "ramda"], function (require, exports, TileSet_3, _) {
+define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile", "ramda"], function (require, exports, TileSet_3, Tile_2, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // used in editor, draws a bunch of 32x32 tiles for selecting
@@ -3283,8 +3277,10 @@ define("dom/TileChooser", ["require", "exports", "logic/TileSet", "ramda"], func
                 }
             });
         }
-        makeTileImages(tiles) {
-            return _.map(tile => {
+        makeTileImages() {
+            return _.map(tileOriginal => {
+                return new Tile_2.Tile(tileOriginal);
+            }, TileSet_3.tiles).map(tile => {
                 const tileImage = document.createElement("img");
                 tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
                 tileImage.setAttribute("width", "32");
@@ -3297,11 +3293,10 @@ define("dom/TileChooser", ["require", "exports", "logic/TileSet", "ramda"], func
                     this.chooseTile(tile.id);
                 };
                 return tileImage;
-            }, tiles);
+            });
         }
         render() {
-            const tiles = TileSet_3.TileSet.getTiles();
-            const images = this.makeTileImages(tiles);
+            const images = this.makeTileImages();
             const tileChooser = document.getElementById("tileChooser");
             Object.values(images).forEach(image => {
                 tileChooser.appendChild(image);
@@ -3310,7 +3305,7 @@ define("dom/TileChooser", ["require", "exports", "logic/TileSet", "ramda"], func
     }
     exports.TileChooser = TileChooser;
 });
-define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TileChooser", "logic/Map", "logic/RenderMap", "logic/TileSet", "logic/Utils"], function (require, exports, BoardSize_7, Coords_8, Canvas_2, Levels_2, Loader_2, Renderer_2, TileChooser_1, Map, RenderMap_3, TileSet_4, Utils_8) {
+define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TileChooser", "logic/Map", "logic/RenderMap", "logic/Utils"], function (require, exports, BoardSize_7, Coords_8, Canvas_2, Levels_2, Loader_2, Renderer_2, TileChooser_1, Map, RenderMap_3, Utils_8) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Editor {
@@ -3429,9 +3424,7 @@ define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "
         createRenderer(boardSize) {
             this.canvas = new Canvas_2.Canvas(boardSize);
             this.boardSize = boardSize;
-            const tiles = TileSet_4.TileSet.getTiles();
-            return new Renderer_2.Renderer(this, tiles, [], // no players in edit mode
-            this.boardSize, this.canvas, () => {
+            return new Renderer_2.Renderer(this.boardSize, this.canvas, () => {
                 // 
             });
         }

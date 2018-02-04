@@ -18,12 +18,13 @@ import { WebAudio } from "./dom/WebAudio";
 
 import { Collisions } from "./logic/Collisions";
 import * as Map from "./logic/Map";
-import { PlayerTypes } from "./logic/PlayerTypes";
 import { RenderMap } from "./logic/RenderMap";
 import { SavedLevel } from "./logic/SavedLevel";
 import { TheEgg } from "./logic/TheEgg";
-import { TileSet } from "./logic/TileSet";
 import { Utils } from "./logic/Utils";
+
+import { playerTypes } from "./data/PlayerTypes";
+import { tiles } from "./data/TileSet";
 
 export class Jetpack {
   public animationHandle: number;
@@ -49,8 +50,6 @@ export class Jetpack {
   protected score: number = 0;
   protected rotationsUsed: number = 0;
   protected collectable: number = 0; // total points on screen
-
-  protected playerTypes: object = {};
 
   protected defaultBoardSize: number = 20;
   protected checkResize: boolean = false;
@@ -80,9 +79,6 @@ export class Jetpack {
 
     this.canvas = new Canvas(boardSize);
 
-    const playerTypes = new PlayerTypes();
-    this.playerTypes = playerTypes.getPlayerTypes();
-
     this.webAudio = new WebAudio();
     this.webAudio.init(); // load web audio stuff
 
@@ -108,7 +104,6 @@ export class Jetpack {
 
   // create player
   public createNewPlayer(
-    playerTypes,
     type: string,
     coords: Coords,
     direction: Coords
@@ -178,12 +173,7 @@ export class Jetpack {
     this.canvas = new Canvas(boardSize);
     this.boardSize = boardSize;
 
-    const tiles = TileSet.getTiles();
-
     return new Renderer(
-      this,
-      tiles,
-      this.playerTypes,
       this.boardSize,
       this.canvas,
       () => completedCallback()
@@ -297,7 +287,7 @@ export class Jetpack {
   // create first "frame" of gameState from board
   // create players etc
   protected getBlankGameState(board: Board): GameState {
-    const players = this.createPlayers(this.playerTypes, board);
+    const players = this.createPlayers(board);
     return new GameState({
       board,
       players
@@ -324,7 +314,7 @@ export class Jetpack {
     action: string,
     timePassed: number
   ): GameState {
-    const theEgg = new TheEgg(this.playerTypes);
+    const theEgg = new TheEgg();
     const newGameState = theEgg.doAction(gameState, action, timePassed);
     this.updateGameState(gameState, newGameState);
     this.playSounds(gameState, newGameState);
@@ -472,7 +462,7 @@ export class Jetpack {
   };
 
   // cycle through all map tiles, find egg cups etc and create players
-  protected createPlayers(playerTypes, board: Board) {
+  protected createPlayers(board: Board) {
     const tiles = board.getAllTiles();
 
     const filtered = this.filterCreateTiles(tiles);
@@ -486,7 +476,7 @@ export class Jetpack {
         y: tile.y
       });
       const direction = new Coords({ x: 1 });
-      return this.createNewPlayer(playerTypes, type, coords, direction);
+      return this.createNewPlayer(type, coords, direction);
     });
     return players;
   }

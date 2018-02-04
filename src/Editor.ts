@@ -3,6 +3,8 @@ import { BoardSize } from "./objects/BoardSize";
 import { Coords } from "./objects/Coords";
 import { Player } from "./objects/Player";
 
+import { tiles } from "./data/TileSet";
+
 import { Canvas } from "./dom/Canvas";
 import { Levels } from "./dom/Levels";
 import { Loader } from "./dom/Loader";
@@ -12,10 +14,8 @@ import { TitleScreen } from "./dom/TitleScreen";
 
 import { Collisions } from "./logic/Collisions";
 import * as Map from "./logic/Map";
-import { PlayerTypes } from "./logic/PlayerTypes";
 import { RenderMap } from "./logic/RenderMap";
 import { SavedLevel } from "./logic/SavedLevel";
-import { TileSet } from "./logic/TileSet";
 import { Utils } from "./logic/Utils";
 
 export class Editor {
@@ -175,12 +175,7 @@ export class Editor {
     this.canvas = new Canvas(boardSize);
     this.boardSize = boardSize;
 
-    const tiles = TileSet.getTiles();
-
     return new Renderer(
-      this,
-      tiles,
-      [], // no players in edit mode
       this.boardSize,
       this.canvas,
       () => {

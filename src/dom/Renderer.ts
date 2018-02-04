@@ -4,58 +4,58 @@ import { Coords } from "../objects/Coords";
 import { Player } from "../objects/Player";
 import { Tile } from "../objects/Tile";
 
+import { playerTypes } from "../data/PlayerTypes"
 import * as Map from "../logic/Map";
+import { teleport } from "../logic/Movement";
 import { Utils } from "../logic/Utils";
 
+import { getTile, tiles as originalTiles } from "../data/TileSet"
 import { Canvas } from "./Canvas";
-
-import { Editor } from "../Editor";
-import { Jetpack } from "../Jetpack";
 
 const SPRITE_SIZE: number = 64;
 const OFFSET_DIVIDE: number = 100;
 
+interface IDomImage {
+  title: string
+  image: HTMLImageElement
+  ready: boolean
+}
+
+interface ImageSet { [key: string]: IDomImage }
+
+type RenderMap = boolean[][]
+
 export class Renderer {
   public tileSize: number;
 
-  protected jetpack: Jetpack | Editor;
-  protected tiles: object;
-  protected playerTypes: object;
   protected boardSize: BoardSize;
   protected canvas: Canvas;
 
   protected animationHandle: number; // used only in rotations
 
-  protected lampMode: boolean = false; // lamp mode only draws around the eggs
-
-  protected renderMap: boolean[][]; // map of screen with whether it needs rendering
+  protected renderMap: RenderMap; // map of screen with whether it needs rendering
 
   protected checkResize: boolean = true;
 
-  protected tileImages: object = {}; // image elements of tiles
-  protected playerImages: object = {}; // image element of players
+  protected tileImages: ImageSet = {}; // image elements of tiles
+  protected playerImages: ImageSet = {}; // image element of players
 
   protected rotating: boolean;
 
   protected loadCallback: () => void; // call this when all the tiles are loaded
-  protected totalTiles: number = 0;
-  protected tilesLoaded: number = 0;
+  
+  protected playersLoaded = false 
+  protected tilesLoaded = false
 
   constructor(
-    jetpack: Jetpack | Editor,
-    tiles: object,
-    playerTypes: object,
     boardSize: BoardSize,
     canvas: Canvas,
     loadCallback: () => void
   ) {
-    this.jetpack = jetpack;
-    this.tiles = tiles;
-    this.playerTypes = playerTypes;
     this.boardSize = boardSize;
     this.canvas = canvas;
     this.loadCallback = loadCallback;
-    this.loadTilePalette(tiles);
+    this.loadTilePalette(originalTiles);
     this.loadPlayerPalette();
   }
 
@@ -110,62 +110,88 @@ export class Renderer {
     return savedData;
   }
 
-  protected loadTilePalette(tiles) {
-    this.totalTiles = this.tilesLoaded = 0;
-    for (const i in tiles) {
-      if (tiles[i] !== undefined) {
-        this.totalTiles++;
-        const thisTile = tiles[i];
-        const tileImage = document.createElement("img");
-        tileImage.setAttribute("src", this.getTileImagePath(thisTile));
-        tileImage.setAttribute("width", SPRITE_SIZE.toString());
-        tileImage.setAttribute("height", SPRITE_SIZE.toString());
-        tileImage.addEventListener(
-          "load",
-          () => {
-            this.markTileImageAsLoaded(thisTile.id);
-          },
-          false
-        );
-        this.tileImages[thisTile.id] = {
-          image: tileImage,
-          ready: false
-        };
+  protected loadTilePalette(tiles: Tile[]) {
+    const tilePromises = tiles.map(this.loadTileImage)
+    Promise.all(tilePromises).then(data => {
+      // all players loaded
+      this.tilesLoaded = true
+      data.map(item => {
+        this.tileImages[item.title] = item
+      })
+      if (this.playersLoaded) {
+        this.loadCallback()
       }
-    }
+    }).catch(() => {
+      this.tilesLoaded = false
+      this.tileImages = {}
+    })
+  }
+
+  protected loadTileImage(tile: Tile): Promise<IDomImage> {
+    return new Promise((resolve, reject) => {
+      const tileImage = document.createElement("img");
+      tileImage.setAttribute("src", this.getTileImagePath(tile));
+      tileImage.setAttribute("width", SPRITE_SIZE.toString());
+      tileImage.setAttribute("height", SPRITE_SIZE.toString());
+      tileImage.addEventListener(
+        "load",
+        () => {
+          return resolve({
+            title: tile.img,
+            image: tileImage,
+            ready: true
+          })
+        },
+        false
+      );
+      tileImage.addEventListener(
+        "onerror",
+        () => {
+          return reject("Could not load tile image")
+        },false
+      )
+    })
   }
 
   protected loadPlayerPalette() {
-    for (const i in this.playerTypes) {
-      if (this.playerTypes[i] !== undefined) {
-        const playerType = this.playerTypes[i];
-        const playerImage = document.createElement("img");
-        playerImage.setAttribute("src", this.getTileImagePath(playerType));
-        playerImage.addEventListener(
-          "load",
-          () => {
-            this.markPlayerImageAsLoaded(playerType.img);
-          },
-          false
-        );
-        this.playerImages[playerType.img] = {
-          image: playerImage,
-          ready: false
-        };
+    const playerPromises = playerTypes.map(this.loadPlayerImage)
+    Promise.all(playerPromises).then(data => {
+      // all players loaded
+      this.playersLoaded = true
+      data.map(item => {
+        this.playerImages[item.title] = item
+      })
+      if (this.tilesLoaded) {
+        this.loadCallback()
       }
-    }
+    }).catch(() => {
+      this.playersLoaded = false
+      this.playerImages = {}
+    })
   }
 
-  protected markPlayerImageAsLoaded(img: string) {
-    this.playerImages[img].ready = true;
-  }
-
-  protected markTileImageAsLoaded(id: number) {
-    this.tilesLoaded++;
-    this.tileImages[id].ready = true;
-    if (this.tilesLoaded === this.totalTiles) {
-      this.loadCallback(); // we are ready to fucking party
-    }
+  protected loadPlayerImage(playerType): Promise<IDomImage> {
+    return new Promise((resolve, reject) => {
+      const playerImage = document.createElement("img");
+      playerImage.setAttribute("src", this.getTileImagePath(playerType));
+      playerImage.addEventListener(
+        "load",
+        () => {
+          return resolve({
+            title: playerType.img,
+            image: playerImage,
+            ready: true
+          })
+        },
+        false
+      );
+      playerImage.addEventListener(
+        "onerror",
+        () => {
+          return reject("Could not load player image")
+        },false
+      )
+    })
   }
 
   protected renderBoard(
@@ -195,7 +221,7 @@ export class Renderer {
   }
 
   protected drawSkyTile(tile: Tile, x: number, y: number, renderAngle: number) {
-    const skyTile = this.tiles[1];
+    const skyTile = getTile(1)
     this.renderTile(x, y, skyTile, renderAngle);
   }
 

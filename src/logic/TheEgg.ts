@@ -10,8 +10,9 @@ import * as BoardCollisions from "./BoardCollisions";
 import { Collisions } from "./Collisions";
 import * as Map from "./Map";
 import * as Movement from "./Movement";
-import { PlayerTypes } from "./PlayerTypes";
 import { Utils } from "./Utils";
+
+import { playerTypes } from "../data/PlayerTypes";
 
 import { Board } from "../objects/Board";
 import { BoardSize } from "../objects/BoardSize";
@@ -19,11 +20,6 @@ import { GameState } from "../objects/GameState";
 import { Player } from "../objects/Player";
 
 export class TheEgg {
-  protected playerTypes: object; // used by Collisions
-
-  constructor(playerTypes) {
-    this.playerTypes = playerTypes;
-  }
 
   public doAction(
     gameState: GameState,
@@ -52,16 +48,15 @@ export class TheEgg {
     const action = new Action();
     const newerGameState = action.checkAllPlayerTileActions(newGameState);
 
-    const collisions = new Collisions(this.playerTypes);
+    const collisions = new Collisions();
     const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
 
     const splitPlayers = BoardCollisions.checkBoardCollisions(
       newerGameState.board,
-      this.playerTypes,
       sortedPlayers
     );
 
-    const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(
+    const colouredPlayers = this.checkNearlyFinished(
       newerGameState.modify({
         players: splitPlayers
       })
@@ -72,7 +67,7 @@ export class TheEgg {
     });
   }
 
-  protected checkNearlyFinished = playerTypes => (
+  protected checkNearlyFinished = (
     gameState: GameState
   ): Player[] => {
     if (Utils.checkLevelIsCompleted(gameState)) {

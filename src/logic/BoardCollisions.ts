@@ -5,7 +5,7 @@ import { Coords } from "../objects/Coords";
 import { Player } from "../objects/Player";
 import { Tile } from "../objects/Tile";
 
-import { PlayerTypes } from "./PlayerTypes";
+import { playerTypes } from "../data/PlayerTypes";
 
 import { Utils } from "./Utils";
 
@@ -21,12 +21,11 @@ interface ISplitItem {
 
 export const checkBoardCollisions = (
   board: Board,
-  playerTypes,
   players: Player[]
 ): Player[] => {
   return addIDsToPlayers(
     players.reduce((newPlayers, player) => {
-      const checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(
+      const checkedPlayers = checkPlayerBoardCollision(board)(
         player
       );
       return [...newPlayers, ...checkedPlayers];
@@ -43,11 +42,11 @@ const addIDsToPlayers = (players: Player[]): Player[] => {
   });
 };
 
-const checkPlayerBoardCollision = (board: Board, playerTypes) => (
+const checkPlayerBoardCollision = (board: Board) => (
   player: Player
 ): Player[] => {
   return isCollision(board)(player)
-    ? splitPlayer(playerTypes)(player)
+    ? splitPlayer(player)
     : [player];
 };
 
@@ -110,14 +109,14 @@ export const getValuesAndDirections = (value: number): ISplitItem[] => {
   return _.zipWith(combineDirectionsAndValues, values, directions);
 };
 
-export const splitPlayer = playerTypes => (player: Player): Player[] => {
+export const splitPlayer = (player: Player): Player[] => {
   const items = getValuesAndDirections(player.value);
-  const playerFromItemFunc = playerFromItem(playerTypes, player);
+  const playerFromItemFunc = playerFromItem(player);
 
   return items.map(playerFromItemFunc);
 };
 
-const playerFromItem = (playerTypes, player: Player) => (
+const playerFromItem = (player: Player) => (
   item: ISplitItem
 ): Player => {
   const newPlayerType = Utils.getPlayerByValue(playerTypes, item.value);

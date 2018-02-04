@@ -3,7 +3,6 @@ import { BoardSize } from "../../objects/BoardSize";
 import { Coords } from "../../objects/Coords";
 
 import * as Map from "../../logic/Map";
-import { TileSet } from "../../logic/TileSet";
 
 test("Translate rotation", () => {
   const rotateData = [

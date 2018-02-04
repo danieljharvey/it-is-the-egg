@@ -3,17 +3,12 @@ import { fromJS, List } from "immutable";
 import { Coords } from "../objects/Coords";
 import { Player } from "../objects/Player";
 
-import { PlayerTypes } from "./PlayerTypes";
+import { playerTypes } from "../data/PlayerTypes";
 import { Utils } from "./Utils";
 
 import * as _ from "ramda";
 
 export class Collisions {
-  protected playerTypes: object;
-
-  constructor(playerTypes: object) {
-    this.playerTypes = playerTypes;
-  }
 
   public checkAllCollisions(players: Player[]): Player[] {
     const combinations = this.getAllPlayerCombinations(players);
@@ -191,7 +186,7 @@ export class Collisions {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    const newPlayerType = Utils.getPlayerByValue(this.playerTypes, newValue);
+    const newPlayerType = Utils.getPlayerByValue(playerTypes, newValue);
 
     if (!newPlayerType) {
       return [player1, player2];
