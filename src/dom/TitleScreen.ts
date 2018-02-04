@@ -2,6 +2,8 @@ import { Jetpack } from "../Jetpack";
 import { BoardSize } from "../objects/BoardSize";
 import { Canvas } from "./Canvas";
 
+import { Utils } from "../logic/Utils"
+
 export class TitleScreen {
   protected jetpack: Jetpack;
   protected canvas: Canvas;
@@ -18,7 +20,7 @@ export class TitleScreen {
   ) {
     this.jetpack = jetpack;
     this.canvas = canvas;
-    this.imagePath = this.canvas.getImagesFolder() + imagePath;
+    this.imagePath = Utils.getTileImagePath(imagePath);
     this.width = width;
     this.height = height;
   }

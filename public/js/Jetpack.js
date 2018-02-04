@@ -150,6 +150,7 @@ define("logic/Utils", ["require", "exports", "ramda"], function (require, export
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // wee lad full of reusable functions
+    const imagesFolder = "img/";
     class Utils {
         static getRandomObjectKey(object) {
             const keys = Object.keys(object);
@@ -262,6 +263,9 @@ define("logic/Utils", ["require", "exports", "ramda"], function (require, export
                 }
                 return collectable;
             }, 0);
+        }
+        static getTileImagePath(img) {
+            return imagesFolder + img;
         }
     }
     exports.Utils = Utils;
@@ -480,7 +484,6 @@ define("dom/Canvas", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     class Canvas {
         constructor(boardSize) {
-            this.imagesFolder = "img/";
             this.boardSize = boardSize;
             const tileSize = this.sizeCanvas(boardSize);
             this.loadCanvas(boardSize, tileSize);
@@ -490,9 +493,6 @@ define("dom/Canvas", ["require", "exports"], function (require, exports) {
         }
         getCanvas() {
             return this.canvas;
-        }
-        getImagesFolder() {
-            return this.imagesFolder;
         }
         wipeCanvas(fillStyle) {
             this.ctx.fillStyle = fillStyle;
@@ -1287,14 +1287,14 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
             : tsmonad_1.Maybe.nothing();
     };
 });
-define("dom/TitleScreen", ["require", "exports", "objects/BoardSize"], function (require, exports, BoardSize_3) {
+define("dom/TitleScreen", ["require", "exports", "objects/BoardSize", "logic/Utils"], function (require, exports, BoardSize_3, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class TitleScreen {
         constructor(jetpack, canvas, imagePath, width, height) {
             this.jetpack = jetpack;
             this.canvas = canvas;
-            this.imagePath = this.canvas.getImagesFolder() + imagePath;
+            this.imagePath = Utils_3.Utils.getTileImagePath(imagePath);
             this.width = width;
             this.height = height;
         }
@@ -1462,7 +1462,7 @@ define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exp
     }
     exports.WebAudio = WebAudio;
 });
-define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, immutable_5, PlayerTypes_1, Utils_3, _) {
+define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, immutable_5, PlayerTypes_1, Utils_4, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Collisions {
@@ -1502,8 +1502,8 @@ define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes
         // returns all non-collided players
         // collided is any number of pairs of IDs, ie [[1,3], [3,5]]
         removeCollidedPlayers(collided, players) {
-            const collidedIDs = Utils_3.Utils.flattenArray(collided);
-            const uniqueIDs = Utils_3.Utils.removeDuplicates(collidedIDs);
+            const collidedIDs = Utils_4.Utils.flattenArray(collided);
+            const uniqueIDs = Utils_4.Utils.removeDuplicates(collidedIDs);
             return players.filter(player => {
                 if (uniqueIDs.indexOf(player.id) === -1) {
                     return true;
@@ -1601,7 +1601,7 @@ define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes
         combinePlayers(player1, player2) {
             const newValue = player1.value + player2.value;
             const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            const newPlayerType = Utils_3.Utils.getPlayerByValue(PlayerTypes_1.playerTypes, newValue);
+            const newPlayerType = Utils_4.Utils.getPlayerByValue(PlayerTypes_1.playerTypes, newValue);
             if (!newPlayerType) {
                 return [player1, player2];
             }
@@ -1621,7 +1621,7 @@ define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes
     }
     exports.Collisions = Collisions;
 });
-define("logic/RenderMap", ["require", "exports", "objects/BoardSize", "objects/Coords", "logic/Map", "logic/Utils"], function (require, exports, BoardSize_4, Coords_3, Map, Utils_4) {
+define("logic/RenderMap", ["require", "exports", "objects/BoardSize", "objects/Coords", "logic/Map", "logic/Utils"], function (require, exports, BoardSize_4, Coords_3, Map, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1642,7 +1642,7 @@ define("logic/RenderMap", ["require", "exports", "objects/BoardSize", "objects/C
             for (let x = startX; x <= endX; x++) {
                 for (let y = startY; y <= endY; y++) {
                     const newCoords = new Coords_3.Coords({ x, y });
-                    const fixedCoords = Utils_4.Utils.correctForOverflow(newCoords, boardSize);
+                    const fixedCoords = Utils_5.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
             }
@@ -1789,7 +1789,7 @@ define("logic/Action", ["require", "exports", "logic/Map"], function (require, e
     }
     exports.Action = Action;
 });
-define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, Coords_4, PlayerTypes_2, Utils_5, _) {
+define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, Coords_4, PlayerTypes_2, Utils_6, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // Board Collide
@@ -1865,7 +1865,7 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/P
         return items.map(playerFromItemFunc);
     };
     const playerFromItem = (player) => (item) => {
-        const newPlayerType = Utils_5.Utils.getPlayerByValue(PlayerTypes_2.playerTypes, item.value);
+        const newPlayerType = Utils_6.Utils.getPlayerByValue(PlayerTypes_2.playerTypes, item.value);
         return player.modify({
             type: newPlayerType.type,
             moveSpeed: newPlayerType.moveSpeed,
@@ -1884,16 +1884,16 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/P
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "data/PlayerTypes", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_6, PlayerTypes_3, BoardSize_5) {
+define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "data/PlayerTypes", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_7, PlayerTypes_3, BoardSize_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class TheEgg {
         constructor() {
             this.checkNearlyFinished = (gameState) => {
-                if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
+                if (Utils_7.Utils.checkLevelIsCompleted(gameState)) {
                     return gameState.players.map(player => {
                         if (player.value > 0) {
-                            const newPlayer = Utils_6.Utils.getPlayerByType(PlayerTypes_3.playerTypes, "rainbow-egg");
+                            const newPlayer = Utils_7.Utils.getPlayerByType(PlayerTypes_3.playerTypes, "rainbow-egg");
                             return player.modify(Object.assign({}, newPlayer.toJS(), { value: player.value }));
                         }
                         return player;
@@ -1953,7 +1953,7 @@ define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollis
     }
     exports.TheEgg = TheEgg;
 });
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils", "data/PlayerTypes"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_7, PlayerTypes_4) {
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils", "data/PlayerTypes"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_8, PlayerTypes_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Jetpack {
@@ -2014,7 +2014,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize
         }
         // create player
         createNewPlayer(type, coords, direction) {
-            const playerType = Utils_7.Utils.getPlayerByType(PlayerTypes_4.playerTypes, type);
+            const playerType = Utils_8.Utils.getPlayerByType(PlayerTypes_4.playerTypes, type);
             const moveSpeed = (playerType.moveSpeed === 1) ? this.moveSpeed : playerType.moveSpeed;
             const fallSpeed = (playerType.fallSpeed === 1) ? this.moveSpeed * 1.5 : playerType.fallSpeed;
             const nextID = this.nextPlayerID++;
@@ -2052,7 +2052,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_8.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -2976,7 +2976,7 @@ define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logi
         });
     };
 });
-define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"], function (require, exports, PlayerTypes_5, TileSet_2) {
+define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils", "data/TileSet"], function (require, exports, PlayerTypes_5, Utils_9, TileSet_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const SPRITE_SIZE = 64;
@@ -3044,9 +3044,6 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"
                 this.drawRotated(savedData, -1, 0, -90, moveSpeed, completed);
             }
         }
-        getTileImagePath(tile) {
-            return this.canvas.imagesFolder + tile.img;
-        }
         getImageData(canvas) {
             const cw = canvas.width;
             const ch = canvas.height;
@@ -3055,7 +3052,9 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"
             return savedData;
         }
         loadTilePalette(tiles) {
+            console.log('loadTilePalette', tiles);
             const tilePromises = tiles.map(this.loadTileImage);
+            console.log(tilePromises);
             Promise.all(tilePromises).then(data => {
                 // all players loaded
                 this.tilesLoaded = true;
@@ -3073,7 +3072,7 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"
         loadTileImage(tile) {
             return new Promise((resolve, reject) => {
                 const tileImage = document.createElement("img");
-                tileImage.setAttribute("src", this.getTileImagePath(tile));
+                tileImage.setAttribute("src", Utils_9.Utils.getTileImagePath(tile.img));
                 tileImage.setAttribute("width", SPRITE_SIZE.toString());
                 tileImage.setAttribute("height", SPRITE_SIZE.toString());
                 tileImage.addEventListener("load", () => {
@@ -3107,7 +3106,7 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"
         loadPlayerImage(playerType) {
             return new Promise((resolve, reject) => {
                 const playerImage = document.createElement("img");
-                playerImage.setAttribute("src", this.getTileImagePath(playerType));
+                playerImage.setAttribute("src", Utils_9.Utils.getTileImagePath(playerType.img));
                 playerImage.addEventListener("load", () => {
                     return resolve({
                         title: playerType.img,
@@ -3233,7 +3232,7 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"
     }
     exports.Renderer = Renderer;
 });
-define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile", "ramda"], function (require, exports, TileSet_3, Tile_3, _) {
+define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile", "logic/Utils", "ramda"], function (require, exports, TileSet_3, Tile_3, Utils_10, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // used in editor, draws a bunch of 32x32 tiles for selecting
@@ -3265,7 +3264,7 @@ define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile",
                 return new Tile_3.Tile(tileOriginal);
             }, TileSet_3.tiles).map(tile => {
                 const tileImage = document.createElement("img");
-                tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
+                tileImage.setAttribute("src", Utils_10.Utils.getTileImagePath(tile.img));
                 tileImage.setAttribute("width", "32");
                 tileImage.setAttribute("height", "32");
                 tileImage.setAttribute("padding", "2px");
@@ -3288,7 +3287,7 @@ define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile",
     }
     exports.TileChooser = TileChooser;
 });
-define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TileChooser", "logic/Map", "logic/RenderMap", "logic/Utils"], function (require, exports, BoardSize_7, Coords_8, Canvas_2, Levels_2, Loader_2, Renderer_2, TileChooser_1, Map, RenderMap_3, Utils_8) {
+define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TileChooser", "logic/Map", "logic/RenderMap", "logic/Utils"], function (require, exports, BoardSize_7, Coords_8, Canvas_2, Levels_2, Loader_2, Renderer_2, TileChooser_1, Map, RenderMap_3, Utils_11) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Editor {
@@ -3396,7 +3395,7 @@ define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_8.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_11.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }

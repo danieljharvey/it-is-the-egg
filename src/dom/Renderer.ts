@@ -96,10 +96,6 @@ export class Renderer {
     }
   }
 
-  public getTileImagePath(tile: Tile): string {
-    return this.canvas.imagesFolder + tile.img;
-  }
-
   protected getImageData(canvas: HTMLCanvasElement): HTMLImageElement {
     const cw = canvas.width;
     const ch = canvas.height;
@@ -111,7 +107,9 @@ export class Renderer {
   }
 
   protected loadTilePalette(tiles: Tile[]) {
+    console.log('loadTilePalette', tiles)
     const tilePromises = tiles.map(this.loadTileImage)
+    console.log(tilePromises)
     Promise.all(tilePromises).then(data => {
       // all players loaded
       this.tilesLoaded = true
@@ -130,7 +128,7 @@ export class Renderer {
   protected loadTileImage(tile: Tile): Promise<IDomImage> {
     return new Promise((resolve, reject) => {
       const tileImage = document.createElement("img");
-      tileImage.setAttribute("src", this.getTileImagePath(tile));
+      tileImage.setAttribute("src", Utils.getTileImagePath(tile.img));
       tileImage.setAttribute("width", SPRITE_SIZE.toString());
       tileImage.setAttribute("height", SPRITE_SIZE.toString());
       tileImage.addEventListener(
@@ -173,7 +171,7 @@ export class Renderer {
   protected loadPlayerImage(playerType): Promise<IDomImage> {
     return new Promise((resolve, reject) => {
       const playerImage = document.createElement("img");
-      playerImage.setAttribute("src", this.getTileImagePath(playerType));
+      playerImage.setAttribute("src", Utils.getTileImagePath(playerType.img));
       playerImage.addEventListener(
         "load",
         () => {

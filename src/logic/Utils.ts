@@ -4,8 +4,11 @@ import { BoardSize } from "../objects/BoardSize";
 import { Coords } from "../objects/Coords";
 import { GameState } from "../objects/GameState";
 import { Player } from "../objects/Player";
+import { Tile } from '../objects/Tile'
 
 // wee lad full of reusable functions
+
+const imagesFolder: string = "img/";
 
 export class Utils {
   public static getRandomObjectKey(object: object) {
@@ -135,4 +138,9 @@ export class Utils {
       return collectable;
     }, 0);
   }
+
+  public static getTileImagePath(img: string): string {
+    return imagesFolder + img
+  }
+
 }

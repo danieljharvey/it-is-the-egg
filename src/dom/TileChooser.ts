@@ -3,6 +3,8 @@ import { Renderer } from "./Renderer";
 
 import { Tile } from "../objects/Tile"
 
+import { Utils } from "../logic/Utils"
+
 import * as _ from "ramda";
 
 // used in editor, draws a bunch of 32x32 tiles for selecting
@@ -39,7 +41,7 @@ export class TileChooser {
       return new Tile(tileOriginal)
     }, tiles).map(tile => {
       const tileImage = document.createElement("img");
-      tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
+      tileImage.setAttribute("src", Utils.getTileImagePath(tile.img));
       tileImage.setAttribute("width", "32");
       tileImage.setAttribute("height", "32");
       tileImage.setAttribute("padding", "2px");

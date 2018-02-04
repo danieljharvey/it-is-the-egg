@@ -5,7 +5,6 @@ import { BoardSize } from "../objects/BoardSize";
 import { Utils } from "../logic/Utils";
 
 export class Canvas {
-  public imagesFolder: string = "img/";
 
   protected canvas: HTMLCanvasElement;
   protected ctx: CanvasRenderingContext2D;
@@ -23,10 +22,6 @@ export class Canvas {
 
   public getCanvas() {
     return this.canvas;
-  }
-
-  public getImagesFolder() {
-    return this.imagesFolder;
   }
 
   public wipeCanvas(fillStyle: string): void {
