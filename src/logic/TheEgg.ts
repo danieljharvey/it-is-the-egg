@@ -75,7 +75,7 @@ export class TheEgg {
         if (player.value > 0) {
           const newPlayer = Utils.getPlayerByType(playerTypes, "rainbow-egg");
           return player.modify({
-            ...newPlayer,
+            ...newPlayer.toJS(),
             value: player.value
           });
         }

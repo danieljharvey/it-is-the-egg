@@ -48,7 +48,7 @@ test("Ignores when not on whole tile", () => {
     })
   });
 
-  const actual = BoardCollisions.checkBoardCollisions(board, playerTypes, [
+  const actual = BoardCollisions.checkBoardCollisions(board, [
     player1
   ]);
 
@@ -68,7 +68,7 @@ test("Do nothing when no splitter tiles", () => {
     })
   });
 
-  const actual = BoardCollisions.checkBoardCollisions(blankBoard, playerTypes, [
+  const actual = BoardCollisions.checkBoardCollisions(blankBoard, [
     player1
   ]);
 
@@ -83,7 +83,7 @@ test("Do nothing when player is not on tile", () => {
     })
   });
 
-  const actual = BoardCollisions.checkBoardCollisions(board, playerTypes, [
+  const actual = BoardCollisions.checkBoardCollisions(board, [
     player1
   ]);
 
@@ -109,7 +109,7 @@ test("Recognse if player is on a tile", () => {
   expect(actual).toEqual(true);
 });
 
-test("Recognse if player isn't on a tile", () => {
+test("Recognise if player isn't on a tile", () => {
   const player1 = new Player({
     coords: new Coords({
       x: 1,
@@ -137,7 +137,7 @@ test("Do nothing when player is of minimum value", () => {
     value: 1
   });
 
-  const actual = BoardCollisions.checkBoardCollisions(board, playerTypes, [
+  const actual = BoardCollisions.checkBoardCollisions(board, [
     player1
   ]);
 
@@ -173,6 +173,8 @@ test("Split a 2-value egg", () => {
         x: -1
       }),
       value: 1,
+      img: "egg-sprite.png",
+      title: "It is of course the egg",
       lastAction: "split"
     }),
     player.modify({
@@ -180,11 +182,13 @@ test("Split a 2-value egg", () => {
         x: 1
       }),
       value: 1,
+      img: "egg-sprite.png",
+      title: "It is of course the egg",
       lastAction: "split"
     })
   ];
 
-  const actual = BoardCollisions.splitPlayer(playerTypes)(player);
+  const actual = BoardCollisions.splitPlayer(player);
 
   expect(actual).toEqual(expected);
 });
@@ -214,6 +218,9 @@ test("Split a 3-value egg when the time is right", () => {
         x: -1
       }),
       value: 2,
+      img: "egg-sprite-red.png",
+      title: "It is of course the red egg",
+      type: 'red-egg',
       id: 0,
       lastAction: "split"
     }),
@@ -221,13 +228,15 @@ test("Split a 3-value egg when the time is right", () => {
       direction: new Coords({
         x: 1
       }),
+      img: 'egg-sprite.png',
+      title: "It is of course the egg",
       value: 1,
       id: 1,
       lastAction: "split"
     })
   ];
 
-  const actual = BoardCollisions.checkBoardCollisions(board, playerTypes, [
+  const actual = BoardCollisions.checkBoardCollisions(board, [
     player1
   ]);
 

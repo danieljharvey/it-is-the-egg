@@ -238,12 +238,7 @@ define("logic/Utils", ["require", "exports", "ramda"], function (require, export
             return false;
         }
         static getPlayerByType(playerTypes, type) {
-            for (const i in playerTypes) {
-                if (playerTypes[i].type === type) {
-                    return playerTypes[i];
-                }
-            }
-            return false;
+            return playerTypes.find(playerType => (playerType.type === type));
         }
         // check leftovers on board and whether player is over finish tile
         static checkLevelIsCompleted(gameState) {
@@ -309,191 +304,169 @@ define("objects/Player", ["require", "exports", "immutable", "objects/Coords"], 
     }
     exports.Player = Player;
 });
-define("data/TileSet", ["require", "exports"], function (require, exports) {
+define("data/TileSet", ["require", "exports", "objects/Tile"], function (require, exports, Tile_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.tiles = [
-        {
+        new Tile_1.Tile({
             background: true,
             id: 1,
             img: "sky.png",
-            needsDraw: true,
             title: "Sky"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 2,
             img: "fabric.png",
-            needsDraw: true,
             title: "Fabric"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             collectable: 1,
             frontLayer: true,
             id: 3,
             img: "cacti.png",
-            needsDraw: true,
             title: "Cacti"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             collectable: 10,
             frontLayer: true,
             id: 4,
             img: "plant.png",
-            needsDraw: true,
             title: "Plant"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             breakable: true,
             id: 5,
             img: "crate.png",
-            needsDraw: true,
             title: "Crate"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 8,
             img: "work-surface-2.png",
-            needsDraw: true,
             title: "Work surface 2"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 9,
             img: "work-surface-3.png",
-            needsDraw: true,
             title: "Work surface 3"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 10,
             img: "work-surface-4.png",
-            needsDraw: true,
             title: "Work surface 4"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 11,
             img: "tile.png",
-            needsDraw: true,
             title: "Tiles"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             action: "completeLevel",
             background: true,
             createPlayer: "egg",
             frontLayer: true,
             id: 12,
             img: "egg-cup.png",
-            needsDraw: true,
             title: "Egg Cup"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             collectable: 100,
             dontAdd: true,
             frontLayer: true,
             id: 13,
             img: "toast.png",
-            needsDraw: true,
             title: "Toast"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             action: "teleport",
             background: true,
             frontLayer: true,
             id: 14,
             img: "door.png",
-            needsDraw: true,
             title: "Door"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             frontLayer: true,
             id: 15,
             img: "pink-door-open.png",
-            needsDraw: true,
             title: "Pink door open"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 16,
             img: "pink-door.png",
-            needsDraw: true,
             title: "Pink door closed"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             action: "pink-switch",
             background: true,
             frontLayer: true,
             id: 17,
             img: "pink-switch.png",
-            needsDraw: true,
             title: "Pink door switch"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             frontLayer: true,
             id: 18,
             img: "green-door-open.png",
-            needsDraw: true,
             title: "Green door open"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: false,
             id: 19,
             img: "green-door.png",
-            needsDraw: true,
             title: "Green door closed"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             action: "green-switch",
             background: true,
             frontLayer: true,
             id: 20,
             img: "green-switch.png",
-            needsDraw: true,
             title: "Green door switch"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             createPlayer: "silver-egg",
             frontLayer: true,
             id: 21,
             img: "silver-egg-cup.png",
-            needsDraw: true,
             title: "Silver Egg Cup"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             createPlayer: "blade",
             frontLayer: true,
             id: 22,
             img: "blade-egg-cup.png",
-            needsDraw: true,
             title: "Blade egg cup"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             createPlayer: "find-blade",
             frontLayer: true,
             id: 23,
             img: "find-blade-egg-cup.png",
-            needsDraw: true,
             title: "Find-blade egg cup"
-        },
-        {
+        }),
+        new Tile_1.Tile({
             background: true,
             id: 24,
             action: "split-eggs",
-            needsDraw: true,
             frontLayer: true,
             img: "egg-splitter.png",
             title: "It is the egg splitter"
-        }
+        })
     ];
     exports.getTile = id => {
         return exports.tiles.find(tile => {
@@ -817,35 +790,35 @@ define("dom/Levels", ["require", "exports", "logic/SavedLevel", "objects/BoardSi
     }
     exports.Levels = Levels;
 });
-define("data/PlayerTypes", ["require", "exports"], function (require, exports) {
+define("data/PlayerTypes", ["require", "exports", "objects/Player"], function (require, exports, Player_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.playerTypes = [
-        {
+        new Player_1.Player({
             frames: 18,
             img: "egg-sprite-blue.png",
             multiplier: 5,
             title: "It is of course the blue egg",
             type: "blue-egg",
             value: 3
-        },
-        {
+        }),
+        new Player_1.Player({
             frames: 18,
             img: "egg-sprite.png",
             multiplier: 1,
             title: "It is of course the egg",
             type: "egg",
             value: 1
-        },
-        {
+        }),
+        new Player_1.Player({
             frames: 18,
             img: "egg-sprite-red.png",
             multiplier: 2,
             title: "It is of course the red egg",
             type: "red-egg",
             value: 2
-        },
-        {
+        }),
+        new Player_1.Player({
             fallSpeed: 20,
             frames: 1,
             img: "silver-egg.png",
@@ -854,32 +827,32 @@ define("data/PlayerTypes", ["require", "exports"], function (require, exports) {
             title: "It is of course the silver egg",
             type: "silver-egg",
             value: 0
-        },
-        {
+        }),
+        new Player_1.Player({
             frames: 18,
             img: "egg-sprite-yellow.png",
             multiplier: 10,
             title: "It is of course the yellow egg",
             type: "yellow-egg",
             value: 4
-        },
-        {
+        }),
+        new Player_1.Player({
             frames: 18,
             img: "egg-rainbow.png",
             multiplier: 1,
             title: "It goes without saying that this is the rainbow egg",
             type: "rainbow-egg",
             value: 1
-        },
-        {
+        }),
+        new Player_1.Player({
             frames: 18,
             img: "blade-sprite.png",
             title: "It is the mean spirited blade",
             type: "blade",
             value: 0,
             flying: true
-        },
-        {
+        }),
+        new Player_1.Player({
             frames: 18,
             img: "find-blade-sprite.png",
             title: "It is the mean spirited blade",
@@ -887,10 +860,10 @@ define("data/PlayerTypes", ["require", "exports"], function (require, exports) {
             value: 0,
             movePattern: "seek-egg",
             flying: true
-        }
+        })
     ];
 });
-define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize", "objects/Coords", "objects/Tile", "logic/Utils", "data/TileSet"], function (require, exports, Board_1, BoardSize_2, Coords_2, Tile_1, Utils_1, TileSet_1) {
+define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize", "objects/Coords", "objects/Tile", "logic/Utils", "data/TileSet"], function (require, exports, Board_1, BoardSize_2, Coords_2, Tile_2, Utils_1, TileSet_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // map is just a class full of functions that is created for manipulating the board
@@ -999,7 +972,7 @@ define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize",
     };
     exports.cloneTile = (id) => {
         const prototypeTile = exports.getPrototypeTile(id);
-        return new Tile_1.Tile(prototypeTile); // create new Tile object with these
+        return new Tile_2.Tile(prototypeTile); // create new Tile object with these
     };
     exports.getRandomTile = (tiles) => {
         const randomProperty = obj => {
@@ -1632,11 +1605,18 @@ define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes
             if (!newPlayerType) {
                 return [player1, player2];
             }
-            const newPlayerParams = Object.assign({}, newPlayerType, {
+            const newParams = {
+                type: newPlayerType.type,
+                moveSpeed: newPlayerType.moveSpeed,
+                fallSpeed: newPlayerType.fallSpeed,
+                img: newPlayerType.img,
+                title: newPlayerType.title,
+                value: newValue,
+                multiplier: newPlayerType.multiplier,
                 coords: higherPlayer.coords,
                 direction: higherPlayer.direction
-            });
-            return [player1.modify(newPlayerParams)];
+            };
+            return [player1.modify(newParams)];
         }
     }
     exports.Collisions = Collisions;
@@ -1886,14 +1866,18 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/P
     };
     const playerFromItem = (player) => (item) => {
         const newPlayerType = Utils_5.Utils.getPlayerByValue(PlayerTypes_2.playerTypes, item.value);
-        const newPlayerParams = Object.assign({}, newPlayerType, {
+        return player.modify({
+            type: newPlayerType.type,
+            moveSpeed: newPlayerType.moveSpeed,
+            fallSpeed: newPlayerType.fallSpeed,
+            img: newPlayerType.img,
+            title: newPlayerType.title,
             direction: new Coords_4.Coords({
                 x: item.direction
             }),
             value: item.value,
             lastAction: "split"
         });
-        return player.modify(newPlayerParams);
     };
 });
 // this is the egg
@@ -1910,7 +1894,7 @@ define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollis
                     return gameState.players.map(player => {
                         if (player.value > 0) {
                             const newPlayer = Utils_6.Utils.getPlayerByType(PlayerTypes_3.playerTypes, "rainbow-egg");
-                            return player.modify(Object.assign({}, newPlayer, { value: player.value }));
+                            return player.modify(Object.assign({}, newPlayer.toJS(), { value: player.value }));
                         }
                         return player;
                     });
@@ -1969,7 +1953,7 @@ define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollis
     }
     exports.TheEgg = TheEgg;
 });
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "objects/Player", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils", "data/PlayerTypes"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, Player_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_7, PlayerTypes_4) {
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils", "data/PlayerTypes"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_7, PlayerTypes_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Jetpack {
@@ -2030,17 +2014,16 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize
         }
         // create player
         createNewPlayer(type, coords, direction) {
-            const playerType = PlayerTypes_4.playerTypes[type];
-            const params = JSON.parse(JSON.stringify(playerType));
-            params.id = this.nextPlayerID++;
-            params.coords = coords;
-            params.direction = direction;
-            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
-                params.moveSpeed = this.moveSpeed;
-                params.fallSpeed = this.moveSpeed * 1.2;
-            }
-            const player = new Player_1.Player(params);
-            return player;
+            const playerType = Utils_7.Utils.getPlayerByType(PlayerTypes_4.playerTypes, type);
+            const moveSpeed = (playerType.moveSpeed === 1) ? this.moveSpeed : playerType.moveSpeed;
+            const fallSpeed = (playerType.fallSpeed === 1) ? this.moveSpeed * 1.5 : playerType.fallSpeed;
+            const nextID = this.nextPlayerID++;
+            return playerType.modify({
+                moveSpeed,
+                fallSpeed,
+                coords,
+                direction
+            });
         }
         // make this actually fucking rotate, and choose direction, and do the visual effect thing
         rotateBoard(clockwise) {
@@ -3250,7 +3233,7 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "data/TileSet"
     }
     exports.Renderer = Renderer;
 });
-define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile", "ramda"], function (require, exports, TileSet_3, Tile_2, _) {
+define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile", "ramda"], function (require, exports, TileSet_3, Tile_3, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // used in editor, draws a bunch of 32x32 tiles for selecting
@@ -3279,7 +3262,7 @@ define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile",
         }
         makeTileImages() {
             return _.map(tileOriginal => {
-                return new Tile_2.Tile(tileOriginal);
+                return new Tile_3.Tile(tileOriginal);
             }, TileSet_3.tiles).map(tile => {
                 const tileImage = document.createElement("img");
                 tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));

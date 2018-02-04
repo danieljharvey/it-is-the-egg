@@ -120,12 +120,16 @@ const playerFromItem = (player: Player) => (
   item: ISplitItem
 ): Player => {
   const newPlayerType = Utils.getPlayerByValue(playerTypes, item.value);
-  const newPlayerParams = (Object as any).assign({}, newPlayerType, {
+  return player.modify({
+    type: newPlayerType.type,
+    moveSpeed: newPlayerType.moveSpeed,
+    fallSpeed: newPlayerType.fallSpeed,
+    img: newPlayerType.img,
+    title: newPlayerType.title,
     direction: new Coords({
       x: item.direction
     }),
     value: item.value,
     lastAction: "split"
-  });
-  return player.modify(newPlayerParams);
+   });
 };

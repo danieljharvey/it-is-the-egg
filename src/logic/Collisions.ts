@@ -192,11 +192,18 @@ export class Collisions {
       return [player1, player2];
     }
 
-    const newPlayerParams = (Object as any).assign({}, newPlayerType, {
+    const newParams = {
+      type: newPlayerType.type,
+      moveSpeed: newPlayerType.moveSpeed,
+      fallSpeed: newPlayerType.fallSpeed,
+      img: newPlayerType.img,
+      title: newPlayerType.title,
+      value: newValue,
+      multiplier: newPlayerType.multiplier,
       coords: higherPlayer.coords,
       direction: higherPlayer.direction
-    });
+    }
 
-    return [player1.modify(newPlayerParams)];
+    return [player1.modify(newParams)];
   }
 }

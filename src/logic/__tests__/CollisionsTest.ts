@@ -17,7 +17,7 @@ const playerTypes = {
 test("Ignores same player collision test", () => {
   const player1 = new Player();
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, player1);
   expect(result).toEqual(false);
@@ -38,7 +38,7 @@ test("Vertical collision works", () => {
     type: "Horse"
   });
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, player2);
   expect(result).toEqual(true);
@@ -60,7 +60,7 @@ test("Too far for horizontal collision", () => {
 
   // difference of 30
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, player2);
   expect(result).toEqual(false);
@@ -82,7 +82,7 @@ test("Close enough for RHS horizontal collision", () => {
 
   // difference of 18
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, player2);
   expect(result).toEqual(true);
@@ -105,7 +105,7 @@ test("Close enough for LHS horizontal collision", () => {
 
   // difference of 19
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, player2);
   expect(result).toEqual(true);
@@ -118,7 +118,7 @@ test("Ignores collision with zero-value player", () => {
 
   const zeroValuePlayer = player1.modify({ value: 0, id: 100 });
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, zeroValuePlayer);
   expect(result).toEqual(false);
@@ -132,7 +132,7 @@ test("Ignores collision with just-split player", () => {
 
   const splitPlayer = player1.modify({ id: 100 });
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const result = collisions.checkCollision(player1, splitPlayer);
   expect(result).toEqual(false);
@@ -151,7 +151,7 @@ test("Removes correct players", () => {
 
   const expected = [player1];
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const collided = [[2, 3], [4, 5]];
 
@@ -163,7 +163,7 @@ test("Removes correct players", () => {
 test("Create new players", () => {
   const player1 = new Player({
     id: 1,
-    value: 10,
+    value: 1,
     coords: new Coords({
       x: 100,
       y: 100
@@ -172,33 +172,21 @@ test("Create new players", () => {
 
   const player2 = new Player({
     id: 2,
-    value: 5,
+    value: 1,
     coords: new Coords({
       x: 6,
       y: 6
     })
   });
 
-  const types = {
-    madeUp: {
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 15
-    }
-  };
-
   const expected = [
     new Player({
       id: 1,
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 15,
+      img: "egg-sprite-red.png",
+      title: "It is of course the red egg",
+      type: "red-egg",
+      value: 2,
+      multiplier:2,
       coords: new Coords({
         x: 100,
         y: 100
@@ -206,7 +194,7 @@ test("Create new players", () => {
     })
   ];
 
-  const collisions = new Collisions(types);
+  const collisions = new Collisions();
 
   const actual = collisions.combinePlayers(player1, player2);
 
@@ -347,7 +335,7 @@ test("Clean combos of immutable", () => {
 test("Create new players actually works", () => {
   const player1 = new Player({
     id: 1,
-    value: 10,
+    value: 1,
     coords: new Coords({
       x: 100,
       y: 100
@@ -356,7 +344,7 @@ test("Create new players actually works", () => {
 
   const player2 = new Player({
     id: 2,
-    value: 5,
+    value: 1,
     coords: new Coords({
       x: 6,
       y: 6
@@ -365,33 +353,21 @@ test("Create new players actually works", () => {
 
   const player3 = new Player({
     id: 3,
-    value: 5,
+    value: 2,
     coords: new Coords({
       x: 100,
       y: 100
     })
   });
 
-  const types = {
-    madeUp: {
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 15
-    }
-  };
-
   const expected = [
     new Player({
       id: 1,
-      frames: 18,
-      img: "egg-sprite.png",
-      multiplier: 1,
-      title: "It is of course the egg",
-      type: "madeUp",
-      value: 15,
+      img: "egg-sprite-red.png",
+      multiplier: 2,
+      title: "It is of course the red egg",
+      type: "red-egg",
+      value: 2,
       coords: new Coords({
         x: 100,
         y: 100
@@ -403,7 +379,7 @@ test("Create new players actually works", () => {
 
   const collided = [[1, 2], [4, 6]];
 
-  const collisions = new Collisions(types);
+  const collisions = new Collisions();
 
   const actual = collisions.createNewPlayers(collided, players);
 
@@ -444,7 +420,7 @@ test("Combine player lists", () => {
 
   const expected = fromJS([player1, player2, player3]);
 
-  const collisions = new Collisions(playerTypes);
+  const collisions = new Collisions();
 
   const actual = collisions.combinePlayerLists(list1, list2);
 

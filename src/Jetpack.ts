@@ -108,17 +108,16 @@ export class Jetpack {
     coords: Coords,
     direction: Coords
   ): Player {
-    const playerType = playerTypes[type];
-    const params = JSON.parse(JSON.stringify(playerType));
-    params.id = this.nextPlayerID++;
-    params.coords = coords;
-    params.direction = direction;
-    if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
-      params.moveSpeed = this.moveSpeed;
-      params.fallSpeed = this.moveSpeed * 1.2;
-    }
-    const player = new Player(params);
-    return player;
+    const playerType = Utils.getPlayerByType(playerTypes, type);
+    const moveSpeed = (playerType.moveSpeed === 1) ? this.moveSpeed : playerType.moveSpeed
+    const fallSpeed = (playerType.fallSpeed === 1) ? this.moveSpeed * 1.5 : playerType.fallSpeed
+    const nextID = this.nextPlayerID++;
+    return playerType.modify({
+      moveSpeed,
+      fallSpeed,
+      coords,
+      direction
+    })
   }
 
   // make this actually fucking rotate, and choose direction, and do the visual effect thing

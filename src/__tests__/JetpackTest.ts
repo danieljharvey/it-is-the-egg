@@ -22,7 +22,7 @@ const createPlayerBoard = () => {
   });
 
   const createPlayerTile = new Tile({
-    createPlayer: "dog",
+    createPlayer: "red-egg",
     x: 1,
     y: 1
   });
@@ -35,27 +35,20 @@ const createPlayerBoard = () => {
   return new Board(array);
 };
 
-const getPlayerTypes = () => {
-  return {
-    dog: {
-      type: "dog",
-      value: 2
-    }
-  };
-};
-
 test("Create new player", () => {
-  const playerTypes = getPlayerTypes();
 
   const coords = new Coords({ x: 1, y: 1 });
 
-  const type = "dog";
+  const type = "red-egg";
 
-  const direction = 1;
+  const direction = new Coords({
+    x: 1,
+    y: 0
+  })
 
   const jetpack = new Jetpack();
 
-  const player = jetpack.createNewPlayer(playerTypes, type, coords, direction);
+  const player = jetpack.createNewPlayer(type, coords, direction);
 
   expect(typeof player).toEqual("object");
   expect(player.coords).toEqual(coords);
@@ -75,7 +68,6 @@ test("Filter create tiles", () => {
 });
 
 test("Create multiple new players", () => {
-  const playerTypes = getPlayerTypes();
 
   const board = createPlayerBoard();
 
@@ -86,14 +78,18 @@ test("Create multiple new players", () => {
   const expected = new Player({
     coords: new Coords({ x: 1, y: 1 }),
     direction: new Coords({ x: 1 }),
-    id: 3,
-    type: "dog",
+    id: 0,
+    multiplier: 2,
+    frames: 18,
+    type: "red-egg",
     value: 2,
     moveSpeed: 10,
-    fallSpeed: 12
+    fallSpeed: 15,
+    img: "egg-sprite-red.png",
+    title: "It is of course the red egg"
   });
 
-  const players = jetpack.createPlayers(playerTypes, board);
+  const players = jetpack.createPlayers(board);
 
   expect(typeof players).toEqual("object");
   expect(players.first()).toEqual(expected);

@@ -104,13 +104,10 @@ export class Utils {
     return false;
   }
 
-  public static getPlayerByType(playerTypes, type: string) {
-    for (const i in playerTypes) {
-      if (playerTypes[i].type === type) {
-        return playerTypes[i];
-      }
-    }
-    return false;
+  public static getPlayerByType(playerTypes: Player[], type: string): (Player | undefined) {
+    return playerTypes.find(playerType =>
+      (playerType.type === type)
+    )
   }
 
   // check leftovers on board and whether player is over finish tile
