@@ -1,4 +1,4 @@
-define("Tile", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
+define("objects/Tile", ["require", "exports", "immutable"], function (require, exports, immutable_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Tile extends immutable_1.Record({
@@ -10,6 +10,7 @@ define("Tile", ["require", "exports", "immutable"], function (require, exports, 
         dontAdd: false,
         frontLayer: false,
         id: 0,
+        img: "",
         title: "Title",
         x: 0,
         y: 0
@@ -24,7 +25,7 @@ define("Tile", ["require", "exports", "immutable"], function (require, exports, 
     }
     exports.Tile = Tile;
 });
-define("Board", ["require", "exports", "immutable"], function (require, exports, immutable_2) {
+define("objects/Board", ["require", "exports", "immutable"], function (require, exports, immutable_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // new board is built from JS array
@@ -58,31 +59,7 @@ define("Board", ["require", "exports", "immutable"], function (require, exports,
     }
     exports.Board = Board;
 });
-define("Coords", ["require", "exports", "immutable"], function (require, exports, immutable_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // import { Utils } from "./Utils";
-    const OFFSET_DIVIDE = 100;
-    class Coords extends immutable_3.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 }) {
-        constructor(params) {
-            const superParams = params ? params : undefined;
-            super(superParams);
-        }
-        modify(values) {
-            return this.merge(values);
-        }
-        getActualPosition() {
-            const fullX = this.x * OFFSET_DIVIDE + this.offsetX;
-            const fullY = this.y * OFFSET_DIVIDE + this.offsetY;
-            return {
-                fullX,
-                fullY
-            };
-        }
-    }
-    exports.Coords = Coords;
-});
-define("BoardSize", ["require", "exports"], function (require, exports) {
+define("objects/BoardSize", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BoardSize {
@@ -124,10 +101,131 @@ define("BoardSize", ["require", "exports"], function (require, exports) {
     }
     exports.BoardSize = BoardSize;
 });
-define("Utils", ["require", "exports", "ramda"], function (require, exports, _) {
+define("objects/Coords", ["require", "exports", "immutable"], function (require, exports, immutable_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // import { Utils } from "./Utils";
+    const OFFSET_DIVIDE = 100;
+    class Coords extends immutable_3.Record({ x: 0, y: 0, offsetX: 0, offsetY: 0 }) {
+        constructor(params) {
+            const superParams = params ? params : undefined;
+            super(superParams);
+        }
+        modify(values) {
+            return this.merge(values);
+        }
+        getActualPosition() {
+            const fullX = this.x * OFFSET_DIVIDE + this.offsetX;
+            const fullY = this.y * OFFSET_DIVIDE + this.offsetY;
+            return {
+                fullX,
+                fullY
+            };
+        }
+    }
+    exports.Coords = Coords;
+});
+define("objects/GameState", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GameState {
+        constructor(params = {}) {
+            this.players = [];
+            this.board = null;
+            this.score = 0;
+            this.rotations = 0;
+            this.rotateAngle = 0;
+            this.outcome = "";
+            Object.entries(params).map(pair => {
+                const [key, value] = pair;
+                this[key] = value;
+            });
+        }
+        modify(values = {}) {
+            return new GameState(Object.assign({}, this, values));
+        }
+    }
+    exports.GameState = GameState;
+});
+define("data/PlayerTypes", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.playerTypes = [
+        {
+            frames: 18,
+            img: "egg-sprite-blue.png",
+            multiplier: 5,
+            title: "It is of course the blue egg",
+            type: "blue-egg",
+            value: 3
+        },
+        {
+            frames: 18,
+            img: "egg-sprite.png",
+            multiplier: 1,
+            title: "It is of course the egg",
+            type: "egg",
+            value: 1
+        },
+        {
+            frames: 18,
+            img: "egg-sprite-red.png",
+            multiplier: 2,
+            title: "It is of course the red egg",
+            type: "red-egg",
+            value: 2
+        },
+        {
+            fallSpeed: 20,
+            frames: 1,
+            img: "silver-egg.png",
+            moveSpeed: 0,
+            multiplier: 10,
+            title: "It is of course the silver egg",
+            type: "silver-egg",
+            value: 0
+        },
+        {
+            frames: 18,
+            img: "egg-sprite-yellow.png",
+            multiplier: 10,
+            title: "It is of course the yellow egg",
+            type: "yellow-egg",
+            value: 4
+        },
+        {
+            frames: 18,
+            img: "egg-rainbow.png",
+            multiplier: 1,
+            title: "It goes without saying that this is the rainbow egg",
+            type: "rainbow-egg",
+            value: 1
+        },
+        {
+            frames: 18,
+            img: "blade-sprite.png",
+            title: "It is the mean spirited blade",
+            type: "blade",
+            value: 0,
+            flying: true
+        },
+        {
+            frames: 18,
+            img: "find-blade-sprite.png",
+            title: "It is the mean spirited blade",
+            type: "find-blade",
+            value: 0,
+            movePattern: "seek-egg",
+            flying: true
+        }
+    ];
+});
+define("logic/Utils", ["require", "exports", "ramda", "data/PlayerTypes", "tsmonad"], function (require, exports, _, PlayerTypes_1, tsmonad_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // wee lad full of reusable functions
+    const imagesFolder = "img/";
+    const defaultMoveSpeed = 10;
     class Utils {
         static getRandomObjectKey(object) {
             const keys = Object.keys(object);
@@ -216,12 +314,7 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
             return false;
         }
         static getPlayerByType(playerTypes, type) {
-            for (const i in playerTypes) {
-                if (playerTypes[i].type === type) {
-                    return playerTypes[i];
-                }
-            }
-            return false;
+            return playerTypes.find(playerType => (playerType.type === type));
         }
         // check leftovers on board and whether player is over finish tile
         static checkLevelIsCompleted(gameState) {
@@ -246,10 +339,26 @@ define("Utils", ["require", "exports", "ramda"], function (require, exports, _) 
                 return collectable;
             }, 0);
         }
+        static getTileImagePath(img) {
+            return imagesFolder + img;
+        }
+        static moveSpeed(playerMoveSpeed) {
+            return (playerMoveSpeed === undefined || playerMoveSpeed === 1) ? defaultMoveSpeed : playerMoveSpeed;
+        }
+        static fallSpeed(playerFallSpeed) {
+            return (playerFallSpeed === undefined || playerFallSpeed === 1) ? defaultMoveSpeed * 1.5 : playerFallSpeed;
+        }
     }
+    Utils.getPlayerType = (type) => {
+        return tsmonad_1.maybe(PlayerTypes_1.playerTypes.find(playerType => playerType.type === type));
+    };
+    // gets the original JS object of options, not a Player
+    Utils.getPlayerTypeByValue = (value) => {
+        return tsmonad_1.maybe(PlayerTypes_1.playerTypes.find(playerType => playerType.value === value));
+    };
     exports.Utils = Utils;
 });
-define("Player", ["require", "exports", "immutable", "Coords"], function (require, exports, immutable_4, Coords_1) {
+define("objects/Player", ["require", "exports", "immutable", "objects/Coords"], function (require, exports, immutable_4, Coords_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const SPRITE_SIZE = 64;
@@ -287,230 +396,489 @@ define("Player", ["require", "exports", "immutable", "Coords"], function (requir
     }
     exports.Player = Player;
 });
-define("GameState", ["require", "exports"], function (require, exports) {
+define("data/TileSet", ["require", "exports", "objects/Tile"], function (require, exports, Tile_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class GameState {
-        constructor(params = {}) {
-            this.players = [];
-            this.board = null;
-            this.score = 0;
-            this.rotations = 0;
-            this.rotateAngle = 0;
-            this.outcome = "";
-            Object.entries(params).map(pair => {
-                const [key, value] = pair;
-                this[key] = value;
+    exports.tiles = [
+        new Tile_1.Tile({
+            background: true,
+            id: 1,
+            img: "sky.png",
+            title: "Sky"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 2,
+            img: "fabric.png",
+            title: "Fabric"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            collectable: 1,
+            frontLayer: true,
+            id: 3,
+            img: "cacti.png",
+            title: "Cacti"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            collectable: 10,
+            frontLayer: true,
+            id: 4,
+            img: "plant.png",
+            title: "Plant"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            breakable: true,
+            id: 5,
+            img: "crate.png",
+            title: "Crate"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 8,
+            img: "work-surface-2.png",
+            title: "Work surface 2"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 9,
+            img: "work-surface-3.png",
+            title: "Work surface 3"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 10,
+            img: "work-surface-4.png",
+            title: "Work surface 4"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 11,
+            img: "tile.png",
+            title: "Tiles"
+        }),
+        new Tile_1.Tile({
+            action: "completeLevel",
+            background: true,
+            createPlayer: "egg",
+            frontLayer: true,
+            id: 12,
+            img: "egg-cup.png",
+            title: "Egg Cup"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            collectable: 100,
+            dontAdd: true,
+            frontLayer: true,
+            id: 13,
+            img: "toast.png",
+            title: "Toast"
+        }),
+        new Tile_1.Tile({
+            action: "teleport",
+            background: true,
+            frontLayer: true,
+            id: 14,
+            img: "door.png",
+            title: "Door"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            frontLayer: true,
+            id: 15,
+            img: "pink-door-open.png",
+            title: "Pink door open"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 16,
+            img: "pink-door.png",
+            title: "Pink door closed"
+        }),
+        new Tile_1.Tile({
+            action: "pink-switch",
+            background: true,
+            frontLayer: true,
+            id: 17,
+            img: "pink-switch.png",
+            title: "Pink door switch"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            frontLayer: true,
+            id: 18,
+            img: "green-door-open.png",
+            title: "Green door open"
+        }),
+        new Tile_1.Tile({
+            background: false,
+            id: 19,
+            img: "green-door.png",
+            title: "Green door closed"
+        }),
+        new Tile_1.Tile({
+            action: "green-switch",
+            background: true,
+            frontLayer: true,
+            id: 20,
+            img: "green-switch.png",
+            title: "Green door switch"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            createPlayer: "silver-egg",
+            frontLayer: true,
+            id: 21,
+            img: "silver-egg-cup.png",
+            title: "Silver Egg Cup"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            createPlayer: "blade",
+            frontLayer: true,
+            id: 22,
+            img: "blade-egg-cup.png",
+            title: "Blade egg cup"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            createPlayer: "find-blade",
+            frontLayer: true,
+            id: 23,
+            img: "find-blade-egg-cup.png",
+            title: "Find-blade egg cup"
+        }),
+        new Tile_1.Tile({
+            background: true,
+            id: 24,
+            action: "split-eggs",
+            frontLayer: true,
+            img: "egg-splitter.png",
+            title: "It is the egg splitter"
+        })
+    ];
+    exports.getTile = id => {
+        return exports.tiles.find(tile => {
+            return tile.id === id;
+        });
+    };
+});
+// responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
+define("dom/Canvas", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Canvas {
+        constructor(boardSize) {
+            this.boardSize = boardSize;
+            const tileSize = this.sizeCanvas(boardSize);
+            this.loadCanvas(boardSize, tileSize);
+        }
+        getDrawingContext() {
+            return this.ctx;
+        }
+        getCanvas() {
+            return this.canvas;
+        }
+        wipeCanvas(fillStyle) {
+            this.ctx.fillStyle = fillStyle;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        // takes BoardSize, returns size of each tile
+        sizeCanvas(boardSize) {
+            const maxBoardSize = this.getMaxBoardSize(boardSize);
+            const tileSize = this.calcTileSize(boardSize);
+            this.loadCanvas(boardSize, tileSize);
+            this.positionCanvas(maxBoardSize);
+            this.boardSize = boardSize;
+            return tileSize;
+        }
+        positionCanvas(maxBoardSize) {
+            const windowHeight = window.innerHeight;
+            const canvasTop = this.getCanvasTop(windowHeight, maxBoardSize);
+            const wrapper = document.getElementById("wrapper");
+            if (wrapper) {
+                wrapper.style.paddingTop = canvasTop.toString() + "px";
+            }
+        }
+        getCanvasTop(windowHeight, boardHeight) {
+            if (boardHeight < windowHeight) {
+                return (windowHeight - boardHeight) / 2;
+            }
+            return 0;
+        }
+        calcTileSize(boardSize) {
+            const maxBoardSize = this.getMaxBoardSize(this.boardSize);
+            const tileSize = maxBoardSize / boardSize.width;
+            return Math.floor(tileSize);
+        }
+        darkBackground() {
+            const background = document.getElementById("background");
+            if (!background) {
+                return;
+            }
+            if (!background.classList.contains("dark")) {
+                background.classList.add("dark");
+            }
+        }
+        gradientBackground() {
+            const background = document.getElementById("background");
+            if (!background) {
+                return;
+            }
+            if (background.classList.contains("dark")) {
+                background.classList.remove("dark");
+            }
+        }
+        getMaxBoardSize(boardSize) {
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            if (width > height) {
+                const difference = height % boardSize.width;
+                height = height - difference;
+                return height;
+            }
+            else {
+                const difference = width % boardSize.width;
+                width = width - difference;
+                return width;
+            }
+        }
+        loadCanvas(boardSize, tileSize) {
+            this.canvas = document.getElementById("canvas");
+            if (!this.canvas) {
+                return;
+            }
+            this.canvas.width = boardSize.width * tileSize;
+            this.canvas.height = boardSize.height * tileSize;
+            this.ctx = this.canvas.getContext("2d");
+            this.sizeBackground(boardSize, tileSize);
+        }
+        sizeBackground(boardSize, tileSize) {
+            const background = document.getElementById("background");
+            if (!background) {
+                return;
+            }
+            background.style.width = String(boardSize.width * tileSize) + "px";
+            background.style.height = String(boardSize.height * tileSize) + "px";
+            background.style.opacity = "1.0";
+        }
+    }
+    exports.Canvas = Canvas;
+});
+define("logic/SavedLevel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class SavedLevel {
+        constructor(boardSize, board, levelID) {
+            this.boardSize = boardSize;
+            this.board = board;
+            this.levelID = levelID;
+        }
+        toString() {
+            const data = this.getData();
+            return JSON.stringify(data);
+        }
+        getData() {
+            return {
+                board: this.board,
+                boardSize: this.boardSize.getData(),
+                levelID: this.levelID
+            };
+        }
+    }
+    exports.SavedLevel = SavedLevel;
+});
+define("dom/Loader", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const DONE = 4; // readyState 4 means the request is done.
+    const OK = 200; // status 200 is a successful return.
+    class Loader {
+        constructor(apiLocation) {
+            this.apiLocation = apiLocation;
+        }
+        callServer(action, params) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                params.action = action;
+                xhr.open("POST", this.apiLocation, true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === DONE) {
+                        if (xhr.status === OK) {
+                            let object;
+                            try {
+                                object = JSON.parse(xhr.responseText);
+                            }
+                            catch (e) {
+                                return reject("Could not decode this JSON: " + xhr.responseText);
+                            }
+                            if (object.rc > 0) {
+                                return reject(object.msg);
+                            }
+                            else {
+                                return resolve(object.data);
+                            }
+                        }
+                        else {
+                            return reject("Error: " + xhr.status);
+                        }
+                    }
+                };
+                // var formData = this.paramsToFormData(params);
+                const queryString = this.param(params);
+                xhr.send(queryString);
             });
         }
-        modify(values = {}) {
-            return new GameState(Object.assign({}, this, values));
+        paramsToFormData(params) {
+            const formData = new FormData();
+            for (const key in params) {
+                if (params[key] !== undefined) {
+                    formData.append(key, params[key]);
+                }
+            }
+            return formData;
+        }
+        param(object) {
+            let encodedString = "";
+            for (const prop in object) {
+                if (object.hasOwnProperty(prop)) {
+                    if (encodedString.length > 0) {
+                        encodedString += "&";
+                    }
+                    encodedString += encodeURI(prop + "=" + object[prop]);
+                }
+            }
+            return encodedString;
         }
     }
-    exports.GameState = GameState;
+    exports.Loader = Loader;
 });
-define("TileSet", ["require", "exports"], function (require, exports) {
+define("dom/Levels", ["require", "exports", "logic/SavedLevel", "objects/BoardSize"], function (require, exports, SavedLevel_1, BoardSize_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class TileSet {
-        static getTiles() {
-            const tiles = {
-                1: {
-                    background: true,
-                    id: 1,
-                    img: "sky.png",
-                    needsDraw: true,
-                    title: "Sky"
-                },
-                2: {
-                    background: false,
-                    id: 2,
-                    img: "fabric.png",
-                    needsDraw: true,
-                    title: "Fabric"
-                },
-                3: {
-                    background: true,
-                    collectable: 1,
-                    frontLayer: true,
-                    id: 3,
-                    img: "cacti.png",
-                    needsDraw: true,
-                    title: "Cacti"
-                },
-                4: {
-                    background: true,
-                    collectable: 10,
-                    frontLayer: true,
-                    id: 4,
-                    img: "plant.png",
-                    needsDraw: true,
-                    title: "Plant"
-                },
-                5: {
-                    background: false,
-                    breakable: true,
-                    id: 5,
-                    img: "crate.png",
-                    needsDraw: true,
-                    title: "Crate"
-                },
-                8: {
-                    background: false,
-                    id: 8,
-                    img: "work-surface-2.png",
-                    needsDraw: true,
-                    title: "Work surface 2"
-                },
-                9: {
-                    background: false,
-                    id: 9,
-                    img: "work-surface-3.png",
-                    needsDraw: true,
-                    title: "Work surface 3"
-                },
-                10: {
-                    background: false,
-                    id: 10,
-                    img: "work-surface-4.png",
-                    needsDraw: true,
-                    title: "Work surface 4"
-                },
-                11: {
-                    background: false,
-                    id: 11,
-                    img: "tile.png",
-                    needsDraw: true,
-                    title: "Tiles"
-                },
-                12: {
-                    action: "completeLevel",
-                    background: true,
-                    createPlayer: "egg",
-                    frontLayer: true,
-                    id: 12,
-                    img: "egg-cup.png",
-                    needsDraw: true,
-                    title: "Egg Cup"
-                },
-                13: {
-                    background: true,
-                    collectable: 100,
-                    dontAdd: true,
-                    frontLayer: true,
-                    id: 13,
-                    img: "toast.png",
-                    needsDraw: true,
-                    title: "Toast"
-                },
-                14: {
-                    action: "teleport",
-                    background: true,
-                    frontLayer: true,
-                    id: 14,
-                    img: "door.png",
-                    needsDraw: true,
-                    title: "Door"
-                },
-                15: {
-                    background: true,
-                    frontLayer: true,
-                    id: 15,
-                    img: "pink-door-open.png",
-                    needsDraw: true,
-                    title: "Pink door open"
-                },
-                16: {
-                    background: false,
-                    id: 16,
-                    img: "pink-door.png",
-                    needsDraw: true,
-                    title: "Pink door closed"
-                },
-                17: {
-                    action: "pink-switch",
-                    background: true,
-                    frontLayer: true,
-                    id: 17,
-                    img: "pink-switch.png",
-                    needsDraw: true,
-                    title: "Pink door switch"
-                },
-                18: {
-                    background: true,
-                    frontLayer: true,
-                    id: 18,
-                    img: "green-door-open.png",
-                    needsDraw: true,
-                    title: "Green door open"
-                },
-                19: {
-                    background: false,
-                    id: 19,
-                    img: "green-door.png",
-                    needsDraw: true,
-                    title: "Green door closed"
-                },
-                20: {
-                    action: "green-switch",
-                    background: true,
-                    frontLayer: true,
-                    id: 20,
-                    img: "green-switch.png",
-                    needsDraw: true,
-                    title: "Green door switch"
-                },
-                21: {
-                    background: true,
-                    createPlayer: "silver-egg",
-                    frontLayer: true,
-                    id: 21,
-                    img: "silver-egg-cup.png",
-                    needsDraw: true,
-                    title: "Silver Egg Cup"
-                },
-                22: {
-                    background: true,
-                    createPlayer: "blade",
-                    frontLayer: true,
-                    id: 22,
-                    img: "blade-egg-cup.png",
-                    needsDraw: true,
-                    title: "Blade egg cup"
-                },
-                23: {
-                    background: true,
-                    createPlayer: "find-blade",
-                    frontLayer: true,
-                    id: 23,
-                    img: "find-blade-egg-cup.png",
-                    needsDraw: true,
-                    title: "Find-blade egg cup"
-                },
-                24: {
-                    background: true,
-                    id: 24,
-                    action: "split-eggs",
-                    needsDraw: true,
-                    frontLayer: true,
-                    img: "egg-splitter.png",
-                    title: "It is the egg splitter"
-                }
-            };
-            // return a copy rather than letting this get messed with
-            return JSON.parse(JSON.stringify(tiles));
+    class Levels {
+        constructor(loader) {
+            this.levelID = 0;
+            this.levels = {};
+            this.loader = loader;
         }
-        static getTile(id) {
-            const tiles = TileSet.getTiles();
-            if (tiles.hasOwnProperty(id)) {
-                return tiles[id];
+        getLevelList(callback) {
+            this.loader
+                .callServer("getLevelsList", {})
+                .then(data => {
+                const levelList = this.cleanLevelList(data);
+                callback(levelList);
+            })
+                .catch((err) => {
+                const levelList = this.cleanLevelList([]);
+                callback(levelList);
+            });
+        }
+        populateLevelsList(levelList) {
+            const select = document.getElementById("levelList");
+            if (!select) {
+                return;
             }
-            return false;
+            while (select.firstChild) {
+                select.removeChild(select.firstChild);
+            }
+            const nullEl = document.createElement("option");
+            nullEl.textContent = "New";
+            nullEl.value = "";
+            if (!this.levelID) {
+                nullEl.selected = true;
+            }
+            select.appendChild(nullEl);
+            for (const i in levelList) {
+                if (levelList[i] !== undefined) {
+                    const levelID = parseInt(i, 10);
+                    const el = document.createElement("option");
+                    el.textContent = levelID.toString();
+                    el.value = levelID.toString();
+                    if (levelID === this.levelID) {
+                        el.selected = true;
+                    }
+                    select.appendChild(el);
+                }
+            }
+        }
+        saveLevel(board, boardSize, levelID, callback) {
+            const saveData = new SavedLevel_1.SavedLevel(boardSize, board, levelID);
+            const saveString = saveData.toString();
+            const params = {
+                data: saveString,
+                levelID: 0
+            };
+            if (levelID) {
+                params.levelID = levelID;
+            }
+            this.loader
+                .callServer("saveLevel", params)
+                .then(savedLevelID => {
+                this.levelID = savedLevelID;
+                callback(savedLevelID);
+            })
+                .catch((errorMsg) => {
+                // console.log("ERROR: ", errorMsg);
+            });
+        }
+        loadLevel(levelID, callback, failCallback) {
+            this.getLevelList(() => {
+                // console.log("gotLevelList");
+            });
+            const params = {
+                levelID
+            };
+            this.loader
+                .callServer("getLevel", params)
+                .then(data => {
+                this.levelID = levelID;
+                const boardSize = new BoardSize_1.BoardSize(data.boardSize.width);
+                const savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
+                callback(savedLevel);
+            })
+                .catch((errorMsg) => {
+                // console.log("ERROR: ", errorMsg);
+                failCallback();
+            });
+        }
+        saveData(levelID, rotationsUsed, score, callback) {
+            const params = {
+                levelID,
+                rotationsUsed,
+                score
+            };
+            this.loader
+                .callServer("saveScore", params)
+                .then((data) => {
+                callback(data);
+            })
+                .catch(() => {
+                callback({ msg: "call failed" });
+            });
+        }
+        // turn array of numbers into list key'd by levelID with object of won/lost
+        cleanLevelList(list) {
+            const levelList = [];
+            for (const i in list) {
+                if (list[i] !== undefined) {
+                    const levelID = parseInt(list[i], 10);
+                    levelList[levelID] = {
+                        completed: false,
+                        levelID
+                    };
+                }
+            }
+            return levelList;
         }
     }
-    exports.TileSet = TileSet;
+    exports.Levels = Levels;
 });
-define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "TileSet", "Utils"], function (require, exports, Board_1, BoardSize_1, Coords_2, Tile_1, TileSet_1, Utils_1) {
+define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize", "objects/Coords", "objects/Tile", "logic/Utils", "data/TileSet"], function (require, exports, Board_1, BoardSize_2, Coords_2, Tile_2, Utils_1, TileSet_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // map is just a class full of functions that is created for manipulating the board
@@ -520,7 +888,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
     };
     exports.correctForOverflow = (board, coords) => {
         const boardSize = exports.calcBoardSize(board);
-        return Utils_1.Utils.correctForOverflow(coords, new BoardSize_1.BoardSize(boardSize));
+        return Utils_1.Utils.correctForOverflow(coords, new BoardSize_2.BoardSize(boardSize));
     };
     // is intended next tile empty / a wall?
     // need to make this wrap around the board
@@ -545,12 +913,12 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         return newTile;
     };
     exports.shrinkBoard = (board) => {
-        const boardSize = new BoardSize_1.BoardSize(board.getLength());
+        const boardSize = new BoardSize_2.BoardSize(board.getLength());
         const shrunkBoardSize = boardSize.shrink();
         return exports.correctBoardSizeChange(board, shrunkBoardSize);
     };
     exports.growBoard = (board) => {
-        const boardSize = new BoardSize_1.BoardSize(board.getLength());
+        const boardSize = new BoardSize_2.BoardSize(board.getLength());
         const grownBoardSize = boardSize.grow();
         return exports.correctBoardSizeChange(board, grownBoardSize);
     };
@@ -619,7 +987,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
     };
     exports.cloneTile = (id) => {
         const prototypeTile = exports.getPrototypeTile(id);
-        return new Tile_1.Tile(prototypeTile); // create new Tile object with these
+        return new Tile_2.Tile(prototypeTile); // create new Tile object with these
     };
     exports.getRandomTile = (tiles) => {
         const randomProperty = obj => {
@@ -663,7 +1031,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         const tiles = board.getAllTiles();
         const width = board.getLength() - 1;
         const height = board.getLength() - 1;
-        const boardSize = new BoardSize_1.BoardSize(exports.calcBoardSize(board));
+        const boardSize = new BoardSize_2.BoardSize(exports.calcBoardSize(board));
         const rotatedBoard = tiles.reduce((currentBoard, tile) => {
             const coords = new Coords_2.Coords({ x: tile.x, y: tile.y });
             const newCoords = exports.translateRotation(boardSize, coords, clockwise);
@@ -707,7 +1075,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         for (let x = 0; x < boardSize.width; x++) {
             boardArray[x] = [];
             for (let y = 0; y < boardSize.height; y++) {
-                const blankTile = exports.getRandomTile(TileSet_1.TileSet.getTiles());
+                const blankTile = exports.getRandomTile(TileSet_1.tiles);
                 const positionedTile = blankTile.modify({
                     x,
                     y
@@ -722,7 +1090,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         return exports.getTileWithCoords(board, coords);
     };
     exports.getPrototypeTile = (id) => {
-        return TileSet_1.TileSet.getTile(id);
+        return TileSet_1.getTile(id);
     };
     exports.translateRotation = (boardSize, coords, clockwise) => {
         const width = boardSize.width - 1;
@@ -749,99 +1117,7 @@ define("Map", ["require", "exports", "Board", "BoardSize", "Coords", "Tile", "Ti
         }
     };
 });
-define("Action", ["require", "exports", "Map"], function (require, exports, Map) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // this concerns all the changes between player and board
-    class Action {
-        // go through each player, check it's effect on board, score and outcome, return new gameState obj
-        checkAllPlayerTileActions(gameState) {
-            return gameState.players.reduce((currentGameState, player) => {
-                const updated = this.checkPlayerTileAction(player, currentGameState.board, currentGameState.score, currentGameState.outcome);
-                const postCrateBoard = this.checkTileBelowPlayer(player, updated.board);
-                return gameState.modify({
-                    board: postCrateBoard,
-                    outcome: updated.outcome,
-                    score: updated.score
-                });
-            }, gameState);
-        }
-        checkPlayerTileAction(player, board, score, outcome) {
-            const currentCoords = player.coords;
-            if (currentCoords.offsetX !== 0 ||
-                currentCoords.offsetY !== 0 ||
-                player.moved === false) {
-                return {
-                    board,
-                    outcome,
-                    score
-                };
-            }
-            const coords = Map.correctForOverflow(board, currentCoords);
-            const tile = board.getTile(coords.x, coords.y);
-            if (tile.collectable > 0) {
-                const newScore = tile.collectable * player.multiplier;
-                const blankTile = Map.cloneTile(1);
-                const newTile = blankTile.modify({
-                    x: coords.x,
-                    y: coords.y
-                });
-                return {
-                    board: board.modify(coords.x, coords.y, newTile),
-                    outcome,
-                    score: score + newScore
-                };
-            }
-            if (tile.action === "completeLevel") {
-                return {
-                    board,
-                    outcome: "completeLevel",
-                    score
-                };
-            }
-            else if (tile.action === "pink-switch") {
-                return {
-                    board: Map.switchTiles(board, 15, 16),
-                    outcome,
-                    score
-                };
-            }
-            else if (tile.action === "green-switch") {
-                return {
-                    board: Map.switchTiles(board, 18, 19),
-                    outcome,
-                    score
-                };
-            }
-            return {
-                board,
-                outcome,
-                score
-            };
-        }
-        // basically, do we need to smash the block below?
-        checkTileBelowPlayer(player, board) {
-            if (player.falling === false) {
-                return board;
-            }
-            const coords = player.coords;
-            const belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
-            const tile = board.getTile(belowCoords.x, belowCoords.y);
-            if (tile.get("breakable") === true) {
-                // if tile below is breakable (and we are already falling and thus have momentum, smash it)
-                const newTile = Map.cloneTile(1);
-                const newTileWithCoords = newTile.modify({
-                    x: belowCoords.x,
-                    y: belowCoords.y
-                });
-                return board.modify(belowCoords.x, belowCoords.y, newTileWithCoords);
-            }
-            return board;
-        }
-    }
-    exports.Action = Action;
-});
-define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], function (require, exports, _, tsmonad_1, Utils_2) {
+define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Utils"], function (require, exports, _, tsmonad_2, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.triggerSounds = (oldState) => (newState) => {
@@ -866,7 +1142,7 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
         }
     };
     const rotateSound = () => {
-        return tsmonad_1.Maybe.just({
+        return tsmonad_2.Maybe.just({
             name: "warp",
             pan: 0
         });
@@ -915,22 +1191,22 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
     };
     exports.gotCoins = (boardSize) => (tiles) => {
         return filterGotCoins(tiles)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "pop",
                 pan: calcPan(boardSize)(tiles.new.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterCrateSmash = (tiles) => {
         return tiles.old.breakable === true && tiles.new.breakable === false;
     };
     exports.crateSmash = (boardSize) => (tiles) => {
         return filterCrateSmash(tiles)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "crate-smash",
                 pan: calcPan(boardSize)(tiles.new.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterDoorChange = (tiles) => {
         return ((tiles.old.background === true &&
@@ -942,11 +1218,11 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
     };
     exports.doorChange = (boardSize) => (tiles) => {
         return filterDoorChange(tiles)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "switch",
                 pan: calcPan(boardSize)(tiles.new.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     exports.getPlayerSounds = (oldState) => (newState) => {
         const boardSize = newState.board.getLength();
@@ -962,11 +1238,11 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
     };
     exports.playerHitsFloor = (boardSize) => (players) => {
         return filterPlayerHitsFloor(players)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "thud",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterPlayerHitsWall = (players) => {
         return (players.old.falling === false &&
@@ -976,33 +1252,33 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
     };
     exports.playerHitsWall = (boardSize) => (players) => {
         return filterPlayerHitsWall(players)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "bounce",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterTeleported = (players) => {
         return players.old.lastAction === "" && players.new.lastAction === "teleport";
     };
     exports.playerTeleported = (boardSize) => (players) => {
         return filterTeleported(players)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "soft-bell",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterPlayersCombine = (oldPlayers) => (newPlayers) => {
         return oldPlayers.length > newPlayers.length;
     };
     const playersCombine = (oldPlayers) => (newPlayers) => {
         return filterPlayersCombine(oldPlayers)(newPlayers)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "power-up",
                 pan: 0
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     // super basic for now
     const calcPan = (boardSize) => (x) => {
@@ -1019,291 +1295,192 @@ define("AudioTriggers", ["require", "exports", "ramda", "tsmonad", "Utils"], fun
     };
     const nearlyDone = (oldState) => (newState) => {
         return filterNearlyDone(oldState)(newState)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "woo",
                 pan: 0
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
 });
-define("PlayerTypes", ["require", "exports"], function (require, exports) {
+define("dom/TitleScreen", ["require", "exports", "objects/BoardSize", "logic/Utils"], function (require, exports, BoardSize_3, Utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class PlayerTypes {
-        getPlayerTypes() {
-            return {
-                "blue-egg": {
-                    frames: 18,
-                    img: "egg-sprite-blue.png",
-                    multiplier: 5,
-                    title: "It is of course the blue egg",
-                    type: "blue-egg",
-                    value: 3
-                },
-                egg: {
-                    frames: 18,
-                    img: "egg-sprite.png",
-                    multiplier: 1,
-                    title: "It is of course the egg",
-                    type: "egg",
-                    value: 1
-                },
-                "red-egg": {
-                    frames: 18,
-                    img: "egg-sprite-red.png",
-                    multiplier: 2,
-                    title: "It is of course the red egg",
-                    type: "red-egg",
-                    value: 2
-                },
-                "silver-egg": {
-                    fallSpeed: 20,
-                    frames: 1,
-                    img: "silver-egg.png",
-                    moveSpeed: 0,
-                    multiplier: 10,
-                    title: "It is of course the silver egg",
-                    type: "silver-egg",
-                    value: 0
-                },
-                "yellow-egg": {
-                    frames: 18,
-                    img: "egg-sprite-yellow.png",
-                    multiplier: 10,
-                    title: "It is of course the yellow egg",
-                    type: "yellow-egg",
-                    value: 4
-                },
-                "rainbow-egg": {
-                    frames: 18,
-                    img: "egg-rainbow.png",
-                    multiplier: 1,
-                    title: "It goes without saying that this is the rainbow egg",
-                    type: "rainbow-egg",
-                    value: 1
-                },
-                blade: {
-                    frames: 18,
-                    img: "blade-sprite.png",
-                    title: "It is the mean spirited blade",
-                    type: "blade",
-                    value: 0,
-                    flying: true
-                },
-                "find-blade": {
-                    frames: 18,
-                    img: "find-blade-sprite.png",
-                    title: "It is the mean spirited blade",
-                    type: "find-blade",
-                    value: 0,
-                    movePattern: "seek-egg",
-                    flying: true
+    class TitleScreen {
+        constructor(jetpack, canvas, imagePath, width, height) {
+            this.jetpack = jetpack;
+            this.canvas = canvas;
+            this.imagePath = Utils_3.Utils.getTileImagePath(imagePath);
+            this.width = width;
+            this.height = height;
+        }
+        render(callback) {
+            const boardSize = new BoardSize_3.BoardSize(10);
+            this.canvas.sizeCanvas(boardSize);
+            this.canvas.darkBackground();
+            const titleImage = document.createElement("img");
+            titleImage.addEventListener("load", () => {
+                this.drawTheBigEgg(titleImage, 0.02, true, callback);
+            }, false);
+            titleImage.setAttribute("src", this.imagePath);
+            titleImage.setAttribute("width", this.width.toString());
+            titleImage.setAttribute("height", this.height.toString());
+        }
+        drawTheBigEgg(titleImage, opacity, show, callback) {
+            const ctx = this.canvas.getDrawingContext();
+            const canvas = this.canvas.getCanvas();
+            this.canvas.darkBackground();
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = "lighten";
+            // this.canvas.wipeCanvas("rgb(0,0,0)");
+            ctx.globalAlpha = opacity;
+            ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
+            if (show) {
+                opacity += 0.01;
+                if (opacity >= 1) {
+                    // wait, fade the egg
+                    const v = setTimeout(() => {
+                        // and start fading!
+                        this.drawTheBigEgg(titleImage, opacity, false, callback);
+                    }, 1000);
+                    return false;
                 }
-            };
-        }
-    }
-    exports.PlayerTypes = PlayerTypes;
-});
-define("BoardCollisions", ["require", "exports", "Coords", "Utils", "ramda"], function (require, exports, Coords_3, Utils_3, _) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // Board Collide
-    // deals with egg splitting tiles
-    exports.checkBoardCollisions = (board, playerTypes, players) => {
-        return addIDsToPlayers(players.reduce((newPlayers, player) => {
-            const checkedPlayers = checkPlayerBoardCollision(board, playerTypes)(player);
-            return [...newPlayers, ...checkedPlayers];
-        }, []));
-    };
-    // players need different IDs to make sure they make sense
-    const addIDsToPlayers = (players) => {
-        return players.map((player, index) => {
-            return player.modify({
-                id: index
-            });
-        });
-    };
-    const checkPlayerBoardCollision = (board, playerTypes) => (player) => {
-        return isCollision(board)(player)
-            ? exports.splitPlayer(playerTypes)(player)
-            : [player];
-    };
-    const isCollision = (board) => (player) => isPlayerInTile(player) &&
-        isCollisionTile(board)(player) &&
-        isPlayerValueHighEnough(player);
-    const isPlayerInTile = (player) => player.coords.offsetX === 0 && player.coords.offsetY === 0;
-    const isCollisionTile = (board) => (player) => {
-        const collidedTiles = getCollidedTiles(board)(player);
-        return collidedTiles.size > 0;
-    };
-    const isPlayerValueHighEnough = (player) => {
-        return player.value > 1;
-    };
-    const isSplitterTile = (tile) => tile.get("action") === "split-eggs";
-    exports.getSplitterTiles = (board) => {
-        return board.getAllTiles().filter(isSplitterTile);
-    };
-    const getCollidedTiles = (board) => (player) => {
-        const isPlayerOnTileFunc = exports.isPlayerOnTile(player);
-        return exports.getSplitterTiles(board).filter(isPlayerOnTileFunc);
-    };
-    exports.isPlayerOnTile = (player) => (tile) => {
-        return player.coords.x === tile.x && player.coords.y === tile.y;
-    };
-    // would be clevererer about this but we don't have many eggs
-    exports.newValues = (value) => {
-        if (value === 2) {
-            return [1, 1];
-        }
-        if (value === 3) {
-            return [2, 1];
-        }
-        if (value === 4) {
-            return [2, 2];
-        }
-        return [];
-    };
-    const combineDirectionsAndValues = (x, y) => {
-        return {
-            value: x,
-            direction: y
-        };
-    };
-    exports.getValuesAndDirections = (value) => {
-        const values = exports.newValues(value);
-        const directions = [-1, 1];
-        return _.zipWith(combineDirectionsAndValues, values, directions);
-    };
-    exports.splitPlayer = playerTypes => (player) => {
-        const items = exports.getValuesAndDirections(player.value);
-        const playerFromItemFunc = playerFromItem(playerTypes, player);
-        return items.map(playerFromItemFunc);
-    };
-    const playerFromItem = (playerTypes, player) => (item) => {
-        const newPlayerType = Utils_3.Utils.getPlayerByValue(playerTypes, item.value);
-        const newPlayerParams = Object.assign({}, newPlayerType, {
-            direction: new Coords_3.Coords({
-                x: item.direction
-            }),
-            value: item.value,
-            lastAction: "split"
-        });
-        return player.modify(newPlayerParams);
-    };
-});
-// responsible for the care and feeding of the html canvas and it's size on screen etc etc etc
-define("Canvas", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Canvas {
-        constructor(boardSize) {
-            this.imagesFolder = "img/";
-            this.boardSize = boardSize;
-            const tileSize = this.sizeCanvas(boardSize);
-            this.loadCanvas(boardSize, tileSize);
-        }
-        getDrawingContext() {
-            return this.ctx;
-        }
-        getCanvas() {
-            return this.canvas;
-        }
-        getImagesFolder() {
-            return this.imagesFolder;
-        }
-        wipeCanvas(fillStyle) {
-            this.ctx.fillStyle = fillStyle;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-        // takes BoardSize, returns size of each tile
-        sizeCanvas(boardSize) {
-            const maxBoardSize = this.getMaxBoardSize(boardSize);
-            const tileSize = this.calcTileSize(boardSize);
-            this.loadCanvas(boardSize, tileSize);
-            this.positionCanvas(maxBoardSize);
-            this.boardSize = boardSize;
-            return tileSize;
-        }
-        positionCanvas(maxBoardSize) {
-            const windowHeight = window.innerHeight;
-            const canvasTop = this.getCanvasTop(windowHeight, maxBoardSize);
-            const wrapper = document.getElementById("wrapper");
-            if (wrapper) {
-                wrapper.style.paddingTop = canvasTop.toString() + "px";
-            }
-        }
-        getCanvasTop(windowHeight, boardHeight) {
-            if (boardHeight < windowHeight) {
-                return (windowHeight - boardHeight) / 2;
-            }
-            return 0;
-        }
-        calcTileSize(boardSize) {
-            const maxBoardSize = this.getMaxBoardSize(this.boardSize);
-            const tileSize = maxBoardSize / boardSize.width;
-            return Math.floor(tileSize);
-        }
-        darkBackground() {
-            const background = document.getElementById("background");
-            if (!background) {
-                return;
-            }
-            if (!background.classList.contains('dark')) {
-                background.classList.add('dark');
-            }
-        }
-        gradientBackground() {
-            const background = document.getElementById("background");
-            if (!background) {
-                return;
-            }
-            if (background.classList.contains('dark')) {
-                background.classList.remove('dark');
-            }
-        }
-        getMaxBoardSize(boardSize) {
-            let width = window.innerWidth;
-            let height = window.innerHeight;
-            if (width > height) {
-                const difference = height % boardSize.width;
-                height = height - difference;
-                return height;
             }
             else {
-                const difference = width % boardSize.width;
-                width = width - difference;
-                return width;
+                opacity = opacity - 0.03;
+                if (opacity <= 0) {
+                    callback();
+                    titleImage = null;
+                    return false;
+                }
             }
-        }
-        loadCanvas(boardSize, tileSize) {
-            this.canvas = document.getElementById("canvas");
-            if (!this.canvas) {
-                return;
-            }
-            this.canvas.width = boardSize.width * tileSize;
-            this.canvas.height = boardSize.height * tileSize;
-            this.ctx = this.canvas.getContext("2d");
-            this.sizeBackground(boardSize, tileSize);
-        }
-        sizeBackground(boardSize, tileSize) {
-            const background = document.getElementById("background");
-            if (!background) {
-                return;
-            }
-            background.style.width = String(boardSize.width * tileSize) + "px";
-            background.style.height = String(boardSize.height * tileSize) + "px";
-            background.style.opacity = "1.0";
+            this.jetpack.animationHandle = window.requestAnimationFrame(() => {
+                this.drawTheBigEgg(titleImage, opacity, show, callback);
+            });
         }
     }
-    exports.Canvas = Canvas;
+    exports.TitleScreen = TitleScreen;
 });
-define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], function (require, exports, immutable_5, Utils_4, _) {
+// sets up Web Audio
+define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class WebAudio {
+        constructor() {
+            this.audioReady = false;
+            this.audioBuffers = {}; // object containing a buffer for each game sound
+            this.soundPaths = [
+                "bright-bell",
+                "pop",
+                "soft-bell",
+                "warp",
+                "thud",
+                "woo",
+                "crate-smash",
+                "switch",
+                "power-up",
+                "bounce"
+            ];
+        }
+        init() {
+            this.audioContext = this.createAudioContext(); // create audioContext
+            this.output = this.createLimiter(this.audioContext); // create limiter and link up
+            const promises = this.fetchSounds(this.soundPaths);
+            Promise.all(promises).then(buffers => {
+                this.audioReady = true;
+            });
+        }
+        fetchSounds(soundPaths) {
+            return soundPaths.map(soundName => {
+                const path = this.getSoundPath(soundName);
+                return this.loadBuffer(soundName, path);
+            });
+        }
+        createAudioContext() {
+            if (this.audioContext) {
+                return this.audioContext;
+            }
+            return new (window.AudioContext ||
+                window.webkitAudioContext)();
+        }
+        createLimiter(audioCtx) {
+            // Create a compressor node
+            const compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.value = -1;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0;
+            compressor.release.value = 0.25;
+            compressor.connect(audioCtx.destination);
+            return compressor;
+        }
+        playSound(soundName, pan) {
+            if (!this.audioReady) {
+                return false;
+            }
+            this.getAudioNode(soundName, pan).caseOf({
+                just: audioNode => audioNode.start(),
+                nothing: () => {
+                    // 
+                }
+            });
+        }
+        getAudioNode(soundName, pan) {
+            const audioBuffer = Object
+                .values(this.audioBuffers)
+                .find(name => name.name === soundName);
+            if (audioBuffer) {
+                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer, pan));
+            }
+            return tsmonad_3.Maybe.nothing();
+        }
+        getSoundPath(soundName) {
+            return "/sounds/" + soundName + ".wav";
+        }
+        createOutput(buffer, pan) {
+            const panner = this.audioContext.createStereoPanner();
+            panner.connect(this.output);
+            panner.pan.value = pan;
+            const source = this.audioContext.createBufferSource();
+            source.buffer = buffer.buffer;
+            source.connect(panner);
+            return source;
+        }
+        storeBuffer(soundName, buffer) {
+            const audioBuffer = {
+                name: soundName,
+                buffer
+            };
+            return (this.audioBuffers[soundName] = audioBuffer);
+        }
+        loadBuffer(soundName, url) {
+            return new Promise((resolve, reject) => {
+                const request = new XMLHttpRequest();
+                request.open("GET", url, true);
+                request.responseType = "arraybuffer";
+                request.onload = () => {
+                    this.audioContext.decodeAudioData(request.response, buffer => {
+                        if (!buffer) {
+                            reject("Buffer could not be read!");
+                        }
+                        this.storeBuffer(soundName, buffer);
+                        resolve(buffer);
+                    }, error => {
+                        reject(error);
+                    });
+                };
+                request.onerror = () => {
+                    reject("BufferLoader: XHR error");
+                };
+                request.send();
+            });
+        }
+    }
+    exports.WebAudio = WebAudio;
+});
+define("logic/Collisions", ["require", "exports", "immutable", "logic/Utils", "ramda"], function (require, exports, immutable_5, Utils_4, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Collisions {
-        constructor(playerTypes) {
-            this.playerTypes = playerTypes;
-        }
         checkAllCollisions(players) {
             const combinations = this.getAllPlayerCombinations(players);
             // only one egg, do nothing
@@ -1439,220 +1616,16 @@ define("Collisions", ["require", "exports", "immutable", "Utils", "ramda"], func
         combinePlayers(player1, player2) {
             const newValue = player1.value + player2.value;
             const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            const newPlayerType = Utils_4.Utils.getPlayerByValue(this.playerTypes, newValue);
-            if (!newPlayerType) {
-                return [player1, player2];
-            }
-            const newPlayerParams = Object.assign({}, newPlayerType, {
-                coords: higherPlayer.coords,
-                direction: higherPlayer.direction
-            });
-            return [player1.modify(newPlayerParams)];
+            const maybePlayerType = Utils_4.Utils.getPlayerTypeByValue(newValue);
+            return maybePlayerType.map(newPlayerType => {
+                const newParams = Object.assign({}, newPlayerType, { coords: higherPlayer.coords, direction: higherPlayer.direction });
+                return [player1.modify(newParams)];
+            }).valueOr([player1, player2]);
         }
     }
     exports.Collisions = Collisions;
 });
-define("Loader", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Loader {
-        constructor(apiLocation) {
-            this.apiLocation = apiLocation;
-        }
-        callServer(action, params, callback, failCallback) {
-            const xhr = new XMLHttpRequest();
-            params.action = action;
-            xhr.open("POST", this.apiLocation, true);
-            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = () => {
-                const DONE = 4; // readyState 4 means the request is done.
-                const OK = 200; // status 200 is a successful return.
-                if (xhr.readyState === DONE) {
-                    if (xhr.status === OK) {
-                        let object;
-                        try {
-                            object = JSON.parse(xhr.responseText);
-                        }
-                        catch (e) {
-                            failCallback("Could not decode this JSON: " + xhr.responseText);
-                            return;
-                        }
-                        if (object.rc > 0) {
-                            failCallback(object.msg);
-                            return false;
-                        }
-                        else {
-                            callback(object.data);
-                            return true;
-                        }
-                    }
-                    else {
-                        failCallback("Error: " + xhr.status);
-                        return false;
-                    }
-                }
-            };
-            // var formData = this.paramsToFormData(params);
-            const queryString = this.param(params);
-            xhr.send(queryString);
-        }
-        paramsToFormData(params) {
-            const formData = new FormData();
-            for (const key in params) {
-                if (params[key] !== undefined) {
-                    formData.append(key, params[key]);
-                }
-            }
-            return formData;
-        }
-        param(object) {
-            let encodedString = "";
-            for (const prop in object) {
-                if (object.hasOwnProperty(prop)) {
-                    if (encodedString.length > 0) {
-                        encodedString += "&";
-                    }
-                    encodedString += encodeURI(prop + "=" + object[prop]);
-                }
-            }
-            return encodedString;
-        }
-    }
-    exports.Loader = Loader;
-});
-define("SavedLevel", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class SavedLevel {
-        constructor(boardSize, board, levelID) {
-            this.boardSize = boardSize;
-            this.board = board;
-            this.levelID = levelID;
-        }
-        toString() {
-            const data = this.getData();
-            return JSON.stringify(data);
-        }
-        getData() {
-            return {
-                board: this.board,
-                boardSize: this.boardSize.getData(),
-                levelID: this.levelID
-            };
-        }
-    }
-    exports.SavedLevel = SavedLevel;
-});
-define("Levels", ["require", "exports", "BoardSize", "SavedLevel"], function (require, exports, BoardSize_2, SavedLevel_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Levels {
-        constructor(loader) {
-            this.levelID = 0;
-            this.levels = {};
-            this.loader = loader;
-        }
-        getLevelList(callback) {
-            this.loader.callServer("getLevelsList", {}, data => {
-                const levelList = this.cleanLevelList(data);
-                callback(levelList);
-            }, () => {
-                const levelList = this.cleanLevelList([]);
-                callback(levelList);
-            });
-        }
-        populateLevelsList(levelList) {
-            const select = document.getElementById("levelList");
-            if (!select) {
-                return;
-            }
-            while (select.firstChild) {
-                select.removeChild(select.firstChild);
-            }
-            const nullEl = document.createElement("option");
-            nullEl.textContent = "New";
-            nullEl.value = "";
-            if (!this.levelID) {
-                nullEl.selected = true;
-            }
-            select.appendChild(nullEl);
-            for (const i in levelList) {
-                if (levelList[i] !== undefined) {
-                    const levelID = parseInt(i, 10);
-                    const el = document.createElement("option");
-                    el.textContent = levelID.toString();
-                    el.value = levelID.toString();
-                    if (levelID === this.levelID) {
-                        el.selected = true;
-                    }
-                    select.appendChild(el);
-                }
-            }
-        }
-        saveLevel(board, boardSize, levelID, callback) {
-            const saveData = new SavedLevel_1.SavedLevel(boardSize, board, levelID);
-            const saveString = saveData.toString();
-            const params = {
-                data: saveString,
-                levelID: 0
-            };
-            if (levelID) {
-                params.levelID = levelID;
-            }
-            this.loader.callServer("saveLevel", params, savedLevelID => {
-                this.levelID = savedLevelID;
-                callback(savedLevelID);
-            }, (errorMsg) => {
-                // console.log("ERROR: ", errorMsg);
-            });
-        }
-        loadLevel(levelID, callback, failCallback) {
-            this.getLevelList(() => {
-                // console.log("gotLevelList");
-            });
-            const params = {
-                levelID
-            };
-            this.loader.callServer("getLevel", params, data => {
-                this.levelID = levelID;
-                const boardSize = new BoardSize_2.BoardSize(data.boardSize.width);
-                const savedLevel = new SavedLevel_1.SavedLevel(boardSize, data.board, levelID);
-                callback(savedLevel);
-            }, (errorMsg) => {
-                // console.log("ERROR: ", errorMsg);
-                failCallback();
-            });
-        }
-        saveData(levelID, rotationsUsed, score, callback) {
-            const params = {
-                levelID,
-                rotationsUsed,
-                score
-            };
-            this.loader.callServer("saveScore", params, (data) => {
-                callback(data);
-            }, () => {
-                callback({ msg: "call failed" });
-            });
-        }
-        // turn array of numbers into list key'd by levelID with object of won/lost
-        cleanLevelList(list) {
-            const levelList = [];
-            for (const i in list) {
-                if (list[i] !== undefined) {
-                    const levelID = parseInt(list[i], 10);
-                    levelList[levelID] = {
-                        completed: false,
-                        levelID
-                    };
-                }
-            }
-            return levelList;
-        }
-    }
-    exports.Levels = Levels;
-});
-define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"], function (require, exports, BoardSize_3, Coords_4, Map, Utils_5) {
+define("logic/RenderMap", ["require", "exports", "objects/BoardSize", "objects/Coords", "logic/Map", "logic/Utils"], function (require, exports, BoardSize_4, Coords_3, Map, Utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // this is not a render map object, but a class for making them
@@ -1669,10 +1642,10 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
             const startY = coords.y - 1;
             const endY = coords.y + 1;
             const newRenderMap = this.copyRenderMap(renderMap);
-            const boardSize = new BoardSize_3.BoardSize(renderMap.length);
+            const boardSize = new BoardSize_4.BoardSize(renderMap.length);
             for (let x = startX; x <= endX; x++) {
                 for (let y = startY; y <= endY; y++) {
-                    const newCoords = new Coords_4.Coords({ x, y });
+                    const newCoords = new Coords_3.Coords({ x, y });
                     const fixedCoords = Utils_5.Utils.correctForOverflow(newCoords, boardSize);
                     newRenderMap[fixedCoords.x][fixedCoords.y] = true;
                 }
@@ -1728,7 +1701,692 @@ define("RenderMap", ["require", "exports", "BoardSize", "Coords", "Map", "Utils"
     };
     exports.RenderMap = RenderMap;
 });
-define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], function (require, exports, _, tsmonad_2, Coords_5) {
+define("logic/Action", ["require", "exports", "logic/Map"], function (require, exports, Map) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // this concerns all the changes between player and board
+    class Action {
+        // go through each player, check it's effect on board, score and outcome, return new gameState obj
+        checkAllPlayerTileActions(gameState) {
+            return gameState.players.reduce((currentGameState, player) => {
+                const updated = this.checkPlayerTileAction(player, currentGameState.board, currentGameState.score, currentGameState.outcome);
+                const postCrateBoard = this.checkTileBelowPlayer(player, updated.board);
+                return gameState.modify({
+                    board: postCrateBoard,
+                    outcome: updated.outcome,
+                    score: updated.score
+                });
+            }, gameState);
+        }
+        checkPlayerTileAction(player, board, score, outcome) {
+            const currentCoords = player.coords;
+            if (currentCoords.offsetX !== 0 ||
+                currentCoords.offsetY !== 0 ||
+                player.moved === false) {
+                return {
+                    board,
+                    outcome,
+                    score
+                };
+            }
+            const coords = Map.correctForOverflow(board, currentCoords);
+            const tile = board.getTile(coords.x, coords.y);
+            if (tile.collectable > 0) {
+                const newScore = tile.collectable * player.multiplier;
+                const blankTile = Map.cloneTile(1);
+                const newTile = blankTile.modify({
+                    x: coords.x,
+                    y: coords.y
+                });
+                return {
+                    board: board.modify(coords.x, coords.y, newTile),
+                    outcome,
+                    score: score + newScore
+                };
+            }
+            if (tile.action === "completeLevel") {
+                return {
+                    board,
+                    outcome: "completeLevel",
+                    score
+                };
+            }
+            else if (tile.action === "pink-switch") {
+                return {
+                    board: Map.switchTiles(board, 15, 16),
+                    outcome,
+                    score
+                };
+            }
+            else if (tile.action === "green-switch") {
+                return {
+                    board: Map.switchTiles(board, 18, 19),
+                    outcome,
+                    score
+                };
+            }
+            return {
+                board,
+                outcome,
+                score
+            };
+        }
+        // basically, do we need to smash the block below?
+        checkTileBelowPlayer(player, board) {
+            if (player.falling === false) {
+                return board;
+            }
+            const coords = player.coords;
+            const belowCoords = Map.correctForOverflow(board, coords.modify({ y: coords.y + 1 }));
+            const tile = board.getTile(belowCoords.x, belowCoords.y);
+            if (tile.get("breakable") === true) {
+                // if tile below is breakable (and we are already falling and thus have momentum, smash it)
+                const newTile = Map.cloneTile(1);
+                const newTileWithCoords = newTile.modify({
+                    x: belowCoords.x,
+                    y: belowCoords.y
+                });
+                return board.modify(belowCoords.x, belowCoords.y, newTileWithCoords);
+            }
+            return board;
+        }
+    }
+    exports.Action = Action;
+});
+define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "logic/Utils", "ramda"], function (require, exports, Coords_4, Utils_6, _) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // Board Collide
+    // deals with egg splitting tiles
+    exports.checkBoardCollisions = (board, players) => {
+        return addIDsToPlayers(players.reduce((newPlayers, player) => {
+            const checkedPlayers = checkPlayerBoardCollision(board)(player);
+            return [...newPlayers, ...checkedPlayers];
+        }, []));
+    };
+    // players need different IDs to make sure they make sense
+    const addIDsToPlayers = (players) => {
+        return players.map((player, index) => {
+            return player.modify({
+                id: index
+            });
+        });
+    };
+    const checkPlayerBoardCollision = (board) => (player) => {
+        return isCollision(board)(player)
+            ? exports.splitPlayer(player)
+            : [player];
+    };
+    const isCollision = (board) => (player) => isPlayerInTile(player) &&
+        isCollisionTile(board)(player) &&
+        isPlayerValueHighEnough(player);
+    const isPlayerInTile = (player) => player.coords.offsetX === 0 && player.coords.offsetY === 0;
+    const isCollisionTile = (board) => (player) => {
+        const collidedTiles = getCollidedTiles(board)(player);
+        return collidedTiles.size > 0;
+    };
+    const isPlayerValueHighEnough = (player) => {
+        return player.value > 1;
+    };
+    const isSplitterTile = (tile) => tile.get("action") === "split-eggs";
+    exports.getSplitterTiles = (board) => {
+        return board.getAllTiles().filter(isSplitterTile);
+    };
+    const getCollidedTiles = (board) => (player) => {
+        const isPlayerOnTileFunc = exports.isPlayerOnTile(player);
+        return exports.getSplitterTiles(board).filter(isPlayerOnTileFunc);
+    };
+    exports.isPlayerOnTile = (player) => (tile) => {
+        return player.coords.x === tile.x && player.coords.y === tile.y;
+    };
+    // would be clevererer about this but we don't have many eggs
+    exports.newValues = (value) => {
+        if (value === 2) {
+            return [1, 1];
+        }
+        if (value === 3) {
+            return [2, 1];
+        }
+        if (value === 4) {
+            return [2, 2];
+        }
+        return [];
+    };
+    const combineDirectionsAndValues = (x, y) => {
+        return {
+            value: x,
+            direction: y
+        };
+    };
+    exports.getValuesAndDirections = (value) => {
+        const values = exports.newValues(value);
+        const directions = [-1, 1];
+        return _.zipWith(combineDirectionsAndValues, values, directions);
+    };
+    exports.splitPlayer = (player) => {
+        const items = exports.getValuesAndDirections(player.value);
+        const playerFromItemFunc = playerFromItem(player);
+        return items.map(playerFromItemFunc);
+    };
+    const playerFromItem = (player) => (item) => {
+        const maybePlayerType = Utils_6.Utils.getPlayerTypeByValue(item.value);
+        return maybePlayerType.map(playerType => {
+            return player.modify(Object.assign({}, playerType, { direction: new Coords_4.Coords({
+                    x: item.direction
+                }), value: item.value, lastAction: "split" }));
+        }).valueOr(null);
+    };
+});
+// this is the egg
+// it accepts a GameState and an Action
+// and returns a new GameState
+// totally fucking stateless and burnable in itself
+define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_7, BoardSize_5) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class TheEgg {
+        constructor() {
+            this.checkNearlyFinished = (gameState) => {
+                if (Utils_7.Utils.checkLevelIsCompleted(gameState)) {
+                    return gameState.players.map(player => {
+                        if (player.value > 0) {
+                            const maybeNewPlayer = Utils_7.Utils.getPlayerType("rainbow-egg");
+                            return maybeNewPlayer.map(newPlayer => {
+                                return player.modify(Object.assign({}, newPlayer));
+                            }).valueOr(player);
+                        }
+                        return player;
+                    });
+                }
+                return gameState.players;
+            };
+        }
+        doAction(gameState, action, timePassed) {
+            if (action === "rotateLeft") {
+                return this.doRotate(gameState, false);
+            }
+            else if (action === "rotateRight") {
+                return this.doRotate(gameState, true);
+            }
+            else if (action === "") {
+                return this.doGameMove(gameState, timePassed);
+            }
+            return gameState;
+        }
+        // this is where we have to do a shitload of things
+        doGameMove(gameState, timePassed) {
+            // first get rid of old outcome
+            const startGameState = gameState.modify({
+                outcome: ""
+            });
+            const newGameState = Movement.doCalcs(startGameState, timePassed);
+            const action = new Action_1.Action();
+            const newerGameState = action.checkAllPlayerTileActions(newGameState);
+            const collisions = new Collisions_1.Collisions();
+            const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
+            const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, sortedPlayers);
+            const colouredPlayers = this.checkNearlyFinished(newerGameState.modify({
+                players: splitPlayers
+            }));
+            return newerGameState.modify({
+                players: colouredPlayers
+            });
+        }
+        // this rotates board and players
+        // it DOES NOT do animation - not our problem
+        doRotate(gameState, clockwise) {
+            const rotations = gameState.rotations + 1;
+            const boardSize = new BoardSize_5.BoardSize(gameState.board.getLength());
+            const newBoard = Map.rotateBoard(gameState.board, clockwise);
+            const rotatedPlayers = gameState.players.map(player => {
+                return Map.rotatePlayer(boardSize, player, clockwise);
+            });
+            const rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
+            return gameState.modify({
+                board: newBoard,
+                players: rotatedPlayers,
+                rotateAngle,
+                rotations
+            });
+        }
+    }
+    exports.TheEgg = TheEgg;
+});
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "objects/Player", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, Player_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_8) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Jetpack {
+        constructor() {
+            this.moveSpeed = 10;
+            this.paused = true;
+            this.editMode = false;
+            this.levelID = 1;
+            this.levelList = [];
+            this.nextPlayerID = 1;
+            this.score = 0;
+            this.rotationsUsed = 0;
+            this.collectable = 0; // total points on screen
+            this.defaultBoardSize = 20;
+            this.checkResize = false;
+            this.isCalculating = false;
+            this.action = "";
+            this.filterCreateTiles = tiles => {
+                return tiles.filter(tile => {
+                    return tile.createPlayer !== "";
+                });
+            };
+        }
+        go(levelID) {
+            // this.bootstrap();
+            this.bindSizeHandler();
+            this.bindKeyboardHandler();
+            this.bindSwipeHandler();
+            this.pauseRender();
+            this.getTitleScreen(() => {
+                this.loadLevel(levelID, () => {
+                    this.setNextAction("");
+                    this.canvas.gradientBackground();
+                    this.startRender();
+                });
+            });
+        }
+        // load static stuff - map/renderer etc will be worked out later
+        bootstrap(callback) {
+            const boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
+            this.canvas = new Canvas_1.Canvas(boardSize);
+            this.webAudio = new WebAudio_1.WebAudio();
+            this.webAudio.init(); // load web audio stuff
+            const apiLocation = "http://" + window.location.hostname + "/levels/";
+            const loader = new Loader_1.Loader(apiLocation);
+            this.levels = new Levels_1.Levels(loader);
+            this.getLevelList(levelList => {
+                const levelID = this.chooseLevelID(levelList);
+                this.levelID = levelID;
+                callback(levelID);
+            });
+        }
+        displayScore(score) {
+            const scoreElement = document.getElementById("score");
+            if (scoreElement) {
+                scoreElement.innerHTML = score.toString();
+            }
+        }
+        // create player
+        createNewPlayer(type, coords, direction) {
+            const maybePlayerType = Utils_8.Utils.getPlayerType(type);
+            return maybePlayerType.map(playerType => {
+                const player = new Player_1.Player(playerType);
+                const moveSpeed = Utils_8.Utils.moveSpeed(playerType.moveSpeed);
+                const fallSpeed = Utils_8.Utils.fallSpeed(playerType.fallSpeed);
+                const nextID = this.nextPlayerID++;
+                return player.modify({
+                    moveSpeed,
+                    fallSpeed,
+                    coords,
+                    direction
+                });
+            }).valueOr(null);
+        }
+        // make this actually fucking rotate, and choose direction, and do the visual effect thing
+        rotateBoard(clockwise) {
+            if (clockwise) {
+                this.setNextAction("rotateRight");
+            }
+            else {
+                this.setNextAction("rotateLeft");
+            }
+        }
+        getTitleScreen(callback) {
+            const imageSize = { width: 1024, height: 1024 };
+            const imagePath = "large/the-egg.png";
+            const titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
+            titleScreen.render(callback);
+        }
+        getLevelList(callback) {
+            this.levels.getLevelList(levelList => {
+                this.levelList = levelList;
+                callback(levelList);
+            });
+        }
+        // select a random level that has not been completed yet
+        // a return of false means none available (generate a random one)
+        chooseLevelID(levelList) {
+            const availableLevels = levelList.filter(level => {
+                return level.completed === false;
+            });
+            const chosenKey = Utils_8.Utils.getRandomArrayKey(availableLevels);
+            if (!chosenKey) {
+                return false;
+            }
+            const levelID = availableLevels[chosenKey].levelID;
+            return levelID;
+        }
+        setNextAction(action) {
+            this.action = action;
+        }
+        // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
+        createRenderer(boardSize, completedCallback) {
+            this.canvas = new Canvas_1.Canvas(boardSize);
+            this.boardSize = boardSize;
+            return new Renderer_1.Renderer(this.boardSize, this.canvas, () => completedCallback());
+        }
+        startRender() {
+            window.cancelAnimationFrame(this.animationHandle);
+            this.showControls();
+            this.animationHandle = window.requestAnimationFrame(time => this.eventLoop(time, 0));
+        }
+        getNextAction() {
+            const action = this.action;
+            // this.action = "";
+            return action;
+        }
+        // change of heart - this runs all the time and requests various things do stuff
+        // if we are paused, it is nothing, but the loop runs all the same
+        // we are separating one frame ==== one turn
+        // as this does not work for things like rotation
+        // which is one 'turn' but many frames
+        eventLoop(time, lastTime) {
+            this.animationHandle = window.requestAnimationFrame(newTime => this.eventLoop(newTime, time));
+            const timePassed = this.calcTimePassed(time, lastTime);
+            this.displayFrameRate(timePassed);
+            const action = this.getNextAction();
+            this.gameCycle(timePassed, action);
+        }
+        // this does one step of the game
+        gameCycle(timePassed, action) {
+            const oldGameState = this.getCurrentGameState();
+            if (action === "rotateLeft") {
+                const rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
+                this.doBoardRotation(false, rotatedLeftState);
+                this.setNextAction("rotatingLeft");
+                return false;
+            }
+            else if (action === "rotateRight") {
+                const rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
+                this.doBoardRotation(true, rotatedRightState);
+                this.setNextAction("rotatingRight");
+                return false;
+            }
+            else if (action.length > 0) {
+                return false;
+            }
+            if (oldGameState.outcome.length > 0) {
+                const continueGame = this.checkOutcome(oldGameState);
+                if (continueGame === false) {
+                    this.setNextAction("stop");
+                }
+            }
+            const newGameState = this.getNewGameState(oldGameState, action, timePassed);
+            if (oldGameState.score !== newGameState.score) {
+                this.displayScore(newGameState.score);
+            }
+            this.renderChanges(oldGameState, newGameState);
+        }
+        // return true for continue play, false for stop
+        checkOutcome(gameState) {
+            if (gameState.outcome === "completeLevel") {
+                // egg is over cup - check whether we've completed
+                const completed = this.completeLevel(gameState.board, gameState.players);
+                if (completed) {
+                    this.webAudio.playSound("bright-bell", 0);
+                    this.nextLevel(gameState.score, gameState.rotations);
+                    return false;
+                }
+            }
+            return true;
+        }
+        // or at least try
+        completeLevel(board, players) {
+            const collectable = this.getCollectable(board);
+            const playerCount = this.countPlayers(players);
+            if (collectable < 1 && playerCount < 2) {
+                return true;
+            }
+            return false;
+        }
+        getBoardFromArray(boardArray) {
+            return Map.makeBoardFromArray(boardArray);
+        }
+        // create first "frame" of gameState from board
+        // create players etc
+        getBlankGameState(board) {
+            const players = this.createPlayers(board);
+            return new GameState_1.GameState({
+                board,
+                players
+            });
+        }
+        // current game state from array
+        getCurrentGameState() {
+            return this.gameStates.slice(-1)[0]; // set to new last item
+        }
+        resetGameState(board) {
+            const gameState = this.getBlankGameState(board);
+            this.gameStates = [gameState];
+        }
+        updateGameState(oldGameState, gameState) {
+            this.gameStates = [oldGameState, gameState];
+        }
+        // do next move, plop new state on pile, return new state
+        getNewGameState(gameState, action, timePassed) {
+            const theEgg = new TheEgg_1.TheEgg();
+            const newGameState = theEgg.doAction(gameState, action, timePassed);
+            this.updateGameState(gameState, newGameState);
+            this.playSounds(gameState, newGameState);
+            return newGameState;
+        }
+        // check changes in board, get sounds, trigger them
+        playSounds(oldState, newState) {
+            _.map(sound => sound.caseOf({
+                just: audio => this.webAudio.playSound(audio.name, audio.pan),
+                nothing: () => {
+                    // don't play a sound
+                }
+            }), AudioTriggers.triggerSounds(oldState)(newState));
+        }
+        renderEverything(gameState) {
+            const boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
+            const blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, true);
+            this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
+        }
+        renderChanges(oldGameState, newGameState) {
+            const boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
+            // if rotated everything changes anyway
+            if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
+                return this.renderEverything(newGameState);
+            }
+            // player map is covering old shit up
+            const playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
+            // render changes
+            const boardRenderMap = RenderMap_1.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
+            const finalRenderMap = RenderMap_1.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
+            this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
+        }
+        sizeCanvas(boardSize) {
+            if (!this.checkResize) {
+                return false;
+            }
+            this.renderer.resize(boardSize);
+            this.checkResize = false;
+        }
+        // create empty renderMap based on boardSize, and then apply each player's position to it
+        createRenderMapFromPlayers(players, boardSize) {
+            const blankMap = RenderMap_1.RenderMap.createRenderMap(boardSize.width, false);
+            return players.reduce((map, player) => {
+                return RenderMap_1.RenderMap.addPlayerToRenderMap(player, map);
+            }, blankMap);
+        }
+        calcTimePassed(time, lastTime) {
+            const difference = Math.min(time - lastTime, 20);
+            return difference;
+        }
+        displayFrameRate(timePassed) {
+            const frameRate = Math.floor(1000 / timePassed);
+            const fps = document.getElementById("fps");
+            if (fps) {
+                fps.innerHTML = frameRate.toFixed(3) + "fps";
+            }
+        }
+        nextLevel(score, rotations) {
+            this.pauseRender();
+            this.levels.saveData(this.levelID, rotations, score, data => {
+                this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
+                this.levelID = this.chooseLevelID(this.levelList);
+                this.go(this.levelID);
+            });
+        }
+        markLevelAsCompleted(levelList, levelID) {
+            levelList[levelID].completed = true;
+            return levelList;
+        }
+        pauseRender() {
+            this.paused = true;
+            this.hideControls();
+            window.cancelAnimationFrame(this.animationHandle);
+        }
+        showControls() {
+            const controlHeader = document.getElementById("controlHeader");
+            if (controlHeader && controlHeader.classList.contains("hidden")) {
+                controlHeader.classList.remove("hidden");
+            }
+        }
+        hideControls() {
+            const controlHeader = document.getElementById("controlHeader");
+            if (controlHeader && !controlHeader.classList.contains("hidden")) {
+                controlHeader.classList.add("hidden");
+            }
+        }
+        countPlayers(players) {
+            return players.reduce((total, player) => {
+                if (player && player.value > 0) {
+                    return total + 1;
+                }
+                else {
+                    return total;
+                }
+            }, 0);
+        }
+        // cycle through all map tiles, find egg cups etc and create players
+        createPlayers(board) {
+            const tiles = board.getAllTiles();
+            const filtered = this.filterCreateTiles(tiles);
+            const players = filtered.map((tile) => {
+                const type = tile.createPlayer;
+                const coords = new Coords_5.Coords({
+                    offsetX: 0,
+                    offsetY: 0,
+                    x: tile.x,
+                    y: tile.y
+                });
+                const direction = new Coords_5.Coords({ x: 1 });
+                return this.createNewPlayer(type, coords, direction);
+            });
+            return players;
+        }
+        // get total outstanding points left to grab on board
+        getCollectable(board) {
+            const tiles = board.getAllTiles();
+            return tiles.reduce((collectable, tile) => {
+                const score = tile.get("collectable");
+                if (score > 0) {
+                    return collectable + score;
+                }
+                else {
+                    return collectable;
+                }
+            }, 0);
+        }
+        doBoardRotation(clockwise, gameState) {
+            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
+                this.renderEverything(gameState);
+                this.setNextAction(""); // continue playing the game
+            });
+        }
+        loadLevel(levelID, callback) {
+            this.levels.loadLevel(levelID, (savedLevel) => {
+                this.renderer = this.createRenderer(savedLevel.boardSize, () => {
+                    const board = this.getBoardFromArray(savedLevel.board);
+                    this.resetGameState(board);
+                    const gameState = this.getCurrentGameState();
+                    this.renderEverything(gameState);
+                    callback();
+                });
+            }, () => {
+                this.renderer = this.createRenderer(this.boardSize, () => {
+                    const board = Map.generateRandomBoard(this.boardSize);
+                    this.resetGameState(board);
+                    const gameState = this.getCurrentGameState();
+                    this.renderEverything(gameState);
+                    callback();
+                });
+            });
+        }
+        bindSizeHandler() {
+            window.addEventListener("resize", () => {
+                this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
+            });
+        }
+        bindKeyboardHandler() {
+            window.addEventListener("keydown", event => {
+                if (event.keyCode === 37) {
+                    // left arrow
+                    this.rotateBoard(false);
+                }
+                if (event.keyCode === 39) {
+                    // right arrow
+                    this.rotateBoard(true);
+                }
+                if (event.keyCode === 80) {
+                    // 'p'
+                    this.togglePaused();
+                }
+                if (event.keyCode === 83) {
+                    // 's'
+                    this.doStep();
+                }
+                if (event.keyCode === 70) {
+                    // 'f'
+                    this.toggleFPS();
+                }
+            });
+        }
+        bindSwipeHandler() {
+            const element = document.getElementById("wrapper");
+            const hammertime = new Hammer(element, {});
+            hammertime.on("swipeleft", ev => {
+                this.rotateBoard(false);
+            });
+            hammertime.on("swiperight", ev => {
+                this.rotateBoard(true);
+            });
+        }
+        toggleFPS() {
+            const fps = document.getElementById("fps");
+            if (!fps) {
+                return false;
+            }
+            if (fps.style.display !== "block") {
+                fps.style.display = "block";
+            }
+            else {
+                fps.style.display = "none";
+            }
+        }
+        togglePaused() {
+            if (this.paused) {
+                this.startRender();
+            }
+            else {
+                this.pauseRender();
+            }
+        }
+        doStep() {
+            this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
+        }
+    }
+    exports.Jetpack = Jetpack;
+});
+define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/Coords"], function (require, exports, _, tsmonad_4, Coords_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getMapSize = (map) => {
@@ -1745,7 +2403,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     exports.wrapValue = (map) => (x, y) => {
         const mapSize = exports.getMapSize(map);
-        return new Coords_5.Coords({
+        return new Coords_6.Coords({
             x: overflow(x, mapSize.width),
             y: overflow(y, mapSize.height)
         });
@@ -1753,7 +2411,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     exports.findAdjacent = (map) => (point) => {
         const wrappedPoint = exports.wrapValue(map)(point.x, point.y);
         const { x, y } = wrappedPoint;
-        return tsmonad_2.Maybe.just(map[x][y]);
+        return tsmonad_4.Maybe.just(map[x][y]);
     };
     exports.addToList = (list, point) => [
         point,
@@ -1814,20 +2472,20 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         const partialFindAnswer = exports.findAnswer(targetPoint);
         const found = _.find(list, partialFindAnswer);
         if (found) {
-            return tsmonad_2.Maybe.just(found);
+            return tsmonad_4.Maybe.just(found);
         }
-        return tsmonad_2.Maybe.nothing();
+        return tsmonad_4.Maybe.nothing();
     };
     exports.flipAnswer = (list) => _.reverse(list);
     exports.processMoveList = (map) => (lists) => (targetPoint) => {
         const moveOptions = exports.getMultipleMoveOptions(map)(lists);
         if (moveOptions.length === 0) {
-            return tsmonad_2.Maybe.nothing();
+            return tsmonad_4.Maybe.nothing();
         }
         const solution = exports.findAnswerInList(targetPoint)(moveOptions);
         return solution.caseOf({
             just: value => {
-                return tsmonad_2.Maybe.just(exports.flipAnswer(value));
+                return tsmonad_4.Maybe.just(exports.flipAnswer(value));
             },
             nothing: () => {
                 return exports.processMoveList(map)(moveOptions)(targetPoint);
@@ -1836,7 +2494,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
     };
     exports.findPath = (map) => (start) => (target) => {
         if (start.equals(target)) {
-            return tsmonad_2.Maybe.nothing();
+            return tsmonad_4.Maybe.nothing();
         }
         return exports.processMoveList(map)([[start]])(target);
     };
@@ -1860,14 +2518,14 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
             .map(obj => obj.valueOr([]))
             .filter(arr => arr.length > 0)
             .sort(sortArray);
-        return paths.count() > 0 ? tsmonad_2.Maybe.just(paths.first()) : tsmonad_2.Maybe.nothing();
+        return paths.count() > 0 ? tsmonad_4.Maybe.just(paths.first()) : tsmonad_4.Maybe.nothing();
     };
     // work out what first move is according to directions
     exports.findNextDirection = (pointList) => {
         const parts = _.slice(pointList, 0, 2);
         const start = parts[0];
         const end = parts[1];
-        return new Coords_5.Coords({
+        return new Coords_6.Coords({
             x: calcDifference(start.x, end.x),
             y: calcDifference(start.y, end.y)
         });
@@ -1883,7 +2541,7 @@ define("PathFinder", ["require", "exports", "lodash", "tsmonad", "Coords"], func
         return diff;
     };
 });
-define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder", "RenderMap", "immutable"], function (require, exports, _, Coords_6, Map, PathFinder, RenderMap_1, immutable_6) {
+define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logic/Map", "logic/PathFinder", "logic/RenderMap", "immutable"], function (require, exports, _, Coords_7, Map, PathFinder, RenderMap_2, immutable_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const OFFSET_DIVIDE = 100;
@@ -1985,11 +2643,11 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         if (player.coords.offsetX !== 0 || player.coords.offsetY !== 0) {
             return player;
         }
-        const pathMap = RenderMap_1.RenderMap.createPathFindingMapFromBoard(board);
+        const pathMap = RenderMap_2.RenderMap.createPathFindingMapFromBoard(board);
         const maybe = PathFinder.findClosestPath(pathMap)(player.coords)(getAllCoords(players));
         return maybe.map(PathFinder.findNextDirection).caseOf({
             just: val => player.modify({
-                direction: new Coords_6.Coords(val)
+                direction: new Coords_7.Coords(val)
             }),
             nothing: () => player
         });
@@ -2059,7 +2717,7 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
             player.currentFrame === 0) {
             // if we're still, and have returned to main frame, disregard old movement
             return player.modify({
-                oldDirection: new Coords_6.Coords()
+                oldDirection: new Coords_7.Coords()
             });
         }
         let newFrame = player.currentFrame;
@@ -2320,799 +2978,48 @@ define("Movement", ["require", "exports", "ramda", "Coords", "Map", "PathFinder"
         });
     };
 });
-// this is the egg
-// it accepts a GameState and an Action
-// and returns a new GameState
-// totally fucking stateless and burnable in itself
-define("TheEgg", ["require", "exports", "Action", "BoardCollisions", "BoardSize", "Collisions", "Map", "Movement", "Utils"], function (require, exports, Action_1, BoardCollisions, BoardSize_4, Collisions_1, Map, Movement, Utils_6) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class TheEgg {
-        constructor(playerTypes) {
-            this.checkNearlyFinished = playerTypes => (gameState) => {
-                if (Utils_6.Utils.checkLevelIsCompleted(gameState)) {
-                    return gameState.players.map(player => {
-                        if (player.value > 0) {
-                            const newPlayer = Utils_6.Utils.getPlayerByType(playerTypes, "rainbow-egg");
-                            return player.modify(Object.assign({}, newPlayer, { value: player.value }));
-                        }
-                        return player;
-                    });
-                }
-                return gameState.players;
-            };
-            this.playerTypes = playerTypes;
-        }
-        doAction(gameState, action, timePassed) {
-            if (action === "rotateLeft") {
-                return this.doRotate(gameState, false);
-            }
-            else if (action === "rotateRight") {
-                return this.doRotate(gameState, true);
-            }
-            else if (action === "") {
-                return this.doGameMove(gameState, timePassed);
-            }
-            return gameState;
-        }
-        // this is where we have to do a shitload of things
-        doGameMove(gameState, timePassed) {
-            // first get rid of old outcome
-            const startGameState = gameState.modify({
-                outcome: ""
-            });
-            const newGameState = Movement.doCalcs(startGameState, timePassed);
-            const action = new Action_1.Action();
-            const newerGameState = action.checkAllPlayerTileActions(newGameState);
-            const collisions = new Collisions_1.Collisions(this.playerTypes);
-            const sortedPlayers = collisions.checkAllCollisions(newerGameState.players);
-            const splitPlayers = BoardCollisions.checkBoardCollisions(newerGameState.board, this.playerTypes, sortedPlayers);
-            const colouredPlayers = this.checkNearlyFinished(this.playerTypes)(newerGameState.modify({
-                players: splitPlayers
-            }));
-            return newerGameState.modify({
-                players: colouredPlayers
-            });
-        }
-        // this rotates board and players
-        // it DOES NOT do animation - not our problem
-        doRotate(gameState, clockwise) {
-            const rotations = gameState.rotations + 1;
-            const boardSize = new BoardSize_4.BoardSize(gameState.board.getLength());
-            const newBoard = Map.rotateBoard(gameState.board, clockwise);
-            const rotatedPlayers = gameState.players.map(player => {
-                return Map.rotatePlayer(boardSize, player, clockwise);
-            });
-            const rotateAngle = Map.changeRenderAngle(gameState.rotateAngle, clockwise);
-            return gameState.modify({
-                board: newBoard,
-                players: rotatedPlayers,
-                rotateAngle,
-                rotations
-            });
-        }
-    }
-    exports.TheEgg = TheEgg;
-});
-define("TileChooser", ["require", "exports", "TileSet", "ramda"], function (require, exports, TileSet_2, _) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    // used in editor, draws a bunch of 32x32 tiles for selecting
-    class TileChooser {
-        constructor(renderer) {
-            this.chosenTileID = 0;
-            this.renderer = renderer;
-        }
-        chooseTile(id) {
-            this.chosenTileID = id;
-            this.highlightChosenTile(id);
-        }
-        highlightChosenTile(id) {
-            const tileChooser = document.getElementById("tileChooser");
-            const children = tileChooser.children;
-            const childrenArray = [].slice.call(children);
-            childrenArray.forEach(child => {
-                const className = child.getAttribute("class");
-                if (className === "tile" + id) {
-                    child.setAttribute("style", "border: 1px red solid;");
-                }
-                else {
-                    child.setAttribute("style", "border: 1px white solid;");
-                }
-            });
-        }
-        makeTileImages(tiles) {
-            return _.map(tile => {
-                const tileImage = document.createElement("img");
-                tileImage.setAttribute("src", this.renderer.getTileImagePath(tile));
-                tileImage.setAttribute("width", "32");
-                tileImage.setAttribute("height", "32");
-                tileImage.setAttribute("padding", "2px");
-                tileImage.setAttribute("alt", tile.title);
-                tileImage.setAttribute("style", "border: 1px white solid;");
-                tileImage.setAttribute("class", "tile" + tile.id);
-                tileImage.onclick = () => {
-                    this.chooseTile(tile.id);
-                };
-                return tileImage;
-            }, tiles);
-        }
-        render() {
-            const tiles = TileSet_2.TileSet.getTiles();
-            const images = this.makeTileImages(tiles);
-            const tileChooser = document.getElementById("tileChooser");
-            Object.values(images).forEach(image => {
-                tileChooser.appendChild(image);
-            });
-        }
-    }
-    exports.TileChooser = TileChooser;
-});
-define("TitleScreen", ["require", "exports", "BoardSize"], function (require, exports, BoardSize_5) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class TitleScreen {
-        constructor(jetpack, canvas, imagePath, width, height) {
-            this.jetpack = jetpack;
-            this.canvas = canvas;
-            this.imagePath = this.canvas.getImagesFolder() + imagePath;
-            this.width = width;
-            this.height = height;
-        }
-        render(callback) {
-            const boardSize = new BoardSize_5.BoardSize(10);
-            this.canvas.sizeCanvas(boardSize);
-            this.canvas.darkBackground();
-            const titleImage = document.createElement("img");
-            titleImage.addEventListener("load", () => {
-                this.drawTheBigEgg(titleImage, 0.02, true, callback);
-            }, false);
-            titleImage.setAttribute("src", this.imagePath);
-            titleImage.setAttribute("width", this.width.toString());
-            titleImage.setAttribute("height", this.height.toString());
-        }
-        drawTheBigEgg(titleImage, opacity, show, callback) {
-            const ctx = this.canvas.getDrawingContext();
-            const canvas = this.canvas.getCanvas();
-            this.canvas.darkBackground();
-            ctx.globalAlpha = 1;
-            ctx.globalCompositeOperation = "lighten";
-            // this.canvas.wipeCanvas("rgb(0,0,0)");
-            ctx.globalAlpha = opacity;
-            ctx.drawImage(titleImage, 0, 0, titleImage.width, titleImage.height, 0, 0, canvas.width, canvas.height);
-            if (show) {
-                opacity += 0.01;
-                if (opacity >= 1) {
-                    // wait, fade the egg
-                    const v = setTimeout(() => {
-                        // and start fading!
-                        this.drawTheBigEgg(titleImage, opacity, false, callback);
-                    }, 1000);
-                    return false;
-                }
-            }
-            else {
-                opacity = opacity - 0.03;
-                if (opacity <= 0) {
-                    callback();
-                    titleImage = null;
-                    return false;
-                }
-            }
-            this.jetpack.animationHandle = window.requestAnimationFrame(() => {
-                this.drawTheBigEgg(titleImage, opacity, show, callback);
-            });
-        }
-    }
-    exports.TitleScreen = TitleScreen;
-});
-// sets up Web Audio
-define("WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class WebAudio {
-        constructor() {
-            this.audioReady = false;
-            this.audioBuffers = {}; // object containing a buffer for each game sound
-            this.soundPaths = [
-                "bright-bell",
-                "pop",
-                "soft-bell",
-                "warp",
-                "thud",
-                "woo",
-                "crate-smash",
-                "switch",
-                "power-up",
-                "bounce"
-            ];
-        }
-        init() {
-            this.audioContext = this.createAudioContext(); // create audioContext
-            this.output = this.createLimiter(this.audioContext); // create limiter and link up
-            const promises = this.fetchSounds(this.soundPaths);
-            Promise.all(promises).then(buffers => {
-                this.audioReady = true;
-            });
-        }
-        fetchSounds(soundPaths) {
-            return soundPaths.map(soundName => {
-                const path = this.getSoundPath(soundName);
-                return this.loadBuffer(soundName, path);
-            });
-        }
-        createAudioContext() {
-            if (this.audioContext) {
-                return this.audioContext;
-            }
-            return new (window.AudioContext ||
-                window.webkitAudioContext)();
-        }
-        createLimiter(audioCtx) {
-            // Create a compressor node
-            const compressor = audioCtx.createDynamicsCompressor();
-            compressor.threshold.value = -1;
-            compressor.knee.value = 40;
-            compressor.ratio.value = 12;
-            compressor.attack.value = 0;
-            compressor.release.value = 0.25;
-            compressor.connect(audioCtx.destination);
-            return compressor;
-        }
-        playSound(soundName, pan) {
-            // console.log(soundName)
-            if (!this.audioReady) {
-                return false;
-            }
-            this.getAudioNode(soundName, pan).caseOf({
-                just: audioNode => audioNode.start(),
-                nothing: () => {
-                    // console.log("not found")
-                }
-            });
-        }
-        getAudioNode(soundName, pan) {
-            const audioBuffer = Object
-                .values(this.audioBuffers)
-                .find(name => name.name === soundName);
-            if (audioBuffer) {
-                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer, pan));
-            }
-            return tsmonad_3.Maybe.nothing();
-        }
-        getSoundPath(soundName) {
-            return "/sounds/" + soundName + ".wav";
-        }
-        createOutput(buffer, pan) {
-            const panner = this.audioContext.createStereoPanner();
-            panner.connect(this.output);
-            panner.pan.value = pan;
-            const source = this.audioContext.createBufferSource();
-            source.buffer = buffer.buffer;
-            source.connect(panner);
-            return source;
-        }
-        storeBuffer(soundName, buffer) {
-            const audioBuffer = {
-                name: soundName,
-                buffer
-            };
-            return (this.audioBuffers[soundName] = audioBuffer);
-        }
-        loadBuffer(soundName, url) {
-            return new Promise((resolve, reject) => {
-                const request = new XMLHttpRequest();
-                request.open("GET", url, true);
-                request.responseType = "arraybuffer";
-                request.onload = () => {
-                    this.audioContext.decodeAudioData(request.response, buffer => {
-                        if (!buffer) {
-                            reject("Buffer could not be read!");
-                        }
-                        this.storeBuffer(soundName, buffer);
-                        resolve(buffer);
-                    }, error => {
-                        reject(error);
-                    });
-                };
-                request.onerror = () => {
-                    reject("BufferLoader: XHR error");
-                };
-                request.send();
-            });
-        }
-    }
-    exports.WebAudio = WebAudio;
-});
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "AudioTriggers", "BoardSize", "Canvas", "Coords", "Editor", "GameState", "Levels", "Loader", "Map", "Player", "PlayerTypes", "Renderer", "RenderMap", "TheEgg", "TileSet", "TitleScreen", "Utils", "WebAudio"], function (require, exports, Hammer, _, AudioTriggers, BoardSize_6, Canvas_1, Coords_7, Editor_1, GameState_1, Levels_1, Loader_1, Map, Player_1, PlayerTypes_1, Renderer_1, RenderMap_2, TheEgg_1, TileSet_3, TitleScreen_1, Utils_7, WebAudio_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Jetpack {
-        constructor() {
-            this.moveSpeed = 10;
-            this.paused = true;
-            this.editMode = false;
-            this.levelID = 1;
-            this.levelList = [];
-            this.nextPlayerID = 1;
-            this.score = 0;
-            this.rotationsUsed = 0;
-            this.collectable = 0; // total points on screen
-            this.playerTypes = {};
-            this.defaultBoardSize = 20;
-            this.checkResize = false;
-            this.isCalculating = false;
-            this.action = "";
-            this.filterCreateTiles = tiles => {
-                return tiles.filter(tile => {
-                    return tile.createPlayer !== "";
-                });
-            };
-        }
-        go(levelID) {
-            // this.bootstrap();
-            this.bindSizeHandler();
-            this.bindKeyboardHandler();
-            this.bindSwipeHandler();
-            this.pauseRender();
-            this.getTitleScreen(() => {
-                this.loadLevel(levelID, () => {
-                    this.setNextAction("");
-                    this.canvas.gradientBackground();
-                    this.startRender();
-                });
-            });
-        }
-        getEditor() {
-            return new Editor_1.Editor();
-        }
-        // load static stuff - map/renderer etc will be worked out later
-        bootstrap(callback) {
-            const boardSize = new BoardSize_6.BoardSize(this.defaultBoardSize);
-            this.canvas = new Canvas_1.Canvas(boardSize);
-            const playerTypes = new PlayerTypes_1.PlayerTypes();
-            this.playerTypes = playerTypes.getPlayerTypes();
-            this.webAudio = new WebAudio_1.WebAudio();
-            this.webAudio.init(); // load web audio stuff
-            const apiLocation = "http://" + window.location.hostname + "/levels/";
-            const loader = new Loader_1.Loader(apiLocation);
-            this.levels = new Levels_1.Levels(loader);
-            this.getLevelList(levelList => {
-                const levelID = this.chooseLevelID(levelList);
-                this.levelID = levelID;
-                callback(levelID);
-            });
-        }
-        displayScore(score) {
-            const scoreElement = document.getElementById("score");
-            if (scoreElement) {
-                scoreElement.innerHTML = score.toString();
-            }
-        }
-        // create player
-        createNewPlayer(playerTypes, type, coords, direction) {
-            const playerType = playerTypes[type];
-            const params = JSON.parse(JSON.stringify(playerType));
-            params.id = this.nextPlayerID++;
-            params.coords = coords;
-            params.direction = direction;
-            if (!Object.hasOwnProperty.call(params, "moveSpeed")) {
-                params.moveSpeed = this.moveSpeed;
-                params.fallSpeed = this.moveSpeed * 1.2;
-            }
-            const player = new Player_1.Player(params);
-            return player;
-        }
-        // make this actually fucking rotate, and choose direction, and do the visual effect thing
-        rotateBoard(clockwise) {
-            if (clockwise) {
-                this.setNextAction("rotateRight");
-            }
-            else {
-                this.setNextAction("rotateLeft");
-            }
-        }
-        getTitleScreen(callback) {
-            const imageSize = { width: 1024, height: 1024 };
-            const imagePath = "large/the-egg.png";
-            const titleScreen = new TitleScreen_1.TitleScreen(this, this.canvas, imagePath, imageSize.width, imageSize.height);
-            titleScreen.render(callback);
-        }
-        getLevelList(callback) {
-            this.levels.getLevelList(levelList => {
-                this.levelList = levelList;
-                callback(levelList);
-            });
-        }
-        // select a random level that has not been completed yet
-        // a return of false means none available (generate a random one)
-        chooseLevelID(levelList) {
-            const availableLevels = levelList.filter(level => {
-                return level.completed === false;
-            });
-            const chosenKey = Utils_7.Utils.getRandomArrayKey(availableLevels);
-            if (!chosenKey) {
-                return false;
-            }
-            const levelID = availableLevels[chosenKey].levelID;
-            return levelID;
-        }
-        setNextAction(action) {
-            this.action = action;
-        }
-        // with no arguments this will cause a blank 12 x 12 board to be created and readied for drawing
-        createRenderer(boardSize, completedCallback) {
-            this.canvas = new Canvas_1.Canvas(boardSize);
-            this.boardSize = boardSize;
-            const tiles = TileSet_3.TileSet.getTiles();
-            return new Renderer_1.Renderer(this, tiles, this.playerTypes, this.boardSize, this.canvas, () => completedCallback());
-        }
-        startRender() {
-            window.cancelAnimationFrame(this.animationHandle);
-            this.showControls();
-            this.animationHandle = window.requestAnimationFrame(time => this.eventLoop(time, 0));
-        }
-        getNextAction() {
-            const action = this.action;
-            // this.action = "";
-            return action;
-        }
-        // change of heart - this runs all the time and requests various things do stuff
-        // if we are paused, it is nothing, but the loop runs all the same
-        // we are separating one frame ==== one turn
-        // as this does not work for things like rotation
-        // which is one 'turn' but many frames
-        eventLoop(time, lastTime) {
-            this.animationHandle = window.requestAnimationFrame(newTime => this.eventLoop(newTime, time));
-            const timePassed = this.calcTimePassed(time, lastTime);
-            this.displayFrameRate(timePassed);
-            const action = this.getNextAction();
-            this.gameCycle(timePassed, action);
-        }
-        // this does one step of the game
-        gameCycle(timePassed, action) {
-            const oldGameState = this.getCurrentGameState();
-            if (action === "rotateLeft") {
-                const rotatedLeftState = this.getNewGameState(oldGameState, "rotateLeft", timePassed);
-                this.doBoardRotation(false, rotatedLeftState);
-                this.setNextAction("rotatingLeft");
-                return false;
-            }
-            else if (action === "rotateRight") {
-                const rotatedRightState = this.getNewGameState(oldGameState, "rotateRight", timePassed);
-                this.doBoardRotation(true, rotatedRightState);
-                this.setNextAction("rotatingRight");
-                return false;
-            }
-            else if (action.length > 0) {
-                return false;
-            }
-            if (oldGameState.outcome.length > 0) {
-                const continueGame = this.checkOutcome(oldGameState);
-                if (continueGame === false) {
-                    this.setNextAction("stop");
-                }
-            }
-            const newGameState = this.getNewGameState(oldGameState, action, timePassed);
-            if (oldGameState.score !== newGameState.score) {
-                this.displayScore(newGameState.score);
-            }
-            this.renderChanges(oldGameState, newGameState);
-        }
-        // return true for continue play, false for stop
-        checkOutcome(gameState) {
-            if (gameState.outcome === "completeLevel") {
-                // egg is over cup - check whether we've completed
-                const completed = this.completeLevel(gameState.board, gameState.players);
-                if (completed) {
-                    this.webAudio.playSound("bright-bell", 0);
-                    this.nextLevel(gameState.score, gameState.rotations);
-                    return false;
-                }
-            }
-            return true;
-        }
-        // or at least try
-        completeLevel(board, players) {
-            const collectable = this.getCollectable(board);
-            const playerCount = this.countPlayers(players);
-            if (collectable < 1 && playerCount < 2) {
-                return true;
-            }
-            return false;
-        }
-        getBoardFromArray(boardArray) {
-            return Map.makeBoardFromArray(boardArray);
-        }
-        // create first "frame" of gameState from board
-        // create players etc
-        getBlankGameState(board) {
-            const players = this.createPlayers(this.playerTypes, board);
-            return new GameState_1.GameState({
-                board,
-                players
-            });
-        }
-        // current game state from array
-        getCurrentGameState() {
-            return this.gameStates.slice(-1)[0]; // set to new last item
-        }
-        resetGameState(board) {
-            const gameState = this.getBlankGameState(board);
-            this.gameStates = [gameState];
-        }
-        updateGameState(oldGameState, gameState) {
-            this.gameStates = [oldGameState, gameState];
-        }
-        // do next move, plop new state on pile, return new state
-        getNewGameState(gameState, action, timePassed) {
-            const theEgg = new TheEgg_1.TheEgg(this.playerTypes);
-            const newGameState = theEgg.doAction(gameState, action, timePassed);
-            this.updateGameState(gameState, newGameState);
-            this.playSounds(gameState, newGameState);
-            return newGameState;
-        }
-        // check changes in board, get sounds, trigger them
-        playSounds(oldState, newState) {
-            _.map(sound => sound.caseOf({
-                just: audio => this.webAudio.playSound(audio.name, audio.pan),
-                nothing: () => {
-                    // don't play a sound
-                }
-            }), AudioTriggers.triggerSounds(oldState)(newState));
-        }
-        renderEverything(gameState) {
-            const boardSize = new BoardSize_6.BoardSize(gameState.board.getLength());
-            const blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, true);
-            this.renderer.render(gameState.board, blankMap, gameState.players, gameState.rotateAngle);
-        }
-        renderChanges(oldGameState, newGameState) {
-            const boardSize = new BoardSize_6.BoardSize(newGameState.board.getLength());
-            // if rotated everything changes anyway
-            if (oldGameState.rotateAngle !== newGameState.rotateAngle) {
-                return this.renderEverything(newGameState);
-            }
-            // player map is covering old shit up
-            const playerRenderMap = this.createRenderMapFromPlayers(oldGameState.players, boardSize);
-            // render changes
-            const boardRenderMap = RenderMap_2.RenderMap.createRenderMapFromBoards(oldGameState.board, newGameState.board);
-            const finalRenderMap = RenderMap_2.RenderMap.combineRenderMaps(playerRenderMap, boardRenderMap);
-            this.renderer.render(newGameState.board, finalRenderMap, newGameState.players, newGameState.rotateAngle);
-        }
-        sizeCanvas(boardSize) {
-            if (!this.checkResize) {
-                return false;
-            }
-            this.renderer.resize(boardSize);
-            this.checkResize = false;
-        }
-        // create empty renderMap based on boardSize, and then apply each player's position to it
-        createRenderMapFromPlayers(players, boardSize) {
-            const blankMap = RenderMap_2.RenderMap.createRenderMap(boardSize.width, false);
-            return players.reduce((map, player) => {
-                return RenderMap_2.RenderMap.addPlayerToRenderMap(player, map);
-            }, blankMap);
-        }
-        calcTimePassed(time, lastTime) {
-            const difference = Math.min(time - lastTime, 20);
-            return difference;
-        }
-        displayFrameRate(timePassed) {
-            const frameRate = Math.floor(1000 / timePassed);
-            const fps = document.getElementById("fps");
-            if (fps) {
-                fps.innerHTML = frameRate.toFixed(3) + "fps";
-            }
-        }
-        nextLevel(score, rotations) {
-            this.pauseRender();
-            this.levels.saveData(this.levelID, rotations, score, data => {
-                this.levelList = this.markLevelAsCompleted(this.levelList, this.levelID);
-                this.levelID = this.chooseLevelID(this.levelList);
-                this.go(this.levelID);
-            });
-        }
-        markLevelAsCompleted(levelList, levelID) {
-            levelList[levelID].completed = true;
-            return levelList;
-        }
-        pauseRender() {
-            this.paused = true;
-            this.hideControls();
-            window.cancelAnimationFrame(this.animationHandle);
-        }
-        showControls() {
-            const controlHeader = document.getElementById("controlHeader");
-            if (controlHeader && controlHeader.classList.contains("hidden")) {
-                controlHeader.classList.remove("hidden");
-            }
-        }
-        hideControls() {
-            const controlHeader = document.getElementById("controlHeader");
-            if (controlHeader && !controlHeader.classList.contains("hidden")) {
-                controlHeader.classList.add("hidden");
-            }
-        }
-        countPlayers(players) {
-            return players.reduce((total, player) => {
-                if (player && player.value > 0) {
-                    return total + 1;
-                }
-                else {
-                    return total;
-                }
-            }, 0);
-        }
-        // cycle through all map tiles, find egg cups etc and create players
-        createPlayers(playerTypes, board) {
-            const tiles = board.getAllTiles();
-            const filtered = this.filterCreateTiles(tiles);
-            const players = filtered.map((tile) => {
-                const type = tile.createPlayer;
-                const coords = new Coords_7.Coords({
-                    offsetX: 0,
-                    offsetY: 0,
-                    x: tile.x,
-                    y: tile.y
-                });
-                const direction = new Coords_7.Coords({ x: 1 });
-                return this.createNewPlayer(playerTypes, type, coords, direction);
-            });
-            return players;
-        }
-        // get total outstanding points left to grab on board
-        getCollectable(board) {
-            const tiles = board.getAllTiles();
-            return tiles.reduce((collectable, tile) => {
-                const score = tile.get("collectable");
-                if (score > 0) {
-                    return collectable + score;
-                }
-                else {
-                    return collectable;
-                }
-            }, 0);
-        }
-        doBoardRotation(clockwise, gameState) {
-            this.renderer.drawRotatingBoard(clockwise, this.moveSpeed, () => {
-                this.renderEverything(gameState);
-                this.setNextAction(""); // continue playing the game
-            });
-        }
-        loadLevel(levelID, callback) {
-            this.levels.loadLevel(levelID, (savedLevel) => {
-                this.renderer = this.createRenderer(savedLevel.boardSize, () => {
-                    const board = this.getBoardFromArray(savedLevel.board);
-                    this.resetGameState(board);
-                    const gameState = this.getCurrentGameState();
-                    this.renderEverything(gameState);
-                    callback();
-                });
-            }, () => {
-                this.renderer = this.createRenderer(this.boardSize, () => {
-                    const board = Map.generateRandomBoard(this.boardSize);
-                    this.resetGameState(board);
-                    const gameState = this.getCurrentGameState();
-                    this.renderEverything(gameState);
-                    callback();
-                });
-            });
-        }
-        bindSizeHandler() {
-            window.addEventListener("resize", () => {
-                this.checkResize = true; // as this event fires quickly - simply request system check new size on next redraw
-            });
-        }
-        bindKeyboardHandler() {
-            window.addEventListener("keydown", event => {
-                if (event.keyCode === 37) {
-                    // left arrow
-                    this.rotateBoard(false);
-                }
-                if (event.keyCode === 39) {
-                    // right arrow
-                    this.rotateBoard(true);
-                }
-                if (event.keyCode === 80) {
-                    // 'p'
-                    this.togglePaused();
-                }
-                if (event.keyCode === 83) {
-                    // 's'
-                    this.doStep();
-                }
-                if (event.keyCode === 70) {
-                    // 'f'
-                    this.toggleFPS();
-                }
-            });
-        }
-        bindSwipeHandler() {
-            const element = document.getElementById("wrapper");
-            const hammertime = new Hammer(element, {});
-            hammertime.on("swipeleft", ev => {
-                this.rotateBoard(false);
-            });
-            hammertime.on("swiperight", ev => {
-                this.rotateBoard(true);
-            });
-        }
-        toggleFPS() {
-            const fps = document.getElementById("fps");
-            if (!fps) {
-                return false;
-            }
-            if (fps.style.display !== "block") {
-                fps.style.display = "block";
-            }
-            else {
-                fps.style.display = "none";
-            }
-        }
-        togglePaused() {
-            if (this.paused) {
-                this.startRender();
-            }
-            else {
-                this.pauseRender();
-            }
-        }
-        doStep() {
-            this.gameCycle(16, this.getNextAction()); // movement based on 60 fps
-        }
-    }
-    exports.Jetpack = Jetpack;
-});
-define("Renderer", ["require", "exports"], function (require, exports) {
+define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils", "data/TileSet", "tsmonad"], function (require, exports, PlayerTypes_2, Utils_9, TileSet_2, tsmonad_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const SPRITE_SIZE = 64;
     const OFFSET_DIVIDE = 100;
     class Renderer {
-        constructor(jetpack, tiles, playerTypes, boardSize, canvas, loadCallback) {
-            this.lampMode = false; // lamp mode only draws around the eggs
+        constructor(boardSize, canvas, loadCallback) {
             this.checkResize = true;
-            this.tileImages = {}; // image elements of tiles
-            this.playerImages = {}; // image element of players
-            this.totalTiles = 0;
-            this.tilesLoaded = 0;
+            this.tileImages = []; // image elements of tiles
+            this.playerImages = []; // image element of players
+            this.loadIsCompleted = () => (this.tileImages.length > 0 && this.playerImages.length > 0);
             this.renderTile = function (x, y, tile, renderAngle) {
                 const ctx = this.canvas.getDrawingContext();
                 const tileSize = this.tileSize;
-                const img = this.getTileImage(tile);
-                if (!img) {
-                    // console.log("Could not find tile image for id " + tile.id);
-                    return false;
-                }
-                let left = Math.floor(x * tileSize);
-                let top = Math.floor(y * tileSize);
-                if (renderAngle === 0) {
-                    ctx.drawImage(img, left, top, tileSize, tileSize);
-                }
-                else {
-                    const angleInRad = renderAngle * (Math.PI / 180);
-                    const offset = Math.floor(tileSize / 2);
-                    left = Math.floor(left + offset);
-                    top = Math.floor(top + offset);
-                    ctx.translate(left, top);
-                    ctx.rotate(angleInRad);
-                    ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
-                    ctx.rotate(-angleInRad);
-                    ctx.translate(-left, -top);
-                }
-                return true;
+                const maybeImg = this.getTileImage(tile);
+                return maybeImg.map(img => {
+                    let left = Math.floor(x * tileSize);
+                    let top = Math.floor(y * tileSize);
+                    if (renderAngle === 0) {
+                        ctx.drawImage(img, left, top, tileSize, tileSize);
+                    }
+                    else {
+                        const angleInRad = renderAngle * (Math.PI / 180);
+                        const offset = Math.floor(tileSize / 2);
+                        left = Math.floor(left + offset);
+                        top = Math.floor(top + offset);
+                        ctx.translate(left, top);
+                        ctx.rotate(angleInRad);
+                        ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
+                        ctx.rotate(-angleInRad);
+                        ctx.translate(-left, -top);
+                    }
+                    return true;
+                }).valueOr(false);
             };
-            this.jetpack = jetpack;
-            this.tiles = tiles;
-            this.playerTypes = playerTypes;
             this.boardSize = boardSize;
             this.canvas = canvas;
             this.loadCallback = loadCallback;
-            this.loadTilePalette(tiles);
+            this.loadTilePalette(TileSet_2.tiles);
             this.loadPlayerPalette();
         }
         render(board, renderMap, players, renderAngle) {
-            // console.log("Renderer->render",board, renderMap, renderAngle);
             this.tileSize = this.canvas.calcTileSize(this.boardSize);
             this.renderBoard(board, renderMap, renderAngle);
             this.renderPlayers(players);
@@ -3136,9 +3043,6 @@ define("Renderer", ["require", "exports"], function (require, exports) {
                 this.drawRotated(savedData, -1, 0, -90, moveSpeed, completed);
             }
         }
-        getTileImagePath(tile) {
-            return this.canvas.imagesFolder + tile.img;
-        }
         getImageData(canvas) {
             const cw = canvas.width;
             const ch = canvas.height;
@@ -3147,50 +3051,60 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             return savedData;
         }
         loadTilePalette(tiles) {
-            this.totalTiles = this.tilesLoaded = 0;
-            for (const i in tiles) {
-                if (tiles[i] !== undefined) {
-                    this.totalTiles++;
-                    const thisTile = tiles[i];
-                    const tileImage = document.createElement("img");
-                    tileImage.setAttribute("src", this.getTileImagePath(thisTile));
-                    tileImage.setAttribute("width", SPRITE_SIZE.toString());
-                    tileImage.setAttribute("height", SPRITE_SIZE.toString());
-                    tileImage.addEventListener("load", () => {
-                        this.markTileImageAsLoaded(thisTile.id);
-                    }, false);
-                    this.tileImages[thisTile.id] = {
-                        image: tileImage,
-                        ready: false
-                    };
+            const tilePromises = tiles.map(this.loadTileImage);
+            Promise.all(tilePromises).then(data => {
+                this.tileImages = data;
+                if (this.loadIsCompleted()) {
+                    this.loadCallback();
                 }
-            }
+            }).catch(() => {
+                this.tileImages = [];
+            });
+        }
+        loadTileImage(tile) {
+            return new Promise((resolve, reject) => {
+                const tileImage = document.createElement("img");
+                tileImage.setAttribute("src", Utils_9.Utils.getTileImagePath(tile.img));
+                tileImage.setAttribute("width", SPRITE_SIZE.toString());
+                tileImage.setAttribute("height", SPRITE_SIZE.toString());
+                tileImage.addEventListener("load", () => {
+                    return resolve({
+                        title: tile.img,
+                        image: tileImage,
+                        ready: true
+                    });
+                }, false);
+                tileImage.addEventListener("onerror", () => {
+                    return reject("Could not load tile image");
+                }, false);
+            });
         }
         loadPlayerPalette() {
-            for (const i in this.playerTypes) {
-                if (this.playerTypes[i] !== undefined) {
-                    const playerType = this.playerTypes[i];
-                    const playerImage = document.createElement("img");
-                    playerImage.setAttribute("src", this.getTileImagePath(playerType));
-                    playerImage.addEventListener("load", () => {
-                        this.markPlayerImageAsLoaded(playerType.img);
-                    }, false);
-                    this.playerImages[playerType.img] = {
-                        image: playerImage,
-                        ready: false
-                    };
+            const playerPromises = PlayerTypes_2.playerTypes.map(this.loadPlayerImage);
+            Promise.all(playerPromises).then(data => {
+                this.playerImages = data;
+                if (this.loadIsCompleted()) {
+                    this.loadCallback();
                 }
-            }
+            }).catch(() => {
+                this.playerImages = [];
+            });
         }
-        markPlayerImageAsLoaded(img) {
-            this.playerImages[img].ready = true;
-        }
-        markTileImageAsLoaded(id) {
-            this.tilesLoaded++;
-            this.tileImages[id].ready = true;
-            if (this.tilesLoaded === this.totalTiles) {
-                this.loadCallback(); // we are ready to fucking party
-            }
+        loadPlayerImage(playerType) {
+            return new Promise((resolve, reject) => {
+                const playerImage = document.createElement("img");
+                playerImage.setAttribute("src", Utils_9.Utils.getTileImagePath(playerType.img));
+                playerImage.addEventListener("load", () => {
+                    return resolve({
+                        title: playerType.img,
+                        image: playerImage,
+                        ready: true
+                    });
+                }, false);
+                playerImage.addEventListener("onerror", () => {
+                    return reject("Could not load player image");
+                }, false);
+            });
         }
         renderBoard(board, renderMap, renderAngle) {
             const ctx = this.canvas.getDrawingContext();
@@ -3198,13 +3112,11 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             ctx.globalAlpha = 1;
             const tiles = board.getAllTiles();
             const drawable = tiles.filter(tile => renderMap[tile.x][tile.y]);
-            drawable.filter(tile => tile.frontLayer || tile.id === 1)
-                .map(tile => {
+            drawable.filter(tile => tile.frontLayer || tile.id === 1).map(tile => {
                 this.clearTile(ctx, tile.x, tile.y);
                 return tile;
             });
-            drawable.filter(tile => tile.id > 1)
-                .map(tile => {
+            drawable.filter(tile => tile.id > 1).map(tile => {
                 this.renderTile(tile.x, tile.y, tile, renderAngle);
             });
         }
@@ -3215,7 +3127,7 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             ctx.clearRect(left, top, tileSize, tileSize);
         }
         drawSkyTile(tile, x, y, renderAngle) {
-            const skyTile = this.tiles[1];
+            const skyTile = TileSet_2.getTile(1);
             this.renderTile(x, y, skyTile, renderAngle);
         }
         renderPlayers(players) {
@@ -3224,22 +3136,10 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             });
         }
         getTileImage(tile) {
-            if (tile.id < 1) {
-                // console.log("invalid tile requested", tile.id, tile);
-                return false;
-            }
-            const tileImage = this.tileImages[tile.id];
-            if (tileImage.ready) {
-                return tileImage.image;
-            }
-            return false;
+            return tsmonad_5.maybe(this.tileImages.find(tileImage => (tileImage.title === tile.img))).map(tileImage => tileImage.image);
         }
         getPlayerImage(img) {
-            const playerImage = this.playerImages[img];
-            if (playerImage.ready) {
-                return playerImage.image;
-            }
-            return false;
+            return tsmonad_5.maybe(this.playerImages.find(playerImage => (playerImage.title === img))).map(playerImage => playerImage.image);
         }
         renderPlayer(player) {
             const ctx = this.canvas.getDrawingContext();
@@ -3250,27 +3150,25 @@ define("Renderer", ["require", "exports"], function (require, exports) {
             const top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
             const clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
             const clipTop = 0;
-            const image = this.getPlayerImage(player.img);
-            if (!image) {
-                // console.log('player image not loaded', player.img);
-                return false;
-            }
-            ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
-            if (left < 0) {
-                // also draw on right
-                const secondLeft = left + tileSize * this.boardSize.width;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
-            }
-            if (left + tileSize > tileSize * this.boardSize.width) {
-                // also draw on left
-                const secondLeft = left - tileSize * this.boardSize.width;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
-            }
-            if (top + tileSize > tileSize * this.boardSize.height) {
-                // also draw on top
-                const secondTop = top - tileSize * this.boardSize.height;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
-            }
+            const maybeImage = this.getPlayerImage(player.img);
+            maybeImage.map(image => {
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
+                if (left < 0) {
+                    // also draw on right
+                    const secondLeft = left + tileSize * this.boardSize.width;
+                    ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
+                }
+                if (left + tileSize > tileSize * this.boardSize.width) {
+                    // also draw on left
+                    const secondLeft = left - tileSize * this.boardSize.width;
+                    ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
+                }
+                if (top + tileSize > tileSize * this.boardSize.height) {
+                    // also draw on top
+                    const secondTop = top - tileSize * this.boardSize.height;
+                    ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
+                }
+            });
         }
         drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed) {
             const canvas = this.canvas.getCanvas();
@@ -3307,7 +3205,62 @@ define("Renderer", ["require", "exports"], function (require, exports) {
     }
     exports.Renderer = Renderer;
 });
-define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels", "Loader", "Map", "Renderer", "RenderMap", "TileChooser", "TileSet", "Utils"], function (require, exports, BoardSize_7, Canvas_2, Coords_8, Levels_2, Loader_2, Map, Renderer_2, RenderMap_3, TileChooser_1, TileSet_4, Utils_8) {
+define("dom/TileChooser", ["require", "exports", "data/TileSet", "objects/Tile", "logic/Utils", "ramda"], function (require, exports, TileSet_3, Tile_3, Utils_10, _) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    // used in editor, draws a bunch of 32x32 tiles for selecting
+    class TileChooser {
+        constructor(renderer) {
+            this.chosenTileID = 0;
+            this.renderer = renderer;
+        }
+        chooseTile(id) {
+            this.chosenTileID = id;
+            this.highlightChosenTile(id);
+        }
+        highlightChosenTile(id) {
+            const tileChooser = document.getElementById("tileChooser");
+            const children = tileChooser.children;
+            const childrenArray = [].slice.call(children);
+            childrenArray.forEach(child => {
+                const className = child.getAttribute("class");
+                if (className === "tile" + id) {
+                    child.setAttribute("style", "border: 1px red solid;");
+                }
+                else {
+                    child.setAttribute("style", "border: 1px white solid;");
+                }
+            });
+        }
+        makeTileImages() {
+            return _.map(tileOriginal => {
+                return new Tile_3.Tile(tileOriginal);
+            }, TileSet_3.tiles).map(tile => {
+                const tileImage = document.createElement("img");
+                tileImage.setAttribute("src", Utils_10.Utils.getTileImagePath(tile.img));
+                tileImage.setAttribute("width", "32");
+                tileImage.setAttribute("height", "32");
+                tileImage.setAttribute("padding", "2px");
+                tileImage.setAttribute("alt", tile.title);
+                tileImage.setAttribute("style", "border: 1px white solid;");
+                tileImage.setAttribute("class", "tile" + tile.id);
+                tileImage.onclick = () => {
+                    this.chooseTile(tile.id);
+                };
+                return tileImage;
+            });
+        }
+        render() {
+            const images = this.makeTileImages();
+            const tileChooser = document.getElementById("tileChooser");
+            Object.values(images).forEach(image => {
+                tileChooser.appendChild(image);
+            });
+        }
+    }
+    exports.TileChooser = TileChooser;
+});
+define("Editor", ["require", "exports", "objects/BoardSize", "objects/Coords", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TileChooser", "logic/Map", "logic/RenderMap", "logic/Utils"], function (require, exports, BoardSize_7, Coords_8, Canvas_2, Levels_2, Loader_2, Renderer_2, TileChooser_1, Map, RenderMap_3, Utils_11) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Editor {
@@ -3415,7 +3368,7 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
             const availableLevels = levelList.filter(level => {
                 return level.completed === false;
             });
-            const chosenKey = Utils_8.Utils.getRandomArrayKey(availableLevels);
+            const chosenKey = Utils_11.Utils.getRandomArrayKey(availableLevels);
             if (!chosenKey) {
                 return false;
             }
@@ -3426,10 +3379,8 @@ define("Editor", ["require", "exports", "BoardSize", "Canvas", "Coords", "Levels
         createRenderer(boardSize) {
             this.canvas = new Canvas_2.Canvas(boardSize);
             this.boardSize = boardSize;
-            const tiles = TileSet_4.TileSet.getTiles();
-            return new Renderer_2.Renderer(this, tiles, [], // no players in edit mode
-            this.boardSize, this.canvas, () => {
-                // console.log("yes")
+            return new Renderer_2.Renderer(this.boardSize, this.canvas, () => {
+                // 
             });
         }
         renderEverything(board) {

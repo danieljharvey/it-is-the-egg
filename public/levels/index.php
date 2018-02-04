@@ -1,6 +1,6 @@
 <?php
 
-include_once('../../include/bootstrap.php');
+include_once '../../include/bootstrap.php';
 
 $egg = getEgg();
 

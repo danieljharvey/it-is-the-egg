@@ -26,13 +26,14 @@ function getEgg() {
 }
 
 function getDBAL() {
-  $classLoader = new \ClassLoader('Doctrine', '/path/to/doctrine');
+  $classLoader = new \Composer\Autoload\ClassLoader('Doctrine', '/path/to/doctrine');
   $classLoader->register();
-
+  
   $config = new \Doctrine\DBAL\Configuration();
 
   $configFilename = dirname(__FILE__)."/settings/connection.json";
   $configJSON = file_get_contents($configFilename);
+  
   if ($configJSON) {
     $configArray = json_decode($configJSON, true);
     $connectionParams = array(
