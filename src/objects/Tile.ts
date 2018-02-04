@@ -24,6 +24,7 @@ export class Tile extends Record({
   dontAdd: false,
   frontLayer: false,
   id: 0,
+  img: "",
   title: "Title",
   x: 0,
   y: 0

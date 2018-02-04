@@ -23,8 +23,8 @@ import { SavedLevel } from "./logic/SavedLevel";
 import { TheEgg } from "./logic/TheEgg";
 import { Utils } from "./logic/Utils";
 
+import { Maybe, maybe } from 'tsmonad'
 import { playerTypes } from "./data/PlayerTypes";
-import { tiles } from "./data/TileSet";
 
 export class Jetpack {
   public animationHandle: number;
@@ -108,16 +108,21 @@ export class Jetpack {
     coords: Coords,
     direction: Coords
   ): Player {
-    const playerType = Utils.getPlayerByType(playerTypes, type);
-    const moveSpeed = (playerType.moveSpeed === 1) ? this.moveSpeed : playerType.moveSpeed
-    const fallSpeed = (playerType.fallSpeed === 1) ? this.moveSpeed * 1.5 : playerType.fallSpeed
-    const nextID = this.nextPlayerID++;
-    return playerType.modify({
-      moveSpeed,
-      fallSpeed,
-      coords,
-      direction
-    })
+    const maybePlayerType = Utils.getPlayerType(type);
+    return maybePlayerType.map(playerType => {
+      const player = new Player(playerType)
+
+      const moveSpeed = Utils.moveSpeed(playerType.moveSpeed)
+      const fallSpeed = Utils.fallSpeed(playerType.fallSpeed)
+      
+      const nextID = this.nextPlayerID++;
+      return player.modify({
+        moveSpeed,
+        fallSpeed,
+        coords,
+        direction
+      })
+    }).valueOr(null)
   }
 
   // make this actually fucking rotate, and choose direction, and do the visual effect thing

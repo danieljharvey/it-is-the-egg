@@ -175,7 +175,8 @@ test("Split a 2-value egg", () => {
       value: 1,
       img: "egg-sprite.png",
       title: "It is of course the egg",
-      lastAction: "split"
+      lastAction: "split",
+      frames: 18
     }),
     player.modify({
       direction: new Coords({
@@ -184,7 +185,8 @@ test("Split a 2-value egg", () => {
       value: 1,
       img: "egg-sprite.png",
       title: "It is of course the egg",
-      lastAction: "split"
+      lastAction: "split",
+      frames: 18
     })
   ];
 
@@ -222,6 +224,8 @@ test("Split a 3-value egg when the time is right", () => {
       title: "It is of course the red egg",
       type: 'red-egg',
       id: 0,
+      frames :18,
+      multiplier: 2,
       lastAction: "split"
     }),
     player1.modify({
@@ -232,6 +236,7 @@ test("Split a 3-value egg when the time is right", () => {
       title: "It is of course the egg",
       value: 1,
       id: 1,
+      frames: 18,
       lastAction: "split"
     })
   ];

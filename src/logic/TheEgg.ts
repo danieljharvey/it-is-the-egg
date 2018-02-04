@@ -73,11 +73,12 @@ export class TheEgg {
     if (Utils.checkLevelIsCompleted(gameState)) {
       return gameState.players.map(player => {
         if (player.value > 0) {
-          const newPlayer = Utils.getPlayerByType(playerTypes, "rainbow-egg");
-          return player.modify({
-            ...newPlayer.toJS(),
-            value: player.value
-          });
+          const maybeNewPlayer = Utils.getPlayerType("rainbow-egg");
+          return maybeNewPlayer.map(newPlayer => {
+            return player.modify({
+              ...newPlayer
+            });
+          }).valueOr(player)
         }
         return player;
       });

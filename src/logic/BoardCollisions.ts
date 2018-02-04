@@ -119,17 +119,17 @@ export const splitPlayer = (player: Player): Player[] => {
 const playerFromItem = (player: Player) => (
   item: ISplitItem
 ): Player => {
-  const newPlayerType = Utils.getPlayerByValue(playerTypes, item.value);
-  return player.modify({
-    type: newPlayerType.type,
-    moveSpeed: newPlayerType.moveSpeed,
-    fallSpeed: newPlayerType.fallSpeed,
-    img: newPlayerType.img,
-    title: newPlayerType.title,
-    direction: new Coords({
-      x: item.direction
-    }),
-    value: item.value,
-    lastAction: "split"
-   });
+  const maybePlayerType = Utils.getPlayerTypeByValue(item.value);
+  return maybePlayerType.map(playerType => {
+  
+    return player.modify({
+      ...playerType,
+      direction: new Coords({
+        x: item.direction
+      }),
+      value: item.value,
+      lastAction: "split"
+    });
+  }).valueOr(null)
+  
 };

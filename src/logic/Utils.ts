@@ -6,9 +6,14 @@ import { GameState } from "../objects/GameState";
 import { Player } from "../objects/Player";
 import { Tile } from '../objects/Tile'
 
+import { IPlayerType, playerTypes as allPlayerTypes } from "../data/PlayerTypes"
+
+import { maybe, Maybe } from 'tsmonad'
+
 // wee lad full of reusable functions
 
 const imagesFolder: string = "img/";
+const defaultMoveSpeed = 10
 
 export class Utils {
   public static getRandomObjectKey(object: object) {
@@ -143,4 +148,24 @@ export class Utils {
     return imagesFolder + img
   }
 
+  public static moveSpeed (playerMoveSpeed: number): number {
+    return (playerMoveSpeed === undefined || playerMoveSpeed === 1) ? defaultMoveSpeed : playerMoveSpeed
+  }
+
+  public static fallSpeed  (playerFallSpeed: number): number {
+    return (playerFallSpeed === undefined || playerFallSpeed === 1) ? defaultMoveSpeed * 1.5 : playerFallSpeed
+  }
+    
+  public static getPlayerType = (type: string): Maybe<IPlayerType> => {
+    return maybe(allPlayerTypes.find(playerType => 
+      playerType.type === type
+    ))
+  }
+
+  // gets the original JS object of options, not a Player
+  public static getPlayerTypeByValue = (value: number): Maybe<IPlayerType> => {
+    return maybe(allPlayerTypes.find(playerType => 
+      playerType.value === value
+    ))
+  }
 }

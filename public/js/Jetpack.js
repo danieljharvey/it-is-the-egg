@@ -10,6 +10,7 @@ define("objects/Tile", ["require", "exports", "immutable"], function (require, e
         dontAdd: false,
         frontLayer: false,
         id: 0,
+        img: "",
         title: "Title",
         x: 0,
         y: 0
@@ -146,11 +147,85 @@ define("objects/GameState", ["require", "exports"], function (require, exports) 
     }
     exports.GameState = GameState;
 });
-define("logic/Utils", ["require", "exports", "ramda"], function (require, exports, _) {
+define("data/PlayerTypes", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.playerTypes = [
+        {
+            frames: 18,
+            img: "egg-sprite-blue.png",
+            multiplier: 5,
+            title: "It is of course the blue egg",
+            type: "blue-egg",
+            value: 3
+        },
+        {
+            frames: 18,
+            img: "egg-sprite.png",
+            multiplier: 1,
+            title: "It is of course the egg",
+            type: "egg",
+            value: 1
+        },
+        {
+            frames: 18,
+            img: "egg-sprite-red.png",
+            multiplier: 2,
+            title: "It is of course the red egg",
+            type: "red-egg",
+            value: 2
+        },
+        {
+            fallSpeed: 20,
+            frames: 1,
+            img: "silver-egg.png",
+            moveSpeed: 0,
+            multiplier: 10,
+            title: "It is of course the silver egg",
+            type: "silver-egg",
+            value: 0
+        },
+        {
+            frames: 18,
+            img: "egg-sprite-yellow.png",
+            multiplier: 10,
+            title: "It is of course the yellow egg",
+            type: "yellow-egg",
+            value: 4
+        },
+        {
+            frames: 18,
+            img: "egg-rainbow.png",
+            multiplier: 1,
+            title: "It goes without saying that this is the rainbow egg",
+            type: "rainbow-egg",
+            value: 1
+        },
+        {
+            frames: 18,
+            img: "blade-sprite.png",
+            title: "It is the mean spirited blade",
+            type: "blade",
+            value: 0,
+            flying: true
+        },
+        {
+            frames: 18,
+            img: "find-blade-sprite.png",
+            title: "It is the mean spirited blade",
+            type: "find-blade",
+            value: 0,
+            movePattern: "seek-egg",
+            flying: true
+        }
+    ];
+});
+define("logic/Utils", ["require", "exports", "ramda", "data/PlayerTypes", "tsmonad"], function (require, exports, _, PlayerTypes_1, tsmonad_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // wee lad full of reusable functions
     const imagesFolder = "img/";
+    const defaultMoveSpeed = 10;
     class Utils {
         static getRandomObjectKey(object) {
             const keys = Object.keys(object);
@@ -267,7 +342,20 @@ define("logic/Utils", ["require", "exports", "ramda"], function (require, export
         static getTileImagePath(img) {
             return imagesFolder + img;
         }
+        static moveSpeed(playerMoveSpeed) {
+            return (playerMoveSpeed === undefined || playerMoveSpeed === 1) ? defaultMoveSpeed : playerMoveSpeed;
+        }
+        static fallSpeed(playerFallSpeed) {
+            return (playerFallSpeed === undefined || playerFallSpeed === 1) ? defaultMoveSpeed * 1.5 : playerFallSpeed;
+        }
     }
+    Utils.getPlayerType = (type) => {
+        return tsmonad_1.maybe(PlayerTypes_1.playerTypes.find(playerType => playerType.type === type));
+    };
+    // gets the original JS object of options, not a Player
+    Utils.getPlayerTypeByValue = (value) => {
+        return tsmonad_1.maybe(PlayerTypes_1.playerTypes.find(playerType => playerType.value === value));
+    };
     exports.Utils = Utils;
 });
 define("objects/Player", ["require", "exports", "immutable", "objects/Coords"], function (require, exports, immutable_4, Coords_1) {
@@ -790,79 +878,6 @@ define("dom/Levels", ["require", "exports", "logic/SavedLevel", "objects/BoardSi
     }
     exports.Levels = Levels;
 });
-define("data/PlayerTypes", ["require", "exports", "objects/Player"], function (require, exports, Player_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.playerTypes = [
-        new Player_1.Player({
-            frames: 18,
-            img: "egg-sprite-blue.png",
-            multiplier: 5,
-            title: "It is of course the blue egg",
-            type: "blue-egg",
-            value: 3
-        }),
-        new Player_1.Player({
-            frames: 18,
-            img: "egg-sprite.png",
-            multiplier: 1,
-            title: "It is of course the egg",
-            type: "egg",
-            value: 1
-        }),
-        new Player_1.Player({
-            frames: 18,
-            img: "egg-sprite-red.png",
-            multiplier: 2,
-            title: "It is of course the red egg",
-            type: "red-egg",
-            value: 2
-        }),
-        new Player_1.Player({
-            fallSpeed: 20,
-            frames: 1,
-            img: "silver-egg.png",
-            moveSpeed: 0,
-            multiplier: 10,
-            title: "It is of course the silver egg",
-            type: "silver-egg",
-            value: 0
-        }),
-        new Player_1.Player({
-            frames: 18,
-            img: "egg-sprite-yellow.png",
-            multiplier: 10,
-            title: "It is of course the yellow egg",
-            type: "yellow-egg",
-            value: 4
-        }),
-        new Player_1.Player({
-            frames: 18,
-            img: "egg-rainbow.png",
-            multiplier: 1,
-            title: "It goes without saying that this is the rainbow egg",
-            type: "rainbow-egg",
-            value: 1
-        }),
-        new Player_1.Player({
-            frames: 18,
-            img: "blade-sprite.png",
-            title: "It is the mean spirited blade",
-            type: "blade",
-            value: 0,
-            flying: true
-        }),
-        new Player_1.Player({
-            frames: 18,
-            img: "find-blade-sprite.png",
-            title: "It is the mean spirited blade",
-            type: "find-blade",
-            value: 0,
-            movePattern: "seek-egg",
-            flying: true
-        })
-    ];
-});
 define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize", "objects/Coords", "objects/Tile", "logic/Utils", "data/TileSet"], function (require, exports, Board_1, BoardSize_2, Coords_2, Tile_2, Utils_1, TileSet_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1102,7 +1117,7 @@ define("logic/Map", ["require", "exports", "objects/Board", "objects/BoardSize",
         }
     };
 });
-define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Utils"], function (require, exports, _, tsmonad_1, Utils_2) {
+define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Utils"], function (require, exports, _, tsmonad_2, Utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.triggerSounds = (oldState) => (newState) => {
@@ -1127,7 +1142,7 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
         }
     };
     const rotateSound = () => {
-        return tsmonad_1.Maybe.just({
+        return tsmonad_2.Maybe.just({
             name: "warp",
             pan: 0
         });
@@ -1176,22 +1191,22 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
     };
     exports.gotCoins = (boardSize) => (tiles) => {
         return filterGotCoins(tiles)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "pop",
                 pan: calcPan(boardSize)(tiles.new.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterCrateSmash = (tiles) => {
         return tiles.old.breakable === true && tiles.new.breakable === false;
     };
     exports.crateSmash = (boardSize) => (tiles) => {
         return filterCrateSmash(tiles)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "crate-smash",
                 pan: calcPan(boardSize)(tiles.new.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterDoorChange = (tiles) => {
         return ((tiles.old.background === true &&
@@ -1203,11 +1218,11 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
     };
     exports.doorChange = (boardSize) => (tiles) => {
         return filterDoorChange(tiles)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "switch",
                 pan: calcPan(boardSize)(tiles.new.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     exports.getPlayerSounds = (oldState) => (newState) => {
         const boardSize = newState.board.getLength();
@@ -1223,11 +1238,11 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
     };
     exports.playerHitsFloor = (boardSize) => (players) => {
         return filterPlayerHitsFloor(players)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "thud",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterPlayerHitsWall = (players) => {
         return (players.old.falling === false &&
@@ -1237,33 +1252,33 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
     };
     exports.playerHitsWall = (boardSize) => (players) => {
         return filterPlayerHitsWall(players)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "bounce",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterTeleported = (players) => {
         return players.old.lastAction === "" && players.new.lastAction === "teleport";
     };
     exports.playerTeleported = (boardSize) => (players) => {
         return filterTeleported(players)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "soft-bell",
                 pan: calcPan(boardSize)(players.new.coords.x)
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     const filterPlayersCombine = (oldPlayers) => (newPlayers) => {
         return oldPlayers.length > newPlayers.length;
     };
     const playersCombine = (oldPlayers) => (newPlayers) => {
         return filterPlayersCombine(oldPlayers)(newPlayers)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "power-up",
                 pan: 0
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
     // super basic for now
     const calcPan = (boardSize) => (x) => {
@@ -1280,11 +1295,11 @@ define("dom/AudioTriggers", ["require", "exports", "ramda", "tsmonad", "logic/Ut
     };
     const nearlyDone = (oldState) => (newState) => {
         return filterNearlyDone(oldState)(newState)
-            ? tsmonad_1.Maybe.just({
+            ? tsmonad_2.Maybe.just({
                 name: "woo",
                 pan: 0
             })
-            : tsmonad_1.Maybe.nothing();
+            : tsmonad_2.Maybe.nothing();
     };
 });
 define("dom/TitleScreen", ["require", "exports", "objects/BoardSize", "logic/Utils"], function (require, exports, BoardSize_3, Utils_3) {
@@ -1346,7 +1361,7 @@ define("dom/TitleScreen", ["require", "exports", "objects/BoardSize", "logic/Uti
     exports.TitleScreen = TitleScreen;
 });
 // sets up Web Audio
-define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_2) {
+define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exports, tsmonad_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class WebAudio {
@@ -1414,9 +1429,9 @@ define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exp
                 .values(this.audioBuffers)
                 .find(name => name.name === soundName);
             if (audioBuffer) {
-                return tsmonad_2.Maybe.just(this.createOutput(audioBuffer, pan));
+                return tsmonad_3.Maybe.just(this.createOutput(audioBuffer, pan));
             }
-            return tsmonad_2.Maybe.nothing();
+            return tsmonad_3.Maybe.nothing();
         }
         getSoundPath(soundName) {
             return "/sounds/" + soundName + ".wav";
@@ -1462,7 +1477,7 @@ define("dom/WebAudio", ["require", "exports", "tsmonad"], function (require, exp
     }
     exports.WebAudio = WebAudio;
 });
-define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, immutable_5, PlayerTypes_1, Utils_4, _) {
+define("logic/Collisions", ["require", "exports", "immutable", "logic/Utils", "ramda"], function (require, exports, immutable_5, Utils_4, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Collisions {
@@ -1601,22 +1616,11 @@ define("logic/Collisions", ["require", "exports", "immutable", "data/PlayerTypes
         combinePlayers(player1, player2) {
             const newValue = player1.value + player2.value;
             const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
-            const newPlayerType = Utils_4.Utils.getPlayerByValue(PlayerTypes_1.playerTypes, newValue);
-            if (!newPlayerType) {
-                return [player1, player2];
-            }
-            const newParams = {
-                type: newPlayerType.type,
-                moveSpeed: newPlayerType.moveSpeed,
-                fallSpeed: newPlayerType.fallSpeed,
-                img: newPlayerType.img,
-                title: newPlayerType.title,
-                value: newValue,
-                multiplier: newPlayerType.multiplier,
-                coords: higherPlayer.coords,
-                direction: higherPlayer.direction
-            };
-            return [player1.modify(newParams)];
+            const maybePlayerType = Utils_4.Utils.getPlayerTypeByValue(newValue);
+            return maybePlayerType.map(newPlayerType => {
+                const newParams = Object.assign({}, newPlayerType, { coords: higherPlayer.coords, direction: higherPlayer.direction });
+                return [player1.modify(newParams)];
+            }).valueOr([player1, player2]);
         }
     }
     exports.Collisions = Collisions;
@@ -1789,7 +1793,7 @@ define("logic/Action", ["require", "exports", "logic/Map"], function (require, e
     }
     exports.Action = Action;
 });
-define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/PlayerTypes", "logic/Utils", "ramda"], function (require, exports, Coords_4, PlayerTypes_2, Utils_6, _) {
+define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "logic/Utils", "ramda"], function (require, exports, Coords_4, Utils_6, _) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // Board Collide
@@ -1865,26 +1869,19 @@ define("logic/BoardCollisions", ["require", "exports", "objects/Coords", "data/P
         return items.map(playerFromItemFunc);
     };
     const playerFromItem = (player) => (item) => {
-        const newPlayerType = Utils_6.Utils.getPlayerByValue(PlayerTypes_2.playerTypes, item.value);
-        return player.modify({
-            type: newPlayerType.type,
-            moveSpeed: newPlayerType.moveSpeed,
-            fallSpeed: newPlayerType.fallSpeed,
-            img: newPlayerType.img,
-            title: newPlayerType.title,
-            direction: new Coords_4.Coords({
-                x: item.direction
-            }),
-            value: item.value,
-            lastAction: "split"
-        });
+        const maybePlayerType = Utils_6.Utils.getPlayerTypeByValue(item.value);
+        return maybePlayerType.map(playerType => {
+            return player.modify(Object.assign({}, playerType, { direction: new Coords_4.Coords({
+                    x: item.direction
+                }), value: item.value, lastAction: "split" }));
+        }).valueOr(null);
     };
 });
 // this is the egg
 // it accepts a GameState and an Action
 // and returns a new GameState
 // totally fucking stateless and burnable in itself
-define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "data/PlayerTypes", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_7, PlayerTypes_3, BoardSize_5) {
+define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollisions", "logic/Collisions", "logic/Map", "logic/Movement", "logic/Utils", "objects/BoardSize"], function (require, exports, Action_1, BoardCollisions, Collisions_1, Map, Movement, Utils_7, BoardSize_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class TheEgg {
@@ -1893,8 +1890,10 @@ define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollis
                 if (Utils_7.Utils.checkLevelIsCompleted(gameState)) {
                     return gameState.players.map(player => {
                         if (player.value > 0) {
-                            const newPlayer = Utils_7.Utils.getPlayerByType(PlayerTypes_3.playerTypes, "rainbow-egg");
-                            return player.modify(Object.assign({}, newPlayer.toJS(), { value: player.value }));
+                            const maybeNewPlayer = Utils_7.Utils.getPlayerType("rainbow-egg");
+                            return maybeNewPlayer.map(newPlayer => {
+                                return player.modify(Object.assign({}, newPlayer));
+                            }).valueOr(player);
                         }
                         return player;
                     });
@@ -1953,7 +1952,7 @@ define("logic/TheEgg", ["require", "exports", "logic/Action", "logic/BoardCollis
     }
     exports.TheEgg = TheEgg;
 });
-define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils", "data/PlayerTypes"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_8, PlayerTypes_4) {
+define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize", "objects/Coords", "objects/GameState", "objects/Player", "dom/AudioTriggers", "dom/Canvas", "dom/Levels", "dom/Loader", "dom/Renderer", "dom/TitleScreen", "dom/WebAudio", "logic/Map", "logic/RenderMap", "logic/TheEgg", "logic/Utils"], function (require, exports, Hammer, _, BoardSize_6, Coords_5, GameState_1, Player_1, AudioTriggers, Canvas_1, Levels_1, Loader_1, Renderer_1, TitleScreen_1, WebAudio_1, Map, RenderMap_1, TheEgg_1, Utils_8) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Jetpack {
@@ -2014,16 +2013,19 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize
         }
         // create player
         createNewPlayer(type, coords, direction) {
-            const playerType = Utils_8.Utils.getPlayerByType(PlayerTypes_4.playerTypes, type);
-            const moveSpeed = (playerType.moveSpeed === 1) ? this.moveSpeed : playerType.moveSpeed;
-            const fallSpeed = (playerType.fallSpeed === 1) ? this.moveSpeed * 1.5 : playerType.fallSpeed;
-            const nextID = this.nextPlayerID++;
-            return playerType.modify({
-                moveSpeed,
-                fallSpeed,
-                coords,
-                direction
-            });
+            const maybePlayerType = Utils_8.Utils.getPlayerType(type);
+            return maybePlayerType.map(playerType => {
+                const player = new Player_1.Player(playerType);
+                const moveSpeed = Utils_8.Utils.moveSpeed(playerType.moveSpeed);
+                const fallSpeed = Utils_8.Utils.fallSpeed(playerType.fallSpeed);
+                const nextID = this.nextPlayerID++;
+                return player.modify({
+                    moveSpeed,
+                    fallSpeed,
+                    coords,
+                    direction
+                });
+            }).valueOr(null);
         }
         // make this actually fucking rotate, and choose direction, and do the visual effect thing
         rotateBoard(clockwise) {
@@ -2384,7 +2386,7 @@ define("Jetpack", ["require", "exports", "hammerjs", "ramda", "objects/BoardSize
     }
     exports.Jetpack = Jetpack;
 });
-define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/Coords"], function (require, exports, _, tsmonad_3, Coords_6) {
+define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/Coords"], function (require, exports, _, tsmonad_4, Coords_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getMapSize = (map) => {
@@ -2409,7 +2411,7 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
     exports.findAdjacent = (map) => (point) => {
         const wrappedPoint = exports.wrapValue(map)(point.x, point.y);
         const { x, y } = wrappedPoint;
-        return tsmonad_3.Maybe.just(map[x][y]);
+        return tsmonad_4.Maybe.just(map[x][y]);
     };
     exports.addToList = (list, point) => [
         point,
@@ -2470,20 +2472,20 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
         const partialFindAnswer = exports.findAnswer(targetPoint);
         const found = _.find(list, partialFindAnswer);
         if (found) {
-            return tsmonad_3.Maybe.just(found);
+            return tsmonad_4.Maybe.just(found);
         }
-        return tsmonad_3.Maybe.nothing();
+        return tsmonad_4.Maybe.nothing();
     };
     exports.flipAnswer = (list) => _.reverse(list);
     exports.processMoveList = (map) => (lists) => (targetPoint) => {
         const moveOptions = exports.getMultipleMoveOptions(map)(lists);
         if (moveOptions.length === 0) {
-            return tsmonad_3.Maybe.nothing();
+            return tsmonad_4.Maybe.nothing();
         }
         const solution = exports.findAnswerInList(targetPoint)(moveOptions);
         return solution.caseOf({
             just: value => {
-                return tsmonad_3.Maybe.just(exports.flipAnswer(value));
+                return tsmonad_4.Maybe.just(exports.flipAnswer(value));
             },
             nothing: () => {
                 return exports.processMoveList(map)(moveOptions)(targetPoint);
@@ -2492,7 +2494,7 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
     };
     exports.findPath = (map) => (start) => (target) => {
         if (start.equals(target)) {
-            return tsmonad_3.Maybe.nothing();
+            return tsmonad_4.Maybe.nothing();
         }
         return exports.processMoveList(map)([[start]])(target);
     };
@@ -2516,7 +2518,7 @@ define("logic/PathFinder", ["require", "exports", "lodash", "tsmonad", "objects/
             .map(obj => obj.valueOr([]))
             .filter(arr => arr.length > 0)
             .sort(sortArray);
-        return paths.count() > 0 ? tsmonad_3.Maybe.just(paths.first()) : tsmonad_3.Maybe.nothing();
+        return paths.count() > 0 ? tsmonad_4.Maybe.just(paths.first()) : tsmonad_4.Maybe.nothing();
     };
     // work out what first move is according to directions
     exports.findNextDirection = (pointList) => {
@@ -2976,7 +2978,7 @@ define("logic/Movement", ["require", "exports", "ramda", "objects/Coords", "logi
         });
     };
 });
-define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils", "data/TileSet"], function (require, exports, PlayerTypes_5, Utils_9, TileSet_2) {
+define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils", "data/TileSet", "tsmonad"], function (require, exports, PlayerTypes_2, Utils_9, TileSet_2, tsmonad_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const SPRITE_SIZE = 64;
@@ -2984,35 +2986,32 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils",
     class Renderer {
         constructor(boardSize, canvas, loadCallback) {
             this.checkResize = true;
-            this.tileImages = {}; // image elements of tiles
-            this.playerImages = {}; // image element of players
-            this.playersLoaded = false;
-            this.tilesLoaded = false;
+            this.tileImages = []; // image elements of tiles
+            this.playerImages = []; // image element of players
+            this.loadIsCompleted = () => (this.tileImages.length > 0 && this.playerImages.length > 0);
             this.renderTile = function (x, y, tile, renderAngle) {
                 const ctx = this.canvas.getDrawingContext();
                 const tileSize = this.tileSize;
-                const img = this.getTileImage(tile);
-                if (!img) {
-                    // 
-                    return false;
-                }
-                let left = Math.floor(x * tileSize);
-                let top = Math.floor(y * tileSize);
-                if (renderAngle === 0) {
-                    ctx.drawImage(img, left, top, tileSize, tileSize);
-                }
-                else {
-                    const angleInRad = renderAngle * (Math.PI / 180);
-                    const offset = Math.floor(tileSize / 2);
-                    left = Math.floor(left + offset);
-                    top = Math.floor(top + offset);
-                    ctx.translate(left, top);
-                    ctx.rotate(angleInRad);
-                    ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
-                    ctx.rotate(-angleInRad);
-                    ctx.translate(-left, -top);
-                }
-                return true;
+                const maybeImg = this.getTileImage(tile);
+                return maybeImg.map(img => {
+                    let left = Math.floor(x * tileSize);
+                    let top = Math.floor(y * tileSize);
+                    if (renderAngle === 0) {
+                        ctx.drawImage(img, left, top, tileSize, tileSize);
+                    }
+                    else {
+                        const angleInRad = renderAngle * (Math.PI / 180);
+                        const offset = Math.floor(tileSize / 2);
+                        left = Math.floor(left + offset);
+                        top = Math.floor(top + offset);
+                        ctx.translate(left, top);
+                        ctx.rotate(angleInRad);
+                        ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
+                        ctx.rotate(-angleInRad);
+                        ctx.translate(-left, -top);
+                    }
+                    return true;
+                }).valueOr(false);
             };
             this.boardSize = boardSize;
             this.canvas = canvas;
@@ -3052,21 +3051,14 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils",
             return savedData;
         }
         loadTilePalette(tiles) {
-            console.log('loadTilePalette', tiles);
             const tilePromises = tiles.map(this.loadTileImage);
-            console.log(tilePromises);
             Promise.all(tilePromises).then(data => {
-                // all players loaded
-                this.tilesLoaded = true;
-                data.map(item => {
-                    this.tileImages[item.title] = item;
-                });
-                if (this.playersLoaded) {
+                this.tileImages = data;
+                if (this.loadIsCompleted()) {
                     this.loadCallback();
                 }
             }).catch(() => {
-                this.tilesLoaded = false;
-                this.tileImages = {};
+                this.tileImages = [];
             });
         }
         loadTileImage(tile) {
@@ -3088,19 +3080,14 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils",
             });
         }
         loadPlayerPalette() {
-            const playerPromises = PlayerTypes_5.playerTypes.map(this.loadPlayerImage);
+            const playerPromises = PlayerTypes_2.playerTypes.map(this.loadPlayerImage);
             Promise.all(playerPromises).then(data => {
-                // all players loaded
-                this.playersLoaded = true;
-                data.map(item => {
-                    this.playerImages[item.title] = item;
-                });
-                if (this.tilesLoaded) {
+                this.playerImages = data;
+                if (this.loadIsCompleted()) {
                     this.loadCallback();
                 }
             }).catch(() => {
-                this.playersLoaded = false;
-                this.playerImages = {};
+                this.playerImages = [];
             });
         }
         loadPlayerImage(playerType) {
@@ -3149,22 +3136,10 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils",
             });
         }
         getTileImage(tile) {
-            if (tile.id < 1) {
-                // 
-                return false;
-            }
-            const tileImage = this.tileImages[tile.id];
-            if (tileImage.ready) {
-                return tileImage.image;
-            }
-            return false;
+            return tsmonad_5.maybe(this.tileImages.find(tileImage => (tileImage.title === tile.img))).map(tileImage => tileImage.image);
         }
         getPlayerImage(img) {
-            const playerImage = this.playerImages[img];
-            if (playerImage.ready) {
-                return playerImage.image;
-            }
-            return false;
+            return tsmonad_5.maybe(this.playerImages.find(playerImage => (playerImage.title === img))).map(playerImage => playerImage.image);
         }
         renderPlayer(player) {
             const ctx = this.canvas.getDrawingContext();
@@ -3175,27 +3150,25 @@ define("dom/Renderer", ["require", "exports", "data/PlayerTypes", "logic/Utils",
             const top = Math.floor(coords.y * tileSize + coords.offsetY * offsetRatio);
             const clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
             const clipTop = 0;
-            const image = this.getPlayerImage(player.img);
-            if (!image) {
-                // 
-                return false;
-            }
-            ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
-            if (left < 0) {
-                // also draw on right
-                const secondLeft = left + tileSize * this.boardSize.width;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
-            }
-            if (left + tileSize > tileSize * this.boardSize.width) {
-                // also draw on left
-                const secondLeft = left - tileSize * this.boardSize.width;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
-            }
-            if (top + tileSize > tileSize * this.boardSize.height) {
-                // also draw on top
-                const secondTop = top - tileSize * this.boardSize.height;
-                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
-            }
+            const maybeImage = this.getPlayerImage(player.img);
+            maybeImage.map(image => {
+                ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, top, tileSize, tileSize);
+                if (left < 0) {
+                    // also draw on right
+                    const secondLeft = left + tileSize * this.boardSize.width;
+                    ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
+                }
+                if (left + tileSize > tileSize * this.boardSize.width) {
+                    // also draw on left
+                    const secondLeft = left - tileSize * this.boardSize.width;
+                    ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, secondLeft, top, tileSize, tileSize);
+                }
+                if (top + tileSize > tileSize * this.boardSize.height) {
+                    // also draw on top
+                    const secondTop = top - tileSize * this.boardSize.height;
+                    ctx.drawImage(image, clipLeft, 0, SPRITE_SIZE, SPRITE_SIZE, left, secondTop, tileSize, tileSize);
+                }
+            });
         }
         drawRotated(savedData, direction, angle, targetAngle, moveSpeed, completed) {
             const canvas = this.canvas.getCanvas();

@@ -187,6 +187,7 @@ test("Create new players", () => {
       type: "red-egg",
       value: 2,
       multiplier:2,
+      frames: 18,
       coords: new Coords({
         x: 100,
         y: 100
@@ -368,6 +369,7 @@ test("Create new players actually works", () => {
       title: "It is of course the red egg",
       type: "red-egg",
       value: 2,
+      frames: 18,
       coords: new Coords({
         x: 100,
         y: 100

@@ -12,6 +12,8 @@ import { Utils } from "../logic/Utils";
 import { getTile, tiles as originalTiles } from "../data/TileSet"
 import { Canvas } from "./Canvas";
 
+import { maybe, Maybe } from "tsmonad";
+
 const SPRITE_SIZE: number = 64;
 const OFFSET_DIVIDE: number = 100;
 
@@ -20,8 +22,6 @@ interface IDomImage {
   image: HTMLImageElement
   ready: boolean
 }
-
-interface ImageSet { [key: string]: IDomImage }
 
 type RenderMap = boolean[][]
 
@@ -37,15 +37,12 @@ export class Renderer {
 
   protected checkResize: boolean = true;
 
-  protected tileImages: ImageSet = {}; // image elements of tiles
-  protected playerImages: ImageSet = {}; // image element of players
+  protected tileImages: IDomImage[] = []; // image elements of tiles
+  protected playerImages: IDomImage[] = []; // image element of players
 
   protected rotating: boolean;
 
   protected loadCallback: () => void; // call this when all the tiles are loaded
-  
-  protected playersLoaded = false 
-  protected tilesLoaded = false
 
   constructor(
     boardSize: BoardSize,
@@ -107,28 +104,25 @@ export class Renderer {
   }
 
   protected loadTilePalette(tiles: Tile[]) {
-    console.log('loadTilePalette', tiles)
     const tilePromises = tiles.map(this.loadTileImage)
-    console.log(tilePromises)
     Promise.all(tilePromises).then(data => {
-      // all players loaded
-      this.tilesLoaded = true
-      data.map(item => {
-        this.tileImages[item.title] = item
-      })
-      if (this.playersLoaded) {
+      this.tileImages = data
+
+      if (this.loadIsCompleted()) {
         this.loadCallback()
       }
+        
     }).catch(() => {
-      this.tilesLoaded = false
-      this.tileImages = {}
+      this.tileImages = []
     })
   }
+
+  protected loadIsCompleted = () =>  (this.tileImages.length > 0 && this.playerImages.length > 0) 
 
   protected loadTileImage(tile: Tile): Promise<IDomImage> {
     return new Promise((resolve, reject) => {
       const tileImage = document.createElement("img");
-      tileImage.setAttribute("src", Utils.getTileImagePath(tile.img));
+      tileImage.setAttribute("src", Utils.getTileImagePath(tile.img))
       tileImage.setAttribute("width", SPRITE_SIZE.toString());
       tileImage.setAttribute("height", SPRITE_SIZE.toString());
       tileImage.addEventListener(
@@ -154,17 +148,15 @@ export class Renderer {
   protected loadPlayerPalette() {
     const playerPromises = playerTypes.map(this.loadPlayerImage)
     Promise.all(playerPromises).then(data => {
-      // all players loaded
-      this.playersLoaded = true
-      data.map(item => {
-        this.playerImages[item.title] = item
-      })
-      if (this.tilesLoaded) {
+      
+      this.playerImages = data
+
+      if (this.loadIsCompleted()) {
         this.loadCallback()
       }
+
     }).catch(() => {
-      this.playersLoaded = false
-      this.playerImages = {}
+      this.playerImages = []
     })
   }
 
@@ -229,17 +221,10 @@ export class Renderer {
     });
   }
 
-  protected getTileImage(tile: Tile) {
-    if (tile.id < 1) {
-      // 
-      return false;
-    }
-    const tileImage = this.tileImages[tile.id];
-
-    if (tileImage.ready) {
-      return tileImage.image;
-    }
-    return false;
+  protected getTileImage(tile: Tile) : Maybe<HTMLImageElement> {
+    return maybe(this.tileImages.find(tileImage => 
+      (tileImage.title === tile.img)
+    )).map(tileImage => tileImage.image)
   }
 
   protected renderTile = function(
@@ -251,44 +236,39 @@ export class Renderer {
     const ctx = this.canvas.getDrawingContext();
     const tileSize = this.tileSize;
 
-    const img = this.getTileImage(tile);
+    const maybeImg = this.getTileImage(tile);
 
-    if (!img) {
-      // 
-      return false;
-    }
+    return maybeImg.map(img => {
+      let left = Math.floor(x * tileSize);
+      let top = Math.floor(y * tileSize);
 
-    let left = Math.floor(x * tileSize);
-    let top = Math.floor(y * tileSize);
+      if (renderAngle === 0) {
+        ctx.drawImage(img, left, top, tileSize, tileSize);
+      } else {
+        const angleInRad = renderAngle * (Math.PI / 180);
 
-    if (renderAngle === 0) {
-      ctx.drawImage(img, left, top, tileSize, tileSize);
-    } else {
-      const angleInRad = renderAngle * (Math.PI / 180);
+        const offset = Math.floor(tileSize / 2);
 
-      const offset = Math.floor(tileSize / 2);
+        left = Math.floor(left + offset);
+        top = Math.floor(top + offset);
 
-      left = Math.floor(left + offset);
-      top = Math.floor(top + offset);
+        ctx.translate(left, top);
+        ctx.rotate(angleInRad);
 
-      ctx.translate(left, top);
-      ctx.rotate(angleInRad);
+        ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
 
-      ctx.drawImage(img, -offset, -offset, tileSize, tileSize);
+        ctx.rotate(-angleInRad);
+        ctx.translate(-left, -top);
+      }
 
-      ctx.rotate(-angleInRad);
-      ctx.translate(-left, -top);
-    }
-
-    return true;
+      return true;
+    }).valueOr(false)
   };
 
-  protected getPlayerImage(img: string) {
-    const playerImage = this.playerImages[img];
-    if (playerImage.ready) {
-      return playerImage.image;
-    }
-    return false;
+  protected getPlayerImage(img: string): Maybe<HTMLImageElement> {
+    return maybe(this.playerImages.find(playerImage => 
+      (playerImage.title === img)
+    )).map(playerImage => playerImage.image)
   }
 
   protected renderPlayer(player: Player) {
@@ -305,59 +285,8 @@ export class Renderer {
     const clipLeft = Math.floor(player.currentFrame * SPRITE_SIZE);
     const clipTop = 0;
 
-    const image = this.getPlayerImage(player.img);
-    if (!image) {
-      // 
-      return false;
-    }
-
-    ctx.drawImage(
-      image,
-      clipLeft,
-      0,
-      SPRITE_SIZE,
-      SPRITE_SIZE,
-      left,
-      top,
-      tileSize,
-      tileSize
-    );
-
-    if (left < 0) {
-      // also draw on right
-      const secondLeft = left + tileSize * this.boardSize.width;
-      ctx.drawImage(
-        image,
-        clipLeft,
-        0,
-        SPRITE_SIZE,
-        SPRITE_SIZE,
-        secondLeft,
-        top,
-        tileSize,
-        tileSize
-      );
-    }
-
-    if (left + tileSize > tileSize * this.boardSize.width) {
-      // also draw on left
-      const secondLeft = left - tileSize * this.boardSize.width;
-      ctx.drawImage(
-        image,
-        clipLeft,
-        0,
-        SPRITE_SIZE,
-        SPRITE_SIZE,
-        secondLeft,
-        top,
-        tileSize,
-        tileSize
-      );
-    }
-
-    if (top + tileSize > tileSize * this.boardSize.height) {
-      // also draw on top
-      const secondTop = top - tileSize * this.boardSize.height;
+    const maybeImage = this.getPlayerImage(player.img);
+    maybeImage.map(image => {
       ctx.drawImage(
         image,
         clipLeft,
@@ -365,11 +294,59 @@ export class Renderer {
         SPRITE_SIZE,
         SPRITE_SIZE,
         left,
-        secondTop,
+        top,
         tileSize,
         tileSize
       );
-    }
+  
+      if (left < 0) {
+        // also draw on right
+        const secondLeft = left + tileSize * this.boardSize.width;
+        ctx.drawImage(
+          image,
+          clipLeft,
+          0,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+          secondLeft,
+          top,
+          tileSize,
+          tileSize
+        );
+      }
+  
+      if (left + tileSize > tileSize * this.boardSize.width) {
+        // also draw on left
+        const secondLeft = left - tileSize * this.boardSize.width;
+        ctx.drawImage(
+          image,
+          clipLeft,
+          0,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+          secondLeft,
+          top,
+          tileSize,
+          tileSize
+        );
+      }
+  
+      if (top + tileSize > tileSize * this.boardSize.height) {
+        // also draw on top
+        const secondTop = top - tileSize * this.boardSize.height;
+        ctx.drawImage(
+          image,
+          clipLeft,
+          0,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+          left,
+          secondTop,
+          tileSize,
+          tileSize
+        );
+      }
+    })
   }
 
   protected drawRotated(

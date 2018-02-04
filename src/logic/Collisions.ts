@@ -186,24 +186,18 @@ export class Collisions {
     const newValue = player1.value + player2.value;
     const higherPlayer = this.chooseHigherLevelPlayer(player1, player2);
 
-    const newPlayerType = Utils.getPlayerByValue(playerTypes, newValue);
+    const maybePlayerType = Utils.getPlayerTypeByValue(newValue);
+    return maybePlayerType.map(newPlayerType => {
+      
+      const newParams = {
+        ...newPlayerType,
+        coords: higherPlayer.coords,
+        direction: higherPlayer.direction
+      }
 
-    if (!newPlayerType) {
-      return [player1, player2];
-    }
+      return [player1.modify(newParams)];
+    }).valueOr([player1, player2])
 
-    const newParams = {
-      type: newPlayerType.type,
-      moveSpeed: newPlayerType.moveSpeed,
-      fallSpeed: newPlayerType.fallSpeed,
-      img: newPlayerType.img,
-      title: newPlayerType.title,
-      value: newValue,
-      multiplier: newPlayerType.multiplier,
-      coords: higherPlayer.coords,
-      direction: higherPlayer.direction
-    }
-
-    return [player1.modify(newParams)];
+    
   }
 }
