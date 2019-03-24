@@ -1,66 +1,72 @@
 <!DOCTYPE html>
-<html style='background-color: black;'>
-	<head>
-		<title>Level Editor</title>
-		<script data-main="edit" type="text/javascript" src='js/require.js'></script>
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-	</head>
-	<style>
-		html, body {
-			margin: 0px;
-			padding: 0px;
-		}
-		#editHeader {
-			height: 77px;
-			width: 100%;
-			text-align: center;
-			line-height:30px;
-			margin: 5px auto;
-		}
-		#canvas {
-			display: block;
-			margin: 0px auto;
-		}
-		#score {
-			color: white;
-			margin-left: 20px;
-			margin-right: 20px;
-			text-align: center;
-			font-family: Helvetica;
-		}
-		#tileChooser {
-			width:100%;
-			height: 34px;
-			margin-top:5px;
-			margin-bottom: 5px;
-			background-color: white;
-		}
-		span#message {
-			color: white;
-			margin: 0px;
-			padding: 0px;
-		}
-	</style>
-	<body>
-		<div id='wrapper'>
-			<div id='editHeader'>
-				<button onClick='editor.saveLevel();'>SAVE</button>
-				<span id='message'>EDIT MODE</span>
-				<select id='levelList'>
-				</select>
-				<button onClick='editor.loadLevelFromList();'>LOAD</button>
-				<button onClick='editor.shrinkBoard();'> - </button>
-				<button onClick='editor.growBoard();'> + </button>
-				<button onClick='editor.undo();'> UNDO </button>
-				<div id='tileChooser'>
-
-				</div>
-			</div>
-			<canvas id='canvas'></canvas>
-		</div>
-	</body>
+<html style="background-color: black;">
+  <head>
+    <title>Level Editor</title>
+    <script
+      data-main="edit"
+      type="text/javascript"
+      src="js/require.js"
+    ></script>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
+  </head>
+  <style>
+    html,
+    body {
+      margin: 0px;
+      padding: 0px;
+    }
+    #editHeader {
+      height: 77px;
+      width: 100%;
+      text-align: center;
+      line-height: 30px;
+      margin: 5px auto;
+    }
+    #canvas {
+      display: block;
+      margin: 0px auto;
+    }
+    #score {
+      color: white;
+      margin-left: 20px;
+      margin-right: 20px;
+      text-align: center;
+      font-family: Helvetica;
+    }
+    #tileChooser {
+      width: 100%;
+      height: 34px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      background-color: white;
+    }
+    span#message {
+      color: white;
+      margin: 0px;
+      padding: 0px;
+    }
+  </style>
+  <body>
+    <div id="wrapper">
+      <div id="editHeader">
+        <button onClick="editor.saveLevel();">SAVE</button>
+        <span id="message">EDIT MODE</span>
+        <select id="levelList"> </select>
+        <button onClick="editor.loadLevelFromList();">LOAD</button>
+        <button onClick="editor.shrinkBoard();">-</button>
+        <button onClick="editor.growBoard();">+</button>
+        <button onClick="editor.undo();">UNDO</button>
+        <div id="tileChooser"></div>
+      </div>
+      <canvas id="canvas"></canvas>
+    </div>
+  </body>
 </html>
 
 <script>
-var jetpack;
+  var jetpack;
+  var editor;
 </script>

@@ -1,17 +1,18 @@
 // editor.js
-
+console.log("editjs");
 requirejs.config({
-    baseUrl: 'js',
-    paths: {
-        'Jetpack':'./Jetpack',
-        'hammerjs':'./hammer'
-    }
+  baseUrl: "js",
+  paths: {
+    Editor: "./Jetpack",
+    Jetpack: "./Jetpack",
+    hammerjs: "./hammer"
+  }
 });
 
-requirejs(['Jetpack'], function(stuff) {
-    jetpack = new stuff.Jetpack;
-    editor = jetpack.getEditor();
-	editor.bootstrap(levelID => {
-		editor.edit(levelID);
-	});	
+requirejs(["Editor"], function(stuff) {
+  console.log(stuff);
+  editor = new stuff.Editor();
+  editor.bootstrap(levelID => {
+    editor.edit(levelID);
+  });
 });
